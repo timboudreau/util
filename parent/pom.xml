@@ -5,7 +5,7 @@
     <groupId>com.mastfrog</groupId>
     <artifactId>mastfrog-parent</artifactId>
     <!-- NOTE: Changing the version string here changes it for EVERYTHING -->
-    <version>1.3.3</version>
+    <version>1.3.4</version>
     <name>Mastfrog (parent POM)</name>
     <description>Guice + Configuration tools, Acteur Framework</description>
     <url>https://github.com/timboudreau/util</url>
@@ -14,7 +14,6 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.debug>true</maven.compiler.debug>
-        <!-- what still uses this?! -->
         <netty.version>4.0.0.CR2-SNAPSHOT</netty.version>
         <guice.version>3.1.0-SNAPSHOT</guice.version>
         <netbeans.version>RELEASE73</netbeans.version>
