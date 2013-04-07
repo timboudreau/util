@@ -213,7 +213,7 @@
         <dependencies>
             <dependency>
                 <groupId>${project.groupId}</groupId>
-                <artifactId>configuration</artifactId>
+                <artifactId>giulius-settings</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
