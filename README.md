@@ -1,6 +1,3 @@
-Utilities
-=========
-
 Miscellaneous Java utilities several other projects rely on.  Specifically, utilities and idioms for dealing with
 
  * Streams and hashing
@@ -10,4 +7,6 @@ Miscellaneous Java utilities several other projects rely on.  Specifically, util
  * Collection and iterator-related conversion
 
 The parent POM for this and related projects is in ``parent/pom.xml`` (at least for now).
+
+Bits vailable in <a href="http://timboudreau.com/builds/">this Maven repository/continuous-build</a>.
 
