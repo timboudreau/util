@@ -73,9 +73,9 @@ public class Types {
         StringBuilder sb = new StringBuilder();
         for (Iterator<Class<?>> it = c.iterator(); it.hasNext();) {
         Class<?> cc = it.next();
-            sb.append (cc);
+            sb.append(cc.getSimpleName());
             if (it.hasNext()) {
-                sb.append(cc.getSimpleName());
+                sb.append(", ");
             }
         }
         return sb.toString();

@@ -105,7 +105,7 @@ public final class Strings {
             if (part.isEmpty() || (part.length() == 1 && part.charAt(0) == '/')) {
                 continue;
             }
-            boolean gotTrailingSlash = sb.charAt(sb.length()) == '/';
+            boolean gotTrailingSlash = sb.charAt(sb.length() -1) == '/';
             boolean gotLeadingSlash = part.charAt(0) == '/';
             if (gotTrailingSlash != !gotLeadingSlash) {
                 sb.append(part);

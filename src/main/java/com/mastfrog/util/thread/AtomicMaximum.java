@@ -130,7 +130,7 @@ public final class AtomicMaximum extends Number {
         }
     }
 
-    void enter() {
+    public QuietAutoCloseable enter() {
         int current = countActiveThreads();
         for (;;) {
             if (wasReset) {
@@ -145,6 +145,12 @@ public final class AtomicMaximum extends Number {
                 break;
             }
         }
+        return new QuietAutoCloseable() {
+            @Override
+            public void close() {
+                exit();
+            }
+        };
     }
 
     void exit() {
