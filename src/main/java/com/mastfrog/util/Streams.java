@@ -271,7 +271,7 @@ public final class Streams {
      * @throws IOException
      */
     public static String readString(final Reader in) throws IOException {
-        final StringBuffer buffer = new StringBuffer(2048);
+        final StringBuilder buffer = new StringBuilder(2048);
         int value;
 
         while ((value = in.read()) != -1) {
