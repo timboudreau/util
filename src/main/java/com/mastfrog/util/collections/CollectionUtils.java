@@ -40,6 +40,25 @@ public final class CollectionUtils {
     }
 
     /**
+     * Create a reversed view of a list.  Unlike Collections.reverse() this does
+     * not modify the original list;  it also does not copy the original list.
+     * This does mean that modifications to the original list are visible while
+     * iterating the child list, and appropriate steps should be taken to avoid
+     * commodification.
+     * 
+     * @param <T> A type
+     * @param list A list
+     * @return A reversed view of the passed list
+     */
+    @SuppressWarnings("unchecked")
+    public static<T> List<T> reversed(List<T> list) {
+        if (list instanceof ReversedList) {
+            return ((ReversedList<T>) list).delegate();
+        }
+        return new ReversedList<>(list);
+    }
+
+    /**
      * Create a list which wrappers another list and converts the contents on
      * demand
      *

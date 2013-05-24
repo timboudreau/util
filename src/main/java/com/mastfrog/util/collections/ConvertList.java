@@ -200,6 +200,17 @@ final class ConvertList<T, R> implements List<T> {
     public ListIterator<T> listIterator() {
         return listIterator(0);
     }
+    
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (T obj : this) {
+            if (sb.length() != 0) {
+                sb.append (',');
+            }
+            sb.append(obj);
+        }
+        return sb.toString();
+    }
 
     @Override
     public ListIterator<T> listIterator(final int index) {
