@@ -1,4 +1,4 @@
-/* 
+/*
  * The MIT License
  *
  * Copyright 2013 Tim Boudreau.
@@ -201,7 +201,7 @@ public final class Streams {
         Reader r = new BufferedReader(new InputStreamReader(in, Charset.forName(charset)));
         try {
             return readString(r);
-        } finally {    
+        } finally {
             r.close();
         }
     }
@@ -280,14 +280,14 @@ public final class Streams {
 
         return buffer.toString();
     }
-    
+
     static class NamedInputStream extends FilterInputStream {
         private final String name;
         public NamedInputStream(Object src, InputStream in) {
             super(in);
             name = src + "";
         }
-        
+
         @Override
         public String toString() {
             return name + " - " + super.in;
@@ -342,13 +342,13 @@ public final class Streams {
             throw new RuntimeException(e);
         }
     }
-    
+
     public static void writeString(String s, File to) throws IOException {
         try (FileOutputStream out = new FileOutputStream(to)) {
             out.write(s.getBytes(Charset.forName("UTF-8")));
         }
     }
-    
+
     /**
      * Get a ByteBuffer as an InputStream. The passed buffer will be wrapped as
      * a read-only buffer. The position, mark and limit of the passed buffer
@@ -478,13 +478,50 @@ public final class Streams {
             return position == 0 ? -1 : position;
         }
     }
-    
+
     public static InputStream forByteBuffers(ByteBuffer... iter) {
         return new ByteBufferCollectionInputStream(iter);
     }
 
     public static InputStream forByteBuffers(Iterable<ByteBuffer> iter) {
         return new ByteBufferCollectionInputStream(iter);
+    }
+
+    public static OutputStream asOutputStream(ByteBuffer buffer) {
+        return new ByteBufferOutputStream(buffer);
+    }
+
+    private static final class ByteBufferOutputStream extends OutputStream {
+        private final ByteBuffer buffer;
+
+        public ByteBufferOutputStream(ByteBuffer buffer) {
+            this.buffer = buffer;
+        }
+
+        @Override
+        public void write(int i) throws IOException {
+            buffer.put((byte) i);
+        }
+
+        @Override
+        public void close() throws IOException {
+            //do nothing
+        }
+
+        @Override
+        public void flush() throws IOException {
+            //do nothing
+        }
+
+        @Override
+        public void write(byte[] bytes, int i, int i1) throws IOException {
+            buffer.put(bytes, i, i1);
+        }
+
+        @Override
+        public void write(byte[] bytes) throws IOException {
+            buffer.put(bytes);
+        }
     }
 
     private static final class ByteBufferInputStream extends InputStream {
@@ -502,7 +539,8 @@ public final class Streams {
 
         @Override
         public int read(byte[] b) throws IOException {
-            int rem = buf.remaining();
+//            int rem = buf.remaining();
+            int rem = buf.limit() - buf.position();
             int result = Math.min(rem, b.length);
             buf.get(b, 0, result);
             return result;
