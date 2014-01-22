@@ -28,7 +28,8 @@ public final class MapBuilder {
     }
 
     public String hash() {
-        return HashingOutputStream.hashString(digest.digest());
+        return digest == null ? null : 
+                HashingOutputStream.hashString(digest.digest());
     }
 
     public MapBuilder subMap(String name) {
