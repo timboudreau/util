@@ -69,4 +69,8 @@ public final class MapBuilder {
         }
         return props;
     }
+    
+    public Map<String,Object> build() {
+        return new LinkedHashMap<>(data);
+    }
 }

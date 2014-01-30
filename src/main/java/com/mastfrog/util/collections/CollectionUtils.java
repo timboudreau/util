@@ -23,11 +23,14 @@
  */
 package com.mastfrog.util.collections;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.NoSuchElementException;
 
 /**
  * Handles a few collections omissions
@@ -139,6 +142,74 @@ public final class CollectionUtils {
     public static <T> Iterable<T> toIterable(final Iterator<T> iterator) {
         return new IteratorIterable<>(iterator);
     }
+    
+    /**
+     * Get an iterator which merges several iterators.
+     *
+     * @param <T> The type
+     * @param iterators Some iterators
+     * @return An iterator
+     */
+    public static <T> Iterator<T> combine(Collection<Iterator<T>> iterators) {
+        return new MergeIterator<>(iterators);
+    }
+
+    /**
+     * Combine two iterators
+     *
+     * @param <T> The type
+     * @param a One iterator
+     * @param b Another iterator
+     * @return An iterator
+     */
+    public static <T> Iterator<T> combine(Iterator<T> a, Iterator<T> b) {
+        return new MergeIterator<>(Arrays.asList(a, b));
+    }
+
+    private static final class MergeIterator<T> implements Iterator<T> {
+
+        private final LinkedList<Iterator> iterators = new LinkedList<>();
+
+        MergeIterator(Collection<Iterator<T>> iterators) {
+            this.iterators.addAll(iterators);
+        }
+
+        private Iterator<T> iter() {
+            if (iterators.isEmpty()) {
+                return null;
+            }
+            Iterator result = iterators.get(0);
+            if (!result.hasNext()) {
+                iterators.remove(0);
+                return iter();
+            }
+            return result;
+        }
+
+        @Override
+        public boolean hasNext() {
+            Iterator<T> curr = iter();
+            return curr == null ? false : curr.hasNext();
+        }
+
+        @Override
+        public T next() {
+            Iterator<T> iter = iter();
+            if (iter == null) {
+                throw new NoSuchElementException();
+            }
+            return iter.next();
+        }
+
+        @Override
+        public void remove() {
+            Iterator<T> iter = iter();
+            if (iter == null) {
+                throw new NoSuchElementException();
+            }
+            iter.remove();
+        }
+    }    
 
     private static class IteratorIterable<T> implements Iterable<T> {
 
