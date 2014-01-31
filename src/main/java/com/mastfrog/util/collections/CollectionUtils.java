@@ -165,6 +165,10 @@ public final class CollectionUtils {
     public static <T> Iterator<T> combine(Iterator<T> a, Iterator<T> b) {
         return new MergeIterator<>(Arrays.asList(a, b));
     }
+    
+    public static <T> Iterator<T> singletonIterator(T obj) {
+        return new SingletonIterator(obj);
+    }
 
     private static final class MergeIterator<T> implements Iterator<T> {
 
@@ -273,6 +277,33 @@ public final class CollectionUtils {
         @Override
         public Iterator<T> iterator() {
             return this;
+        }
+    }
+    
+    static class SingletonIterator<T> implements Iterator<T> {
+        private final T object;
+        private boolean done;
+        public SingletonIterator(T object) {
+            this.object = object;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return !done;
+        }
+
+        @Override
+        public T next() {
+            if (done) {
+                throw new NoSuchElementException();
+            }
+            done = true;
+            return object;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
         }
     }
 }
