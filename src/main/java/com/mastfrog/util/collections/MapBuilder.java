@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * A map with a fluent API, ability to convert to ordered Properties and ability
+ * A map builder with a fluent API, ability to convert to ordered Properties and ability
  * to compute a hash using a message digest.
  *
  * @author Tim Boudreau

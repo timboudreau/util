@@ -66,4 +66,13 @@ public final class Exceptions {
     public static <T extends Throwable> void chuck(Class<T> type, Throwable t) throws T {
         throw (T) t;
     }
+    
+    @SuppressWarnings("ThrowableResultIgnored")
+    public static <ReturnType> ReturnType chuckOriginal(Throwable t) {
+        while (t.getCause() != null) {
+            t = t.getCause();
+        }
+        chuck(RuntimeException.class, t);
+        throw new AssertionError(t); //should not get here
+    }
 }
