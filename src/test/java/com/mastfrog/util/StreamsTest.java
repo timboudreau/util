@@ -25,21 +25,24 @@
  */
 package com.mastfrog.util;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.io.PrintWriter;
-import java.nio.channels.FileChannel;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.File;
-import java.io.ByteArrayInputStream;
-import java.util.Arrays;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  *
@@ -149,4 +152,24 @@ public class StreamsTest {
         String s = Streams.readString(new FileInputStream(link));
         assertEquals ("I will be linked", s.trim());
     }
+    
+    @Test
+    public void testStringsSha() {
+        StringBuilder sb = new StringBuilder();
+        int count = 20;
+        char base = 'A';
+        Map<String, String> stringForHash = new HashMap<>();
+        
+        for (int i = 0; i < count; i++) {
+            String hash = Strings.sha1(sb.toString());
+            if (stringForHash.containsKey(hash)) {
+                fail(stringForHash.get(hash) + " and " + sb.toString() + " hash to the same value");
+            }
+            stringForHash.put(hash, sb.toString());
+            sb.append(base);
+            base++;
+        }
+        assertEquals(count,stringForHash.size());
+    }
+    
 }

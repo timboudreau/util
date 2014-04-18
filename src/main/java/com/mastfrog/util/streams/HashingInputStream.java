@@ -51,7 +51,7 @@ public final class HashingInputStream extends FilterInputStream {
     private final MessageDigest digest;
     private volatile boolean closed;
     
-    static final MessageDigest createDigest(String algorithm) {
+    public static final MessageDigest createDigest(String algorithm) {
         try {
             return MessageDigest.getInstance(algorithm);
         } catch (NoSuchAlgorithmException ex) {

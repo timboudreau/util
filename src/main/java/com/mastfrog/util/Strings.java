@@ -23,16 +23,38 @@
  */
 package com.mastfrog.util;
 
+import com.mastfrog.util.streams.HashingInputStream;
+import com.mastfrog.util.streams.HashingOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.charset.Charset;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * String utilities
  */
 public final class Strings {
 
+    public static String sha1(String s) {
+//        try {
+//            ByteArrayInputStream in = new ByteArrayInputStream(s.getBytes(Charset.forName("UTF-8")));
+//            HashingInputStream hashIn = HashingInputStream.sha1(in);
+//            Streams.copy(hashIn, Streams.nullOutputStream());
+//            hashIn.close();
+//            return hashIn.getHashAsString();
+//        } catch (IOException ex) {
+//            return Exceptions.chuck(ex);
+//        }
+        MessageDigest digest = HashingInputStream.createDigest("SHA-1");
+        byte[] result = digest.digest(s.getBytes(Charset.forName("UTF-8")));
+        return HashingOutputStream.hashString(result);
+    }
     /**
      * Convenience function for formatting an array of elements separated by a
      * comma.
