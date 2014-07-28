@@ -49,6 +49,15 @@ final class SingleItemList<T> implements List<T> {
             }
 
             @Override
+            public void remove() {
+                if (used) {
+                    item = null;
+                } else {
+                    throw new IndexOutOfBoundsException();
+                }
+            }
+            
+            @Override
             public T next() {
                 if (item == null) {
                     throw new IndexOutOfBoundsException();
