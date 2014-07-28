@@ -43,18 +43,52 @@ public final class CollectionUtils {
     }
 
     /**
-     * Create a reversed view of a list.  Unlike Collections.reverse() this does
-     * not modify the original list;  it also does not copy the original list.
+     * A lightweight List implementation which can only ever contain a single
+     * item. If the existing item is removed, a new one can be added, but
+     * attempting to add more than one results in an IndexOutOfBoundsException.
+     * <p/>
+     * Useful in situations where it is known that the list will only ever
+     * contain at most one item, and minimizing memory allocation is a concern.
+     * <p/>
+     * The returned list may not have null as a member - <code>set(0, null)</code> is 
+     * equivalent to clear();
+     *
+     * @param <T> The type
+     * @return A list that can contain 0 or 1 item
+     */
+    public static <T> List<T> oneItemList() {
+        return new SingleItemList();
+    }
+
+    /**
+     * A lightweight List implementation which can only ever contain a single
+     * item. If the existing item is removed, a new one can be added, but
+     * attempting to add more than one results in an IndexOutOfBoundsException.
+     * <p/>
+     * Useful in situations where it is known that the list will only ever
+     * contain at most one item, and minimizing memory allocation is a concern.
+     *
+     * @param <T> The type
+     * @param item The single item it should initially contain
+     * @return A list that can contain 0 or 1 item
+     */
+    public static <T> List<T> oneItemList(T item) {
+        return new SingleItemList(item);
+    }
+
+    /**
+     * Create a reversed view of a list. Unlike Collections.reverse() this does
+     * not modify the original list; it also does not copy the original list.
      * This does mean that modifications to the original list are visible while
      * iterating the child list, and appropriate steps should be taken to avoid
      * commodification.
-     * 
+     *
      * @param <T> A type
      * @param list A list
      * @return A reversed view of the passed list
      */
     @SuppressWarnings("unchecked")
-    public static<T> List<T> reversed(List<T> list) {
+    public static <T> List<T> reversed(List<T> list) {
         if (list instanceof ReversedList) {
             return ((ReversedList<T>) list).delegate();
         }
@@ -142,7 +176,7 @@ public final class CollectionUtils {
     public static <T> Iterable<T> toIterable(final Iterator<T> iterator) {
         return new IteratorIterable<>(iterator);
     }
-    
+
     /**
      * Get an iterator which merges several iterators.
      *
@@ -165,7 +199,7 @@ public final class CollectionUtils {
     public static <T> Iterator<T> combine(Iterator<T> a, Iterator<T> b) {
         return new MergeIterator<>(Arrays.asList(a, b));
     }
-    
+
     public static <T> Iterator<T> singletonIterator(T obj) {
         return new SingletonIterator(obj);
     }
@@ -213,7 +247,7 @@ public final class CollectionUtils {
             }
             iter.remove();
         }
-    }    
+    }
 
     private static class IteratorIterable<T> implements Iterable<T> {
 
@@ -279,10 +313,12 @@ public final class CollectionUtils {
             return this;
         }
     }
-    
+
     static class SingletonIterator<T> implements Iterator<T> {
+
         private final T object;
         private boolean done;
+
         public SingletonIterator(T object) {
             this.object = object;
         }
