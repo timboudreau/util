@@ -145,12 +145,15 @@ public final class AtomicMaximum extends Number {
                 break;
             }
         }
-        return new QuietAutoCloseable() {
-            @Override
-            public void close() {
-                exit();
-            }
-        };
+        return qac;
+    }
+
+    private final QAC qac = new QAC();
+    private final class QAC extends QuietAutoCloseable {
+        @Override
+        public void close() {
+            exit();
+        }
     }
 
     void exit() {

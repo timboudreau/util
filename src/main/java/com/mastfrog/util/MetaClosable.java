@@ -1,8 +1,6 @@
 package com.mastfrog.util;
 
 import com.mastfrog.util.thread.QuietAutoCloseable;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Wrapper for multiple AutoCloseables.

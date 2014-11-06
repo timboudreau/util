@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
+ * Wrapper for ObjectMapper, or BSON codec or whatever.
  *
  * @author Tim Boudreau
  */
