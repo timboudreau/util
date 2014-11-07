@@ -40,11 +40,11 @@ public class AutoCloseThreadLocalTest {
     static class R implements Runnable {
 
         private final CountDownLatch latch;
-        private final AutoCloseThreadLocal<?> local;
+        private final AutoCloseThreadLocal<Integer> local;
         private final CountDownLatch start;
         private Throwable thrown;
 
-        public R(CountDownLatch latch, AutoCloseThreadLocal<?> local, CountDownLatch start) {
+        public R(CountDownLatch latch, AutoCloseThreadLocal<Integer> local, CountDownLatch start) {
             this.latch = latch;
             this.local = local;
             this.start = start;
