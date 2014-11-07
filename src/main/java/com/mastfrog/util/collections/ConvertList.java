@@ -74,6 +74,7 @@ final class ConvertList<T, R> implements List<T> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Object[] toArray() {
         int max = size();
         T[] result = (T[]) Array.newInstance(type, max);
@@ -84,6 +85,7 @@ final class ConvertList<T, R> implements List<T> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] a) {
         int max = size();
         if (a.length != max) {
@@ -267,6 +269,6 @@ final class ConvertList<T, R> implements List<T> {
 
     @Override
     public List<T> subList(int fromIndex, int toIndex) {
-        return new ConvertList<T, R>(type, origType, orig.subList(fromIndex, toIndex), converter);
+        return new ConvertList<>(type, origType, orig.subList(fromIndex, toIndex), converter);
     }
 }
