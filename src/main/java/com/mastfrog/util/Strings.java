@@ -25,16 +25,12 @@ package com.mastfrog.util;
 
 import com.mastfrog.util.streams.HashingInputStream;
 import com.mastfrog.util.streams.HashingOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * String utilities
@@ -65,6 +61,19 @@ public final class Strings {
      */
     public static <T> String toString(T[] collection) {
         return toString(Arrays.asList(collection));
+    }
+    
+    /**
+     * Split a comma-delimited list into an array of trimmed strings
+     * @param string The input string
+     * @return An array of resulting strings
+     */
+    public static String[] split(String string) {
+        String[] result = string.split(",");
+        for (int i = 0; i < result.length; i++) {
+            result[i] = result[i].trim();
+        }
+        return result;
     }
 
     /**
