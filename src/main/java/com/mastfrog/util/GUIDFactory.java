@@ -57,7 +57,7 @@ public class GUIDFactory {
     }
 
     private void shuffle(SecureRandom r) {
-        for (int i = 0; i < chars.length; i++) {
+        for (int i = 0; i < chars.length-1; i++) {
             int xa = r.nextInt(chars.length);
             char hold = chars[xa];
             chars[xa] = chars[i];
