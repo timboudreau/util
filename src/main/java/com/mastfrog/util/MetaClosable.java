@@ -17,7 +17,7 @@ public class MetaClosable extends QuietAutoCloseable {
         this.close = close;
     }
 
-    private static MetaClosable of(AutoCloseable... closes) {
+    public static MetaClosable of(AutoCloseable... closes) {
         return new MetaClosable(closes);
     }
 

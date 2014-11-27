@@ -24,20 +24,23 @@
 package com.mastfrog.util.thread;
 
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.function.IntBinaryOperator;
 
 /**
- * Thread-safe, lockless AtomicInteger-like object whose value increments from 0 to
- * maximum-1 and returns to 0.
+ * Thread-safe, lockless AtomicInteger-like object whose value increments from 0
+ * to maximum-1 and returns to 0.
  *
  * @author Tim Boudreau
  */
 public final class AtomicRoundRobin {
+
     private final int maximum;
     private volatile int currentValue;
     private final AtomicIntegerFieldUpdater<AtomicRoundRobin> up;
+
     public AtomicRoundRobin(int maximum) {
         if (maximum <= 0) {
-            throw new IllegalArgumentException ("Maximum must be > 0");
+            throw new IllegalArgumentException("Maximum must be > 0");
         }
         this.maximum = maximum;
         up = AtomicIntegerFieldUpdater.newUpdater(AtomicRoundRobin.class, "currentValue");
@@ -45,6 +48,7 @@ public final class AtomicRoundRobin {
 
     /**
      * Get the maximum possible value
+     *
      * @return The maximum
      */
     public int maximum() {
@@ -53,6 +57,7 @@ public final class AtomicRoundRobin {
 
     /**
      * Get the current value
+     *
      * @return
      */
     public int get() {
@@ -60,20 +65,20 @@ public final class AtomicRoundRobin {
     }
 
     /**
-     * Get the next value, incrementing the value or resetting it to zero
-     * for the next caller.
+     * Get the next value, incrementing the value or resetting it to zero for
+     * the next caller.
+     *
      * @return The value
      */
     public int next() {
         if (maximum == 1) {
             return 0;
         }
-        for (;;) {
-            int current = get();
-            int next = current == maximum - 1 ? 0 : current + 1;
-            if (up.compareAndSet(this, current, next)) {
-                return current;
+        return up.getAndAccumulate(this, currentValue, (i1, i2) -> {
+            if (i1 == maximum - 1) {
+                return 0;
             }
-        }
+            return i1 + 1;
+        });
     }
 }

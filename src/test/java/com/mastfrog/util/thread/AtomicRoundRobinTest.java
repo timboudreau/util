@@ -38,7 +38,21 @@ import static org.junit.Assert.*;
  * @author tim
  */
 public class AtomicRoundRobinTest {
+
     private ExecutorService threadPool = Executors.newFixedThreadPool(100);
+
+    @Test
+    public void test() {
+        AtomicRoundRobin rob = new AtomicRoundRobin(23);
+        for (int i = 0; i < 500; i++) {
+            int val = rob.next();
+            if ((i % 23) == 0) {
+                assertEquals(val, 0);
+            } else {
+                assertEquals(i % 23, val);
+            }
+        }
+    }
 
     static class R implements Runnable {
 
@@ -80,7 +94,7 @@ public class AtomicRoundRobinTest {
     @Test
     public void testNext() throws InterruptedException {
         //Just in case, loop enough times that all the code will be JIT'd
-        for (int i= 0; i < 1500; i++) {
+        for (int i = 0; i < 1500; i++) {
             doTestNext(i);
         }
     }
@@ -111,14 +125,13 @@ public class AtomicRoundRobinTest {
         //many threads looped over our value, the total number of times
         //each value was seen should be the same.  If it is not, then
         //we know the value was not actually atomic
-
         //make an array for each legal value, to put the count into
         int[] seenValueCount = new int[maximum];
         for (R runner : runners) {
             //make sure no out-of-range values were seen
-            assertFalse (runner.failed);
+            assertFalse(runner.failed);
             //iterate all the values this runner saw
-            for (int i= 0; i < runner.values.length - loopCount; i++) {
+            for (int i = 0; i < runner.values.length - loopCount; i++) {
                 //increment the recorded number of times this value was seen
                 seenValueCount[runner.values[i]]++;
             }
@@ -126,16 +139,14 @@ public class AtomicRoundRobinTest {
         //set a placeholder
         int val = -1;
         //now confirm that every value was seen the same number of times
-        for (int i= 0; i < seenValueCount.length; i++) {
+        for (int i = 0; i < seenValueCount.length; i++) {
             if (val == -1) {
                 //first iteration
                 val = seenValueCount[i];
-            } else {
-                //every value should be the same
-                if (val != seenValueCount[i]) {
-                    fail ("The value " + i + " was seen " + seenValueCount[i]
-                            + " times, but other values were seen " + val + " times");
-                }
+            } else //every value should be the same
+            if (val != seenValueCount[i]) {
+                fail("The value " + i + " was seen " + seenValueCount[i]
+                        + " times, but other values were seen " + val + " times");
             }
         }
 
