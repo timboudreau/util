@@ -74,6 +74,7 @@ final class SingleItemList<T> implements List<T> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] a) {
         if (a == null || a.length != 1) {
             T[] result = (T[]) Array.newInstance(item.getClass(), 1);

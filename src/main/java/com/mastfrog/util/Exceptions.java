@@ -63,6 +63,7 @@ public final class Exceptions {
         throw new AssertionError(t); //should not get here
     }
 
+    @SuppressWarnings("unchecked")
     public static <T extends Throwable> void chuck(Class<T> type, Throwable t) throws T {
         throw (T) t;
     }

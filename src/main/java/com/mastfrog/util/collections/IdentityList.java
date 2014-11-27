@@ -93,6 +93,7 @@ final class IdentityList<T> implements List<T> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] a) {
         if (a == null) {
             throw new NullPointerException();

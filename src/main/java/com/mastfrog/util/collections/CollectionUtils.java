@@ -57,7 +57,7 @@ public final class CollectionUtils {
      * @return A list that can contain 0 or 1 item
      */
     public static <T> List<T> oneItemList() {
-        return new SingleItemList();
+        return new SingleItemList<T>();
     }
 
     /**
@@ -73,7 +73,7 @@ public final class CollectionUtils {
      * @return A list that can contain 0 or 1 item
      */
     public static <T> List<T> oneItemList(T item) {
-        return new SingleItemList(item);
+        return new SingleItemList<T>(item);
     }
 
     /**
@@ -164,7 +164,7 @@ public final class CollectionUtils {
      * @return A converter
      */
     public static <T, R> Converter<T, R> reverseConverter(Converter<R, T> c) {
-        return new ReverseConverter(c);
+        return new ReverseConverter<>(c);
     }
 
     /**
@@ -201,12 +201,12 @@ public final class CollectionUtils {
     }
 
     public static <T> Iterator<T> singletonIterator(T obj) {
-        return new SingletonIterator(obj);
+        return new SingletonIterator<T>(obj);
     }
 
     private static final class MergeIterator<T> implements Iterator<T> {
 
-        private final LinkedList<Iterator> iterators = new LinkedList<>();
+        private final LinkedList<Iterator<T>> iterators = new LinkedList<>();
 
         MergeIterator(Collection<Iterator<T>> iterators) {
             this.iterators.addAll(iterators);
@@ -216,7 +216,7 @@ public final class CollectionUtils {
             if (iterators.isEmpty()) {
                 return null;
             }
-            Iterator result = iterators.get(0);
+            Iterator<T> result = iterators.get(0);
             if (!result.hasNext()) {
                 iterators.remove(0);
                 return iter();

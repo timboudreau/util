@@ -132,9 +132,10 @@ final class ConvertList<T, R> implements List<T> {
 
     @Override
     public boolean addAll(int index, Collection<? extends T> c) {
-        return orig.addAll(new ConvertList<>(origType, type, toList(c), new ReverseConverter(converter)));
+        return orig.addAll(new ConvertList<>(origType, type, toList(c), new ReverseConverter<R,T>(converter)));
     }
 
+    @SuppressWarnings("unchecked")
     private List<T> toList(Collection<? extends T> c) {
         if (c instanceof List) {
             return (List<T>) c;
