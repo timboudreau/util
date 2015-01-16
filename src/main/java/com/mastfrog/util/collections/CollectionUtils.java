@@ -1,4 +1,4 @@
-/* 
+/*
  * The MIT License
  *
  * Copyright 2013 Tim Boudreau.
@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.collections;
 
+import com.mastfrog.util.Checks;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -50,8 +51,8 @@ public final class CollectionUtils {
      * Useful in situations where it is known that the list will only ever
      * contain at most one item, and minimizing memory allocation is a concern.
      * <p/>
-     * The returned list may not have null as a member - <code>set(0, null)</code> is 
-     * equivalent to clear();
+     * The returned list may not have null as a member -
+     * <code>set(0, null)</code> is equivalent to clear();
      *
      * @param <T> The type
      * @return A list that can contain 0 or 1 item
@@ -202,6 +203,35 @@ public final class CollectionUtils {
 
     public static <T> Iterator<T> singletonIterator(T obj) {
         return new SingletonIterator<T>(obj);
+    }
+
+    public static <T> Iterator<T> toIterator(T[] array) {
+        Checks.notNull("array", array);
+        return new ArrayIterator<T>(array);
+    }
+
+    public static <T> Iterable<T> toIterable(T[] array) {
+        return toIterable(toIterator(array));
+    }
+
+    private static final class ArrayIterator<T> implements Iterator<T> {
+
+        private final T[] items;
+        private int ix = 0;
+
+        public ArrayIterator(T[] items) {
+            this.items = items;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return ix < items.length;
+        }
+
+        @Override
+        public T next() {
+            return items[ix++];
+        }
     }
 
     private static final class MergeIterator<T> implements Iterator<T> {
