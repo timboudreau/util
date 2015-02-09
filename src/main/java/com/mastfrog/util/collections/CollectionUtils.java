@@ -213,6 +213,14 @@ public final class CollectionUtils {
     public static <T> Iterable<T> toIterable(T[] array) {
         return toIterable(toIterator(array));
     }
+    
+    public static <T> Enumeration<T> toEnumeration(Iterable<T> iter) {
+        return toEnumeration(iter.iterator());
+    }
+
+    public static <T> Enumeration<T> toEnumeration(Iterator<T> iter) {
+        return new EnumerationAdapter<>(iter);
+    }
 
     private static final class ArrayIterator<T> implements Iterator<T> {
 
