@@ -8,3 +8,4 @@
 *.iml
 .idea/*
 target/*
+/jdk8-stubs/target/

@@ -1,4 +1,4 @@
-/* 
+/*
  * The MIT License
  *
  * Copyright 2013 Tim Boudreau.
@@ -24,7 +24,6 @@
 package com.mastfrog.util.thread;
 
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.function.IntBinaryOperator;
 
 /**
  * Thread-safe, lockless AtomicInteger-like object whose value increments from 0
@@ -74,11 +73,18 @@ public final class AtomicRoundRobin {
         if (maximum == 1) {
             return 0;
         }
-        return up.getAndAccumulate(this, currentValue, (i1, i2) -> {
-            if (i1 == maximum - 1) {
-                return 0;
+        for (;;) {
+            int current = get();
+            int next = current == maximum - 1 ? 0 : current + 1;
+            if (up.compareAndSet(this, current, next)) {
+                return current;
             }
-            return i1 + 1;
-        });
+        }
+//        return up.getAndAccumulate(this, currentValue, (i1, i2) -> {
+//            if (i1 == maximum - 1) {
+//                return 0;
+//            }
+//            return i1 + 1;
+//        });
     }
 }

@@ -240,6 +240,11 @@ public final class CollectionUtils {
         public T next() {
             return items[ix++];
         }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException("Cannot delete from an array");
+        }
     }
 
     private static final class MergeIterator<T> implements Iterator<T> {
