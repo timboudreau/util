@@ -4,13 +4,13 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met: 
+ * modification, are permitted provided that the following conditions are met:
  *
  * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer. 
+ *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution. 
+ *    and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -49,7 +49,7 @@ import org.junit.Test;
  * @author tim
  */
 public class StreamsTest {
-    
+
     @Test
     public void testAsInputStreams() throws IOException {
         ByteBuffer a = ByteBuffer.wrap(new byte[] {1,2,3,4});
@@ -61,7 +61,7 @@ public class StreamsTest {
         ByteBuffer g = ByteBuffer.wrap(new byte[] {15,16,17,18});
         ByteBuffer h = ByteBuffer.wrap(new byte[] {});
         ByteBuffer i = ByteBuffer.wrap(new byte[] {19});
-        
+
         InputStream in = Streams.asInputStream(Arrays.asList(a,b,c,d,e,f,g,h,i));
         byte val = 0;
         for (int j = 1; j <= 19; j++) {
@@ -78,16 +78,16 @@ public class StreamsTest {
         g.rewind();
         h.rewind();
         i.rewind();
-        
+
         in = Streams.asInputStream(Arrays.asList(a,b,c,d,e,f,g,h,i));
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         int copied = Streams.copy (in, out);
-        
+
         byte[] found = out.toByteArray();
         byte[] expect = new byte[] {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19};
         assertArrayEquals(expect, found);
     }
-    
+
     @Test
     public void testAsInputStream() throws IOException {
         byte[] b = new byte[238092];
@@ -115,12 +115,12 @@ public class StreamsTest {
         Streams.copy(in, fos);
         fos.close();
         in.close();
-        
+
         FileInputStream fis = new FileInputStream(f);
         FileChannel chan = fis.getChannel();
         try {
             in = Streams.asInputStream(chan);
-            
+
             out = new ByteArrayOutputStream(b.length);
             Streams.copy(in, out);
 
@@ -152,14 +152,14 @@ public class StreamsTest {
         String s = Streams.readString(new FileInputStream(link));
         assertEquals ("I will be linked", s.trim());
     }
-    
+
     @Test
     public void testStringsSha() {
         StringBuilder sb = new StringBuilder();
         int count = 20;
         char base = 'A';
         Map<String, String> stringForHash = new HashMap<>();
-        
+
         for (int i = 0; i < count; i++) {
             String hash = Strings.sha1(sb.toString());
             if (stringForHash.containsKey(hash)) {
@@ -171,5 +171,20 @@ public class StreamsTest {
         }
         assertEquals(count,stringForHash.size());
     }
-    
+
+    @Test
+    public void testStringsTrim() {
+        StringBuilder a = new StringBuilder(" foo bar");
+        StringBuilder b = new StringBuilder(" foo bar  ");
+        StringBuilder c = new StringBuilder("foo bar  ");
+        StringBuilder d = new StringBuilder("     foo bar  ");
+        assertEquals("foo bar", Strings.trim(a).toString());
+        assertEquals("foo bar", Strings.trim(b).toString());
+        assertEquals("foo bar", Strings.trim(c).toString());
+        assertEquals("foo bar", Strings.trim(d).toString());
+        assertEquals("", Strings.trim(new StringBuilder("")).toString());
+        assertEquals("", Strings.trim(new StringBuilder(" ")).toString());
+        assertEquals("", Strings.trim(new StringBuilder("   ")).toString());
+        assertEquals("", Strings.trim(new StringBuilder("    ")).toString());
+    }
 }

@@ -36,17 +36,45 @@ import java.util.Iterator;
  * String utilities
  */
 public final class Strings {
+    
+    public static <T extends CharSequence> CharSequence trim(CharSequence seq) {
+        int len = seq.length();
+        if (len == 0) {
+            return seq;
+        }
+        if (seq instanceof String) {
+            return ((String)seq).trim();
+        }
+        int start = 0;
+        int end = len;
+        for (int i = 0; i < len; i++) {
+            if (Character.isWhitespace(seq.charAt(i))) {
+                start++;
+            } else {
+                break;
+            }
+        }
+        if (start == len - 1) {
+            System.out.println("exit a");
+            return "";
+        }
+        for (int i=len-1; i >=0; i--) {
+            if (Character.isWhitespace(seq.charAt(i))) {
+                end--;
+            } else {
+                break;
+            }
+        }
+        if (end == 0) {
+            return "";
+        }
+        if (end == len && start == 0) {
+            return seq;
+        }
+        return seq.subSequence(start, end);
+    }
 
     public static String sha1(String s) {
-//        try {
-//            ByteArrayInputStream in = new ByteArrayInputStream(s.getBytes(Charset.forName("UTF-8")));
-//            HashingInputStream hashIn = HashingInputStream.sha1(in);
-//            Streams.copy(hashIn, Streams.nullOutputStream());
-//            hashIn.close();
-//            return hashIn.getHashAsString();
-//        } catch (IOException ex) {
-//            return Exceptions.chuck(ex);
-//        }
         MessageDigest digest = HashingInputStream.createDigest("SHA-1");
         byte[] result = digest.digest(s.getBytes(Charset.forName("UTF-8")));
         return HashingOutputStream.hashString(result);
