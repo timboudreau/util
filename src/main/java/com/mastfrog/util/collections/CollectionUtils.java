@@ -198,6 +198,8 @@ public final class CollectionUtils {
      * @return An iterator
      */
     public static <T> Iterator<T> combine(Iterator<T> a, Iterator<T> b) {
+        Checks.notNull("a", a);
+        Checks.notNull("b", b);
         return new MergeIterator<>(Arrays.asList(a, b));
     }
 
@@ -211,15 +213,23 @@ public final class CollectionUtils {
     }
 
     public static <T> Iterable<T> toIterable(T[] array) {
+        Checks.notNull("array", array);
         return toIterable(toIterator(array));
     }
     
     public static <T> Enumeration<T> toEnumeration(Iterable<T> iter) {
+        Checks.notNull("iter", iter);
         return toEnumeration(iter.iterator());
     }
 
     public static <T> Enumeration<T> toEnumeration(Iterator<T> iter) {
+        Checks.notNull("iter", iter);
         return new EnumerationAdapter<>(iter);
+    }
+    
+    public static <T> Iterator<T> toReverseIterator(T[] array) {
+        Checks.notNull("array", array);
+        return new ReverseArrayIterator<T>(array);
     }
 
     private static final class ArrayIterator<T> implements Iterator<T> {
@@ -246,6 +256,32 @@ public final class CollectionUtils {
             throw new UnsupportedOperationException("Cannot delete from an array");
         }
     }
+    
+    private static final class ReverseArrayIterator<T> implements Iterator<T> {
+
+        private final T[] items;
+        private int ix;
+
+        public ReverseArrayIterator(T[] items) {
+            this.items = items;
+            ix=items.length-1;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return ix >= 0;
+        }
+
+        @Override
+        public T next() {
+            return items[ix--];
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException("Cannot delete from an array");
+        }
+    }    
 
     private static final class MergeIterator<T> implements Iterator<T> {
 
