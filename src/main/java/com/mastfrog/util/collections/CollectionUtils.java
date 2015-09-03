@@ -231,6 +231,69 @@ public final class CollectionUtils {
         Checks.notNull("array", array);
         return new ReverseArrayIterator<T>(array);
     }
+    
+    /**
+     * Get an iterator whose implementation is synchronized, for the case
+     * where multiple threads will take items.
+     * 
+     * @param <T> The type
+     * @param iter The raw iterator
+     * @return an AtomicIterator
+     */
+    public static <T> AtomicIterator<T> synchronizedIterator(Iterator<T> iter) {
+        return new AtomicIteratorImpl<T>(iter);
+    }
+    
+    /**
+     * Iterator with a method which will do both the hasNext() and next()
+     * calls in a synchronized block, for atomicity when being used across
+     * multiple items.
+     * @param <T> The type
+     */
+    public interface AtomicIterator<T> extends Iterator<T> {
+        /**
+         * Get the next item, if any
+         * 
+         * @return null if no next item, otherwise the next item
+         */
+        public T getIfHasNext();
+    }
+    
+    private static final class AtomicIteratorImpl<T> implements AtomicIterator<T> {
+        private final Iterator<T> iter;
+
+        AtomicIteratorImpl(Iterator<T> iter) {
+            this.iter = iter;
+        }
+        
+        @Override
+        public boolean hasNext() {
+            synchronized(this) {
+                return iter.hasNext();
+            }
+        }
+
+        @Override
+        public T next() {
+            synchronized (this) {
+                T result = iter.next();
+                if (result == null) {
+                    throw new IllegalStateException("Null elements not permitted");
+                }
+                return result;
+            }
+        }
+        
+        public T getIfHasNext() {
+            synchronized(this) {
+                if (iter.hasNext()) {
+                    return next();
+                } else {
+                    return null;
+                }
+            }
+        }
+    }
 
     private static final class ArrayIterator<T> implements Iterator<T> {
 
