@@ -293,6 +293,13 @@ public final class CollectionUtils {
                 }
             }
         }
+
+        @Override
+        public void remove() {
+            synchronized(this) {
+                iter.remove();
+            }
+        }
     }
 
     private static final class ArrayIterator<T> implements Iterator<T> {
