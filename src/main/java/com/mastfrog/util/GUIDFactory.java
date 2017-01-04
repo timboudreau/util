@@ -27,9 +27,14 @@ import java.security.SecureRandom;
 import java.util.Random;
 
 /**
- *
- * @author tim
+ * Generates random long strings.  For unlikely to collide strings,
+ * use UniqueIDs instead.
+ * 
+ * 
+ * @deprecated - Produces random strings not guids by any definition
+ * @author Tim Boudreau
  */
+@Deprecated
 public class GUIDFactory {
 
     private final Random r;
@@ -70,7 +75,7 @@ public class GUIDFactory {
     }
 
     public String newGUID(int segments, int length) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder((length * segments) + segments);
         for (int i = 0; i < segments; i++) {
             segment(length, sb);
             if (i != segments - 1) {

@@ -35,10 +35,17 @@ import java.util.List;
  *
  * @author Tim Boudreau
  */
-final class ConcatCharSequence implements CharSequence, Appendable {
+public final class ConcatCharSequence implements CharSequence, Appendable {
 
     private final List<CharSequence> chars = new ArrayList<>(10);
 
+    /**
+     * Append a CharSequence.  The passed CharSequence will remain
+     * referenced by this object.
+     * 
+     * @param buffer The char sequence
+     * @return this
+     */
     @Override
     public ConcatCharSequence append(CharSequence buffer) {
         if (buffer == this) {
@@ -48,6 +55,18 @@ final class ConcatCharSequence implements CharSequence, Appendable {
         return this;
     }
 
+    /**
+     * Consolidate all internal CharSequences and release references
+     * to them, copying the existing content to a new string.
+     * @return this
+     */
+    public ConcatCharSequence consolidate() {
+        String s = toString();
+        chars.clear();
+        chars.add(s);
+        return this;
+    }
+    
     public boolean isEmpty() {
         return chars.isEmpty() || length() == 0;
     }
@@ -77,10 +96,20 @@ final class ConcatCharSequence implements CharSequence, Appendable {
         throw new IndexOutOfBoundsException(index + " of " + length());
     }
 
+    /**
+     * Fetch a subsequence; the subsequence created may be a subsequence
+     * of a single buffer contained here, or may be a new ConcatCharSequence
+     * spanning subsequences of a number of them.  The resulting object may
+     * reference buffers contained by this object.
+     * 
+     * @param start The start character, inclusive
+     * @param end The end character, exclusive
+     * @return A char sequence
+     */
     @Override
     public CharSequence subSequence(int start, int end) {
         if (start == end) {
-            return "";
+            return new ConcatCharSequence();
         }
         ConcatCharSequence result = null;
         int position = 0;
@@ -163,13 +192,13 @@ final class ConcatCharSequence implements CharSequence, Appendable {
     }
 
     @Override
-    public Appendable append(CharSequence csq, int start, int end) throws IOException {
+    public ConcatCharSequence append(CharSequence csq, int start, int end) throws IOException {
         append(csq.subSequence(start, end));
         return this;
     }
 
     @Override
-    public Appendable append(char c) throws IOException {
+    public ConcatCharSequence append(char c) throws IOException {
         CharBuffer cb = CharBuffer.allocate(1);
         cb.put(c);
         cb.flip();
