@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 /**
@@ -41,6 +42,41 @@ import java.util.NoSuchElementException;
 public final class CollectionUtils {
 
     private CollectionUtils() {
+    }
+
+    /**
+     * Get a primitive integer map backed by an array and binary search (removes
+     * are expensive).
+     *
+     * @param <T> The value type
+     * @return A map
+     */
+    public static <T> IntMap<T> intMap() {
+        return new ArrayIntMap<>();
+    }
+
+    /**
+     * Get a primitive integer map backed by an array and binary search (removes
+     * are expensive).
+     *
+     * @param <T> The value type
+     * @param toCopy A map to copy
+     * @return A map
+     */
+    public static <T> IntMap<T> intMap(Map<Integer, T> toCopy) {
+        return new ArrayIntMap<>(toCopy);
+    }
+
+    /**
+     * Get a primitive integer map backed by an array and binary search (removes
+     * are expensive).
+     *
+     * @param <T> The value type
+     * @param initialCapacity The initial backing array sizes
+     * @return A map
+     */
+    public static <T> IntMap<T> intMap(int initialCapacity) {
+        return new ArrayIntMap<>(initialCapacity);
     }
 
     /**
@@ -216,7 +252,7 @@ public final class CollectionUtils {
         Checks.notNull("array", array);
         return toIterable(toIterator(array));
     }
-    
+
     public static <T> Enumeration<T> toEnumeration(Iterable<T> iter) {
         Checks.notNull("iter", iter);
         return toEnumeration(iter.iterator());
@@ -226,16 +262,16 @@ public final class CollectionUtils {
         Checks.notNull("iter", iter);
         return new EnumerationAdapter<>(iter);
     }
-    
+
     public static <T> Iterator<T> toReverseIterator(T[] array) {
         Checks.notNull("array", array);
         return new ReverseArrayIterator<T>(array);
     }
-    
+
     /**
-     * Get an iterator whose implementation is synchronized, for the case
-     * where multiple threads will take items.
-     * 
+     * Get an iterator whose implementation is synchronized, for the case where
+     * multiple threads will take items.
+     *
      * @param <T> The type
      * @param iter The raw iterator
      * @return an AtomicIterator
@@ -243,32 +279,35 @@ public final class CollectionUtils {
     public static <T> AtomicIterator<T> synchronizedIterator(Iterator<T> iter) {
         return new AtomicIteratorImpl<T>(iter);
     }
-    
+
     /**
-     * Iterator with a method which will do both the hasNext() and next()
-     * calls in a synchronized block, for atomicity when being used across
-     * multiple items.
+     * Iterator with a method which will do both the hasNext() and next() calls
+     * in a synchronized block, for atomicity when being used across multiple
+     * items.
+     *
      * @param <T> The type
      */
     public interface AtomicIterator<T> extends Iterator<T> {
+
         /**
          * Get the next item, if any
-         * 
+         *
          * @return null if no next item, otherwise the next item
          */
         public T getIfHasNext();
     }
-    
+
     private static final class AtomicIteratorImpl<T> implements AtomicIterator<T> {
+
         private final Iterator<T> iter;
 
         AtomicIteratorImpl(Iterator<T> iter) {
             this.iter = iter;
         }
-        
+
         @Override
         public boolean hasNext() {
-            synchronized(this) {
+            synchronized (this) {
                 return iter.hasNext();
             }
         }
@@ -283,9 +322,9 @@ public final class CollectionUtils {
                 return result;
             }
         }
-        
+
         public T getIfHasNext() {
-            synchronized(this) {
+            synchronized (this) {
                 if (iter.hasNext()) {
                     return next();
                 } else {
@@ -296,7 +335,7 @@ public final class CollectionUtils {
 
         @Override
         public void remove() {
-            synchronized(this) {
+            synchronized (this) {
                 iter.remove();
             }
         }
@@ -326,7 +365,7 @@ public final class CollectionUtils {
             throw new UnsupportedOperationException("Cannot delete from an array");
         }
     }
-    
+
     private static final class ReverseArrayIterator<T> implements Iterator<T> {
 
         private final T[] items;
@@ -334,7 +373,7 @@ public final class CollectionUtils {
 
         public ReverseArrayIterator(T[] items) {
             this.items = items;
-            ix=items.length-1;
+            ix = items.length - 1;
         }
 
         @Override
@@ -351,7 +390,7 @@ public final class CollectionUtils {
         public void remove() {
             throw new UnsupportedOperationException("Cannot delete from an array");
         }
-    }    
+    }
 
     private static final class MergeIterator<T> implements Iterator<T> {
 
