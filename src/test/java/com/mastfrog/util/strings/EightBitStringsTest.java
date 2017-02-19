@@ -37,7 +37,7 @@ import static org.junit.Assert.*;
  *
  * @author tim
  */
-public class SmallStringTest {
+public class EightBitStringsTest {
 
     @Test
     public void testCreate() {
@@ -166,7 +166,7 @@ public class SmallStringTest {
             if (cs == null) {
                 break;
             }
-            System.out.println("  " + cs);
+//            System.out.println("  " + cs);
         }
         assertTrue(interned.contains("com"));
         assertTrue(interned.contains("foo"));

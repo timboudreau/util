@@ -34,7 +34,7 @@ import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.security.SecureRandom;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A source of unlikely-to-collide, hard-to-guess random URL-safe strings,
@@ -45,11 +45,10 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public final class UniqueIDs {
 
-    private final long FIRST = System.currentTimeMillis();
-    private final AtomicLong seq = new AtomicLong(FIRST);
+    private final AtomicInteger seq;
     private final Random random;
-    private final String base;
-    private final long vmid;
+    private final byte[] base;
+    private final int vmid;
 
     /**
      * Create an instance.
@@ -61,13 +60,16 @@ public final class UniqueIDs {
      */
     public UniqueIDs(File appfile) throws IOException {
         SecureRandom sr = new SecureRandom();
+        int ts = (int) (System.currentTimeMillis() - 1483853019824L + sr.nextInt(60000 * 12));
+        seq = new AtomicInteger(ts);
         random = new Random(sr.nextLong());
         // Identifier for this process
-        vmid = Math.abs(sr.nextLong());
+        vmid = Math.abs(sr.nextInt());
         // XOR mac addresses of all network cards
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        baos.write(longToBytes(vmid));
+        
         byte[] addrBytes = new byte[6];
+//        xor(addrBytes, longToBytes(System.currentTimeMillis()));
         for (NetworkInterface i : CollectionUtils.toIterable(NetworkInterface.getNetworkInterfaces())) {
             if (!i.isLoopback() && i.isUp() && !i.isVirtual()) {
                 byte[] macAddress = i.getHardwareAddress();
@@ -76,15 +78,14 @@ public final class UniqueIDs {
                 }
             }
         }
-        baos.write(addrBytes);
         // Load or generate a created-on-first-use identifier for
         // this application
         if (appfile.exists()) {
             try (FileInputStream in = new FileInputStream(appfile)) {
-                Streams.copy(in, baos, 8);
+                Streams.copy(in, baos, 5);
             }
         } else {
-            byte[] bts = new byte[8];
+            byte[] bts = new byte[5];
             random.nextBytes(bts);
             appfile.createNewFile();
             try (FileOutputStream out = new FileOutputStream(appfile)) {
@@ -92,7 +93,9 @@ public final class UniqueIDs {
             }
             baos.write(bts);
         }
-        base = bytesToString(baos.toByteArray());
+        baos.write(intToBytes(vmid));
+        baos.write(addrBytes);
+        base = baos.toByteArray();
     }
 
     private void xor(byte[] src, byte[] dest) {
@@ -103,7 +106,32 @@ public final class UniqueIDs {
         }
     }
 
-    private String bytesToString(byte[] b) {
+    static final char[] ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz0123456789~".toCharArray();
+
+    private String bytesToString(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < bytes.length - (bytes.length % 3); i += 3) {
+            // Top 6 bits of byte i
+            int value1 = bytes[i] >> 2;
+            // Bottom 2 bits of byte i, top 4 bits of byte i+1
+            int value2 = ((bytes[i] & 0x3) << 4) | (bytes[i + 1] >> 4);
+            // Bottom 4 bits of byte i+1, top 2 bits of byte i+2
+            int value3 = ((bytes[i + 1] & 0xf) << 2) | (bytes[i + 2] >> 6);
+            // Bottom 6 bits of byte i+2
+            int value4 = bytes[i + 2] & 0x3f;
+//            sb.append('.').append(value1).append('.').append(value2)
+//                    .append('.')
+//                    .append(value3).append('.').append(ALPHA[value4]);
+            
+            sb.append(ALPHA[Math.abs(value1)]).append(ALPHA[Math.abs(value2)])
+                    .append(ALPHA[Math.abs(value3)]).append(ALPHA[Math.abs(value4)]);
+            // Now use value1...value4, e.g. putting them into a char array.
+            // You'll need to decode from the 6-bit number (0-63) to the character.
+        }
+        return sb.toString();
+    }
+
+    private String xbytesToString(byte[] b) {
         LongBuffer lb = ByteBuffer.wrap(b).asLongBuffer();
         StringBuilder sb = new StringBuilder();
         while (lb.position() < lb.capacity()) {
@@ -119,6 +147,12 @@ public final class UniqueIDs {
         return buffer.array();
     }
 
+    private byte[] intToBytes(int x) {
+        ByteBuffer buffer = ByteBuffer.allocate(4);
+        buffer.putInt(x);
+        return buffer.array();
+    }
+    
     /**
      * Get a new unique string id.
      *
@@ -128,21 +162,36 @@ public final class UniqueIDs {
         int inc = random.nextInt(13) + 1;
         // Increment the counter by a random interval of at least 1, so
         // not strictly sequential
-        long ix = seq.getAndAdd(inc);
+        int ix = seq.addAndGet(inc);
         // Get a random value
-        int val = random.nextInt(Integer.MAX_VALUE);
         // Concat it all, and reverse it for better distribution of
         // values if the characters are looked at in order
-        return new StringBuilder(base)
-                .append(Integer.toString(val, 36))
-                .append(Long.toString(ix, 36))
-                .append(newRandomString(5))
-                .reverse().toString();
+        ByteBuffer buf = ByteBuffer.allocate(27);
+        buf.put(reverse(intToBytes(ix))).putLong(random.nextLong()).put(base);
+        return bytesToString(buf.array());
+    }
+    
+    private byte[] reverse(byte[] b) {
+        for (int i = 0; i < b.length / 2; i++) {
+            byte hold = b[i];
+            b[i] = b[b.length - (i+1)];
+            b[b.length-(i+1)] = hold;
+        }
+        return b;
     }
 
+    private byte[] interleave(byte[] b) {
+        for (int i = 1; i < b.length / 2; i+=2) {
+            byte hold = b[i];
+            b[i] = b[b.length - (i+1)];
+            b[b.length-(i+1)] = hold;
+        }
+        return b;
+    }
+    
     @Override
     public String toString() {
-        return base;
+        return bytesToString(base);
     }
 
     public String newRandomString() {
@@ -152,7 +201,7 @@ public final class UniqueIDs {
     public String newRandomString(int count) {
         byte[] bytes = new byte[count];
         random.nextBytes(bytes);
-        return bytesToString(bytes) + '-' + bytesToString(longToBytes(vmid));
+        return bytesToString(bytes);
     }
 
     private String reversed;
@@ -160,8 +209,24 @@ public final class UniqueIDs {
     public boolean recognizes(String id) {
         Checks.notNull("id", id);
         if (reversed == null) {
-            reversed = new StringBuilder(base).reverse().toString();
+            reversed = bytesToString(base);
         }
         return id.endsWith(reversed);
+    }
+    
+    public boolean knows(String id) {
+        Checks.notNull("id", id);
+        if (reversed == null) {
+            reversed = bytesToString(base);
+        }
+        return id.endsWith(reversed.substring(reversed.length() - 8, reversed.length()));        
+    }
+
+    public static void main(String[] args) throws IOException {
+        UniqueIDs ids = new UniqueIDs(new File("/tmp/foo.bytes"));
+        for (int i = 0; i < 100; i++) {
+            String id = ids.newId();
+            System.out.println(id);
+        }
     }
 }

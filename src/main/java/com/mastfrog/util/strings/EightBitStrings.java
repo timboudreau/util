@@ -25,6 +25,7 @@ package com.mastfrog.util.strings;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
@@ -37,14 +38,14 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * byte[] backed string to cut memory consumption from Strings in half for
- * cases where ASCII strings are guaranteed.  Create an instance of 
- * EightBitStrings, which holds an intern pool, and then use it to create
- * individual string instances.
+ * byte[] backed string to cut memory consumption from Strings in half for cases
+ * where ASCII strings are guaranteed. Create an instance of EightBitStrings,
+ * which holds an intern pool, and then use it to create individual string
+ * instances.
  *
  * @author Tim Boudreau
  */
-public class EightBitStrings {
+public final class EightBitStrings implements Serializable {
 
     private static final Charset UTF = Charset.forName("UTF-8");
     private static final Charset ASCII = Charset.forName("US-ASCII");
@@ -124,7 +125,7 @@ public class EightBitStrings {
                 seqs = nue.toArray(new CharSequence[nue.size()]);
             }
         }
-        return new Concatenation(seqs);
+        return new Concatenation(INTERN_TABLE, seqs);
     }
 
     public ComparableCharSequence concatQuoted(Collection<Object> seqs) {
@@ -163,7 +164,8 @@ public class EightBitStrings {
                     quoted.add(SPACE);
                 }
             }
-            Concatenation result = new Concatenation(quoted.toArray(new CharSequence[quoted.size()]));
+            Concatenation result = new Concatenation(INTERN_TABLE,
+                    quoted.toArray(new CharSequence[quoted.size()]));
             if (result.entries.length == 1) {
                 return result.entries[0];
             }
@@ -197,7 +199,7 @@ public class EightBitStrings {
         return INTERN_TABLE.dumpInternTable();
     }
 
-    static class InternTable {
+    static class InternTable implements Serializable{
 
         private static final int SIZE_INCREMENT = 150;
 
@@ -209,8 +211,33 @@ public class EightBitStrings {
             last = -1;
         }
 
-        Entry intern(CharSequence seq) {
+        boolean owns(CharSequence seq) {
             if (seq instanceof Entry) {
+                return ((Entry) seq).belongsTo(this);
+            } else if (seq instanceof Concatenation) {
+                return ((Concatenation) seq).belongsTo(this);
+            } else {
+                return false;
+            }
+        }
+
+        Entry[] intern(CharSequence... seq) {
+            Entry[] result = new Entry[seq.length];
+            for (int i=0; i < seq.length; i++) {
+                result[i] = intern(seq[i], false);
+            }
+            if (seq.length > 0) {
+                resort(seq[0]);
+            }
+            return result;
+        }
+
+        Entry intern(CharSequence seq) {
+            return intern(seq, true);
+        }
+
+        Entry intern(CharSequence seq, boolean sort) {
+            if (seq instanceof Entry && ((Entry) seq).belongsTo(this)) {
                 return (Entry) seq;
             }
             // We are using an array and binary search to conserve memory
@@ -228,22 +255,27 @@ public class EightBitStrings {
                     entries = nue;
                 }
                 entries[++last] = entry;
-                try {
-                    Arrays.sort(entries, 0, last + 1);
-                } catch (IllegalArgumentException e) {
-                    throw new AssertionError("Broken sorting '" + seq
-                            + "' into array for item " + last
-                            + ". Full table: " + dumpInternTable(), e);
-                }
+                resort(seq);
             }
             return entry;
+        }
+
+        private void resort(CharSequence seq) {
+            try {
+                Arrays.sort(entries, 0, last + 1);
+            } catch (IllegalArgumentException e) {
+                throw new AssertionError("Broken sorting '" + seq
+                        + "' into array for item " + last
+                        + ". Full table: " + dumpInternTable(), e);
+            }
+
         }
 
         List<CharSequence> dumpInternTable() {
             return Arrays.asList(entries);
         }
 
-        private static final class Entry implements ComparableCharSequence {
+        private static final class Entry implements ComparableCharSequence, Serializable {
 
             private final byte[] bytes;
             private final short length;
@@ -368,6 +400,15 @@ public class EightBitStrings {
                 }
                 return compareCharSequences(this, o);
             }
+
+            private boolean belongsTo(InternTable aThis) {
+                for (Entry e : aThis.entries) {
+                    if (e == this) {
+                        return true;
+                    }
+                }
+                return false;
+            }
         }
     }
 
@@ -402,18 +443,26 @@ public class EightBitStrings {
 
     static boolean debug;
 
-    class Concatenation implements ComparableCharSequence, Comparable<CharSequence> {
+    static class Concatenation implements ComparableCharSequence, Comparable<CharSequence>, Serializable {
 
         private final InternTable.Entry[] entries;
+        private final InternTable table;
 
-        Concatenation(CharSequence... entries) {
+        Concatenation(InternTable table, CharSequence... entries) {
+            this.table = table;
             List<InternTable.Entry> l = new ArrayList<>(entries.length);
             for (CharSequence cs : entries) {
                 if (cs instanceof Concatenation) {
                     Concatenation c1 = (Concatenation) cs;
-                    l.addAll(Arrays.asList(c1.entries));
+                    if (c1.belongsTo(table)) {
+                        l.addAll(Arrays.asList(c1.entries));
+                    } else {
+                        for (InternTable.Entry e : c1.entries) {
+                            l.add(table.intern(e));
+                        }
+                    }
                 } else {
-                    l.add(INTERN_TABLE.intern(cs));
+                    l.add(table.intern(cs));
                 }
             }
             this.entries = l.toArray(new InternTable.Entry[l.size()]);
@@ -448,7 +497,7 @@ public class EightBitStrings {
 
         @Override
         public CharSequence subSequence(int start, int end) {
-            return INTERN_TABLE.intern(toString().subSequence(start, end));
+            return table.intern(toString().subSequence(start, end));
         }
 
         public String toString() {
@@ -525,6 +574,10 @@ public class EightBitStrings {
             }
             return compareCharSequences(this, o);
         }
+
+        private boolean belongsTo(InternTable aThis) {
+            return table == aThis;
+        }
     }
 
     private static boolean charSequencesEqual(CharSequence a, CharSequence b) {
@@ -555,7 +608,7 @@ public class EightBitStrings {
         return true;
     }
 
-    static class StringWrapper implements ComparableCharSequence {
+    static class StringWrapper implements ComparableCharSequence, Serializable {
 
         private final String s;
 
