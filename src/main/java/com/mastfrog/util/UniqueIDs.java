@@ -106,7 +106,7 @@ public final class UniqueIDs {
         }
     }
 
-    static final char[] ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz0123456789~".toCharArray();
+    private static final char[] ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz0123456789~".toCharArray();
 
     private String bytesToString(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
@@ -119,9 +119,6 @@ public final class UniqueIDs {
             int value3 = ((bytes[i + 1] & 0xf) << 2) | (bytes[i + 2] >> 6);
             // Bottom 6 bits of byte i+2
             int value4 = bytes[i + 2] & 0x3f;
-//            sb.append('.').append(value1).append('.').append(value2)
-//                    .append('.')
-//                    .append(value3).append('.').append(ALPHA[value4]);
             
             sb.append(ALPHA[Math.abs(value1)]).append(ALPHA[Math.abs(value2)])
                     .append(ALPHA[Math.abs(value3)]).append(ALPHA[Math.abs(value4)]);
@@ -131,24 +128,8 @@ public final class UniqueIDs {
         return sb.toString();
     }
 
-    private String xbytesToString(byte[] b) {
-        LongBuffer lb = ByteBuffer.wrap(b).asLongBuffer();
-        StringBuilder sb = new StringBuilder();
-        while (lb.position() < lb.capacity()) {
-            long val = Math.abs(lb.get());
-            sb.append(Long.toString(val, 36));
-        }
-        return sb.toString();
-    }
-
-    private byte[] longToBytes(long x) {
-        ByteBuffer buffer = ByteBuffer.allocate(8);
-        buffer.putLong(x);
-        return buffer.array();
-    }
-
     private byte[] intToBytes(int x) {
-        ByteBuffer buffer = ByteBuffer.allocate(4);
+        ByteBuffer buffer = ByteBuffer.allocate(Integer.SIZE / 8);
         buffer.putInt(x);
         return buffer.array();
     }
@@ -166,22 +147,14 @@ public final class UniqueIDs {
         // Get a random value
         // Concat it all, and reverse it for better distribution of
         // values if the characters are looked at in order
-        ByteBuffer buf = ByteBuffer.allocate(27);
+        int size = (Integer.SIZE / 8) + (Long.SIZE / 8) + base.length;
+        ByteBuffer buf = ByteBuffer.allocate(size);
         buf.put(reverse(intToBytes(ix))).putLong(random.nextLong()).put(base);
         return bytesToString(buf.array());
     }
     
     private byte[] reverse(byte[] b) {
         for (int i = 0; i < b.length / 2; i++) {
-            byte hold = b[i];
-            b[i] = b[b.length - (i+1)];
-            b[b.length-(i+1)] = hold;
-        }
-        return b;
-    }
-
-    private byte[] interleave(byte[] b) {
-        for (int i = 1; i < b.length / 2; i+=2) {
             byte hold = b[i];
             b[i] = b[b.length - (i+1)];
             b[b.length-(i+1)] = hold;
