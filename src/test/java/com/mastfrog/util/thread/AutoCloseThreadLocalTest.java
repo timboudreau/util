@@ -53,7 +53,7 @@ public class AutoCloseThreadLocalTest {
             t.setName("Test thread " + i);
             t.start();
         }
-        Thread.sleep(200);
+        Thread.sleep(10);
         start.countDown();
         done.await();
         for (R r : rs) {
