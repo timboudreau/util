@@ -1,4 +1,4 @@
-/* 
+/*
  * The MIT License
  *
  * Copyright 2013 Tim Boudreau.
@@ -36,14 +36,14 @@ import java.util.Iterator;
  * String utilities
  */
 public final class Strings {
-    
+
     public static <T extends CharSequence> CharSequence trim(CharSequence seq) {
         int len = seq.length();
         if (len == 0) {
             return seq;
         }
         if (seq instanceof String) {
-            return ((String)seq).trim();
+            return ((String) seq).trim();
         }
         int start = 0;
         int end = len;
@@ -58,7 +58,7 @@ public final class Strings {
             System.out.println("exit a");
             return "";
         }
-        for (int i=len-1; i >=0; i--) {
+        for (int i = len - 1; i >= 0; i--) {
             if (Character.isWhitespace(seq.charAt(i))) {
                 end--;
             } else {
@@ -79,6 +79,7 @@ public final class Strings {
         byte[] result = digest.digest(s.getBytes(Charset.forName("UTF-8")));
         return HashingOutputStream.hashString(result);
     }
+
     /**
      * Convenience function for formatting an array of elements separated by a
      * comma.
@@ -90,9 +91,10 @@ public final class Strings {
     public static <T> String toString(T[] collection) {
         return toString(Arrays.asList(collection));
     }
-    
+
     /**
      * Split a comma-delimited list into an array of trimmed strings
+     *
      * @param string The input string
      * @return An array of resulting strings
      */
@@ -149,10 +151,10 @@ public final class Strings {
 
     /**
      * Join / delimited paths, ensuring no doubled slashes
-     * 
+     *
      * @param parts An array of strings
-     * @return A string.  If a leading slash is desired, the first element
-     * must have one
+     * @return A string. If a leading slash is desired, the first element must
+     * have one
      */
     public static String join(String... parts) {
         StringBuilder sb = new StringBuilder();
@@ -164,7 +166,7 @@ public final class Strings {
             if (part.isEmpty() || (part.length() == 1 && part.charAt(0) == '/')) {
                 continue;
             }
-            boolean gotTrailingSlash = sb.length() == 0 ? false : sb.charAt(sb.length() -1) == '/';
+            boolean gotTrailingSlash = sb.length() == 0 ? false : sb.charAt(sb.length() - 1) == '/';
             boolean gotLeadingSlash = part.charAt(0) == '/';
             if (gotTrailingSlash != !gotLeadingSlash) {
                 sb.append(part);
@@ -177,5 +179,88 @@ public final class Strings {
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * Computes a hash code for a CharSequence. The result will be the same as
+     * that of java.lang.String.
+     *
+     * @param seq A char sequence passed CharSequence
+     * @return A hash code
+     * @since 1.7.0
+     */
+    public static int charSequenceHashCode(CharSequence seq) {
+        return charSequenceHashCode(seq, false);
+    }
+
+    /**
+     * Computes a hash code for a CharSequence. If ignoreCase is false, the
+     * result will be the same as that of java.lang.String.
+     *
+     * @param seq A char sequence
+     * @param ignoreCase If true, generate a hash code for the lower-case
+     * version of the passed CharSequence
+     * @return A hash code
+     * @since 1.7.0
+     */
+    public static int charSequenceHashCode(CharSequence seq, boolean ignoreCase) {
+        Checks.notNull("seq", seq);
+        // Same computation as java.lang.String for case sensitive
+        int length = seq.length();
+        if (length == 0) {
+            return 0;
+        }
+        int result = 0;
+        for (int i = 0; i < length; i++) {
+            if (ignoreCase) {
+                result = 31 * result + Character.toLowerCase(seq.charAt(i));
+            } else {
+                result = 31 * result + seq.charAt(i);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Compare the contents of two CharSequences which may be of different types
+     * for equality.
+     *
+     * @param a One character sequence
+     * @param b Another character sequence
+     * @param ignoreCase If true, do a case-insensitive comparison
+     * @return true if they match
+     * @since 1.7.0
+     */
+    @SuppressWarnings("null")
+    public static boolean charSequencesEqual(CharSequence a, CharSequence b, boolean ignoreCase) {
+        Checks.notNull("a", a);
+        Checks.notNull("b", b);
+        if ((a == null) != (b == null)) {
+            return false;
+        } else if (a == b) {
+            return true;
+        }
+        @SuppressWarnings("null")
+        int length = a.length();
+        if (length != b.length()) {
+            return false;
+        }
+        if (ignoreCase && a.getClass() == b.getClass()) {
+            return a.equals(b);
+        }
+        if (!ignoreCase && a instanceof String) {
+            return ((String) a).contentEquals(b);
+        } else if (!ignoreCase && b instanceof String) {
+            return ((String) b).contentEquals(a);
+        } else {
+            for (int i = 0; i < length; i++) {
+                char ca = ignoreCase ? Character.toLowerCase(a.charAt(i)) : a.charAt(i);
+                char cb = ignoreCase ? Character.toLowerCase(b.charAt(i)) : b.charAt(i);
+                if (cb != ca) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }
