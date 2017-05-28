@@ -29,8 +29,11 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * String utilities
@@ -74,6 +77,12 @@ public final class Strings {
         return seq.subSequence(start, end);
     }
 
+    /**
+     * Get the sha1 hash of a string in UTF-8 encoding.
+     *
+     * @param s The string
+     * @return The sha-1 hash
+     */
     public static String sha1(String s) {
         MessageDigest digest = HashingInputStream.createDigest("SHA-1");
         byte[] result = digest.digest(s.getBytes(Charset.forName("UTF-8")));
@@ -262,5 +271,123 @@ public final class Strings {
             }
         }
         return true;
+    }
+
+    public static List<CharSequence> splitToList(char delimiter, CharSequence seq) {
+        List<CharSequence> result = new ArrayList<>(5);
+        int max = seq.length();
+        int start = 0;
+        for (int i = 0; i < max; i++) {
+            char c = seq.charAt(i);
+            boolean last = i == max - 1;
+            if (c == delimiter || last) {
+                result.add(seq.subSequence(start, last ? c == delimiter ? i : i + 1 : i));
+                start = i + 1;
+            }
+        }
+        return result;
+    }
+
+    public static CharSequence[] split(char delimiter, CharSequence seq) {
+        List<CharSequence> all = splitToList(delimiter, seq);
+        return all.toArray(new CharSequence[all.size()]);
+    }
+
+    public static CharSequence[] trim(CharSequence[] seqs) {
+        CharSequence[] result = new CharSequence[seqs.length];
+        for (int i = 0; i < seqs.length; i++) {
+            result[i] = trim(seqs[i]);
+        }
+        return result;
+    }
+
+    public static int compareCharSequences(CharSequence a, CharSequence b, boolean ignoreCase) {
+        if (a == b) {
+            return 0;
+        }
+        int aLength = a.length();
+        int bLength = b.length();
+        if (aLength == 0 && bLength == 0) {
+            return 0;
+        }
+        int max = Math.min(aLength, bLength);
+        for (int i = 0; i < max; i++) {
+            char ac = ignoreCase ? Character.toLowerCase(a.charAt(i)) : a.charAt(i);
+            char bc = ignoreCase ? Character.toLowerCase(b.charAt(i)) : b.charAt(i);
+            if (ac > bc) {
+                return 1;
+            } else if (ac < bc) {
+                return -1;
+            }
+        }
+        if (aLength == bLength) {
+            return 0;
+        } else if (aLength > bLength) {
+            return 1;
+        } else {
+            return -1;
+        }
+    }
+
+    public static Comparator<CharSequence> charSequenceComparator(boolean caseInsensitive) {
+        return new CharSequenceComparator(caseInsensitive);
+    }
+
+    public static Comparator<CharSequence> charSequenceComparator() {
+        return charSequenceComparator(false);
+    }
+
+    private static final class CharSequenceComparator implements Comparator<CharSequence> {
+
+        private final boolean caseInsensitive;
+
+        public CharSequenceComparator(boolean caseInsensitive) {
+            this.caseInsensitive = caseInsensitive;
+        }
+
+        @Override
+        public int compare(CharSequence o1, CharSequence o2) {
+            return compareCharSequences(o1, o2, caseInsensitive);
+        }
+    }
+    
+    public static CharSequence emptyCharSequence() {
+        return EMPTY;
+    }
+
+    private static final EmptyCharSequence EMPTY = new EmptyCharSequence();
+    private static final class EmptyCharSequence implements CharSequence {
+
+        @Override
+        public int length() {
+            return 0;
+        }
+
+        @Override
+        public char charAt(int index) {
+            throw new StringIndexOutOfBoundsException(index);
+        }
+
+        @Override
+        public CharSequence subSequence(int start, int end) {
+            if (start == 0 && end == 0) {
+                return this;
+            }
+            throw new StringIndexOutOfBoundsException("Empty but requested subsequence from " 
+                    + start + " to " + end);
+        }
+        
+        public String toString() {
+            return "";
+        }
+        
+        public int hashCode() {
+            return 0;
+        }
+        
+        public boolean equals(Object o) {
+            return o instanceof CharSequence && ((CharSequence) o).length() == 0;
+        }
+
     }
 }

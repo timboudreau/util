@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.strings;
 
+import com.mastfrog.util.Strings;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
@@ -199,7 +200,7 @@ public final class EightBitStrings implements Serializable {
         return INTERN_TABLE.dumpInternTable();
     }
 
-    static class InternTable implements Serializable{
+    static class InternTable implements Serializable {
 
         private static final int SIZE_INCREMENT = 150;
 
@@ -223,7 +224,7 @@ public final class EightBitStrings implements Serializable {
 
         Entry[] intern(CharSequence... seq) {
             Entry[] result = new Entry[seq.length];
-            for (int i=0; i < seq.length; i++) {
+            for (int i = 0; i < seq.length; i++) {
                 result[i] = intern(seq[i], false);
             }
             if (seq.length > 0) {
@@ -387,8 +388,16 @@ public final class EightBitStrings implements Serializable {
 
             @Override
             public CharSequence subSequence(int start, int end) {
+                if (start == end) {
+                    return Strings.emptyCharSequence();
+                }
+                if (start == 0 && end == length) {
+                    return this;
+                }
                 if (ascii) {
-                    return new String(bytes, start, end - start);
+                    byte[] b = new byte[end-start];
+                    System.arraycopy(bytes, start, b, 0, b.length);
+                    return new Entry(b, (short) b.length);
                 }
                 return toCharSequence(bytes).subSequence(start, end);
             }
@@ -495,9 +504,46 @@ public final class EightBitStrings implements Serializable {
                     + Arrays.asList(entries));
         }
 
+//        @Override
+//        public CharSequence subSequence(int start, int end) {
+//            return table.intern(toString().subSequence(start, end));
+//        }
         @Override
         public CharSequence subSequence(int start, int end) {
-            return table.intern(toString().subSequence(start, end));
+            if (start > end) {
+                throw new IllegalArgumentException("Start greater than end " + start + " > " + end);
+            }
+            if (start == end) {
+                return Strings.emptyCharSequence();
+            }
+            if (start == 0 && end == length()) {
+                return this;
+            }
+            int aggregateLength = 0;
+            int max = entries.length;
+//        AppendableCharSequence result = new AppendableCharSequence();
+            List<CharSequence> result = new ArrayList<>(entries.length);
+            for (int i = 0; i < max; i++) {
+                if (aggregateLength >= end + 1) {
+                    break;
+                }
+                CharSequence curr = entries[i];
+                int len = curr.length();
+                int first = Math.max(0, start - aggregateLength);
+                int last = Math.min(len, Math.min((end + 1) - start, first + (end - aggregateLength)));
+
+                if (end >= aggregateLength + len) {
+                    last = len;
+                } else if (end <= aggregateLength + len) {
+                    last = end - aggregateLength;
+                }
+                if (last > first) {
+                    CharSequence sub = curr.subSequence(first, last);
+                    result.add(sub);
+                }
+                aggregateLength += len;
+            }
+            return new Concatenation(table, result.toArray(new CharSequence[result.size()]));
         }
 
         public String toString() {

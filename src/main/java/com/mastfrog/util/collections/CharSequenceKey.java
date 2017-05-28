@@ -39,6 +39,7 @@ final class CharSequenceKey<T extends CharSequence> implements CharSequence {
         this.value = value;
     }
 
+    @SuppressWarnings("unchecked")
     public static <T extends CharSequence> CharSequenceKey<T> create(CharSequence seq) {
         return seq instanceof CharSequenceKey<?> ? (CharSequenceKey<T>) seq : new CharSequenceKey(seq);
     }
@@ -93,31 +94,12 @@ final class CharSequenceKey<T extends CharSequence> implements CharSequence {
 
         @Override
         public CharSequenceKey<T> convert(T r) {
-            System.out.println("CONVERT " + r.getClass().getName() + " " + r + " to " + r.getClass().getName());
             return new CharSequenceKey<>(r);
         }
 
         @Override
         public T unconvert(CharSequenceKey<T> t) {
-            System.out.println("UNCONVERT " + t.getClass().getName() + " to CharSequenceKey " + t);
             return t.value;
         }
-
     }
-    /*
-    static class Conv<T extends CharSequence> implements Converter<T, CharSequenceKey<T>> {
-
-        @Override
-        public T convert(CharSequenceKey<T> r) {
-            System.out.println("CONVERT " + r.getClass().getName() + " " + r + " to " + r.value.getClass().getName());
-            return r.value;
-        }
-
-        @Override
-        public CharSequenceKey<T> unconvert(T t) {
-            System.out.println("UNCONVERT " + t.getClass().getName() + " to CharSequenceKey " + t);
-            return CharSequenceKey.create(t);
-        }
-    }
-*/
 }

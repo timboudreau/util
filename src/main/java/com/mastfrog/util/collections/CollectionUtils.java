@@ -26,6 +26,7 @@ package com.mastfrog.util.collections;
 import com.mastfrog.util.Checks;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -182,6 +183,17 @@ public final class CollectionUtils {
      */
     public static <T, R> List<R> convertedList(List<T> list, Converter<R, T> converter, Class<T> fromType, Class<R> toType) {
         return new ConvertList<>(toType, fromType, list, converter);
+    }
+    
+    /**
+     * Generic munging - treat a List&lt;String&gt; as an unmodifiable List&lt;CharSequence&gt; and so forth.
+     * @param <T> The target type
+     * @param l The list
+     * @return An unmodifiable list
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> List<T> generalize(List<? extends T> l) {
+        return Collections.<T>unmodifiableList((List)l);
     }
 
     /**

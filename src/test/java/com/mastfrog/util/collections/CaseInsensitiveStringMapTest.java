@@ -65,7 +65,6 @@ public class CaseInsensitiveStringMapTest {
             m.put("TwentyThree", "skiddoo");
             
             Map<? extends CharSequence, String> cv = CollectionUtils.caseInsensitiveStringMap(m);
-            System.out.println("KEY SET: " + cv.keySet());
             for (CharSequence s : m.keySet()) {
                 assertTrue("Key " + s + " missing", cv.containsKey(s));
                 assertEquals(m.get(s), cv.get(s));
@@ -98,23 +97,6 @@ public class CaseInsensitiveStringMapTest {
             assertEquals("food", m.get("WOOKIE"));
             assertEquals("skiddoo", m.get("twentythrEE"));
             assertTrue(m.containsKey(new StringBuilder("twentyThree")));
-            System.out.println(m.keySet());
-            /*
-            Map<? extends CharSequence, String> cv = CollectionUtils.caseInsensitiveStringMap(m);
-            System.out.println("KEY SET: " + cv.keySet());
-            for (String s : m.keySet()) {
-                assertTrue("Key " + s + " missing", cv.containsKey(s));
-                assertEquals(m.get(s), cv.get(s));
-            }
-            for (String s : m.keySet()) {
-                assertTrue(cv.containsKey(s.toUpperCase()));
-                assertEquals(m.get(s), cv.get(s.toUpperCase()));
-            }
-            for (String s : m.keySet()) {
-                assertTrue(cv.containsKey(s.toLowerCase()));
-                assertEquals(m.get(s), cv.get(s.toLowerCase()));
-            }
-*/
         } catch (Exception ex) {
             ex.printStackTrace();
             throw ex;

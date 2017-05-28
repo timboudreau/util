@@ -25,6 +25,7 @@
 package com.mastfrog.util.collections;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -85,6 +86,14 @@ public class ReversedListTest {
         List<String> nue = new ArrayList<>(rl);
         Collections.reverse(nue);
         assertEquals(l, nue);
-
+    }
+    
+    @Test
+    public void testTypeMunging() {
+        List<String> l = new ArrayList<>(Arrays.asList("hello", "world"));
+        List<CharSequence> c = CollectionUtils.<CharSequence>generalize(l);
+        assertTrue(c.contains("hello"));
+        assertTrue(c.contains("world"));
+        assertEquals(l, c);
     }
 }
