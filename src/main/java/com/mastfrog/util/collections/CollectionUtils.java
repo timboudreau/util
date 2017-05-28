@@ -27,6 +27,7 @@ import com.mastfrog.util.Checks;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,6 +43,41 @@ import java.util.NoSuchElementException;
 public final class CollectionUtils {
 
     private CollectionUtils() {
+    }
+
+    public static <From, T, R> Map<From, R> convertedKeyMap(Class<From> from, Map<T, R> delegate, Converter<T, From> converter) {
+        return new ConvertedMap<From, T, R, From>(from, delegate, converter);
+    }
+
+    /**
+     * Creates a Map which will case-insensitively match CharSequences for its
+     * keys.
+     *
+     * @param <R> The value type
+     * @return A map
+     */
+    @SuppressWarnings("unchecked")
+    public static <R> Map<CharSequence, R> caseInsensitiveStringMap() {
+        Converter<CharSequenceKey<CharSequence>, CharSequence> converter = CharSequenceKey.<CharSequence>converter();
+        return new ConvertedMap(CharSequence.class, new HashMap<>(), converter);
+    }
+
+    /**
+     * Creates a Map which will case insensitively match CharSequences for its
+     * keys, initially populated from the passed map.Changes in the passed map
+     * are not reflected - the resulting map is independent.
+     *
+     * @param <T> The key type of the inbound map
+     * @param <R> The value type
+     * @param map A map
+     * @return A new map
+     */
+    public static <T extends CharSequence, R> Map<CharSequence, R> caseInsensitiveStringMap(Map<T, R> map) {
+        Map<CharSequence, R> result = caseInsensitiveStringMap();
+        for (Map.Entry<T, R> entry : map.entrySet()) {
+            result.put(entry.getKey(), entry.getValue());
+        }
+        return result;
     }
 
     /**

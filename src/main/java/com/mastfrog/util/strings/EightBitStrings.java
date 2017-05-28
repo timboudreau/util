@@ -648,6 +648,7 @@ public final class EightBitStrings implements Serializable {
             s.getChars(srcBegin, srcEnd, dst, dstBegin);
         }
 
+        @SuppressWarnings("deprecation")
         public void getBytes(int srcBegin, int srcEnd, byte[] dst, int dstBegin) {
             s.getBytes(srcBegin, srcEnd, dst, dstBegin);
         }

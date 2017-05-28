@@ -35,4 +35,23 @@ public interface Converter<T, R> {
 
     public R unconvert(T t);
     
+    public default Converter<R,T> reverse() {
+        return new Converter<R,T>() {
+            @Override
+            public R convert(T r) {
+                return Converter.this.unconvert(r);
+            }
+
+            @Override
+            public T unconvert(R t) {
+                return Converter.this.convert(t);
+            }
+
+            @Override
+            public Converter<T, R> reverse() {
+                return Converter.this;
+            }
+        };
+    }
+    
 }
