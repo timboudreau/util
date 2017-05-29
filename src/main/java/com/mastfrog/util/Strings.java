@@ -232,6 +232,19 @@ public final class Strings {
 
     /**
      * Compare the contents of two CharSequences which may be of different types
+     * for exact character-level equality.
+     *
+     * @param a One character sequence
+     * @param b Another character sequence
+     * @return true if they match
+     * @since 1.7.0
+     */
+    @SuppressWarnings("null")
+    public static boolean charSequencesEqual(CharSequence a, CharSequence b) {
+        return charSequencesEqual(a, b, false);
+    }
+    /**
+     * Compare the contents of two CharSequences which may be of different types
      * for equality.
      *
      * @param a One character sequence
