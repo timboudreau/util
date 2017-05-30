@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.collections;
 
+import com.mastfrog.util.Strings;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -249,14 +250,7 @@ final class IdentityList<T> implements List<T> {
     
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(super.toString()).append('[');
-        for (Iterator<T> it=iterator(); it.hasNext();) {
-            sb.append (it.next());
-            if (it.hasNext()) {
-                sb.append(',');
-            }
-        }
-        return sb.toString();
+        return Strings.join(',', this);
     }
 
     private static final class Identity<T> {

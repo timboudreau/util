@@ -382,14 +382,17 @@ public final class Strings {
                     + start + " to " + end);
         }
         
+        @Override
         public String toString() {
             return "";
         }
         
+        @Override
         public int hashCode() {
             return 0;
         }
         
+        @Override
         public boolean equals(Object o) {
             return o instanceof CharSequence && ((CharSequence) o).length() == 0;
         }
