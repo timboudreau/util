@@ -1,7 +1,8 @@
+
 /*
  * The MIT License
  *
- * Copyright 2017 tim.
+ * Copyright 2017 Tim Boudreau.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,12 +22,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package com.mastfrog.util;
 
+import com.mastfrog.util.strings.ComparableCharSequence;
+import com.mastfrog.util.strings.EightBitStrings;
+import java.util.Arrays;
 import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Test;
@@ -40,7 +44,7 @@ public class StringsTest {
     @Test
     public void testSplit() {
         String s = "hello,there,world,how,are,you";
-        List<CharSequence> cs = Strings.split(',', s);
+        List<CharSequence> cs = Strings.splitToList(',', s);
         int ix = 0;
         for (CharSequence ss : cs) {
             switch(ix++) {
@@ -69,7 +73,7 @@ public class StringsTest {
         }
         assertEquals(6, ix);
         s = "hello,,there";
-        cs = Strings.split(',', s);
+        cs = Strings.splitToList(',', s);
         ix = 0;
         for (CharSequence ss : cs) {
             switch(ix++) {
@@ -87,7 +91,7 @@ public class StringsTest {
             }
         }
         assertEquals(3, ix);
-        cs = Strings.split(',', ",");
+        cs = Strings.splitToList(',', ",");
         assertEquals(1, cs.size());
         assertEquals("", cs.get(0));
     }
@@ -100,5 +104,47 @@ public class StringsTest {
         assertFalse(Strings.startsWith(a, b));
         assertTrue(Strings.startsWithIgnoreCase(a, b));
         assertFalse(Strings.startsWith(b, a));
+    }
+
+    @Test
+    public void testSplit2() {
+        EightBitStrings strs = new EightBitStrings(false, true);
+        ComparableCharSequence seq = strs.create("hello world how are you ");
+        CharSequence[] result = Strings.split(' ', seq);
+        assertEquals(Arrays.asList(result).toString(), 5, result.length);
+        String[] actual = seq.toString().split("\\s");
+        for (int i = 0; i < result.length; i++) {
+            assertEquals(actual[i], result[i].toString());
+            assertTrue(result[i] + " vs " + actual[i], Strings.charSequencesEqual(actual[i], result[i], false));
+        }
+    }
+
+    private final String test = "Mastfrog is awesome!";
+    private final String unlike = test + " ";
+    private final EightBitStrings strings = new EightBitStrings(true, true);
+    private final CharSequence ascii = strings.create("Mastfrog is awesome!");
+    private final CharSequence upper = strings.create("MASTFROG IS AWESOME!");
+
+    @Test
+    public void testEquality() {
+        assertTrue(Strings.charSequencesEqual(test, ascii, false));
+        assertTrue(Strings.charSequencesEqual(test, ascii, true));
+        assertTrue(Strings.charSequencesEqual(test, upper, true));
+        assertFalse(Strings.charSequencesEqual(test, upper, false));
+        assertFalse(Strings.charSequencesEqual(test, unlike, false));
+        assertFalse(Strings.charSequencesEqual(ascii, unlike, false));
+        assertFalse(Strings.charSequencesEqual(upper, unlike, false));
+        assertFalse(Strings.charSequencesEqual(test, unlike, true));
+        assertFalse(Strings.charSequencesEqual(ascii, unlike, true));
+        assertFalse(Strings.charSequencesEqual(upper, unlike, true));
+    }
+
+    @Test
+    public void testHashCode() {
+        assertEquals(test.hashCode(), Strings.charSequenceHashCode(test, false));
+        assertEquals(test.toLowerCase().hashCode(), Strings.charSequenceHashCode(test, true));
+        assertEquals(test.hashCode(), Strings.charSequenceHashCode(ascii, false));
+        assertNotEquals(test.hashCode(), Strings.charSequenceHashCode(unlike, false));
+        assertNotEquals(test.hashCode(), Strings.charSequenceHashCode(unlike, true));
     }
 }

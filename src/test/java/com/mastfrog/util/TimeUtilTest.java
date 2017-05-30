@@ -1,7 +1,7 @@
-/* 
+/*
  * The MIT License
  *
- * Copyright 2013 Tim Boudreau.
+ * Copyright 2017 Tim Boudreau.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,37 +21,32 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util.collections;
+package com.mastfrog.util;
+
+import java.time.ZonedDateTime;
+import org.junit.Test;
+import static org.junit.Assert.*;
 
 /**
- * Converts an object from one type to another.
  *
- * @see ConvertList
  * @author Tim Boudreau
  */
-public interface Converter<T, R> {
-
-    public T convert(R r);
-
-    public R unconvert(T t);
+public class TimeUtilTest {
     
-    public default Converter<R,T> reverse() {
-        return new Converter<R,T>() {
-            @Override
-            public R convert(T r) {
-                return Converter.this.unconvert(r);
-            }
-
-            @Override
-            public T unconvert(R t) {
-                return Converter.this.convert(t);
-            }
-
-            @Override
-            public Converter<T, R> reverse() {
-                return Converter.this;
-            }
-        };
+    @Test
+    public void testConversions() {
+        String s = "Mon, 29 May 2017 03:33:57 -04:00";
+        long millis = 1496043237000L;
+        
+        ZonedDateTime zdt = TimeUtil.fromUnixTimestamp(millis);
+        long test = TimeUtil.toUnixTimestamp(zdt);
+        assertEquals(millis, test);
+        
+        ZonedDateTime zoned = TimeUtil.fromHttpHeaderFormat(s);
+        assertEquals(millis, TimeUtil.toUnixTimestamp(zoned));
+        
+        long test2 = TimeUtil.timestampFromHttpHeaderFormat(s);
+        assertEquals(millis, test2);
     }
     
 }

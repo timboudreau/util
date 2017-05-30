@@ -38,6 +38,43 @@ import static org.junit.Assert.*;
  * @author tim
  */
 public class EightBitStringsTest {
+    
+    @Test
+    public void testCharSequences() throws Exception {
+        String expect = "one two three";
+        char[] chars = expect.toCharArray();
+        EightBitStrings strings = new EightBitStrings(false);
+        
+        ComparableCharSequence s = strings.concat("one", " ", "two", " ", "three");
+        
+        assertEquals(expect.length(), s.length());
+        assertEquals("one two three", s.toString());
+        for (int i = 0; i < chars.length; i++) {
+            assertEquals("Mismatch at " + i + " '" + chars[i] + "' vs '" + s.charAt(i) + "'", chars[i], s.charAt(i));
+        }
+        testSubstrings(expect, s);
+    }
+
+    private void testSubstrings(String expect, CharSequence s) {
+        char[] chars = expect.toCharArray();
+        int ix = 0;
+        for (int i = 0; i <= chars.length; i++) {
+            for (int j = i; j <= chars.length; j++) {
+                CharSequence sub = s.subSequence(i, j);
+                CharSequence expectedSubstring = expect.subSequence(i, j);
+                assertEquals(sub.toString(), sub.length(), sub.toString().length());
+                assertEquals(expectedSubstring + " vs. " + sub + " lengths differ", expectedSubstring.length(), sub.length());
+                assertEquals("FAIL " + ix + " Bad result on sub from " + i + " to " + j, expectedSubstring, sub.toString());
+                for (int k = 0; k < expectedSubstring.length(); k++) {
+                    char ce = expectedSubstring.charAt(k);
+                    char se = sub.charAt(k);
+                    assertEquals("Mismatch at " + k + " in " + ce + " vs. " + sub, ce, se);
+                }
+                ix++;
+            }
+        }
+    }
+    
 
     @Test
     public void testCreate() {

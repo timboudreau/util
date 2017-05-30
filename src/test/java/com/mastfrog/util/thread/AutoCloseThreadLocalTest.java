@@ -27,6 +27,7 @@ package com.mastfrog.util.thread;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static org.junit.Assert.assertEquals;
@@ -53,9 +54,8 @@ public class AutoCloseThreadLocalTest {
             t.setName("Test thread " + i);
             t.start();
         }
-        Thread.sleep(200);
         start.countDown();
-        done.await();
+        done.await(1, TimeUnit.SECONDS);
         for (R r : rs) {
             r.throwIfError();
         }
