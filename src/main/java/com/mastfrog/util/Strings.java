@@ -1,4 +1,4 @@
-/* 
+/*
  * The MIT License
  *
  * Copyright 2013 Tim Boudreau.
@@ -29,21 +29,26 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Function;
 
 /**
  * String utilities
  */
 public final class Strings {
-    
+
     public static <T extends CharSequence> CharSequence trim(CharSequence seq) {
         int len = seq.length();
         if (len == 0) {
             return seq;
         }
         if (seq instanceof String) {
-            return ((String)seq).trim();
+            return ((String) seq).trim();
         }
         int start = 0;
         int end = len;
@@ -55,10 +60,9 @@ public final class Strings {
             }
         }
         if (start == len - 1) {
-            System.out.println("exit a");
             return "";
         }
-        for (int i=len-1; i >=0; i--) {
+        for (int i = len - 1; i >= 0; i--) {
             if (Character.isWhitespace(seq.charAt(i))) {
                 end--;
             } else {
@@ -79,6 +83,7 @@ public final class Strings {
         byte[] result = digest.digest(s.getBytes(Charset.forName("UTF-8")));
         return HashingOutputStream.hashString(result);
     }
+
     /**
      * Convenience function for formatting an array of elements separated by a
      * comma.
@@ -90,9 +95,10 @@ public final class Strings {
     public static <T> String toString(T[] collection) {
         return toString(Arrays.asList(collection));
     }
-    
+
     /**
      * Split a comma-delimited list into an array of trimmed strings
+     *
      * @param string The input string
      * @return An array of resulting strings
      */
@@ -149,12 +155,25 @@ public final class Strings {
 
     /**
      * Join / delimited paths, ensuring no doubled slashes
-     * 
+     *
      * @param parts An array of strings
-     * @return A string.  If a leading slash is desired, the first element
-     * must have one
+     * @return A string. If a leading slash is desired, the first element must
+     * have one
+     * @deprecated Use joinPath
      */
+    @Deprecated
     public static String join(String... parts) {
+        return joinPath(parts);
+    }
+
+    /**
+     * Join / delimited paths, ensuring no doubled slashes
+     *
+     * @param parts An array of strings
+     * @return A string. If a leading slash is desired, the first element must
+     * have one
+     */
+    public static String joinPath(String... parts) {
         StringBuilder sb = new StringBuilder();
         if (parts.length > 0) {
             sb.append(parts[0]);
@@ -164,7 +183,7 @@ public final class Strings {
             if (part.isEmpty() || (part.length() == 1 && part.charAt(0) == '/')) {
                 continue;
             }
-            boolean gotTrailingSlash = sb.length() == 0 ? false : sb.charAt(sb.length() -1) == '/';
+            boolean gotTrailingSlash = sb.length() == 0 ? false : sb.charAt(sb.length() - 1) == '/';
             boolean gotLeadingSlash = part.charAt(0) == '/';
             if (gotTrailingSlash != !gotLeadingSlash) {
                 sb.append(part);
@@ -178,4 +197,122 @@ public final class Strings {
         }
         return sb.toString();
     }
+
+    public static String join(char delim, String... parts) {
+        return join(delim, Arrays.asList(parts));
+    }
+
+    public static String join(char delim, CharSequence... parts) {
+        return join(delim, Arrays.asList(parts));
+    }
+
+    public static String join(char delim, Iterable<?> parts) {
+        StringBuilder sb = new StringBuilder();
+        for (Iterator<?> iter = parts.iterator(); iter.hasNext();) {
+            sb.append(iter.next());
+            if (iter.hasNext()) {
+                sb.append(delim);
+            }
+        }
+        return sb.toString();
+    }
+
+    public static String join(String delim, Iterable<?> parts) {
+        StringBuilder sb = new StringBuilder();
+        for (Iterator<?> iter = parts.iterator(); iter.hasNext();) {
+            sb.append(iter.next());
+            if (iter.hasNext()) {
+                sb.append(delim);
+            }
+        }
+        return sb.toString();
+    }
+
+    public static List<CharSequence> split(char delim, CharSequence seq) {
+        Checks.notNull("seq", seq);
+        List<CharSequence> seqs = new ArrayList<>(5);
+        split(delim, seq, (val) -> {
+            seqs.add(val);
+            return true;
+        });
+        return seqs;
+    }
+
+    public static Set<CharSequence> splitUniqueNoEmpty(char delim, CharSequence seq) {
+        Set<CharSequence> result = new LinkedHashSet<>();
+        split(delim, seq, (s) -> {
+            s = trim(s);
+            if (s.length() > 0) {
+                result.add(s);
+            }
+            return true;
+        });
+        return result;
+    }
+
+    public static void split(char delim, CharSequence seq, Function<CharSequence, Boolean> proc) {
+        Checks.notNull("seq", seq);
+        Checks.notNull("proc", proc);
+        int lastStart = 0;
+        int max = seq.length();
+        for (int i = 0; i < max; i++) {
+            char c = seq.charAt(i);
+//            System.out.println("At " + i + " " + c + " look for " + delim);
+            if (delim == c || i == max - 1) {
+                if (lastStart != i) {
+                    CharSequence sub = seq.subSequence(lastStart, i == max - 1 ? i + 1 : i);
+                    if (!proc.apply(sub)) {
+                        return;
+                    }
+                } else {
+                    if (!proc.apply("")) {
+                        return;
+                    }
+                }
+                lastStart = i + 1;
+            }
+        }
+    }
+
+    public static boolean startsWith(CharSequence target, CharSequence start) {
+        int targetLength = target.length();
+        int startLength = start.length();
+        if (startLength > targetLength) {
+            return false;
+        }
+        for (int i = 0; i < startLength; i++) {
+            if (start.charAt(i) != target.charAt(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean startsWithIgnoreCase(CharSequence target, CharSequence start) {
+        int targetLength = target.length();
+        int startLength = start.length();
+        if (startLength > targetLength) {
+            return false;
+        }
+        for (int i = 0; i < startLength; i++) {
+            if (start.charAt(i) != target.charAt(i) && Character.toLowerCase(start.charAt(i)) != target.charAt(i) && Character.toUpperCase(start.charAt(i)) != target.charAt(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean contentEqualsIgnoreCase(CharSequence a, CharSequence b) {
+        int len = a.length();
+        if (b.length() != len) {
+            return false;
+        }
+        for (int i = 0; i < len; i++) {
+            if (a.charAt(i) != b.charAt(i) && Character.toLowerCase(a.charAt(i)) != b.charAt(i) && Character.toUpperCase(a.charAt(i)) != b.charAt(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 }
