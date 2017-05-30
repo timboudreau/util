@@ -1,4 +1,4 @@
-/* 
+/*
  * The MIT License
  *
  * Copyright 2013 Tim Boudreau.
@@ -42,14 +42,14 @@ import java.util.function.Function;
  * String utilities
  */
 public final class Strings {
-    
+
     public static <T extends CharSequence> CharSequence trim(CharSequence seq) {
         int len = seq.length();
         if (len == 0) {
             return seq;
         }
         if (seq instanceof String) {
-            return ((String)seq).trim();
+            return ((String) seq).trim();
         }
         int start = 0;
         int end = len;
@@ -63,7 +63,7 @@ public final class Strings {
         if (start == len - 1) {
             return "";
         }
-        for (int i=len-1; i >=0; i--) {
+        for (int i = len - 1; i >= 0; i--) {
             if (Character.isWhitespace(seq.charAt(i))) {
                 end--;
             } else {
@@ -90,6 +90,7 @@ public final class Strings {
         byte[] result = digest.digest(s.getBytes(Charset.forName("UTF-8")));
         return HashingOutputStream.hashString(result);
     }
+
     /**
      * Convenience function for formatting an array of elements separated by a
      * comma.
@@ -101,9 +102,10 @@ public final class Strings {
     public static <T> String toString(T[] collection) {
         return toString(Arrays.asList(collection));
     }
-    
+
     /**
      * Split a comma-delimited list into an array of trimmed strings
+     *
      * @param string The input string
      * @return An array of resulting strings
      */
@@ -160,7 +162,7 @@ public final class Strings {
 
     /**
      * Join / delimited paths, ensuring no doubled slashes
-     * 
+     *
      * @param parts An array of strings
      * @return A string. If a leading slash is desired, the first element must
      * have one
@@ -187,7 +189,7 @@ public final class Strings {
             if (part.isEmpty() || (part.length() == 1 && part.charAt(0) == '/')) {
                 continue;
             }
-            boolean gotTrailingSlash = sb.length() == 0 ? false : sb.charAt(sb.length() -1) == '/';
+            boolean gotTrailingSlash = sb.length() == 0 ? false : sb.charAt(sb.length() - 1) == '/';
             boolean gotLeadingSlash = part.charAt(0) == '/';
             if (gotTrailingSlash != !gotLeadingSlash) {
                 sb.append(part);
@@ -255,6 +257,7 @@ public final class Strings {
     public static boolean charSequencesEqual(CharSequence a, CharSequence b) {
         return charSequencesEqual(a, b, false);
     }
+
     /**
      * Compare the contents of two CharSequences which may be of different types
      * for equality.
@@ -273,6 +276,9 @@ public final class Strings {
             return false;
         } else if (a == b) {
             return true;
+        }
+        if (a instanceof String && b instanceof String) {
+            return ignoreCase ? ((String) a).equalsIgnoreCase((String) b) : a.equals(b);
         }
         @SuppressWarnings("null")
         int length = a.length();
@@ -355,12 +361,13 @@ public final class Strings {
             return compareCharSequences(o1, o2, caseInsensitive);
         }
     }
-    
+
     public static CharSequence emptyCharSequence() {
         return EMPTY;
     }
 
     private static final EmptyCharSequence EMPTY = new EmptyCharSequence();
+
     private static final class EmptyCharSequence implements CharSequence {
 
         @Override
@@ -378,25 +385,26 @@ public final class Strings {
             if (start == 0 && end == 0) {
                 return this;
             }
-            throw new StringIndexOutOfBoundsException("Empty but requested subsequence from " 
+            throw new StringIndexOutOfBoundsException("Empty but requested subsequence from "
                     + start + " to " + end);
         }
-        
+
         @Override
         public String toString() {
             return "";
         }
-        
+
         @Override
         public int hashCode() {
             return 0;
         }
-        
+
         @Override
         public boolean equals(Object o) {
             return o instanceof CharSequence && ((CharSequence) o).length() == 0;
         }
     }
+
     public static String join(char delim, String... parts) {
         return join(delim, Arrays.asList(parts));
     }
@@ -436,12 +444,11 @@ public final class Strings {
 //        });
 //        return seqs;
 //    }
-    
     public static CharSequence[] split(char delim, CharSequence seq) {
         List<CharSequence> l = splitToList(delim, seq);
         return l.toArray(new CharSequence[l.size()]);
     }
-    
+
     public static List<CharSequence> splitToList(char delimiter, CharSequence seq) {
         List<CharSequence> result = new ArrayList<>(5);
         int max = seq.length();
@@ -456,7 +463,7 @@ public final class Strings {
         }
         return result;
     }
-    
+
     public static Set<CharSequence> splitUniqueNoEmpty(char delim, CharSequence seq) {
         Set<CharSequence> result = new LinkedHashSet<>();
         split(delim, seq, (s) -> {
@@ -532,6 +539,32 @@ public final class Strings {
             }
         }
         return true;
+    }
+
+    public static boolean charSequenceContains(CharSequence container, CharSequence contained, boolean ignoreCase) {
+        if (!ignoreCase && container instanceof String && contained instanceof String) {
+            return ((String) container).contains((String) contained);
+        }
+        int containedLength = contained.length();
+        int containerLength = container.length();
+        if (containedLength > containerLength) {
+            return false;
+        }
+        int offset = 0;
+        int max = container.length(); //(containerLength - containedLength) + 1;
+        for (int i = 0; i < max; i++) {
+            char c = ignoreCase ? Character.toLowerCase(container.charAt(i)) : container.charAt(i);
+            char d = ignoreCase ? Character.toLowerCase(contained.charAt(i)) : contained.charAt(offset);
+            if (c != d) {
+                offset = 0;
+            } else {
+                offset++;
+            }
+            if (offset == containedLength) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

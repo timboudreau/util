@@ -47,28 +47,28 @@ public class StringsTest {
         List<CharSequence> cs = Strings.splitToList(',', s);
         int ix = 0;
         for (CharSequence ss : cs) {
-            switch(ix++) {
-                case 0 :
+            switch (ix++) {
+                case 0:
                     assertEquals("hello", ss);
                     break;
                 case 1:
                     assertEquals("there", ss);
                     break;
-                case 2 :
+                case 2:
                     assertEquals("world", ss);
                     break;
-                case 3 :
+                case 3:
                     assertEquals("how", ss);
                     break;
-                case 4 :
+                case 4:
                     assertEquals("are", ss);
                     break;
-                case 5 :
+                case 5:
                     assertEquals("you", ss);
                     break;
-                default :
+                default:
                     fail("Bad value '" + ss + "'");
-                    
+
             }
         }
         assertEquals(6, ix);
@@ -76,17 +76,17 @@ public class StringsTest {
         cs = Strings.splitToList(',', s);
         ix = 0;
         for (CharSequence ss : cs) {
-            switch(ix++) {
-                case 0 :
+            switch (ix++) {
+                case 0:
                     assertEquals("hello", ss);
                     break;
                 case 1:
                     assertEquals("", ss);
                     break;
-                case 2 :
+                case 2:
                     assertEquals("there", ss);
                     break;
-                default :
+                default:
                     fail("Bad value '" + ss + "'");
             }
         }
@@ -95,7 +95,7 @@ public class StringsTest {
         assertEquals(1, cs.size());
         assertEquals("", cs.get(0));
     }
-    
+
     public void testStartsWith() {
         StringBuilder a = new StringBuilder("hello there");
         StringBuilder b = new StringBuilder("hello");
@@ -146,5 +146,31 @@ public class StringsTest {
         assertEquals(test.hashCode(), Strings.charSequenceHashCode(ascii, false));
         assertNotEquals(test.hashCode(), Strings.charSequenceHashCode(unlike, false));
         assertNotEquals(test.hashCode(), Strings.charSequenceHashCode(unlike, true));
+    }
+
+    @Test
+    public void testCharSequenceContains() {
+        EightBitStrings str = new EightBitStrings(false, true);
+        CharSequence lookFor = str.create(" Hello! ");
+
+        StringBuilder sb = new StringBuilder();
+        char at = 'A';
+        for (char x = 'A'; x <= 'Z'; x++) {
+            for (char c = 'A'; c <= 'Z'; c++) {
+                if (c == at) {
+                    sb.append(lookFor);
+                }
+                sb.append(c);
+            }
+            at++;
+            assertTrue(sb.toString(), Strings.charSequenceContains(sb, lookFor, false));
+            sb.setLength(0);
+        }
+        // test last position
+        sb = new StringBuilder("ABCDEFGHIJKLMNOPQRSTUVWXYZ").append(lookFor);
+        assertTrue(sb.toString(), Strings.charSequenceContains(sb, lookFor, false));
+        
+        sb = new StringBuilder(lookFor);
+        assertTrue(Strings.charSequenceContains(sb, lookFor, false));
     }
 }
