@@ -108,7 +108,7 @@ public class StringsTest {
 
     @Test
     public void testSplit2() {
-        EightBitStrings strs = new EightBitStrings(false, true);
+        EightBitStrings strs = new EightBitStrings(false, true, true);
         ComparableCharSequence seq = strs.create("hello world how are you ");
         CharSequence[] result = Strings.split(' ', seq);
         assertEquals(Arrays.asList(result).toString(), 5, result.length);
@@ -121,7 +121,7 @@ public class StringsTest {
 
     private final String test = "Mastfrog is awesome!";
     private final String unlike = test + " ";
-    private final EightBitStrings strings = new EightBitStrings(true, true);
+    private final EightBitStrings strings = new EightBitStrings(true, true, true);
     private final CharSequence ascii = strings.create("Mastfrog is awesome!");
     private final CharSequence upper = strings.create("MASTFROG IS AWESOME!");
 
@@ -150,7 +150,7 @@ public class StringsTest {
 
     @Test
     public void testCharSequenceContains() {
-        EightBitStrings str = new EightBitStrings(false, true);
+        EightBitStrings str = new EightBitStrings(false, true, true);
         CharSequence lookFor = str.create(" Hello! ");
 
         StringBuilder sb = new StringBuilder();
@@ -172,5 +172,86 @@ public class StringsTest {
         
         sb = new StringBuilder(lookFor);
         assertTrue(Strings.charSequenceContains(sb, lookFor, false));
+    }
+    
+    @Test
+    public void testParseLong() {
+        long lval = Long.MAX_VALUE;
+        for (;;) {
+            long prev = lval;
+            long test = Strings.parseLong(Long.toString(lval));
+            assertEquals(lval, test);
+            test = Strings.parseLong(Long.toString(-lval));
+            assertEquals(-lval, test);
+            lval /= 2;
+            if (lval == prev) {
+                break;
+            }
+        }
+    }
+    
+    @Test
+    public void testParseInt() {
+        int lval = Integer.MAX_VALUE;
+        for (;;) {
+            int prev = lval;
+            int test = Strings.parseInt(Long.toString(lval));
+            assertEquals(lval, test);
+            test = Strings.parseInt(Long.toString(-lval));
+            assertEquals(-lval, test);
+            lval /= 2;
+            if (lval == prev) {
+                break;
+            }
+        }
+    }
+    
+    @Test(expected=NumberFormatException.class)
+    public void testParseTooLargeInt() {
+        Strings.parseInt(Long.toString((long) Integer.MAX_VALUE + 1L));
+    }
+    
+    @Test(expected=NumberFormatException.class)
+    public void testParseTooLargeLong() {
+        Strings.parseLong(Long.toString(Long.MAX_VALUE) + "0");
+    }
+    
+    @Test(expected=NumberFormatException.class)
+    public void testParseInvalidLong() {
+        Strings.parseLong("gx0321");
+    }
+   
+    @Test(expected=NumberFormatException.class)
+    public void testParseInvalidInt() {
+        Strings.parseInt("gx0321");
+    }
+    
+    @Test(expected=NumberFormatException.class)
+    public void testParseInvalidLong2() {
+        Strings.parseLong("3 72 ");
+    }
+   
+    @Test(expected=NumberFormatException.class)
+    public void testParseInvalidInt2() {
+        Strings.parseInt("5 41");
+    }
+    @Test(expected=NumberFormatException.class)
+    public void testParseInvalidLong3() {
+        Strings.parseLong(" 372");
+    }
+   
+    @Test(expected=NumberFormatException.class)
+    public void testParseInvalidInt3() {
+        Strings.parseInt(" 541");
+    }
+    
+    @Test(expected=NumberFormatException.class)
+    public void testParseInvalidLong4() {
+        Strings.parseLong("--372");
+    }
+   
+    @Test(expected=NumberFormatException.class)
+    public void testParseInvalidInt4() {
+        Strings.parseInt("--541");
     }
 }

@@ -25,6 +25,7 @@ package com.mastfrog.util;
 
 import com.mastfrog.util.streams.HashingInputStream;
 import com.mastfrog.util.streams.HashingOutputStream;
+import com.mastfrog.util.strings.AppendableCharSequence;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
@@ -39,11 +40,24 @@ import java.util.Set;
 import java.util.function.Function;
 
 /**
- * String utilities
+ * String utilities - in particular, contains a number of utility methods for
+ * performing String operations on CharSequence instances in-place, which are
+ * useful for libraries such as Netty which implement 8-bit CharSequences, where
+ * otherwise we would need to copy the bytes into a String to perform
+ * operations.
  */
 public final class Strings {
 
-    public static <T extends CharSequence> CharSequence trim(CharSequence seq) {
+    /**
+     * Trim a CharSequence returning a susbsequence.
+     *
+     * @param seq The string
+     * @return
+     */
+    public static CharSequence trim(CharSequence seq) {
+        if (seq instanceof String) {
+            return ((String) seq).trim();
+        }
         int len = seq.length();
         if (len == 0) {
             return seq;
@@ -304,6 +318,12 @@ public final class Strings {
         return true;
     }
 
+    /**
+     * Trim an array of CharSequences at once.
+     *
+     * @param seqs The strings
+     * @return a new array of CharSequences
+     */
     public static CharSequence[] trim(CharSequence[] seqs) {
         CharSequence[] result = new CharSequence[seqs.length];
         for (int i = 0; i < seqs.length; i++) {
@@ -312,9 +332,20 @@ public final class Strings {
         return result;
     }
 
+    /**
+     * Compare two CharSequences, optionally ignoring case.
+     *
+     * @param a The first
+     * @param b The second
+     * @param ignoreCase If true, do case-insensitive comparison
+     * @return the difference
+     */
     public static int compareCharSequences(CharSequence a, CharSequence b, boolean ignoreCase) {
         if (a == b) {
             return 0;
+        }
+        if (a instanceof String && b instanceof String) {
+            return ((String) a).compareTo((String) b);
         }
         int aLength = a.length();
         int bLength = b.length();
@@ -340,10 +371,21 @@ public final class Strings {
         }
     }
 
+    /**
+     * Get a comparator that calls compareCharSequences().
+     *
+     * @param caseInsensitive If true, do case-insensitive comparison.
+     * @return A comparator
+     */
     public static Comparator<CharSequence> charSequenceComparator(boolean caseInsensitive) {
         return new CharSequenceComparator(caseInsensitive);
     }
 
+    /**
+     * Get a comparator that calls compareCharSequences().
+     *
+     * @return A comparator
+     */
     public static Comparator<CharSequence> charSequenceComparator() {
         return charSequenceComparator(false);
     }
@@ -362,6 +404,11 @@ public final class Strings {
         }
     }
 
+    /**
+     * Returns an empty char sequence.
+     * 
+     * @return An empty char sequence.
+     */
     public static CharSequence emptyCharSequence() {
         return EMPTY;
     }
@@ -405,14 +452,42 @@ public final class Strings {
         }
     }
 
+    /**
+     * Join strings using the passed delimiter.
+     * 
+     * @param delim A delimiter
+     * @param parts The parts
+     * @return A string that joins the strings using the delimiter
+     */
     public static String join(char delim, String... parts) {
         return join(delim, Arrays.asList(parts));
     }
 
-    public static String join(char delim, CharSequence... parts) {
-        return join(delim, Arrays.asList(parts));
+    /**
+     * Join strings using the passed delimiter.
+     * 
+     * @param delim A delimiter
+     * @param parts The parts
+     * @return A string that joins the strings using the delimiter
+     */
+    public static CharSequence join(char delim, CharSequence... parts) {
+        AppendableCharSequence seq = new AppendableCharSequence();
+        for (int i = 0; i < parts.length; i++) {
+            seq.append(parts[i]);
+            if (i != parts.length -1) {
+                seq.append(delim);
+            }
+        }
+        return seq;
     }
 
+    /**
+     * Join strings using the passed delimiter.
+     * 
+     * @param delim A delimiter
+     * @param parts The parts
+     * @return A string that joins the strings using the delimiter
+     */
     public static String join(char delim, Iterable<?> parts) {
         StringBuilder sb = new StringBuilder();
         for (Iterator<?> iter = parts.iterator(); iter.hasNext();) {
@@ -424,6 +499,13 @@ public final class Strings {
         return sb.toString();
     }
 
+    /**
+     * Join strings using the passed delimiter.
+     * 
+     * @param delim A delimiter
+     * @param parts The parts
+     * @return A string that joins the strings using the delimiter
+     */
     public static String join(String delim, Iterable<?> parts) {
         StringBuilder sb = new StringBuilder();
         for (Iterator<?> iter = parts.iterator(); iter.hasNext();) {
@@ -433,6 +515,10 @@ public final class Strings {
             }
         }
         return sb.toString();
+    }
+    
+    public static CharSequence singleChar(char c) {
+        return new SingleCharSequence(c);
     }
 
 //    public static List<CharSequence> splitToList(char delim, CharSequence seq) {
@@ -567,4 +653,82 @@ public final class Strings {
         return false;
     }
 
+    public static int parseInt(CharSequence seq) {
+        int result = 0;
+        int max = seq.length() - 1;
+        int position = 1;
+        boolean negative = false;
+        for (int i = max; i >= 0; i--) {
+            char c = seq.charAt(i);
+            switch (c) {
+                case '-':
+                    if (i == 0) {
+                        negative = true;
+                        continue;
+                    }
+                    throw new NumberFormatException("- encountered not at start of '" + seq + "'");
+                case '0':
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
+                    int prev = result;
+                    result += position * (c - '0');
+                    if (prev > result) {
+                        throw new NumberFormatException("Number too large for integer: '" + seq + "' - "
+                                + " " + prev + " + " + (position * (c - '0')) + " = " + result);
+                    }
+                    position *= 10;
+                    continue;
+                default:
+                    throw new NumberFormatException("Illegal character '" + c + "' in number '" + seq + "'");
+            }
+        }
+        return negative ? -result : result;
+    }
+
+    public static long parseLong(CharSequence seq) {
+        long result = 0;
+        int max = seq.length() - 1;
+        long position = 1;
+        boolean negative = false;
+        for (int i = max; i >= 0; i--) {
+            char c = seq.charAt(i);
+            switch (c) {
+                case '-':
+                    if (i == 0) {
+                        negative = true;
+                        continue;
+                    }
+                    throw new NumberFormatException("- encountered not at start of '" + seq + "'");
+                case '0':
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
+                    long prev = result;
+                    result += position * (c - '0');
+                    if (prev > result) {
+                        throw new NumberFormatException("Number too large for long: '" + seq + "' - "
+                                + " " + prev + " + " + (position * (c - '0')) + " = " + result);
+                    }
+                    position *= 10;
+                    continue;
+                default:
+                    throw new NumberFormatException("Illegal character '" + c + "' in number '" + seq + "'");
+            }
+        }
+        return negative ? -result : result;
+
+    }
 }

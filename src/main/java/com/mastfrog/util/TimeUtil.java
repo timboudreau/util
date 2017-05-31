@@ -229,25 +229,29 @@ public class TimeUtil {
 
     public static Duration parse(String val) {
         long[] vals = new long[5];
-        StringBuilder sb = new StringBuilder();
         char[] chars = val.toCharArray();
         int ix = vals.length - 1;
+        long position = 1;
         for (int i = chars.length - 1; i >= 0; i--) {
+            if (ix < 0) {
+                throw new IllegalArgumentException("Too many fields in '" + val + "'");
+            }
             char c = chars[i];
             switch (c) {
                 case ':':
                 case '.':
-                    if (sb.length() > 0) {
-                        vals[ix--] = Long.parseLong(sb.toString());
-                        sb.setLength(0);
-                    }
+                    ix--;
+                    position = 1;
                     continue;
+                default:
+                    vals[ix] += position * (c - '0');
+                    position *= 10;
+                    if (i == 0) {
+                        continue;
+                    }
             }
-            sb.insert(0, c);
             if (i == 0) {
-                if (sb.length() > 0) {
-                    vals[ix] = Long.parseLong(sb.toString());
-                }
+                vals[ix] += position * (c - '0');
             }
         }
         if (vals[0] > 106_751_991_167_299L) {
@@ -259,20 +263,20 @@ public class TimeUtil {
             if (vals[i] == 0L) {
                 continue;
             }
-            switch(i) {
-                case 1 :
+            switch (i) {
+                case 1:
                     result = result.plus(Duration.ofHours(vals[i]));
                     break;
-                case 2 :
+                case 2:
                     result = result.plus(Duration.ofMinutes(vals[i]));
                     break;
-                case 3 :
+                case 3:
                     result = result.plus(Duration.ofSeconds(vals[i]));
                     break;
-                case 4 :
+                case 4:
                     result = result.plus(Duration.ofMillis(vals[i]));
                     break;
-                default :
+                default:
                     throw new AssertionError(i);
             }
         }

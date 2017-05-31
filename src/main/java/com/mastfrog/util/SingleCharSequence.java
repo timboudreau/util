@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2015 Tim Boudreau.
+ * Copyright 2017 Tim Boudreau.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,62 +21,45 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 package com.mastfrog.util;
 
+import com.mastfrog.util.Strings;
+
 /**
- * Stub implementation in order to support JDK 7.
  *
  * @author Tim Boudreau
  */
-public final class Optional<T> {
+final class SingleCharSequence implements CharSequence {
 
-    private final T value;
+    private final char c;
 
-    Optional(T value) {
-        this.value = value;
+    public SingleCharSequence(char c) {
+        this.c = c;
     }
 
-    public T get() {
-        return value;
+    @Override
+    public int length() {
+        return 1;
     }
 
-    public static <T> Optional<T> of(T obj) {
-        return new Optional<T>(obj);
-    }
-
-    public static <T> Optional<T> fromNullable(T obj) {
-        return ofNullable(obj);
-    }
-
-    public static <T> Optional<T> empty() {
-        return new Optional<T>(null);
-    }
-
-    public static <T> Optional<T> ofNullable(T obj) {
-        return new Optional<T>(obj);
-    }
-
-    public boolean isPresent() {
-        return value != null;
-    }
-
-    public int hashCode() {
-        return value == null ? 0 : value.hashCode();
-    }
-
-    public boolean equals(Object o) {
-        if (o == this) {
-            return true;
+    @Override
+    public char charAt(int index) {
+        if (index == 0) {
+            return c;
         }
-        if (o == null) {
-            return false;
-        }
-        if (o instanceof Optional<?>) {
-            boolean result = (value == null) == (((Optional<?>) o).value == null);
-            if (result && value != null) {
-                return value.equals(((Optional<?>) o).value);
-            }
-        }
-        return false;
+        throw new StringIndexOutOfBoundsException(index + " of 1");
     }
+
+    @Override
+    public CharSequence subSequence(int start, int end) {
+        if (start == 0 && end == 0) {
+            return Strings.emptyCharSequence();
+        }
+        if (start == 0 && end == 1) {
+            return this;
+        }
+        throw new StringIndexOutOfBoundsException("Length is 1 but requested subsequence " + start + " to " + end);
+    }
+
 }

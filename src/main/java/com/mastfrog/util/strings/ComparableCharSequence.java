@@ -23,6 +23,8 @@
  */
 package com.mastfrog.util.strings;
 
+import com.mastfrog.util.Strings;
+
 /**
  *
  * @author Tim Boudreau
@@ -31,7 +33,7 @@ public interface ComparableCharSequence extends CharSequence, Comparable<CharSeq
 
     @Override
     public default int compareTo(CharSequence o) {
-        return EightBitStrings.compareCharSequences(this, o);
+        return Strings.compareCharSequences(this, o, false);
     }
 
     public default boolean startsWith(CharSequence seq) {

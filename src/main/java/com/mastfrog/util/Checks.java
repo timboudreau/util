@@ -1,4 +1,4 @@
-/* 
+/*
  * The MIT License
  *
  * Copyright 2013 Tim Boudreau.
@@ -25,6 +25,8 @@ package com.mastfrog.util;
 
 import java.io.File;
 import java.lang.reflect.Array;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -41,7 +43,7 @@ public final class Checks {
 
     private Checks() {
     }
-    
+
     public static void canCastToInt (String name, long value) {
         if (value > Integer.MAX_VALUE) {
             throw new IllegalArgumentException(name + " too large for an integer: " + value);
@@ -317,6 +319,11 @@ public final class Checks {
         }
     }
 
+    /**
+     * Test that file exists.
+     *
+     * @param file The file
+     */
     public static void fileExists (File file) {
         notNull("file", file);
         if (!file.exists() || !file.isFile()) {
@@ -324,10 +331,45 @@ public final class Checks {
         }
     }
 
+    /**
+     * Test that a file exists and is a folder.
+     *
+     * @param file The file
+     */
     public static void folderExists (File file) {
         notNull("file", file);
         if (!file.exists() || !file.isDirectory()) {
             throw new IllegalArgumentException (file + " does not exist or is not a regular file");
+        }
+    }
+
+    /**
+     * Test that a file exists and the current user has read permission.
+     *
+     * @param file A file
+     */
+    public static void readable(File file) {
+        fileExists(file);
+        if (!file.canRead()) {
+            throw new IllegalArgumentException("Read permission missing on " + file);
+        }
+    }
+
+    /**
+     * Test that a character sequence is encodable in the passe charset.
+     *
+     * @param seq A string
+     * @param charset A character set
+     */
+    public static void encodable (CharSequence seq, Charset charset) {
+        notNull("seq", seq);
+        notNull("charset", charset);
+        CharsetEncoder encoder = charset.newEncoder();
+        if (!encoder.canEncode(seq)) {
+            if (seq.length() > 30) {
+                seq = seq.subSequence(0, 30) + "...";
+            }
+            throw new IllegalArgumentException("Cannot be encoded in " + charset.name() + " '" + seq + "'");
         }
     }
 

@@ -27,6 +27,7 @@ import com.mastfrog.util.Checks;
 import com.mastfrog.util.Strings;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * An appendable implementation for char sequences that does not copy bytes.
@@ -166,6 +167,11 @@ public final class AppendableCharSequence implements Appendable, Comparable<Char
             if (len == 0) {
                 return this;
             }
+            if (len == 1) {
+                length += 1;
+                seqs.add(Strings.singleChar(csq.charAt(0)));
+                return this;
+            }
             length += len;
             seqs.add(csq);
         }
@@ -183,8 +189,16 @@ public final class AppendableCharSequence implements Appendable, Comparable<Char
     }
 
     @Override
-    public Appendable append(char c) {
-        return append(new String(new char[]{c}));
+    public AppendableCharSequence append(char c) {
+        return append(Strings.singleChar(c));
+    }
+
+    public AppendableCharSequence appendObject(Object o) {
+        if (o instanceof CharSequence) {
+            return append((CharSequence) o);
+        } else {
+            return append(Objects.toString(o));
+        }
     }
 
     public String toString() {
@@ -209,5 +223,4 @@ public final class AppendableCharSequence implements Appendable, Comparable<Char
     public int hashCode() {
         return Strings.charSequenceHashCode(this);
     }
-
 }

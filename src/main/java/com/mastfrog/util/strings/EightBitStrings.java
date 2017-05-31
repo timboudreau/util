@@ -58,20 +58,21 @@ public final class EightBitStrings implements Serializable {
     public final CharSequence QUOTE_SPACE = create("\" ");
     public final CharSequence CLOSE_OPEN_QUOTE = create("\" \"");
 
-    private static final boolean ascii = !Boolean.getBoolean("utf");
     private final boolean disabled;
     private final boolean aggressive;
+    private final boolean ascii;
 
     public EightBitStrings(boolean disabled) {
-        this(disabled, false);
+        this(disabled, false, true);
     }
 
-    public EightBitStrings(boolean disabled, boolean aggressive) {
+    public EightBitStrings(boolean disabled, boolean aggressive, boolean ascii) {
         this.disabled = disabled;
         this.aggressive = aggressive;
+        this.ascii = ascii;
     }
 
-    public static Charset charset() {
+    public Charset charset() {
         return ascii ? ASCII : UTF;
     }
 
@@ -174,7 +175,10 @@ public final class EightBitStrings implements Serializable {
         }
     }
 
-    private static byte[] toBytes(CharSequence seq) {
+    private byte[] toBytes(CharSequence seq) {
+        if (seq instanceof Entry) {
+            return ((Entry) seq).bytes;
+        }
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             out.write(seq.toString().getBytes(charset()));
@@ -184,9 +188,9 @@ public final class EightBitStrings implements Serializable {
         }
     }
 
-    private static CharSequence toCharSequence(byte[] bytes) {
+    private static CharSequence toCharSequence(Charset charset, byte[] bytes) {
         try {
-            return charset().newDecoder().decode(ByteBuffer.wrap(bytes));
+            return charset.newDecoder().decode(ByteBuffer.wrap(bytes));
         } catch (CharacterCodingException ex) {
             throw new IllegalArgumentException(ex);
         }
@@ -200,7 +204,7 @@ public final class EightBitStrings implements Serializable {
         return INTERN_TABLE.dumpInternTable();
     }
 
-    static class InternTable implements Serializable {
+    class InternTable implements Serializable {
 
         private static final int SIZE_INCREMENT = 150;
 
@@ -244,7 +248,7 @@ public final class EightBitStrings implements Serializable {
             // We are using an array and binary search to conserve memory
             // here.  This is slower than a HashMap (we sort on insert so
             // we can binary search later), but involves far fewer allocations
-            Entry entry = new Entry(toBytes(seq), (short) seq.length());
+            Entry entry = new Entry(toBytes(seq), (short) seq.length(), ascii);
             synchronized (this) {
                 int offset = last == -1 ? -1 : Arrays.binarySearch(entries, 0, last + 1, entry);
                 if (offset > 0) {
@@ -275,149 +279,159 @@ public final class EightBitStrings implements Serializable {
         List<CharSequence> dumpInternTable() {
             return Arrays.asList(entries);
         }
+    }
 
-        private static final class Entry implements ComparableCharSequence, Serializable {
+    private static final class Entry implements ComparableCharSequence, Serializable {
 
-            private final byte[] bytes;
-            private final short length;
-            int hash = 0;
+        private final byte[] bytes;
+        private final short length;
+        int hash = 0;
+        private final boolean ascii;
 
-            public Entry(byte[] bytes, short length) {
-                if (length < 0) {
-                    throw new Error("String too large");
-                }
-                this.bytes = bytes;
-                this.length = length;
+        public Entry(byte[] bytes, short length, boolean ascii) {
+            if (length < 0) {
+                throw new Error("String too large");
             }
+            this.bytes = bytes;
+            this.length = length;
+            this.ascii = ascii;
+        }
 
-            @Override
-            public int hashCode() {
-                if (hash != 0) {
-                    return hash;
-                }
-                int h = 0;
-                if (h == 0 && bytes.length > 0) {
-                    if (ascii) {
-                        int max = bytes.length;
-                        for (int i = 0; i < max; i++) {
-                            h = 31 * h + ((char) bytes[i]);
-                        }
-                    } else {
-                        CharSequence val = toChars();
-                        int max = val.length();
-                        for (int i = 0; i < max; i++) {
-                            h = 31 * h + val.charAt(i);
-                        }
-                    }
-                }
-                return hash = h;
+        public Charset charset() {
+            return ascii ? ASCII : UTF;
+        }
+
+
+        @Override
+        public int hashCode() {
+            if (hash != 0) {
+                return hash;
             }
-
-            @Override
-            public boolean equals(Object o) {
-                if (o == null) {
-                    return false;
-                } else if (o == this) {
-                    return true;
-                } else if (o instanceof Entry) {
-                    Entry other = (Entry) o;
-                    if (other.bytes.length < bytes.length) {
-                        return false;
+            int h = 0;
+            if (h == 0 && bytes.length > 0) {
+                if (ascii) {
+                    int max = bytes.length;
+                    for (int i = 0; i < max; i++) {
+                        h = 31 * h + ((char) bytes[i]);
                     }
-                    // XXX if two strings with different unicode encodings,
-                    // such as numeric encoding of ascii chars in one,
-                    // will give the wrong answer
-                    return Arrays.equals(bytes, other.bytes);
-                } else if (o instanceof CharSequence) {
-                    return charSequencesEqual(this, (CharSequence) o);
                 } else {
-                    return false;
-                }
-            }
-
-            public int compareChars(Entry o) {
-                int max = Math.min(bytes.length, o.bytes.length);
-                for (int i = 0; i < max; i++) {
-                    if (bytes[i] > o.bytes[i]) {
-                        return 1;
-                    } else if (bytes[i] < o.bytes[i]) {
-                        return -1;
+                    CharSequence val = toChars();
+                    int max = val.length();
+                    for (int i = 0; i < max; i++) {
+                        h = 31 * h + val.charAt(i);
                     }
                 }
-                return 0;
             }
+            return hash = h;
+        }
 
-            public int compare(Entry o) {
-                if (o == this) {
-                    return 0;
+        @Override
+        public boolean equals(Object o) {
+            if (o == null) {
+                return false;
+            } else if (o == this) {
+                return true;
+            } else if (o instanceof Entry) {
+                Entry other = (Entry) o;
+                if (other.bytes.length < bytes.length) {
+                    return false;
                 }
-                int result = compareChars(o);
-                if (result != 0) {
-                    return result;
-                }
-                if (bytes.length == o.bytes.length) {
-                    return 0;
-                } else if (bytes.length > o.bytes.length) {
+                // XXX if two strings with different unicode encodings,
+                // such as numeric encoding of ascii chars in one,
+                // will give the wrong answer
+                return Arrays.equals(bytes, other.bytes);
+            } else if (o instanceof CharSequence) {
+                return charSequencesEqual(this, (CharSequence) o);
+            } else {
+                return false;
+            }
+        }
+
+        public int compareChars(Entry o) {
+            int max = Math.min(bytes.length, o.bytes.length);
+            for (int i = 0; i < max; i++) {
+                if (bytes[i] > o.bytes[i]) {
                     return 1;
-                } else {
+                } else if (bytes[i] < o.bytes[i]) {
                     return -1;
                 }
             }
+            return 0;
+        }
 
-            @Override
-            public String toString() {
-                return new String(bytes, charset());
+        public int compare(Entry o) {
+            if (o == this) {
+                return 0;
             }
-
-            @Override
-            public int length() {
-                return length;
+            if (!ascii) {
+                return Strings.compareCharSequences(this, o, false);
             }
-
-            CharSequence toChars() {
-                return toCharSequence(bytes);
+            int result = compareChars(o);
+            if (result != 0) {
+                return result;
             }
+            if (bytes.length == o.bytes.length) {
+                return 0;
+            } else if (bytes.length > o.bytes.length) {
+                return 1;
+            } else {
+                return -1;
+            }
+        }
 
-            @Override
-            public char charAt(int index) {
-                if (ascii) {
-                    return (char) bytes[index];
+        @Override
+        public String toString() {
+            return new String(bytes, charset());
+        }
+
+        @Override
+        public int length() {
+            return length;
+        }
+
+        CharSequence toChars() {
+            return toCharSequence(charset(), bytes);
+        }
+
+        @Override
+        public char charAt(int index) {
+            if (ascii) {
+                return (char) bytes[index];
+            }
+            return toCharSequence(charset(), bytes).charAt(index);
+        }
+
+        @Override
+        public CharSequence subSequence(int start, int end) {
+            if (start == end) {
+                return Strings.emptyCharSequence();
+            }
+            if (start == 0 && end == length) {
+                return this;
+            }
+            if (ascii) {
+                byte[] b = new byte[end - start];
+                System.arraycopy(bytes, start, b, 0, b.length);
+                return new Entry(b, (short) b.length, ascii);
+            }
+            return toCharSequence(charset(), bytes).subSequence(start, end);
+        }
+
+        @Override
+        public int compareTo(CharSequence o) {
+            if (o instanceof Entry) {
+                return compare((Entry) o);
+            }
+            return compareCharSequences(this, o);
+        }
+
+        private boolean belongsTo(InternTable aThis) {
+            for (Entry e : aThis.entries) {
+                if (e == this) {
+                    return true;
                 }
-                return toCharSequence(bytes).charAt(index);
             }
-
-            @Override
-            public CharSequence subSequence(int start, int end) {
-                if (start == end) {
-                    return Strings.emptyCharSequence();
-                }
-                if (start == 0 && end == length) {
-                    return this;
-                }
-                if (ascii) {
-                    byte[] b = new byte[end-start];
-                    System.arraycopy(bytes, start, b, 0, b.length);
-                    return new Entry(b, (short) b.length);
-                }
-                return toCharSequence(bytes).subSequence(start, end);
-            }
-
-            @Override
-            public int compareTo(CharSequence o) {
-                if (o instanceof Entry) {
-                    return compare((Entry) o);
-                }
-                return compareCharSequences(this, o);
-            }
-
-            private boolean belongsTo(InternTable aThis) {
-                for (Entry e : aThis.entries) {
-                    if (e == this) {
-                        return true;
-                    }
-                }
-                return false;
-            }
+            return false;
         }
     }
 
@@ -428,9 +442,9 @@ public final class EightBitStrings implements Serializable {
         int aLength = a.length();
         int bLength = b.length();
         int max = Math.min(aLength, bLength);
-        if (ascii && a instanceof InternTable.Entry && b instanceof InternTable.Entry) {
-            InternTable.Entry ae = (InternTable.Entry) a;
-            InternTable.Entry be = (InternTable.Entry) b;
+        if (a instanceof Entry && b instanceof Entry) {
+            Entry ae = (Entry) a;
+            Entry be = (Entry) b;
             return ae.compare(be);
         } else {
             for (int i = 0; i < max; i++) {
@@ -454,19 +468,19 @@ public final class EightBitStrings implements Serializable {
 
     static class Concatenation implements ComparableCharSequence, Comparable<CharSequence>, Serializable {
 
-        private final InternTable.Entry[] entries;
+        private final Entry[] entries;
         private final InternTable table;
 
         Concatenation(InternTable table, CharSequence... entries) {
             this.table = table;
-            List<InternTable.Entry> l = new ArrayList<>(entries.length);
+            List<Entry> l = new ArrayList<>(entries.length);
             for (CharSequence cs : entries) {
                 if (cs instanceof Concatenation) {
                     Concatenation c1 = (Concatenation) cs;
                     if (c1.belongsTo(table)) {
                         l.addAll(Arrays.asList(c1.entries));
                     } else {
-                        for (InternTable.Entry e : c1.entries) {
+                        for (Entry e : c1.entries) {
                             l.add(table.intern(e));
                         }
                     }
@@ -474,7 +488,7 @@ public final class EightBitStrings implements Serializable {
                     l.add(table.intern(cs));
                 }
             }
-            this.entries = l.toArray(new InternTable.Entry[l.size()]);
+            this.entries = l.toArray(new Entry[l.size()]);
         }
 
         @Override
@@ -492,7 +506,7 @@ public final class EightBitStrings implements Serializable {
                 throw new IndexOutOfBoundsException("0 length but asked for " + index);
             }
             for (int i = 0; i < entries.length; i++) {
-                InternTable.Entry e = entries[i];
+                Entry e = entries[i];
                 if (index >= e.length) {
                     index -= e.length;
                 } else {
@@ -548,7 +562,7 @@ public final class EightBitStrings implements Serializable {
 
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            for (InternTable.Entry e : entries) {
+            for (Entry e : entries) {
                 sb.append(e);
             }
             if (debug) {
@@ -563,7 +577,7 @@ public final class EightBitStrings implements Serializable {
         public int hashCode() {
             int h = hash;
             if (h == 0 && length() > 0) {
-                for (InternTable.Entry e : entries) {
+                for (Entry e : entries) {
                     CharSequence chars = e.toChars();
                     int max = chars.length();
                     for (int i = 0; i < max; i++) {
@@ -627,8 +641,8 @@ public final class EightBitStrings implements Serializable {
     }
 
     private static boolean charSequencesEqual(CharSequence a, CharSequence b) {
-        if (ascii && a instanceof InternTable.Entry && b instanceof InternTable.Entry) {
-            return Arrays.equals(((InternTable.Entry) a).bytes, ((InternTable.Entry) b).bytes);
+        if (a instanceof Entry && b instanceof Entry) {
+            return Arrays.equals(((Entry) a).bytes, ((Entry) b).bytes);
         }
         if (a instanceof Concatenation && b instanceof Concatenation) {
             Concatenation ca = (Concatenation) a;
@@ -662,6 +676,7 @@ public final class EightBitStrings implements Serializable {
             this.s = s.intern();
         }
 
+        @Override
         public int length() {
             return s.length();
         }
@@ -670,6 +685,7 @@ public final class EightBitStrings implements Serializable {
             return s.isEmpty();
         }
 
+        @Override
         public char charAt(int index) {
             return s.charAt(index);
         }

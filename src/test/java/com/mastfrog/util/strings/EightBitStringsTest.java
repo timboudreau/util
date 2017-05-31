@@ -194,7 +194,7 @@ public class EightBitStringsTest {
 
     @Test
     public void testAggressive() {
-        EightBitStrings strings = new EightBitStrings(false, true);
+        EightBitStrings strings = new EightBitStrings(false, true, true);
         ComparableCharSequence c = strings.concat("com.foo.", "bar.baz.", "Hey$You");
         assertEquals("com.foo.bar.baz.Hey$You", c.toString());
         ComparableCharSequence c2 = strings.concat("com.foo.", "bar.whoodle.", "Hey$You");
@@ -219,7 +219,7 @@ public class EightBitStringsTest {
 
     @Test
     public void testMoreSorting() {
-        EightBitStrings strings = new EightBitStrings(false, true);
+        EightBitStrings strings = new EightBitStrings(false, true, true);
         char[] chars = "QWERTYUIOPASDFGHJKLZXCVBNM<>?:}\"!@#$%^&*()_+1234567890qwertyuiopasdfghjklzxcvbnm,./;'[]=-\\|`~ \t".toCharArray();
         Arrays.sort(chars);
         Random r = new Random(5);
