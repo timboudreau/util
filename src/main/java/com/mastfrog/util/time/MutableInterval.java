@@ -22,42 +22,59 @@
  * THE SOFTWARE.
  */
 
-package com.mastfrog.util;
+package com.mastfrog.util.time;
+
+import java.time.Instant;
 
 /**
  *
  * @author Tim Boudreau
  */
-final class SingleCharSequence implements CharSequence {
+public class MutableInterval extends Interval {
 
-    private final char c;
+    private Instant start;
+    private Instant end;
 
-    SingleCharSequence(char c) {
-        this.c = c;
+    public MutableInterval(Instant start, Instant end) {
+        this.start = start;
+        this.end = end;
+    }
+    public MutableInterval(Interval other) {
+        this.start = other.start();
+        this.end = other.end();
+    }
+    
+    public MutableInterval setStart(Instant start) {
+        this.start = start;
+        if (start.isAfter(end)) {
+            this.start = end;
+            this.end = start;
+        }
+        return this;
+    }
+    
+    public MutableInterval setEnd(Instant end) {
+        this.end = end;
+        if (end.isAfter(start)) {
+            this.end = start;
+            this.start = end;
+        }
+        return this;
     }
 
     @Override
-    public int length() {
-        return 1;
+    public Instant start() {
+        return start;
     }
 
     @Override
-    public char charAt(int index) {
-        if (index == 0) {
-            return c;
-        }
-        throw new StringIndexOutOfBoundsException(index + " of 1");
+    public Instant end() {
+        return end;
     }
 
     @Override
-    public CharSequence subSequence(int start, int end) {
-        if (start == 0 && end == 0) {
-            return Strings.emptyCharSequence();
-        }
-        if (start == 0 && end == 1) {
-            return this;
-        }
-        throw new StringIndexOutOfBoundsException("Length is 1 but requested subsequence " + start + " to " + end);
+    public MutableInterval toMutableInterval() {
+        return new MutableInterval(this);
     }
 
 }

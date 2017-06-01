@@ -21,8 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util;
+package com.mastfrog.util.time;
 
+import com.mastfrog.util.Checks;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.time.Duration;
@@ -139,22 +140,22 @@ public class TimeUtil {
 
     public static Duration minutes(int minutes) {
         Checks.nonNegative("minutes", minutes);
-        return Duration.of(minutes, ChronoUnit.MINUTES);
+        return Duration.ofMinutes(minutes);
     }
 
     public static Duration minutes(long minutes) {
         Checks.nonNegative("minutes", minutes);
-        return Duration.of(minutes, ChronoUnit.MINUTES);
+        return Duration.ofMinutes(minutes);
     }
 
     public static Duration seconds(int seconds) {
         Checks.nonNegative("seconds", seconds);
-        return Duration.of(seconds, ChronoUnit.SECONDS);
+        return Duration.ofSeconds(seconds);
     }
 
     public static Duration seconds(long seconds) {
         Checks.nonNegative("seconds", seconds);
-        return Duration.of(seconds, ChronoUnit.SECONDS);
+        return Duration.ofSeconds(seconds);
     }
 
     public static Duration millis(int milliseconds) {
@@ -169,22 +170,22 @@ public class TimeUtil {
 
     public static Duration days(int days) {
         Checks.nonNegative("days", days);
-        return Duration.of(days, ChronoUnit.DAYS);
+        return Duration.ofDays(days);
     }
 
     public static Duration days(long days) {
         Checks.nonNegative("days", days);
-        return Duration.of(days, ChronoUnit.DAYS);
+        return Duration.ofDays(days);
     }
 
     public static Duration years(long years) {
         Checks.nonNegative("years", years);
-        return Duration.of(years, ChronoUnit.YEARS);
+        return Duration.ofDays(365 * years);
     }
 
     public static Duration years(int years) {
         Checks.nonNegative("years", years);
-        return Duration.of(years, ChronoUnit.YEARS);
+        return Duration.ofDays(365 * years);
     }
 
     public static long millis(Duration duration) {
@@ -194,7 +195,7 @@ public class TimeUtil {
 
     public static long seconds(Duration duration) {
         Checks.notNull("duration", duration);
-        return duration.toMillis() / 1000;
+        return duration.toMillis() / 1_000;
     }
 
     private static final NumberFormat TWO_DIGITS = new DecimalFormat("00");
@@ -212,8 +213,8 @@ public class TimeUtil {
         long seconds = 0;
         long millis = 0;
         try {
-            seconds = (dur.toMillis() / 1000) % 60;
-            millis = dur.toMillis() % 1000;
+            seconds = (dur.toMillis() / 1_000) % 60;
+            millis = dur.toMillis() % 1_000;
         } catch (Exception e) {
             seconds = 0;
         }
@@ -292,4 +293,40 @@ public class TimeUtil {
             sb.append(fmt.format(val));
         }
     }
+
+    public static boolean isLonger(Duration test, Duration other) {
+        return test.toMillis() > other.toMillis();
+    }
+
+    public static boolean isShorter(Duration test, Duration other) {
+        return test.toMillis() < other.toMillis();
+    }
+
+    public static boolean isAfterEqualOrNullSecondsResolution(ZonedDateTime when, ZonedDateTime test) {
+        if (test == null) {
+            return true;
+        }
+        when = when.withSecond(0);
+        test = test.withSecond(0);
+        return test.isAfter(when) || test.toInstant().equals(when.toInstant());
+    }
+
+    public static boolean isBeforeEqualOrNullSecondsResolution(ZonedDateTime when, ZonedDateTime test) {
+        if (test == null) {
+            return true;
+        }
+        when = when.withSecond(0);
+        test = test.withSecond(0);
+        return test.isBefore(when) || test.toInstant().equals(when.toInstant());
+    }
+
+    /**
+     * The maximum Duration possible before arithmetic overflow.
+     */
+    public static final Duration MAX_DURATION = Duration.ofDays(106751991167300L);
+    /**
+     * The maximum Duration less ten years, for cases where it will be added to.
+     */
+    public static final Duration MAX_SAFE_DURATION = Duration.ofDays(106751991167300L).minus(Duration.ofDays(365 * 10));
+
 }

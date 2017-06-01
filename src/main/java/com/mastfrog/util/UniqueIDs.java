@@ -59,7 +59,7 @@ public final class UniqueIDs {
      */
     public UniqueIDs(File appfile) throws IOException {
         SecureRandom sr = new SecureRandom();
-        int ts = (int) (System.currentTimeMillis() - 1483853019824L + sr.nextInt(60000 * 12));
+        int ts = (int) (System.currentTimeMillis() - 1_483_853_019_824L + sr.nextInt(60_000 * 12));
         seq = new AtomicInteger(ts);
         random = new Random(sr.nextLong());
         // Identifier for this process

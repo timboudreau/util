@@ -96,7 +96,7 @@ public final class Streams {
      */
     public static int copy(final InputStream in, final OutputStream out)
             throws IOException {
-        final byte[] buffer = new byte[4096];
+        final byte[] buffer = new byte[4_096];
         int bytesCopied = 0;
         for (;;) {
             int byteCount = in.read(buffer, 0, buffer.length);
@@ -121,7 +121,7 @@ public final class Streams {
      */
     public static int copy(final InputStream in, final OutputStream out, final OutputStream otherOut)
             throws IOException {
-        final byte[] buffer = new byte[4096];
+        final byte[] buffer = new byte[4_096];
         int bytesCopied = 0;
         while (true) {
             int byteCount = in.read(buffer, 0, buffer.length);
@@ -147,11 +147,8 @@ public final class Streams {
      * @throws IOException
      */
     public static String readString(final InputStream in) throws IOException {
-        Reader r = new BufferedReader(new InputStreamReader(in));
-        try {
+        try (Reader r = new BufferedReader(new InputStreamReader(in))) {
             return readString(r);
-        } finally {
-            r.close();
         }
     }
 
@@ -164,11 +161,8 @@ public final class Streams {
      */
     public static String readString(final InputStream in, int bufferSize) throws IOException {
         Checks.nonNegative("bufferSize", bufferSize);
-        Reader r = bufferSize <= 0 ? new InputStreamReader(in) : new BufferedReader(new InputStreamReader(in), bufferSize);
-        try {
+        try (Reader r = bufferSize <= 0 ? new InputStreamReader(in) : new BufferedReader(new InputStreamReader(in), bufferSize)) {
             return readString(r);
-        } finally {
-            r.close();
         }
     }
 
@@ -182,11 +176,8 @@ public final class Streams {
      */
     public static String readString(final InputStream in, String charset, int bufferSize) throws IOException {
         Checks.nonNegative("bufferSize", bufferSize);
-        Reader r = bufferSize == 0 ? new InputStreamReader(in) : new BufferedReader(new InputStreamReader(in), bufferSize);
-        try {
+        try (Reader r = bufferSize == 0 ? new InputStreamReader(in) : new BufferedReader(new InputStreamReader(in), bufferSize)) {
             return readString(r);
-        } finally {
-            r.close();
         }
     }
 
@@ -198,11 +189,8 @@ public final class Streams {
      * @throws IOException if something goes wrong
      */
     public static String readString(final InputStream in, String charset) throws IOException {
-        Reader r = new BufferedReader(new InputStreamReader(in, Charset.forName(charset)));
-        try {
+        try (Reader r = new BufferedReader(new InputStreamReader(in, Charset.forName(charset)))) {
             return readString(r);
-        } finally {
-            r.close();
         }
     }
 
@@ -255,11 +243,8 @@ public final class Streams {
      */
     public static String readString(final InputStream in,
             final CharSequence encoding) throws IOException {
-        Reader r = new BufferedReader(new InputStreamReader(in, encoding.toString()));
-        try {
+        try (Reader r = new BufferedReader(new InputStreamReader(in, encoding.toString()))) {
             return readString(r);
-        } finally {
-            r.close();
         }
     }
 
@@ -271,7 +256,7 @@ public final class Streams {
      * @throws IOException
      */
     public static String readString(final Reader in) throws IOException {
-        final StringBuilder buffer = new StringBuilder(2048);
+        final StringBuilder buffer = new StringBuilder(2_048);
         int value;
 
         while ((value = in.read()) != -1) {
@@ -283,7 +268,7 @@ public final class Streams {
 
     static class NamedInputStream extends FilterInputStream {
         private final String name;
-        public NamedInputStream(Object src, InputStream in) {
+        NamedInputStream(Object src, InputStream in) {
             super(in);
             name = src + "";
         }
@@ -304,7 +289,7 @@ public final class Streams {
      */
     public static InputStream[] locate(String location) {
         Checks.notNull("location", location);
-        List<InputStream> inputStreams = new ArrayList<InputStream>();
+        List<InputStream> inputStreams = new ArrayList<>();
         try {
             if (location.contains("://") || location.startsWith("file:/")) {
                 URL url = new URL(location);
@@ -384,13 +369,13 @@ public final class Streams {
             res.rewind();
             return res;
         }
-        ByteBuffer buf = ByteBuffer.allocateDirect(2048);
+        ByteBuffer buf = ByteBuffer.allocateDirect(2_048);
         int pos = 0;
         int amt;
-        byte[] b = new byte[2048];
+        byte[] b = new byte[2_048];
         while ((amt = in.read(b)) > 0) {
             if (pos + amt > buf.capacity()) {
-                ByteBuffer nue = ByteBuffer.allocateDirect(buf.capacity() + 2048);
+                ByteBuffer nue = ByteBuffer.allocateDirect(buf.capacity() + 2_048);
                 buf.rewind();
                 nue.put(buf);
                 buf = nue;
@@ -494,7 +479,7 @@ public final class Streams {
     private static final class ByteBufferOutputStream extends OutputStream {
         private final ByteBuffer buffer;
 
-        public ByteBufferOutputStream(ByteBuffer buffer) {
+        ByteBufferOutputStream(ByteBuffer buffer) {
             this.buffer = buffer;
         }
 
@@ -572,7 +557,7 @@ public final class Streams {
 
         @Override
         public int read(ByteBuffer dst) throws IOException {
-            byte[] b = new byte[2048];
+            byte[] b = new byte[2_048];
             int result = in.read(b);
             if (result > 0) {
                 dst.put(b);
@@ -652,27 +637,21 @@ public final class Streams {
         } else if (nue.isDirectory()) {
             throw new IllegalArgumentException("Copying file to a directory");
         }
-        FileInputStream in = new FileInputStream(orig);
-        try {
+        try (FileInputStream in = new FileInputStream(orig)) {
             FileChannel inChannel = in.getChannel();
             try {
-                FileOutputStream out = new FileOutputStream(nue);
-                try {
+                try (FileOutputStream out = new FileOutputStream(nue)) {
                     FileChannel outChannel = out.getChannel();
                     try {
                         inChannel.transferTo(0, inChannel.size(), outChannel);
                     } finally {
                         outChannel.close();
                     }
-                } finally {
-                    out.close();
                 }
             } finally {
                 inChannel.close();
             }
 
-        } finally {
-            in.close();
         }
     }
 
@@ -999,17 +978,11 @@ public final class Streams {
                 for (PrintStream pp : p) {
                     try {
                         m.invoke(pp);
-                    } catch (IllegalAccessException ex) {
-                        Logger.getLogger(Streams.class.getName()).log(Level.SEVERE, null, ex);
-                    } catch (IllegalArgumentException ex) {
-                        Logger.getLogger(Streams.class.getName()).log(Level.SEVERE, null, ex);
-                    } catch (InvocationTargetException ex) {
+                    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
                         Logger.getLogger(Streams.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
-            } catch (NoSuchMethodException ex) {
-                Logger.getLogger(Streams.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (SecurityException ex) {
+            } catch (NoSuchMethodException | SecurityException ex) {
                 Logger.getLogger(Streams.class.getName()).log(Level.SEVERE, null, ex);
             }
         }

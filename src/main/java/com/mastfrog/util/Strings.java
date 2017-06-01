@@ -162,9 +162,9 @@ public final class Strings {
      */
     public static String toString(final Throwable throwable) {
         StringWriter w = new StringWriter();
-        PrintWriter p = new PrintWriter(w);
-        throwable.printStackTrace(p);
-        p.close();
+        try (PrintWriter p = new PrintWriter(w)) {
+            throwable.printStackTrace(p);
+        }
         return w.toString();
     }
 
@@ -394,7 +394,7 @@ public final class Strings {
 
         private final boolean caseInsensitive;
 
-        public CharSequenceComparator(boolean caseInsensitive) {
+        CharSequenceComparator(boolean caseInsensitive) {
             this.caseInsensitive = caseInsensitive;
         }
 
@@ -406,7 +406,7 @@ public final class Strings {
 
     /**
      * Returns an empty char sequence.
-     * 
+     *
      * @return An empty char sequence.
      */
     public static CharSequence emptyCharSequence() {
@@ -454,7 +454,7 @@ public final class Strings {
 
     /**
      * Join strings using the passed delimiter.
-     * 
+     *
      * @param delim A delimiter
      * @param parts The parts
      * @return A string that joins the strings using the delimiter
@@ -465,7 +465,7 @@ public final class Strings {
 
     /**
      * Join strings using the passed delimiter.
-     * 
+     *
      * @param delim A delimiter
      * @param parts The parts
      * @return A string that joins the strings using the delimiter
@@ -474,7 +474,7 @@ public final class Strings {
         AppendableCharSequence seq = new AppendableCharSequence();
         for (int i = 0; i < parts.length; i++) {
             seq.append(parts[i]);
-            if (i != parts.length -1) {
+            if (i != parts.length - 1) {
                 seq.append(delim);
             }
         }
@@ -483,7 +483,7 @@ public final class Strings {
 
     /**
      * Join strings using the passed delimiter.
-     * 
+     *
      * @param delim A delimiter
      * @param parts The parts
      * @return A string that joins the strings using the delimiter
@@ -501,7 +501,7 @@ public final class Strings {
 
     /**
      * Join strings using the passed delimiter.
-     * 
+     *
      * @param delim A delimiter
      * @param parts The parts
      * @return A string that joins the strings using the delimiter
@@ -516,7 +516,7 @@ public final class Strings {
         }
         return sb.toString();
     }
-    
+
     public static CharSequence singleChar(char c) {
         return new SingleCharSequence(c);
     }
@@ -629,7 +629,7 @@ public final class Strings {
 
     public static boolean charSequenceContains(CharSequence container, CharSequence contained, boolean ignoreCase) {
         if (!ignoreCase && container instanceof String && contained instanceof String) {
-            return ((String) container).contains((String) contained);
+            return ((String) container).contains(contained);
         }
         int containedLength = contained.length();
         int containerLength = container.length();
@@ -729,6 +729,48 @@ public final class Strings {
             }
         }
         return negative ? -result : result;
+    }
 
+    public static int indexOf(char c, CharSequence seq) {
+        int max = seq.length();
+        for (int i = 0; i < max; i++) {
+            if (c == seq.charAt(i)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public static int lastIndexOf(char c, CharSequence seq) {
+        int max = seq.length() - 1;
+        for (int i = max; i >= 0; i--) {
+            if (c == seq.charAt(i)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Interleave the characters of two strings.
+     *
+     * @param a The first string
+     * @param b The second string
+     * @return A string combining both
+     */
+    public static String interleave(CharSequence a, CharSequence b) {
+        StringBuilder sb = new StringBuilder();
+        int maxA = a.length();
+        int maxB = b.length();
+        int max = Math.max(maxA, maxB);
+        for (int i = 0; i < max; i++) {
+            if (i < maxA) {
+                sb.append(a.charAt(i));
+            }
+            if (i < maxB) {
+                sb.append(b.charAt(i));
+            }
+        }
+        return sb.toString();
     }
 }

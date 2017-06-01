@@ -21,8 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util;
+package com.mastfrog.util.time;
 
+import com.mastfrog.util.time.TimeUtil;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import org.junit.Test;
