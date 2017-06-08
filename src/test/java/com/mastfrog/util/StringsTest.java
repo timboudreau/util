@@ -105,6 +105,12 @@ public class StringsTest {
         assertTrue(Strings.startsWithIgnoreCase(a, b));
         assertFalse(Strings.startsWith(b, a));
     }
+    
+    public void testStartsWith2() {
+        assertTrue(Strings.startsWith("bytes=1-10", "bytes="));
+        assertFalse(Strings.startsWith("BYTES=1-10", "bytes="));
+        assertFalse(Strings.startsWithIgnoreCase("BYTES=1-10", "bytes="));
+    }
 
     @Test
     public void testSplit2() {
