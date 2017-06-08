@@ -277,14 +277,10 @@ public final class IntSet implements Set<Integer> {
         return new InteratorImpl(bits);
     }
     
-    public interface Interator {
-        public boolean hasNext();
-        public int next();
-    }
     
     private static class InteratorImpl implements Interator {
         int pos = 0;
-        private final BitSet bits;
+        final BitSet bits;
 
         public InteratorImpl(BitSet bits) {
             this.bits = bits;

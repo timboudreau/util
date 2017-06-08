@@ -36,9 +36,30 @@ import static org.junit.Assert.*;
 public class BinarySearchTest {
 
     @Test
-    public void testSearchFor() {
-        assertTrue(true);
+    public void testPreHead() {
+        long[] lngs = new long[] { 21, 22, 26, 27, 28, 29};
+        BinarySearch<Long> search = BinarySearch.binarySearch(lngs.length, (Long t) -> lngs[t.intValue()]);
 
+        assertEquals(1, search.search(22, Bias.NONE));
+        assertEquals(1, search.search(22, Bias.BACKWARD));
+        assertEquals(1, search.search(22, Bias.FORWARD));
+
+        assertEquals(-1, search.search(24, Bias.NONE));
+        assertEquals(2, search.search(24, Bias.FORWARD));
+        assertEquals(1, search.search(24, Bias.BACKWARD));
+
+        assertEquals(0, search.search(19, Bias.FORWARD));
+        assertEquals(5, search.search(31, Bias.BACKWARD));
+
+        assertEquals(-1, search.search(19, Bias.BACKWARD));
+        assertEquals(-1, search.search(31, Bias.FORWARD));
+
+        assertEquals(0, search.search(19, Bias.NEAREST));
+        assertEquals(5, search.search(31, Bias.NEAREST));
+    }
+
+    @Test
+    public void testSearchFor() {
         List<W> l = W.listOf(5, 10, 15, 20, 25, 30, 35, 40);
         BinarySearch<W> bs = new BinarySearch<W>(new E(), l);
 
@@ -58,13 +79,13 @@ public class BinarySearchTest {
 
         w = bs.searchFor(45, Bias.NEAREST);
         assertEquals(40, w.value);
-//        
+//
 //        w = bs.searchFor(45, Bias.FORWARD);
 //        assertNull("" + w, w);
-//        
+//
 //        w = bs.searchFor(-11, Bias.BACKWARD);
 //        assertNull(w + "", w);
-        
+
 
         l = W.listOf(105, 10, 15, 20, 25, 30, 35, 40);
         try {
@@ -72,9 +93,6 @@ public class BinarySearchTest {
             fail("Constructed out of order");
         } catch (Throwable t) {
         }
-
-
-
     }
 
     private static class W implements Comparable<W> {
@@ -92,7 +110,7 @@ public class BinarySearchTest {
             }
             return result;
         }
-        
+
         @Override
         public String toString() {
             return value + "";

@@ -30,11 +30,13 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.function.Consumer;
 
 /**
  * Handles a few collections omissions
@@ -46,6 +48,51 @@ public final class CollectionUtils {
     private CollectionUtils() {
     }
 
+    public static <T, R> Map<R, T> reverse(Map<T, R> map) {
+        Map<R, T> result = map instanceof LinkedHashMap<?, ?> ? new LinkedHashMap<>()
+                : new HashMap<>();
+        for (Map.Entry<T, R> e : map.entrySet()) {
+            result.put(e.getValue(), e.getKey());
+        }
+        return result;
+    }
+
+    /**
+     * Create a map builder.
+     *
+     * @param <T> The key type
+     * @param <R> The value type
+     * @return A map builder
+     */
+    public static <T, R> MapBuilder2<T, R> map() {
+        return new MapBuilder2Impl<T, R>();
+    }
+
+    /**
+     * Create a map builder in-progress setting the first key to the passed
+     * value.
+     *
+     * @param <T> The key type
+     * @param <R> The value type
+     * @param key The initial key
+     * @return A ValueBuilder which will return a MapBuilder when map.
+     */
+    public static <T, R> MapBuilder2.ValueBuilder<T, R> map(T key) {
+        return new MapBuilder2Impl<T, R>().map(key);
+    }
+
+    /**
+     * Create a map which wraps another and converts its keys to some other
+     * object type - useful for things like case-insensitive String maps.
+     *
+     * @param <From> The key type to use
+     * @param <T> The original key type
+     * @param <R> The value type
+     * @param from The key type to use
+     * @param delegate The original map
+     * @param converter A converter which can interconvert objects for lookups
+     * @return A map that proxies the original
+     */
     public static <From, T, R> Map<From, R> convertedKeyMap(Class<From> from, Map<T, R> delegate, Converter<T, From> converter) {
         return new ConvertedMap<From, T, R, From>(from, delegate, converter);
     }
@@ -125,7 +172,7 @@ public final class CollectionUtils {
      * contain at most one item, and minimizing memory allocation is a concern.
      * <p/>
      * The returned list may not have null as a member -
-     * <code>set(0, null)</code> is equivalent to clear();
+     * <code>map(0, null)</code> is equivalent to clear();
      *
      * @param <T> The type
      * @return A list that can contain 0 or 1 item
@@ -147,7 +194,7 @@ public final class CollectionUtils {
      * @return A list that can contain 0 or 1 item
      */
     public static <T> List<T> oneItemList(T item) {
-        return new SingleItemList<T>(item);
+        return new SingleItemList<>(item);
     }
 
     /**
@@ -184,16 +231,18 @@ public final class CollectionUtils {
     public static <T, R> List<R> convertedList(List<T> list, Converter<R, T> converter, Class<T> fromType, Class<R> toType) {
         return new ConvertList<>(toType, fromType, list, converter);
     }
-    
+
     /**
-     * Generic munging - treat a List&lt;String&gt; as an unmodifiable List&lt;CharSequence&gt; and so forth.
+     * Generic munging - treat a List&lt;String&gt; as an unmodifiable
+     * List&lt;CharSequence&gt; and so forth.
+     *
      * @param <T> The target type
      * @param l The list
      * @return An unmodifiable list
      */
     @SuppressWarnings("unchecked")
     public static <T> List<T> generalize(List<? extends T> l) {
-        return Collections.<T>unmodifiableList((List)l);
+        return Collections.<T>unmodifiableList((List) l);
     }
 
     /**
@@ -546,7 +595,7 @@ public final class CollectionUtils {
 
         @Override
         public Iterator<T> iterator() {
-            return this;
+            return new EnumIterator<>(enumeration);
         }
     }
 
@@ -574,8 +623,126 @@ public final class CollectionUtils {
         }
 
         @Override
+        public void forEachRemaining(Consumer<? super T> action) {
+            if (!done) {
+                done = true;
+                action.accept(object);
+            }
+        }
+
+        @Override
         public void remove() {
             throw new UnsupportedOperationException();
+        }
+    }
+
+    public static Iterator<Integer> toIterator(final int[] vals) {
+        return new IntArrayIterator(vals);
+    }
+
+    public static Iterator<Long> toIterator(final long[] vals) {
+        return new LongArrayIterator(vals);
+    }
+    
+    public static Interator toInterator(final int[] vals) {
+        return new ArrayInterator(vals);
+    }
+    
+    public static Longerator toLongerator(final long[] vals) {
+        return new ArrayLongerator(vals);
+    }
+
+    private static final class IntArrayIterator implements Iterator<Integer> {
+
+        private final int[] vals;
+
+        public IntArrayIterator(int[] vals) {
+            this.vals = vals;
+        }
+        int ix = 0;
+
+        @Override
+        public boolean hasNext() {
+            return ix < vals.length;
+        }
+
+        @Override
+        public Integer next() {
+            return vals[ix++];
+        }
+
+        @Override
+        public void forEachRemaining(Consumer<? super Integer> action) {
+            for (int i = 0; i < vals.length; i++) {
+                action.accept(vals[i]);
+            }
+        }
+    }
+
+    private static final class LongArrayIterator implements Iterator<Long> {
+
+        private final long[] vals;
+
+        public LongArrayIterator(long[] vals) {
+            this.vals = vals;
+        }
+        int ix = 0;
+
+        @Override
+        public boolean hasNext() {
+            return ix < vals.length;
+        }
+
+        @Override
+        public Long next() {
+            return vals[ix++];
+        }
+
+        @Override
+        public void forEachRemaining(Consumer<? super Long> action) {
+            for (int i = 0; i < vals.length; i++) {
+                action.accept(vals[i]);
+            }
+        }
+    }
+
+    private static final class ArrayInterator implements Interator {
+
+        private final int[] vals;
+
+        public ArrayInterator(int[] vals) {
+            this.vals = vals;
+        }
+        int ix = 0;
+
+        @Override
+        public boolean hasNext() {
+            return ix < vals.length;
+        }
+
+        @Override
+        public int next() {
+            return vals[ix++];
+        }
+    }
+
+    private static final class ArrayLongerator implements Longerator {
+
+        private final long[] vals;
+
+        public ArrayLongerator(long[] vals) {
+            this.vals = vals;
+        }
+        int ix =0;
+
+        @Override
+        public long next() {
+            return vals[ix++];
+        }
+
+        @Override
+        public boolean hasNext() {
+            return ix < vals.length;
         }
     }
 }

@@ -24,21 +24,23 @@
 package com.mastfrog.util.search;
 
 import java.util.List;
+import java.util.function.Function;
+import java.util.function.LongFunction;
+import java.util.function.ToLongFunction;
 
 /**
- * General-purpose binary search algorithm;  you pass in an array or list
- * wrapped in an instance of <code>Indexed</code>, and an
- * <code>Evaluator</code> which converts the contents of the list into
- * numbers used by the binary search algorithm.  Note that the data
- * (as returned by the Indexed array/list) <b><i>must be in order from
- * low to high</i></b>.  The indices need not be contiguous (presumably
- * they are not or you wouldn't be using this class), but they must be
- * sorted.  If assertions are enabled, this is enforced;  if not, very
- * bad things (endless loops, etc.) can happen as a consequence of passing
+ * General-purpose binary search algorithm; you pass in an array or list wrapped
+ * in an instance of <code>Indexed</code>, and an <code>Evaluator</code> which
+ * converts the contents of the list into numbers used by the binary search
+ * algorithm. Note that the data (as returned by the Indexed array/list)
+ * <b><i>must be in order from low to high</i></b>. The indices need not be
+ * contiguous (presumably they are not or you wouldn't be using this class), but
+ * they must be sorted. If assertions are enabled, this is enforced; if not,
+ * very bad things (endless loops, etc.) can happen as a consequence of passing
  * unsorted data in.
  * <p/>
- * This class is not thread-safe and the size and contents of the <code>Indexed</code>
- * should not change while a search is being performed.
+ * This class is not thread-safe and the size and contents of the
+ * <code>Indexed</code> must not change while a search is being performed.
  *
  * @author Tim Boudreau
  */
@@ -49,7 +51,7 @@ public class BinarySearch<T> {
 
     /**
      * Create a new binary search.
-     * 
+     *
      * @param eval The thing which converts elements into numbers
      * @param indexed A collection, list or array
      */
@@ -58,15 +60,56 @@ public class BinarySearch<T> {
         this.indexed = indexed;
         assert checkSorted();
     }
-    
+
     public BinarySearch(Evaluator<T> eval, List<T> l) {
-        this (eval, new ListWrap<T>(l));
+        this(eval, new ListWrap<T>(l));
     }
-    
+
+    public BinarySearch(ToLongFunction<T> eval, final long count, LongFunction<T> getter) {
+        this((value) -> {return eval.applyAsLong(value);}, new LongFunctionWrapper<T>(count, getter));
+    }
+
+    private static final class LongFunctionWrapper<T> implements Indexed<T> {
+
+        private final long count;
+        private final LongFunction<T> getter;
+
+        public LongFunctionWrapper(long count, LongFunction<T> getter) {
+            this.count = count;
+            this.getter = getter;
+        }
+
+        @Override
+        public T get(long index) {
+            return getter.apply(index);
+        }
+
+        @Override
+        public long size() {
+            return count;
+        }
+    }
+
+    public static <R extends Number> BinarySearch<R> binarySearch(long count, Function<Long, R> indexer) {
+        Evaluator<R> eval = Number::longValue;
+        Indexed<R> ix = new Indexed<R>() {
+            @Override
+            public R get(long index) {
+                return indexer.apply(index);
+            }
+
+            @Override
+            public long size() {
+                return count;
+            }
+        };
+        return new BinarySearch<>(eval, ix);
+    }
+
     private boolean checkSorted() {
         long val = Long.MIN_VALUE;
         long sz = indexed.size();
-        for (long i=0; i < sz; i++) {
+        for (long i = 0; i < sz; i++) {
             T t = indexed.get(i);
             long nue = eval.getValue(t);
             if (val != Long.MIN_VALUE) {
@@ -80,7 +123,7 @@ public class BinarySearch<T> {
     }
 
     public long search(long value, Bias bias) {
-        return search(0, indexed.size()-1, value, bias);
+        return search(0, indexed.size() - 1, value, bias);
     }
 
     public T match(T prototype, Bias bias) {
@@ -104,10 +147,27 @@ public class BinarySearch<T> {
             T behind = indexed.get(start);
             long v1 = eval.getValue(behind);
             long v2 = eval.getValue(ahead);
+            if (value == v1) {
+                return start;
+            } else if (value == v2) {
+                return end;
+            }
             switch (bias) {
                 case BACKWARD:
+                    if (v2 < value) {
+                        return end;
+                    }
+                    if (v1 > value) {
+                        return -1;
+                    }
                     return start;
                 case FORWARD:
+                    if (v1 > value) {
+                        return start;
+                    }
+                    if (v2 < value) {
+                        return -1;
+                    }
                     return end;
                 case NEAREST:
                     if (v1 == value) {
@@ -144,18 +204,25 @@ public class BinarySearch<T> {
     }
 
     /**
-     * Converts an object into a numeric value that is used to
-     * perform binary search
-     * @param <T> 
+     * Converts an object into a numeric value that is used to perform binary
+     * search
+     *
+     * @param <T>
      */
-    public interface Evaluator<T> {
+    public interface Evaluator<T> extends ToLongFunction<T> {
 
         public long getValue(T obj);
+
+        @Override
+        public default long applyAsLong(T value) {
+            return getValue(value);
+        }
     }
 
     /**
      * Abstraction for list-like things which have a length and indices
-     * @param <T> 
+     *
+     * @param <T>
      */
     public interface Indexed<T> {
 
@@ -181,7 +248,7 @@ public class BinarySearch<T> {
         public long size() {
             return l.size();
         }
-        
+
         @Override
         public String toString() {
             return super.toString() + '{' + l + '}';
