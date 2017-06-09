@@ -517,8 +517,43 @@ public final class Strings {
         return sb.toString();
     }
 
+    
+    private static final SingleCharSequence CR = new SingleCharSequence('\n');
+    private static final SingleCharSequence COMMA = new SingleCharSequence(',');
+    private static final SingleCharSequence DOT = new SingleCharSequence('.');
+    private static final SingleCharSequence COLON = new SingleCharSequence(':');
+    private static final SingleCharSequence OPEN_CURLY = new SingleCharSequence('{');
+    private static final SingleCharSequence CLOSE_CURLY = new SingleCharSequence('}');
+    private static final SingleCharSequence OPEN_PAREN = new SingleCharSequence('(');
+    private static final SingleCharSequence CLOSE_PAREN = new SingleCharSequence(')');
+    private static final SingleCharSequence OPEN_SQUARE = new SingleCharSequence('[');
+    private static final SingleCharSequence CLOSE_SQUARE = new SingleCharSequence(']');
+    
     public static CharSequence singleChar(char c) {
-        return new SingleCharSequence(c);
+        switch(c) {
+            case '\n' :
+                return CR;
+            case ',' :
+                return COMMA;
+            case '.' :
+                return DOT;
+            case ':' :
+                return COLON;
+            case '{' :
+                return OPEN_CURLY;
+            case '}' :
+                return CLOSE_CURLY;
+            case '(' :
+                return OPEN_PAREN;
+            case ')' :
+                return CLOSE_PAREN;
+            case '[' :
+                return OPEN_SQUARE;
+            case ']' :
+                return CLOSE_SQUARE;
+            default :
+                return new SingleCharSequence(c);
+        }
     }
 
 //    public static List<CharSequence> splitToList(char delim, CharSequence seq) {

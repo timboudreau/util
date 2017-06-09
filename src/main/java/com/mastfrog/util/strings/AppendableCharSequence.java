@@ -42,16 +42,25 @@ import java.util.Objects;
 public final class AppendableCharSequence implements Appendable, Comparable<CharSequence>, CharSequence {
 
     private static final int INCREMENT = 10;
-    private final List<CharSequence> seqs = new ArrayList<>(INCREMENT);
+    private final List<CharSequence> seqs;
     private int length;
     private int[] offsets = new int[INCREMENT];
 
-    public AppendableCharSequence() {
+    /**
+     * Create an appendable character sequence with an anticipated
+     * number of <i>components</i> - as in strings that will be appended,
+     * not a character count - the original char sequences are used as-is.
+     * 
+     * @param components The component count
+     */
+    public AppendableCharSequence(int components) {
+        this.seqs = new ArrayList<>(components);
     }
 
     public AppendableCharSequence(CharSequence... seqs) {
         Checks.notNull("seqs", seqs);
         Checks.noNullElements("seqs", seqs);
+        this.seqs = new ArrayList<>(INCREMENT);
         for (CharSequence s : seqs) {
             this.seqs.add(s);
         }
@@ -186,6 +195,30 @@ public final class AppendableCharSequence implements Appendable, Comparable<Char
 
     public AppendableCharSequence consolidate() {
         return new AppendableCharSequence(toString());
+    }
+    
+    public AppendableCharSequence append(int val) {
+        return append(Integer.toString(val));
+    }
+    
+    public AppendableCharSequence append(long val) {
+        return append(Long.toString(val));
+    }
+    
+    public AppendableCharSequence append(double val) {
+        return append(Double.toString(val));
+    }
+    
+    public AppendableCharSequence append(float val) {
+        return append(Float.toString(val));
+    }
+    
+    public AppendableCharSequence append(boolean val) {
+        return append(Boolean.toString(val));
+    }
+    
+    public AppendableCharSequence append(short val) {
+        return append(Short.toString(val));
     }
 
     @Override
