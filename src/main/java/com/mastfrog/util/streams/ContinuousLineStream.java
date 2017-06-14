@@ -18,7 +18,7 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
 
     private final ContinuousStringStream stringStream;
     private final CharsetDecoder charsetDecoder;
-    private final LinkedList<CharSequence> queuedLines = new LinkedList<CharSequence>();
+    private final LinkedList<CharSequence> queuedLines = new LinkedList<>();
     private String cachedPartialNextLine = null;
     private final int charsPerBuffer;
 

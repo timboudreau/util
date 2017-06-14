@@ -30,8 +30,12 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -48,6 +52,17 @@ public final class UniqueIDs {
     private final Random random;
     private final byte[] base;
     private final int vmid;
+    private final byte[] networkSignature;
+
+    public UniqueIDs() throws IOException {
+        this(Paths.get(System.getProperty("java.io.tmpdir"), UniqueIDs.class.getName() + "-" + System.currentTimeMillis() + ".uid"));
+        System.err.println("Using " + UniqueIDs.class.getName() + " without passing "
+                + "a file.  Not recommended for production use.");
+    }
+
+    public UniqueIDs(Path path) throws IOException {
+        this(path.toFile());
+    }
 
     /**
      * Create an instance.
@@ -66,29 +81,22 @@ public final class UniqueIDs {
         vmid = Math.abs(sr.nextInt());
         // XOR mac addresses of all network cards
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        
-        byte[] addrBytes = new byte[6];
-//        xor(addrBytes, longToBytes(System.currentTimeMillis()));
-        for (NetworkInterface i : CollectionUtils.toIterable(NetworkInterface.getNetworkInterfaces())) {
-            if (!i.isLoopback() && i.isUp() && !i.isVirtual()) {
-                byte[] macAddress = i.getHardwareAddress();
-                if (macAddress != null) {
-                    xor(macAddress, addrBytes);
-                }
-            }
-        }
+
+        byte[] addrBytes = networkSignature =networkInterfaceSignature();
         // Load or generate a created-on-first-use identifier for
         // this application
-        if (appfile.exists()) {
+        if (appfile != null && appfile.exists()) {
             try (FileInputStream in = new FileInputStream(appfile)) {
                 Streams.copy(in, baos, 5);
             }
         } else {
             byte[] bts = new byte[5];
             random.nextBytes(bts);
-            appfile.createNewFile();
-            try (FileOutputStream out = new FileOutputStream(appfile)) {
-                out.write(bts);
+            if (appfile != null) {
+                appfile.createNewFile();
+                try (FileOutputStream out = new FileOutputStream(appfile)) {
+                    out.write(bts);
+                }
             }
             baos.write(bts);
         }
@@ -96,8 +104,29 @@ public final class UniqueIDs {
         baos.write(addrBytes);
         base = baos.toByteArray();
     }
+    
+    static byte[] networkInterfaceSignature() throws SocketException {
+        byte[] addrBytes = new byte[6];
+        for (NetworkInterface i : CollectionUtils.toIterable(NetworkInterface.getNetworkInterfaces())) {
+            if (!i.isLoopback() && !i.isVirtual()) {
+                byte[] macAddress = i.getHardwareAddress();
+                if (macAddress != null) {
+                    xor(macAddress, addrBytes);
+                }
+            }
+        }
+        return addrBytes;
+    }
+    
+    public String uniqueToVmString() {
+        ByteBuffer buf = ByteBuffer.allocate(18);
+        buf.putInt(seq.getAndIncrement());
+        buf.put(networkSignature);
+        buf.putLong(System.currentTimeMillis());
+        return Base64.getEncoder().encodeToString(buf.array());
+    }
 
-    private void xor(byte[] src, byte[] dest) {
+    private static void xor(byte[] src, byte[] dest) {
         if (src != null && dest != null) {
             for (int i = 0; i < Math.min(src.length, dest.length); i++) {
                 dest[i] ^= src[i];
@@ -118,7 +147,7 @@ public final class UniqueIDs {
             int value3 = ((bytes[i + 1] & 0xf) << 2) | (bytes[i + 2] >> 6);
             // Bottom 6 bits of byte i+2
             int value4 = bytes[i + 2] & 0x3f;
-            
+
             sb.append(ALPHA[Math.abs(value1)]).append(ALPHA[Math.abs(value2)])
                     .append(ALPHA[Math.abs(value3)]).append(ALPHA[Math.abs(value4)]);
             // Now use value1...value4, e.g. putting them into a char array.
@@ -132,7 +161,7 @@ public final class UniqueIDs {
         buffer.putInt(x);
         return buffer.array();
     }
-    
+
     /**
      * Get a new unique string id.
      *
@@ -151,16 +180,16 @@ public final class UniqueIDs {
         buf.put(reverse(intToBytes(ix))).putLong(random.nextLong()).put(base);
         return bytesToString(buf.array());
     }
-    
+
     private byte[] reverse(byte[] b) {
         for (int i = 0; i < b.length / 2; i++) {
             byte hold = b[i];
-            b[i] = b[b.length - (i+1)];
-            b[b.length-(i+1)] = hold;
+            b[i] = b[b.length - (i + 1)];
+            b[b.length - (i + 1)] = hold;
         }
         return b;
     }
-    
+
     @Override
     public String toString() {
         return bytesToString(base);
@@ -185,13 +214,13 @@ public final class UniqueIDs {
         }
         return id.endsWith(reversed);
     }
-    
+
     public boolean knows(String id) {
         Checks.notNull("id", id);
         if (reversed == null) {
             reversed = bytesToString(base);
         }
-        return id.endsWith(reversed.substring(reversed.length() - 8, reversed.length()));        
+        return id.endsWith(reversed.substring(reversed.length() - 8, reversed.length()));
     }
 
     public static void main(String[] args) throws IOException {
@@ -199,6 +228,7 @@ public final class UniqueIDs {
         for (int i = 0; i < 100; i++) {
             String id = ids.newId();
             System.out.println(id);
+            System.out.println(ids.uniqueToVmString());
         }
     }
 }

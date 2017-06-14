@@ -24,6 +24,7 @@
 package com.mastfrog.util.collections;
 
 import com.mastfrog.util.Checks;
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -48,15 +49,122 @@ public final class CollectionUtils {
     private CollectionUtils() {
     }
 
+    /**
+     * Version of reifiedList() which returns an empty list if null is passed.
+     *
+     * @param <T>
+     * @param list
+     * @param type
+     * @return
+     */
+    public static <T> List<T> reifiedListFromPossiblyNulList(List<?> list, Class<? super T> type) {
+        if (list == null) {
+            return Collections.emptyList();
+        }
+        return reifiedList(list, type);
+    }
+
+    /**
+     * Allows converting a List&lt:?&gt; to a List&lt;Type&gt;.  <i>It is
+     * possible to generate class cast exceptions here - the list's contents
+     * will be type cast using the passed type.</i>. The signature takes a
+     * supertype, so that it is possible to pass Foo.class for the non-existent
+     * <code>Foo&lt;X&gt;</code> class object.
+     * <p>
+     * The returned list is a wrapper over the original and will reflect changes
+     * in it.
+     *
+     * @param <T> The type to reify to
+     * @param list A list. If null, this method will return null.
+     * @param type The type to reify to
+     * @return A list parameterized on the type in question.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> List<T> reifiedList(List<?> list, Class<? super T> type) {
+        if (type == Object.class) {
+            throw new IllegalArgumentException("Must be refining type - Object.class cannot be");
+        }
+        if (list == null) {
+            return null;
+        }
+        return new ConvertList<>((Class<T>) type, Object.class, (List<Object>) list, new ReifyingConverter<>(type));
+    }
+
+    static final class ReifyingConverter<T, R extends T> implements Converter<R, Object> {
+
+        private final Class<R> type;
+
+        @SuppressWarnings("unchecked")
+        public ReifyingConverter(Class<? super T> type) {
+            this.type = (Class<R>) type;
+        }
+
+        @Override
+        public R convert(Object r) {
+            return type.cast(r);
+        }
+
+        @Override
+        public Object unconvert(R t) {
+            return t;
+        }
+    }
+
+    /**
+     * Create a reversed copy of the passed map, which <i>must not</i> contain
+     * duplicate values.
+     *
+     * @param <T> The original key type
+     * @param <R> The original key type
+     * @param map A map
+     * @return A map with the keys and values swapped
+     * @throws IllegalArgumentException if the passed map contains duplicate
+     * values, which would result in one of the key/value pairs being thrown
+     * away.
+     */
     public static <T, R> Map<R, T> reverse(Map<T, R> map) {
         Map<R, T> result = map instanceof LinkedHashMap<?, ?> ? new LinkedHashMap<>()
                 : new HashMap<>();
         for (Map.Entry<T, R> e : map.entrySet()) {
-            result.put(e.getValue(), e.getKey());
+            T old = result.put(e.getValue(), e.getKey());
+            if (old != null) {
+                throw new IllegalArgumentException("Duplicate values " + e.getValue() + " but "
+                        + "resulting map cannot contain duplicate keys - would lose data");
+            }
         }
         return result;
     }
 
+    /**
+     * Create a generic array using Array.newInstance() and returning
+     * an array with a generic type, which is illegal in plain java code.
+     * @param <T> The type
+     * @param type The type
+     * @param length The array length
+     * @return An array
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T[] genericArray(Class<? super T> type, int length) {
+        Checks.nonNegative("length", length);
+        Checks.notNull("type", type);
+        if (type.getTypeParameters().length == 0) {
+            throw new IllegalArgumentException(type.getName() + " has no type "
+                    + "parameters. Just use 'new " + type.getSimpleName() + "[]'");
+        }
+        return (T[]) Array.newInstance(type, length);
+    }
+    
+    /**
+     * Convert a generified collection to an array of the matching type.
+     * @param <T>
+     * @param coll
+     * @param type The type
+     * @return An array
+     */
+    public static <T> T[] toArray(Collection<T> coll, Class<? super T> type) {
+        return coll.<T>toArray(genericArray(type, coll.size()));
+    }
+    
     /**
      * Create a map builder.
      *
@@ -65,7 +173,7 @@ public final class CollectionUtils {
      * @return A map builder
      */
     public static <T, R> MapBuilder2<T, R> map() {
-        return new MapBuilder2Impl<T, R>();
+        return new MapBuilder2Impl<>();
     }
 
     /**
@@ -94,7 +202,7 @@ public final class CollectionUtils {
      * @return A map that proxies the original
      */
     public static <From, T, R> Map<From, R> convertedKeyMap(Class<From> from, Map<T, R> delegate, Converter<T, From> converter) {
-        return new ConvertedMap<From, T, R, From>(from, delegate, converter);
+        return new ConvertedMap<>(from, delegate, converter);
     }
 
     /**
@@ -336,30 +444,72 @@ public final class CollectionUtils {
         return new MergeIterator<>(Arrays.asList(a, b));
     }
 
+    /**
+     * Create an iterator that contains exactly one object.
+     *
+     * @param <T> The type
+     * @param obj The object
+     * @return An iterator
+     */
     public static <T> Iterator<T> singletonIterator(T obj) {
-        return new SingletonIterator<T>(obj);
+        return new SingletonIterator<>(obj);
     }
 
+    /**
+     * Create an iterator from an array of type T.
+     *
+     * @param <T> The type
+     * @param array An array
+     * @return An iterator
+     */
     public static <T> Iterator<T> toIterator(T[] array) {
         Checks.notNull("array", array);
         return new ArrayIterator<T>(array);
     }
 
+    /**
+     * Create an iterable from an array of type T.
+     *
+     * @param <T> The type
+     * @param array An array
+     * @return An iterator
+     */
     public static <T> Iterable<T> toIterable(T[] array) {
         Checks.notNull("array", array);
         return toIterable(toIterator(array));
     }
 
+    /**
+     * Create an Enumeration from an iterable
+     *
+     * @param <T> The type
+     * @param iter The iterable
+     * @return An enumeration
+     */
     public static <T> Enumeration<T> toEnumeration(Iterable<T> iter) {
         Checks.notNull("iter", iter);
         return toEnumeration(iter.iterator());
     }
 
+    /**
+     * Create an Enumeration from an iterator
+     *
+     * @param <T> The type
+     * @param iter The iterator
+     * @return An enumeration
+     */
     public static <T> Enumeration<T> toEnumeration(Iterator<T> iter) {
         Checks.notNull("iter", iter);
         return new EnumerationAdapter<>(iter);
     }
 
+    /**
+     * Create a reversed iterator over a reversed array
+     *
+     * @param <T> The type
+     * @param array The array
+     * @return The iterator
+     */
     public static <T> Iterator<T> toReverseIterator(T[] array) {
         Checks.notNull("array", array);
         return new ReverseArrayIterator<T>(array);
@@ -374,7 +524,7 @@ public final class CollectionUtils {
      * @return an AtomicIterator
      */
     public static <T> AtomicIterator<T> synchronizedIterator(Iterator<T> iter) {
-        return new AtomicIteratorImpl<T>(iter);
+        return new AtomicIteratorImpl<>(iter);
     }
 
     /**
@@ -643,11 +793,11 @@ public final class CollectionUtils {
     public static Iterator<Long> toIterator(final long[] vals) {
         return new LongArrayIterator(vals);
     }
-    
+
     public static Interator toInterator(final int[] vals) {
         return new ArrayInterator(vals);
     }
-    
+
     public static Longerator toLongerator(final long[] vals) {
         return new ArrayLongerator(vals);
     }
@@ -733,7 +883,7 @@ public final class CollectionUtils {
         public ArrayLongerator(long[] vals) {
             this.vals = vals;
         }
-        int ix =0;
+        int ix = 0;
 
         @Override
         public long next() {

@@ -1,4 +1,4 @@
-/* 
+/*
  * The MIT License
  *
  * Copyright 2013 Tim Boudreau.
@@ -23,16 +23,18 @@
  */
 package com.mastfrog.util.collections;
 
+import com.mastfrog.util.Checks;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Objects;
 
 /**
- * A list which wraps another list and exposes its contents as some other
- * object type.
+ * A list which wraps another list and exposes its contents as some other object
+ * type.
  *
  * @author Tim Boudreau
  */
@@ -43,7 +45,11 @@ final class ConvertList<T, R> implements List<T> {
     private final List<R> orig;
     private final Converter<T, R> converter;
 
-    public ConvertList(Class<T> toType, Class<R> fromType, List<R> orig, Converter<T, R> converter) {
+    ConvertList(Class<T> toType, Class<R> fromType, List<R> orig, Converter<T, R> converter) {
+        Checks.notNull("orig", orig);
+        Checks.notNull("converter", converter);
+        Checks.notNull("toType", toType);
+        Checks.notNull("fromType", fromType);
         this.type = toType;
         this.origType = fromType;
         this.orig = orig;
@@ -132,7 +138,7 @@ final class ConvertList<T, R> implements List<T> {
 
     @Override
     public boolean addAll(int index, Collection<? extends T> c) {
-        return orig.addAll(new ConvertList<>(origType, type, toList(c), new ReverseConverter<R,T>(converter)));
+        return orig.addAll(new ConvertList<>(origType, type, toList(c), new ReverseConverter<R, T>(converter)));
     }
 
     @SuppressWarnings("unchecked")
@@ -203,12 +209,53 @@ final class ConvertList<T, R> implements List<T> {
     public ListIterator<T> listIterator() {
         return listIterator(0);
     }
-    
+
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        } else if (!(o instanceof List)) {
+            return false;
+        } else if (o instanceof ConvertList<?, ?>) {
+            ConvertList<?, ?> c = (ConvertList<?, ?>) o;
+            if (Objects.equals(c.converter, converter)) {
+                return Objects.equals(c.orig, orig);
+            }
+        }
+
+        ListIterator<T> e1 = listIterator();
+        ListIterator<?> e2 = ((List<?>) o).listIterator();
+        while (e1.hasNext() && e2.hasNext()) {
+            T o1 = e1.next();
+            Object o2 = e2.next();
+            if (!(o1 == null ? o2 == null : o1.equals(o2))) {
+                return false;
+            }
+        }
+        return !(e1.hasNext() || e2.hasNext());
+    }
+
+    /**
+     * Returns the hash code value for this list.
+     *
+     * <p>
+     * This implementation uses exactly the code that is used to define the list
+     * hash function in the documentation for the {@link List#hashCode} method.
+     *
+     * @return the hash code value for this list
+     */
+    public int hashCode() {
+        int hashCode = 1;
+        for (T e : this) {
+            hashCode = 31 * hashCode + (e == null ? 0 : e.hashCode());
+        }
+        return hashCode;
+    }
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for (T obj : this) {
             if (sb.length() != 0) {
-                sb.append (',');
+                sb.append(',');
             }
             sb.append(obj);
         }

@@ -169,6 +169,7 @@ final class ReversedList<T> implements List<T> {
         return del.hashCode();
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for (T o : this) {

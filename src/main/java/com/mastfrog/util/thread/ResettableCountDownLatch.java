@@ -48,10 +48,12 @@ public class ResettableCountDownLatch {
             setState(count);
         }
 
+        @Override
         protected int tryAcquireShared(int acquires) {
             return (getState() == 0) ? 1 : -1;
         }
 
+        @Override
         protected boolean tryReleaseShared(int releases) {
             // Decrement count; signal when transition to zero
             for (;;) {
@@ -95,6 +97,7 @@ public class ResettableCountDownLatch {
     public void reset(int count) {
         sync.reset(count);
     }
+    @Override
     public String toString() {
         return super.toString() + "[Count = " + sync.getCount() + "]";
     }

@@ -1,7 +1,7 @@
-/* 
+/*
  * The MIT License
  *
- * Copyright 2013 Tim Boudreau.
+ * Copyright 2017 Tim Boudreau.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,35 +23,41 @@
  */
 package com.mastfrog.util.collections;
 
+import java.util.Arrays;
+import java.util.List;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
+import org.junit.Test;
+
 /**
- * Converts an object from one type to another.
  *
- * @see ConvertList
  * @author Tim Boudreau
  */
-public interface Converter<T, R> {
+public class ReifiedListTest {
 
-    public T convert(R r);
-
-    public R unconvert(T t);
-
-    public default Converter<R,T> reverse() {
-        return new Converter<R,T>() {
-            @Override
-            public R convert(T r) {
-                return Converter.this.unconvert(r);
-            }
-
-            @Override
-            public T unconvert(R t) {
-                return Converter.this.convert(t);
-            }
-
-            @Override
-            public Converter<T, R> reverse() {
-                return Converter.this;
-            }
-        };
+    private List<?> stuff() {
+        return Arrays.asList(1, 2, 3, 4, 5);
     }
-    
+
+    @Test
+    public void test() {
+        List<?> stuff = stuff();
+        List<Integer> ints = CollectionUtils.reifiedList(stuff, Integer.class);
+        assertEquals(stuff.size(), ints.size());
+        for (int i = 0; i < ints.size(); i++) {
+            assertEquals(Integer.valueOf(i + 1), ints.get(i));
+        }
+        assertEquals(stuff, ints);
+        assertNotSame(stuff, ints);
+        assertEquals(stuff.hashCode(), ints.hashCode());
+    }
+
+    @Test
+    public void testIterables() {
+        Integer[] ints = new Integer[]{1, 2, 3};
+        int ix = 0;
+        for (Integer i : CollectionUtils.toIterable(ints)) {
+            assertEquals(ints[ix++], i);
+        }
+    }
 }

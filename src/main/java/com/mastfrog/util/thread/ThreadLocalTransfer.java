@@ -23,8 +23,6 @@
  */
 package com.mastfrog.util.thread;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 /**
  * One-shot ransfer an object between two decoupled parties, clearing the
  * reference after a call to get.  Basically, a ThreadLocal whose value

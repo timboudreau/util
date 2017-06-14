@@ -44,6 +44,7 @@ public final class ContinuousStringStream implements AutoCloseable {
         fileChannel.position(pos);
     }
 
+    @Override
     public synchronized void close() throws IOException {
         fileChannel.close();
     }
