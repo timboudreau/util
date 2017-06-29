@@ -25,6 +25,7 @@ package com.mastfrog.util.collections;
 
 import com.mastfrog.util.Checks;
 import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -38,6 +39,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
+import java.util.function.ToLongFunction;
 
 /**
  * Handles a few collections omissions
@@ -47,6 +49,28 @@ import java.util.function.Consumer;
 public final class CollectionUtils {
 
     private CollectionUtils() {
+    }
+
+    public static <T> List<T> checkedListByCopy(List<?> l, Class<T> type, boolean filter) {
+        List<T> result = new ArrayList<>(l.size());
+        for (Object o : l) {
+            if (filter) {
+                if (type.isInstance(o)) {
+                    result.add(type.cast(o));
+                }
+            } else {
+                result.add(type.cast(o));
+            }
+        }
+        return result;
+    }
+
+    public static List<?> toList(Object array) {
+        return new UnknownTypeArrayList(array);
+    }
+
+    public static <T,R> Map<T,R> immutableArrayMap(Map<T, R> map, Class<T> keyType, Class<R> valType, ToLongFunction<T> func) {
+        return new ImmutableArrayMap<>(map, keyType, valType, func);
     }
 
     /**
@@ -147,10 +171,6 @@ public final class CollectionUtils {
     public static <T> T[] genericArray(Class<? super T> type, int length) {
         Checks.nonNegative("length", length);
         Checks.notNull("type", type);
-        if (type.getTypeParameters().length == 0) {
-            throw new IllegalArgumentException(type.getName() + " has no type "
-                    + "parameters. Just use 'new " + type.getSimpleName() + "[]'");
-        }
         return (T[]) Array.newInstance(type, length);
     }
     

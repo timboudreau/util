@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util;
 
+import com.mastfrog.util.collections.CollectionUtils;
 import com.mastfrog.util.streams.HashingInputStream;
 import com.mastfrog.util.streams.HashingOutputStream;
 import com.mastfrog.util.strings.AppendableCharSequence;
@@ -481,6 +482,21 @@ public final class Strings {
         return seq;
     }
 
+    public static CharSequence join(char delim, Object... parts) {
+        if (parts.length == 1 && parts[0] instanceof Iterable<?>) {
+            return join(delim, (Iterable<?>) parts[0]);
+        }
+        AppendableCharSequence seq = new AppendableCharSequence();
+        for (int i = 0; i < parts.length; i++) {
+            String ts = parts[i] == null ? "null" : parts[i].toString();
+            seq.append(ts);
+            if (i != parts.length - 1) {
+                seq.append(delim);
+            }
+        }
+        return seq;
+    }
+
     /**
      * Join strings using the passed delimiter.
      *
@@ -517,7 +533,6 @@ public final class Strings {
         return sb.toString();
     }
 
-    
     private static final SingleCharSequence CR = new SingleCharSequence('\n');
     private static final SingleCharSequence COMMA = new SingleCharSequence(',');
     private static final SingleCharSequence DOT = new SingleCharSequence('.');
@@ -528,30 +543,30 @@ public final class Strings {
     private static final SingleCharSequence CLOSE_PAREN = new SingleCharSequence(')');
     private static final SingleCharSequence OPEN_SQUARE = new SingleCharSequence('[');
     private static final SingleCharSequence CLOSE_SQUARE = new SingleCharSequence(']');
-    
+
     public static CharSequence singleChar(char c) {
-        switch(c) {
-            case '\n' :
+        switch (c) {
+            case '\n':
                 return CR;
-            case ',' :
+            case ',':
                 return COMMA;
-            case '.' :
+            case '.':
                 return DOT;
-            case ':' :
+            case ':':
                 return COLON;
-            case '{' :
+            case '{':
                 return OPEN_CURLY;
-            case '}' :
+            case '}':
                 return CLOSE_CURLY;
-            case '(' :
+            case '(':
                 return OPEN_PAREN;
-            case ')' :
+            case ')':
                 return CLOSE_PAREN;
-            case '[' :
+            case '[':
                 return OPEN_SQUARE;
-            case ']' :
+            case ']':
                 return CLOSE_SQUARE;
-            default :
+            default:
                 return new SingleCharSequence(c);
         }
     }
@@ -805,6 +820,130 @@ public final class Strings {
             if (i < maxB) {
                 sb.append(b.charAt(i));
             }
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Replace all occurrances of a pattern in a string without regular
+     * expression parsing.
+     *
+     * @param pattern The pattern
+     * @param replacement The replacement
+     * @param in The input string
+     * @return A new string
+     */
+    public static String literalReplaceAll(String pattern, String replacement, String in) {
+        // XXX this could be made considerably more efficient by iterating
+        // the char array
+        if (in.length() < pattern.length()) {
+            return in;
+        }
+        if (pattern.equals(replacement)) {
+            throw new IllegalArgumentException("Replacing pattern with itself: " + pattern);
+        }
+        if (replacement.contains(pattern)) {
+            throw new IllegalArgumentException("Pattern contains its replacement - would loop forever");
+        }
+        boolean replaced;
+        do {
+            int ix = in.indexOf(pattern);
+            if (ix >= 0) {
+                replaced = true;
+                if (ix == 0) {
+                    in = replacement + in.substring(ix + pattern.length());
+                } else {
+                    String begin = in.substring(0, ix);
+                    String end = in.substring(ix + pattern.length(), in.length());
+                    in = begin + replacement + end;
+                }
+            } else {
+                replaced = false;
+            }
+        } while (replaced);
+        return in;
+    }
+
+    public static String toString(Object o) {
+        if (o == null) {
+            return "null";
+        } else if (o instanceof String) {
+            return (String) o;
+        }
+        if (o instanceof Iterable<?>) {
+            return join(',', (Iterable<?>) o);
+        } else if (o.getClass().isArray()) {
+            return join(',', CollectionUtils.toList(o));
+        }
+        return o.toString();
+    }
+
+    /**
+     * A faster String.contains() for single characters, case insensitive.
+     *
+     * @param lookFor The character to look for
+     * @param in Look for in this string
+     * @return True if the character is present
+     */
+    public static boolean containsCaseInsensitive(char lookFor, CharSequence in) {
+        char lookFor1 = Character.toLowerCase(lookFor);
+        char lookFor2 = Character.toLowerCase(lookFor);
+        int max = in.length();
+        for (int i = 0; i < max; i++) {
+            if (in.charAt(i) == lookFor1 || in.charAt(i) == lookFor2) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * A faster String.contains() for single characters, case insensitive.
+     *
+     * @param lookFor The character to look for
+     * @param in Look for in this string
+     * @return True if the character is present
+     */
+    public static boolean contains(char lookFor, CharSequence in) {
+        int max = in.length();
+        for (int i = 0; i < max; i++) {
+            if (in.charAt(i) == lookFor) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static String camelCaseToDashes(CharSequence s) {
+        StringBuilder sb = new StringBuilder();
+        int max = s.length();
+        for (int i = 0; i < max; i++) {
+            char c = s.charAt(i);
+            if (Character.isUpperCase(c)) {
+                if (sb.length() > 0) {
+                    sb.append("-");
+                }
+            }
+            sb.append(Character.toLowerCase(c));
+        }
+        return sb.toString();
+    }
+
+    public static String dashesToCamelCase(CharSequence s) {
+        StringBuilder sb = new StringBuilder();
+        boolean upcase = true;
+        int max = s.length();
+        for (int i = 0; i < max; i++) {
+            char c = s.charAt(i);
+            if (c == '-') {
+                upcase = true;
+                continue;
+            }
+            if (upcase) {
+                c = Character.toUpperCase(c);
+                upcase = false;
+            }
+            sb.append(c);
         }
         return sb.toString();
     }

@@ -33,30 +33,36 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Code sanity checks, to simplify things like null checks.
- * Use these where applicable instead of directly throwing exceptions.
- * That way, expensive tests can be switched to use assertions for production.
+ * Code sanity checks, to simplify things like null checks. Use these where
+ * applicable instead of directly throwing exceptions. That way, expensive tests
+ * can be switched to use assertions for production.
  *
  * @author Tim Boudreau
  */
 public final class Checks {
 
     static boolean disabled = Boolean.getBoolean("checksDisabled");
+
     private Checks() {
     }
 
-    public static void canCastToInt (String name, long value) {
-        if (disabled) return;
+    public static long canCastToInt(String name, long value) {
+        if (disabled) {
+            return value;
+        }
         if (value > Integer.MAX_VALUE) {
             throw new IllegalArgumentException(name + " too large for an integer: " + value);
         }
         if (value < Integer.MIN_VALUE) {
             throw new IllegalArgumentException(name + " too small for an integer: " + value);
         }
+        return value;
     }
 
-    public static void atLeastOneNotNull (String msg, Object... objects) {
-        if (disabled) return;
+    public static void atLeastOneNotNull(String msg, Object... objects) {
+        if (disabled) {
+            return;
+        }
         boolean foundNonNull = false;
         for (Object o : objects) {
             if (o != null) {
@@ -71,64 +77,80 @@ public final class Checks {
 
     /**
      * Determine that the passed parameter is not null
+     *
      * @param name The name of the parameter
      * @param val The value of the parameter
      * @throws NullPointerException if the name is null
      * @throws NullArgumentException if the value is null
      */
-    public static void notNull(String name, Object val) {
-        if (disabled) return;
+    public static <T> T notNull(String name, T val) {
+        if (disabled) {
+            return val;
+        }
         if (name == null) {
             throw new NullPointerException("Null name");
         }
         if (val == null) {
             throw new NullArgumentException(name + " is null");
         }
+        return val;
     }
 
     /**
      * Determine that the passed argument is not a negative number
+     *
      * @param name The name of the argument
      * @param val The value
      * @throws IllegalArgumentException if the number is negative
      */
-    public static void nonNegative(String name, Number val) {
-        if (disabled) return;
+    public static <T extends Number> T nonNegative(String name, T val) {
+        if (disabled) {
+            return val;
+        }
         notNull("name", name);
         notNull(name, val);
         if (val.longValue() < 0) {
             throw new IllegalArgumentException(name + " cannot be a negative number");
         }
+        return val;
     }
-    
+
     /**
      * Determine that the passed argument is not a negative number
+     *
      * @param name The name of the argument
      * @param val The value
      * @throws IllegalArgumentException if the number is negative
      */
-    public static void nonNegative(String name, int val) {
-        if (disabled) return;
+    public static int nonNegative(String name, int val) {
+        if (disabled) {
+            return val;
+        }
         notNull("name", name);
         notNull(name, val);
         if (val < 0) {
             throw new IllegalArgumentException(name + " cannot be a negative number");
         }
+        return val;
     }
-    
+
     /**
      * Determine that the passed argument is not a negative number
+     *
      * @param name The name of the argument
      * @param val The value
      * @throws IllegalArgumentException if the number is negative
      */
-    public static void nonNegative(String name, long val) {
-        if (disabled) return;
+    public static long nonNegative(String name, long val) {
+        if (disabled) {
+            return val;
+        }
         notNull("name", name);
         notNull(name, val);
         if (val < 0) {
             throw new IllegalArgumentException(name + " cannot be a negative number");
         }
+        return val;
     }
 
     /**
@@ -137,13 +159,16 @@ public final class Checks {
      * <li>is an array</li>
      * <li>is not null</li>
      * <li>has a length > 0</li>
+     *
      * @param name The parameter name for use in an exception
      * @param array An array
      * @throws IllegalArgumentException if array is not an array
      * @throws IllegalArgumentException
      */
-    public static void notEmptyOrNull(String name, Object array) {
-        if (disabled) return;
+    public static <T> T notEmptyOrNull(String name, T array) {
+        if (disabled) {
+            return array;
+        }
         notNull(name, array);
         Class<?> arrType = array.getClass();
         if (!arrType.isArray()) {
@@ -152,22 +177,26 @@ public final class Checks {
         if (Array.getLength(array) == 0) {
             throw new IllegalArgumentException(name + " has 0 length");
         }
+        return array;
     }
 
     /**
-     * Verify that an array does not contain null elements, throwing an exception
-     * if it does.
-     * <i>Do not use for primitive array types - they cannot contain nulls anyway</i>
+     * Verify that an array does not contain null elements, throwing an
+     * exception if it does.
+     * <i>Do not use for primitive array types - they cannot contain nulls
+     * anyway</i>
      *
      * @param name The name of the parameter
      * @param arr An array of some sort
-     * @throws IllegalArgumentException if the array has null elements,
-     * or if array is an array of primitive
-     * types (these cannot contain null values and do not need such checking)
+     * @throws IllegalArgumentException if the array has null elements, or if
+     * array is an array of primitive types (these cannot contain null values
+     * and do not need such checking)
      * @throws NullArgumentException if the passed array is null
      */
-    public static void noNullElements(String name, Object[] arr) {
-        if (disabled) return;
+    public static <T> T[] noNullElements(String name, T... arr) {
+        if (disabled) {
+            return arr;
+        }
         notNull(name, arr);
         Class<?> arrType = arr.getClass();
         if (arrType.getComponentType().isPrimitive()) {
@@ -182,64 +211,85 @@ public final class Checks {
                         + " in " + name + " (" + Arrays.asList(arr) + ")");
             }
         }
+        return arr;
     }
 
     /**
      * Throws an exception if a parameter is equal to zero.
+     *
      * @param name The name of the parameter
      * @param val A number
      * @throws IllegalArgumentException if the value of the number equals 0
      */
-    public static void nonZero(String name, Number val) {
-        if (disabled) return;
+    public static <T extends Number> T nonZero(String name, T val) {
+        if (disabled) {
+            return val;
+        }
         notNull(name, val);
         if (val.longValue() == 0) {
             throw new IllegalStateException(name + " should not be 0");
         }
+        return val;
     }
 
     /**
      * Throws an exception if a parameter is equal to zero.
+     *
      * @param name The name of the parameter
      * @param val A number
      * @throws IllegalArgumentException if the value of the number equals 0
      */
-    public static void nonZero(String name, int val) {
-        if (disabled) return;
+    public static int nonZero(String name, int val) {
+        if (disabled) {
+            return val;
+        }
         if (val == 0) {
             throw new IllegalStateException(name + " should not be 0");
         }
+        return val;
     }
+
     /**
      * Throws an exception if a parameter is equal to zero.
+     *
      * @param name The name of the parameter
      * @param val A number
      * @throws IllegalArgumentException if the value of the number equals 0
      */
-    public static void nonZero(String name, long val) {
-        if (disabled) return;
+    public static long nonZero(String name, long val) {
+        if (disabled) {
+            return val;
+        }
         if (val == 0) {
             throw new IllegalStateException(name + " should not be 0");
         }
+        return val;
     }
+
     /**
      * Throws an exception if the passed string is empty
+     *
      * @param name The name of the string used in the exception
      * @param value A string value
      * @throws IllegalArgumentException if the String is empty,
      * <i>but not if it is null</i>
      */
-    public static void notEmpty(String name, CharSequence value) {
-        if (disabled) return;
+    public static <T extends CharSequence> T notEmpty(String name, T value) {
+        if (disabled) {
+            return value;
+        }
         notNull("name", name);
         if (value != null && value.length() == 0) {
             throw new IllegalArgumentException("String " + name
                     + " cannot be 0-length");
         }
+        return value;
     }
 
     public static void notEmpty(String name, Collection<?> collection) {
-        if (disabled) return;
+        if (disabled) {
+            return;
+        }
         if (collection != null && collection.isEmpty()) {
             throw new IllegalArgumentException(name + " cannot be an empty "
                     + "collection (" + collection + ")");
@@ -248,28 +298,36 @@ public final class Checks {
 
     /**
      * Throws an exception if the passed string is null or empty
+     *
      * @param name The parameter name for use in the exception message
      * @param value The value
      * @throws IllegalArgumentException if the value is null or "".equals(value)
      * @throws NullArgumentException if the passed value is null
      */
-    public static void notNullOrEmpty(String name, CharSequence value) {
-        if (disabled) return;
+    public static <T extends CharSequence> T notNullOrEmpty(String name, T value) {
+        if (disabled) {
+            return value;
+        }
         notNull(name, value);
-        notEmpty(name, value);
+        return notEmpty(name, value);
     }
 
     /**
-     * Throws an exception if the passed string contains any of the passed characters
+     * Throws an exception if the passed string contains any of the passed
+     * characters
+     *
      * @param name The parameter name for use in the exception message
-     * @param value The value (may be null - use notNull(name, value) for null checks
+     * @param value The value (may be null - use notNull(name, value) for null
+     * checks
      * @param chars An array of characters
-     * @throws IllegalArgumentException if the value contains any of the passed characters,
-     * or if the passed character array length is 0
+     * @throws IllegalArgumentException if the value contains any of the passed
+     * characters, or if the passed character array length is 0
      * @throws NullArgumentException if the passed char array is null
      */
     public static void mayNotContain(String name, CharSequence value, char... chars) {
-        if (disabled) return;
+        if (disabled) {
+            return;
+        }
         notNull("chars", chars);
         if (value == null) {
             return;
@@ -311,14 +369,17 @@ public final class Checks {
     }
 
     /**
-     * Throws an exception if the passed value does not contain at least one
-     * of the passed character
+     * Throws an exception if the passed value does not contain at least one of
+     * the passed character
+     *
      * @param name The parameter name for constructing the exception message
      * @param value A value
      * @param c A character which must be present
      */
     public static void mustContain(String name, CharSequence value, char c) {
-        if (disabled) return;
+        if (disabled) {
+            return;
+        }
         if (value != null && indexIn(value, c) < 0) {
             throw new IllegalArgumentException(name + " must contain a '" + c + "' character but does not (" + value + ")");
         }
@@ -326,14 +387,17 @@ public final class Checks {
 
     /**
      * Throws an exception if the passed set contains duplicate elements.
-     * <b>Note:</b> do not use this method on very large collections or
-     * lazily resolved collections, as it will trigger resolving and iterating
-     * the entire collection.
+     * <b>Note:</b> do not use this method on very large collections or lazily
+     * resolved collections, as it will trigger resolving and iterating the
+     * entire collection.
+     *
      * @param name The parameter name for constructing the exception message
      * @param collection A collection of something
      */
     public static void noDuplicates(String name, Collection<?> collection) {
-        if (disabled) return;
+        if (disabled) {
+            return;
+        }
         if (!(collection instanceof Set)) {
             Set<Object> nue = new HashSet<>(collection);
             if (nue.size() != collection.size()) {
@@ -344,12 +408,17 @@ public final class Checks {
 
     /**
      * Throws an exception if the passed string starts with the passed character
+     *
      * @param name The parameter name for constructing the exception message
-     * @param value a string or equivalent.  May be null, use notNull() for null checks.
-     * @throws IllegalArgumentException if the passed value starts with the passed character
+     * @param value a string or equivalent. May be null, use notNull() for null
+     * checks.
+     * @throws IllegalArgumentException if the passed value starts with the
+     * passed character
      */
     public static void mayNotStartWith(String name, CharSequence value, char c) {
-        if (disabled) return;
+        if (disabled) {
+            return;
+        }
         if (value != null && value.length() > 0 && c == value.charAt(0)) {
             throw new IllegalArgumentException(name + " may not start with a '" + c + "' character (" + value + ")");
         }
@@ -364,7 +433,9 @@ public final class Checks {
      * @throws ClassCastException if the passed object is of the wrong type
      */
     public static void isInstance(String name, Class<?> type, Object value) {
-        if (disabled) return;
+        if (disabled) {
+            return;
+        }
         if (value != null) {
             if (!type.isInstance(value)) {
                 throw new ClassCastException(value
@@ -374,16 +445,21 @@ public final class Checks {
     }
 
     /**
-     * Check that the given argument is of the given length, throw an IllegalArgumentException if that is not the case.
+     * Check that the given argument is of the given length, throw an
+     * IllegalArgumentException if that is not the case.
+     *
      * @param name The parameter name for constructing the exception message
      * @param length The required length of the given value
      * @param value The value to check the length of
-     * @throws IllegalArgumentException if the length of the passed in value is not equal to the specified required length
+     * @throws IllegalArgumentException if the length of the passed in value is
+     * not equal to the specified required length
      * @throws NullPointerException if the name is null
      * @throws NullArgumentException if the value is null
      */
     public static void isOfLength(String name, int length, Object[] value) {
-        if (disabled) return;
+        if (disabled) {
+            return;
+        }
         notNull(name, value);
         if (value.length != length) {
             throw new IllegalArgumentException("value " + Strings.toString(value) + " does not have the required arguments of " + length);
@@ -395,11 +471,13 @@ public final class Checks {
      *
      * @param file The file
      */
-    public static void fileExists (File file) {
-        if (disabled) return;
+    public static void fileExists(File file) {
+        if (disabled) {
+            return;
+        }
         notNull("file", file);
         if (!file.exists() || !file.isFile()) {
-            throw new IllegalArgumentException (file + " does not exist or is not a regular file");
+            throw new IllegalArgumentException(file + " does not exist or is not a regular file");
         }
     }
 
@@ -408,11 +486,13 @@ public final class Checks {
      *
      * @param file The file
      */
-    public static void folderExists (File file) {
-        if (disabled) return;
+    public static void folderExists(File file) {
+        if (disabled) {
+            return;
+        }
         notNull("file", file);
         if (!file.exists() || !file.isDirectory()) {
-            throw new IllegalArgumentException (file + " does not exist or is not a regular file");
+            throw new IllegalArgumentException(file + " does not exist or is not a regular file");
         }
     }
 
@@ -422,7 +502,9 @@ public final class Checks {
      * @param file A file
      */
     public static void readable(File file) {
-        if (disabled) return;
+        if (disabled) {
+            return;
+        }
         fileExists(file);
         if (!file.canRead()) {
             throw new IllegalArgumentException("Read permission missing on " + file);
@@ -435,8 +517,10 @@ public final class Checks {
      * @param seq A string
      * @param charset A character set
      */
-    public static void encodable (CharSequence seq, Charset charset) {
-        if (disabled) return;
+    public static void encodable(CharSequence seq, Charset charset) {
+        if (disabled) {
+            return;
+        }
         notNull("seq", seq);
         notNull("charset", charset);
         CharsetEncoder encoder = charset.newEncoder();

@@ -105,7 +105,7 @@ public class StringsTest {
         assertTrue(Strings.startsWithIgnoreCase(a, b));
         assertFalse(Strings.startsWith(b, a));
     }
-    
+
     public void testStartsWith2() {
         assertTrue(Strings.startsWith("bytes=1-10", "bytes="));
         assertFalse(Strings.startsWith("BYTES=1-10", "bytes="));
@@ -175,11 +175,11 @@ public class StringsTest {
         // test last position
         sb = new StringBuilder("ABCDEFGHIJKLMNOPQRSTUVWXYZ").append(lookFor);
         assertTrue(sb.toString(), Strings.charSequenceContains(sb, lookFor, false));
-        
+
         sb = new StringBuilder(lookFor);
         assertTrue(Strings.charSequenceContains(sb, lookFor, false));
     }
-    
+
     @Test
     public void testParseLong() {
         long lval = Long.MAX_VALUE;
@@ -195,7 +195,7 @@ public class StringsTest {
             }
         }
     }
-    
+
     @Test
     public void testParseInt() {
         int lval = Integer.MAX_VALUE;
@@ -211,53 +211,71 @@ public class StringsTest {
             }
         }
     }
-    
-    @Test(expected=NumberFormatException.class)
+
+    @Test(expected = NumberFormatException.class)
     public void testParseTooLargeInt() {
         Strings.parseInt(Long.toString((long) Integer.MAX_VALUE + 1L));
     }
-    
-    @Test(expected=NumberFormatException.class)
+
+    @Test(expected = NumberFormatException.class)
     public void testParseTooLargeLong() {
         Strings.parseLong(Long.toString(Long.MAX_VALUE) + "0");
     }
-    
-    @Test(expected=NumberFormatException.class)
+
+    @Test(expected = NumberFormatException.class)
     public void testParseInvalidLong() {
         Strings.parseLong("gx0321");
     }
-   
-    @Test(expected=NumberFormatException.class)
+
+    @Test(expected = NumberFormatException.class)
     public void testParseInvalidInt() {
         Strings.parseInt("gx0321");
     }
-    
-    @Test(expected=NumberFormatException.class)
+
+    @Test(expected = NumberFormatException.class)
     public void testParseInvalidLong2() {
         Strings.parseLong("3 72 ");
     }
-   
-    @Test(expected=NumberFormatException.class)
+
+    @Test(expected = NumberFormatException.class)
     public void testParseInvalidInt2() {
         Strings.parseInt("5 41");
     }
-    @Test(expected=NumberFormatException.class)
+
+    @Test(expected = NumberFormatException.class)
     public void testParseInvalidLong3() {
         Strings.parseLong(" 372");
     }
-   
-    @Test(expected=NumberFormatException.class)
+
+    @Test(expected = NumberFormatException.class)
     public void testParseInvalidInt3() {
         Strings.parseInt(" 541");
     }
-    
-    @Test(expected=NumberFormatException.class)
+
+    @Test(expected = NumberFormatException.class)
     public void testParseInvalidLong4() {
         Strings.parseLong("--372");
     }
-   
-    @Test(expected=NumberFormatException.class)
+
+    @Test(expected = NumberFormatException.class)
     public void testParseInvalidInt4() {
         Strings.parseInt("--541");
     }
+
+    @Test(timeout = 1000)
+    public void testLiteralReplace() {
+        assertEquals("This is a thing", Strings.literalReplaceAll("{{verb}}", "is", "This {{verb}} a thing"));
+        assertEquals("It eats a thing that eats food", Strings.literalReplaceAll("{{verb}}", "eats", "It {{verb}} a thing that {{verb}} food"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testIllegalReplace() {
+        Strings.literalReplaceAll("{{foo}}", "{{foo}}", "xyzqkasdfh");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testIllegalReplace2() {
+        Strings.literalReplaceAll("{{foo}}", "This is {{foo}}", "xyzqkasdfh");
+    }
+
 }
