@@ -24,6 +24,7 @@
 package com.mastfrog.util.collections;
 
 import com.mastfrog.util.Checks;
+import static com.mastfrog.util.Checks.notNull;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,12 +34,15 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.function.ToLongFunction;
 
 /**
@@ -49,6 +53,18 @@ import java.util.function.ToLongFunction;
 public final class CollectionUtils {
 
     private CollectionUtils() {
+    }
+
+    /**
+     * Create a map that, when a call to get() would return null, uses
+     * a supplier to create a new value, adds it and returns that.
+     * @param <T> The key type
+     * @param <R> The value type
+     * @param valueSupplier The supplier of values
+     * @return a map
+     */
+    public static <T,R> Map<T,R> supplierMap(Supplier<R> valueSupplier) {
+        return new SupplierMap<>(valueSupplier);
     }
 
     public static <T> List<T> checkedListByCopy(List<?> l, Class<T> type, boolean filter) {
@@ -65,11 +81,37 @@ public final class CollectionUtils {
         return result;
     }
 
+    /**
+     * Convert an array of any type into a list; has the side effect, with
+     * primitive arrays of converting them to their boxed type.
+     */
     public static List<?> toList(Object array) {
         return new UnknownTypeArrayList(array);
     }
 
-    public static <T,R> Map<T,R> immutableArrayMap(Map<T, R> map, Class<T> keyType, Class<R> valType, ToLongFunction<T> func) {
+    /**
+     * Turn an Iterable into a List.
+     */
+    public static <T> List<T> iterableToList(Iterable<T> iterable) {
+        List<T> result = new ArrayList<>();
+        for (T t : notNull("iterable", iterable)) {
+            result.add(t);
+        }
+        return result;
+    }
+
+    /**
+     * Turn an Iterable into a List.
+     */
+    public static <T> Set<T> iterableToSet(Iterable<T> iterable) {
+        Set<T> result = new LinkedHashSet<>();
+        for (T t : notNull("iterable", iterable)) {
+            result.add(t);
+        }
+        return result;
+    }
+
+    public static <T, R> Map<T, R> immutableArrayMap(Map<T, R> map, Class<T> keyType, Class<R> valType, ToLongFunction<T> func) {
         return new ImmutableArrayMap<>(map, keyType, valType, func);
     }
 
@@ -160,8 +202,9 @@ public final class CollectionUtils {
     }
 
     /**
-     * Create a generic array using Array.newInstance() and returning
-     * an array with a generic type, which is illegal in plain java code.
+     * Create a generic array using Array.newInstance() and returning an array
+     * with a generic type, which is illegal in plain java code.
+     *
      * @param <T> The type
      * @param type The type
      * @param length The array length
@@ -173,9 +216,10 @@ public final class CollectionUtils {
         Checks.notNull("type", type);
         return (T[]) Array.newInstance(type, length);
     }
-    
+
     /**
      * Convert a generified collection to an array of the matching type.
+     *
      * @param <T>
      * @param coll
      * @param type The type
@@ -184,7 +228,7 @@ public final class CollectionUtils {
     public static <T> T[] toArray(Collection<T> coll, Class<? super T> type) {
         return coll.<T>toArray(genericArray(type, coll.size()));
     }
-    
+
     /**
      * Create a map builder.
      *
