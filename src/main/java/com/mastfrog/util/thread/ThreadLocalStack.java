@@ -49,6 +49,10 @@ public class ThreadLocalStack<T> {
         return !stack.hasValue() || stack.get().isEmpty();
     }
 
+    public T pop() {
+        return stack.get().pop();
+    }
+
     private final class Closer extends QuietAutoCloseable {
 
         @Override
@@ -58,7 +62,5 @@ public class ThreadLocalStack<T> {
             }
             stack.get().pop();
         }
-
     }
-
 }

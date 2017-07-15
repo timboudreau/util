@@ -42,6 +42,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.ToLongFunction;
 
@@ -56,17 +58,89 @@ public final class CollectionUtils {
     }
 
     /**
-     * Create a map that, when a call to get() would return null, uses
-     * a supplier to create a new value, adds it and returns that.
+     * Create a map that, when a call to get() would return null, uses a
+     * supplier to create a new value, adds it and returns that.
+     *
      * @param <T> The key type
      * @param <R> The value type
      * @param valueSupplier The supplier of values
      * @return a map
      */
-    public static <T,R> Map<T,R> supplierMap(Supplier<R> valueSupplier) {
+    public static <T, R> Map<T, R> supplierMap(Supplier<R> valueSupplier) {
         return new SupplierMap<>(valueSupplier);
     }
 
+    /**
+     * Filter a map by value, returning a new writable map. Will return a
+     * LinkedHashMap if the input argument is one, to maintain sort order.
+     *
+     * @param <T> Key type
+     * @param <R> Value type
+     * @param map Original map
+     * @param test The test to perform on values
+     * @return A new map
+     */
+    public static <T, R> Map<T, R> filterByKey(Map<T, R> map, Predicate<T> test) {
+        Map<T, R> result = map instanceof LinkedHashMap<?, ?> ? new LinkedHashMap<>() : new HashMap<>();
+        for (Map.Entry<T, R> e : map.entrySet()) {
+            if (test.test(e.getKey())) {
+                result.put(e.getKey(), e.getValue());
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Filter a map by value, returning a new writable map. Will return a
+     * LinkedHashMap if the input argument is one, to maintain sort order.
+     *
+     * @param <T> Key type
+     * @param <R> Value type
+     * @param map Original map
+     * @param test The test to perform on values
+     * @return A new map
+     */
+    public static <T, R> Map<T, R> filterByValue(Map<T, R> map, Predicate<R> test) {
+        Map<T, R> result = map instanceof LinkedHashMap<?, ?> ? new LinkedHashMap<>() : new HashMap<>();
+        for (Map.Entry<T, R> e : map.entrySet()) {
+            if (test.test(e.getValue())) {
+                result.put(e.getKey(), e.getValue());
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Convert (or cast) the values in a map to some other type.
+     *
+     * @param <T> The key type
+     * @param <R> The incoming value type
+     * @param <X> The outgoing value type
+     * @param map The original map
+     * @param conversion A function to convert the map values - items that
+     * return null will not be included in the result
+     * @return A new map
+     */
+    public static <T, R, X> Map<T, X> convertValues(Map<T, R> map, Function<R, X> conversion) {
+        Map<T, X> result = map instanceof LinkedHashMap<?, ?> ? new LinkedHashMap<>() : new HashMap<>();
+        for (Map.Entry<T, R> e : map.entrySet()) {
+            X val = conversion.apply(e.getValue());
+            if (val != null) {
+                result.put(e.getKey(), val);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Generify a raw list.
+     *
+     * @param <T> The member type
+     * @param l The raw list
+     * @param type The type
+     * @param filter If filter, simply omit any non-matching elements
+     * @return A new list
+     */
     public static <T> List<T> checkedListByCopy(List<?> l, Class<T> type, boolean filter) {
         List<T> result = new ArrayList<>(l.size());
         for (Object o : l) {

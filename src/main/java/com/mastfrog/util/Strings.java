@@ -843,7 +843,8 @@ public final class Strings {
             throw new IllegalArgumentException("Replacing pattern with itself: " + pattern);
         }
         if (replacement.contains(pattern)) {
-            throw new IllegalArgumentException("Pattern contains its replacement - would loop forever");
+            throw new IllegalArgumentException("Pattern contains its replacement - would "
+                    + "loop forever.  Pattern: '" + pattern + "' Replacement: '" + replacement + "'");
         }
         boolean replaced;
         do {

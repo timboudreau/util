@@ -40,13 +40,10 @@ import java.util.Set;
 
 /**
  * Sparse array integer keyed map. Similar to a standard Collections map, but
- * considerably more efficient for this purpose, it simply an array if integer
+ * considerably more efficient for this purpose, it simply an array of integer
  * indices that have values and an array of objects mapped to those indices.
  * Entries may be added only in ascending order, enabling use of
  * Arrays.binarySearch() to quickly locate the relevant entry.
- * <p>
- * Used to maintain the mapping between the (relatively few) OutputListeners and
- * their associated getLine numbers.
  *
  * @author Tim Boudreau
  */
@@ -58,7 +55,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
     private int last = -1;
 
     /**
-     * Creates a new instance of IntMap
+     * Creates a new instance of ArrayIntMap
      */
     public ArrayIntMap() {
         keys = new int[]{Integer.MAX_VALUE, Integer.MAX_VALUE,
@@ -277,7 +274,6 @@ final class ArrayIntMap<T> implements IntMap<T> {
         int newSize = last < 250 ? last + Math.min(5, last + (last / 3)) : 300;
         int[] newKeys = new int[newSize];
         Object[] newVals = new Object[newSize];
-//        Arrays.fill(newKeys, Integer.MAX_VALUE); //So binarySearch works
         System.arraycopy(keys, 0, newKeys, 0, keys.length);
         System.arraycopy(vals, 0, newVals, 0, vals.length);
         Arrays.fill(newKeys, keys.length, newKeys.length, Integer.MAX_VALUE);
