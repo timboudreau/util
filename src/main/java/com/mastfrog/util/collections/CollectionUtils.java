@@ -41,6 +41,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -68,6 +69,19 @@ public final class CollectionUtils {
      */
     public static <T, R> Map<T, R> supplierMap(Supplier<R> valueSupplier) {
         return new SupplierMap<>(valueSupplier);
+    }
+
+    /**
+     * Create a map that, when a call to get() would return null, uses a
+     * supplier to create a new value, adds it and returns that.
+     *
+     * @param <T> The key type
+     * @param <R> The value type
+     * @param valueSupplier The supplier of values
+     * @return a map
+     */
+    public static <T, R> Map<T, R> concurrentSupplierMap(Supplier<R> valueSupplier) {
+        return new SupplierMap<>(valueSupplier, new ConcurrentHashMap<>());
     }
 
     /**

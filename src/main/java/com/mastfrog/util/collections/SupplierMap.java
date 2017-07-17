@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.collections;
 
+import static com.mastfrog.util.Checks.notNull;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,11 +39,17 @@ import java.util.function.Supplier;
  */
 final class SupplierMap<T, R> implements Map<T, R> {
 
-    private final Map<T, R> delegate = new HashMap<>();
+    private final Map<T, R> delegate;
     private final Supplier<R> supplier;
 
-    public SupplierMap(Supplier<R> supplier) {
-        this.supplier = supplier;
+    SupplierMap(Supplier<R> supplier) {
+        this.supplier = notNull("supplier", supplier);
+        delegate = new HashMap<>();
+    }
+
+    SupplierMap(Supplier<R> supplier, Map<T,R> delegate) {
+        this.supplier = notNull("supplier", supplier);
+        this.delegate = notNull("delegate", delegate);
     }
 
     @Override

@@ -23,6 +23,8 @@
  */
 package com.mastfrog.util.thread;
 
+import static com.mastfrog.util.Checks.notNull;
+
 /**
  * Callback which can be passed some object which cannot be computed on the
  * calling thread.
@@ -35,6 +37,7 @@ package com.mastfrog.util.thread;
  * @author Tim Boudreau
  */
 public abstract class Receiver<T> {
+
     public abstract void receive(T object);
 
     public <E extends Throwable> void onFail(E exception) throws E {
@@ -44,5 +47,33 @@ public abstract class Receiver<T> {
     public void onFail() {
         //do nothing
         System.err.println(this + " failed");
+    }
+
+    public static <T> Receiver<T> of(Callback<T> callback) {
+        return new CallbackReceiver<>(notNull("callback", callback));
+    }
+
+    private static final class CallbackReceiver<T> extends Receiver<T> {
+
+        private final Callback<T> callback;
+
+        public CallbackReceiver(Callback<T> callback) {
+            this.callback = callback;
+        }
+
+        @Override
+        public void receive(T object) {
+            callback.receive(null, object);
+        }
+
+        @Override
+        public <E extends Throwable> void onFail(E exception) throws E {
+            callback.receive(exception, null);
+        }
+
+        @Override
+        public void onFail() {
+            callback.receive(new Exception("Unknown failure"), null);
+        }
     }
 }
