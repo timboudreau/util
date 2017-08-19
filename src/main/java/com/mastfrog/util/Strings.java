@@ -690,13 +690,13 @@ public final class Strings {
         int max = container.length(); //(containerLength - containedLength) + 1;
         for (int i = 0; i < max; i++) {
             char c = ignoreCase ? Character.toLowerCase(container.charAt(i)) : container.charAt(i);
-            char d = ignoreCase ? Character.toLowerCase(contained.charAt(i)) : contained.charAt(offset);
+            char d = ignoreCase ? Character.toLowerCase(contained.charAt(offset)) : contained.charAt(offset);
             if (c != d) {
                 offset = 0;
             } else {
                 offset++;
             }
-            if (offset == containedLength) {
+            if (offset >= containedLength) {
                 return true;
             }
         }

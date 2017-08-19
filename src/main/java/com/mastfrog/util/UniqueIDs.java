@@ -60,6 +60,10 @@ public final class UniqueIDs {
                 + "a file.  Not recommended for production use.");
     }
 
+    public static UniqueIDs createNoFile() throws IOException {
+        return new UniqueIDs((File) null);
+    }
+
     public UniqueIDs(Path path) throws IOException {
         this(path.toFile());
     }
@@ -104,7 +108,7 @@ public final class UniqueIDs {
         baos.write(addrBytes);
         base = baos.toByteArray();
     }
-    
+
     static byte[] networkInterfaceSignature() throws SocketException {
         byte[] addrBytes = new byte[6];
         for (NetworkInterface i : CollectionUtils.toIterable(NetworkInterface.getNetworkInterfaces())) {
@@ -117,7 +121,7 @@ public final class UniqueIDs {
         }
         return addrBytes;
     }
-    
+
     public String uniqueToVmString() {
         ByteBuffer buf = ByteBuffer.allocate(18);
         buf.putInt(seq.getAndIncrement());

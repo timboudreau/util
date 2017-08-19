@@ -278,4 +278,10 @@ public class StringsTest {
         Strings.literalReplaceAll("{{foo}}", "This is {{foo}}", "xyzqkasdfh");
     }
 
+    @Test
+    public void testOffsetBug() {
+        String searchFor = "gzip";
+        String searchIn = "identity;q=1, *;q=0";
+        assertFalse(Strings.charSequenceContains(searchIn, searchFor, true));
+    }
 }

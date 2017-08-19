@@ -73,6 +73,7 @@ final class SupplierMap<T, R> implements Map<T, R> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public R get(Object key) {
         R result = delegate.get(key);
         if (result == null) {
