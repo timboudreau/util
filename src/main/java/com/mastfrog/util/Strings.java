@@ -31,8 +31,10 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -947,5 +949,18 @@ public final class Strings {
             sb.append(c);
         }
         return sb.toString();
+    }
+
+    public static String hash(String s) {
+        try {
+            return hash(s, "SHA-1");
+        } catch (NoSuchAlgorithmException ex) {
+            return Exceptions.chuck(ex);
+        }
+    }
+
+    public static String hash(String s, String algorithm) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance(algorithm);
+        return Base64.getEncoder().encodeToString(digest.digest(s.getBytes(Charset.forName("UTF-8"))));
     }
 }
