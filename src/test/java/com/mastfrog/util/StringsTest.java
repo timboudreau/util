@@ -42,6 +42,15 @@ import org.junit.Test;
 public class StringsTest {
 
     @Test
+    public void testSha1() {
+        String a = "abcdefghij";
+        String b = "abcdefghijklmn";
+        String c = "abqrstghij";
+        assertNotEquals(Strings.sha1(a), Strings.sha1(b));
+        assertNotEquals(Strings.sha1(a), Strings.sha1(c));
+    }
+
+    @Test
     public void testSplit() {
         String s = "hello,there,world,how,are,you";
         List<CharSequence> cs = Strings.splitToList(',', s);
