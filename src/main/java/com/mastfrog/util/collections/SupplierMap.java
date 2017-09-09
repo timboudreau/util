@@ -26,6 +26,7 @@ package com.mastfrog.util.collections;
 import static com.mastfrog.util.Checks.notNull;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -47,7 +48,7 @@ final class SupplierMap<T, R> implements Map<T, R> {
         delegate = new HashMap<>();
     }
 
-    SupplierMap(Supplier<R> supplier, Map<T,R> delegate) {
+    SupplierMap(Supplier<R> supplier, Map<T, R> delegate) {
         this.supplier = notNull("supplier", supplier);
         this.delegate = notNull("delegate", delegate);
     }
@@ -183,4 +184,16 @@ final class SupplierMap<T, R> implements Map<T, R> {
         return delegate.merge(key, value, remappingFunction);
     }
 
+    @Override
+    public String toString() {
+        StringBuilder result = new StringBuilder(super.toString()).append("[");
+        for (Iterator<Map.Entry<T, R>> it = delegate.entrySet().iterator(); it.hasNext();) {
+            Map.Entry<T, R> e = it.next();
+            result.append(e.getKey()).append("=").append(e.getValue());
+            if (it.hasNext()) {
+                result.append(", ");
+            }
+        }
+        return result.append(']').toString();
+    }
 }
