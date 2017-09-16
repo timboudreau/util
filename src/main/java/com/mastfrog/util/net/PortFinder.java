@@ -26,6 +26,7 @@ package com.mastfrog.util.net;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
+import java.security.SecureRandom;
 import java.util.Random;
 
 /**
@@ -37,11 +38,25 @@ public final class PortFinder {
 
     private final int last;
     private final int first;
-    private final Random random = new Random(System.currentTimeMillis());
+    // With parallel tests, using the wall clock as a seed can get us
+    // the same port
+    private static final SecureRandom SRAND = new SecureRandom();
+    private final Random random = new Random(SRAND.nextInt());
     private final int maxIterations;
 
     public PortFinder() {
-        this(5000, 65535);
+        this(nextStartPort(), 65535);
+    }
+
+    private static final int BASE_START_PORT = 4000;
+    private static int LAST_START_PORT = BASE_START_PORT;
+    static synchronized int nextStartPort() {
+        int result = LAST_START_PORT + 200;
+        LAST_START_PORT = result;
+        if (LAST_START_PORT > 65535) {
+            LAST_START_PORT = BASE_START_PORT;
+        }
+        return result;
     }
 
     public PortFinder(int first, int last) {
@@ -87,10 +102,10 @@ public final class PortFinder {
     }
 
     private int findPort() {
-        int port = first;
+        int port = nextStartPort();
         int iterations = 0;
         do {
-            port += random.nextInt(13);
+            port += random.nextInt(25);
             if (port > last) {
                 port = first;
             }
@@ -117,5 +132,4 @@ public final class PortFinder {
             return false;
         }
     }
-
 }
