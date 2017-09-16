@@ -35,6 +35,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -962,5 +963,24 @@ public final class Strings {
     public static String hash(String s, String algorithm) throws NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance(algorithm);
         return Base64.getEncoder().encodeToString(digest.digest(s.getBytes(Charset.forName("UTF-8"))));
+    }
+
+    public static List<String> commaDelimitedToList(String commas, int lengthLimit) {
+        if (commas == null || commas.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Set<String> tgs = new LinkedHashSet<>();
+        for (String t : commas.split(",")) {
+            t = t.trim();
+            if (t.length() > lengthLimit) {
+                throw new IllegalArgumentException("Length limit is " + lengthLimit);
+            }
+            if (!t.isEmpty()) {
+                tgs.add(t);
+            }
+        }
+        List<String> result = new ArrayList<>(tgs);
+        Collections.sort(result);
+        return result;
     }
 }
