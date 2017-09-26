@@ -24,11 +24,15 @@
 package com.mastfrog.util.collections;
 
 import com.mastfrog.util.Checks;
+import com.mastfrog.util.Strings;
 import com.mastfrog.util.collections.HeteroMap.Key;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -69,6 +73,26 @@ public final class HeteroMap implements Iterable<Map.Entry<Key<?>, Object>> {
         this(new HashMap<>());
     }
 
+    public boolean isEmpty() {
+        return map.isEmpty();
+    }
+
+    public String toString() {
+        return '{' + Strings.join(',', map.entrySet()) + '}';
+    }
+
+    public Map<String, Object> toStringObjectMap() {
+        List<Key> keys = new ArrayList<>(map.keySet());
+        Collections.sort(keys, (a, b) -> {
+            return a.name.compareTo(b.name);
+        });
+        Map<String, Object> result = new LinkedHashMap<>();
+        for (Key key : keys) {
+            result.put(key.name, get(key));
+        }
+        return result;
+    }
+
     /**
      * Create an independent, duplicate map to this one.
      *
@@ -99,7 +123,7 @@ public final class HeteroMap implements Iterable<Map.Entry<Key<?>, Object>> {
         }
         return null;
     }
-    
+
     public <T> T remove(Class<T> type) {
         Key<T> key = findKey(type, false);
         if (key != null) {
@@ -107,7 +131,7 @@ public final class HeteroMap implements Iterable<Map.Entry<Key<?>, Object>> {
         }
         return null;
     }
-    
+
     public <T> T remove(Key<T> key) {
         Object o = map.remove(key);
         return o == null ? null : key.type.cast(o);
