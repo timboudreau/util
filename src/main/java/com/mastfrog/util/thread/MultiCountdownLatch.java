@@ -1,4 +1,4 @@
-/* 
+/*
  * The MIT License
  *
  * Copyright 2017 Tim Boudreau.
@@ -27,10 +27,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 
 /**
+ * Like a CountDownLatch but with the ability to release multiple permits
+ * in one call.
  *
  * @author Tim Boudreau
  */
-public class ResettableCountDownLatch {
+public class MultiCountdownLatch {
 
     private static final class Sync extends AbstractQueuedSynchronizer {
 
@@ -59,7 +61,7 @@ public class ResettableCountDownLatch {
                 if (c == 0) {
                     return false;
                 }
-                int nextc = c - 1;
+                int nextc = c - releases;
                 if (compareAndSetState(c, nextc)) {
                     return nextc == 0;
                 }
@@ -69,10 +71,7 @@ public class ResettableCountDownLatch {
 
     private final Sync sync;
 
-    public ResettableCountDownLatch(int count) {
-        if (count < 0) {
-            throw new IllegalArgumentException("count < 0");
-        }
+    public MultiCountdownLatch(int count) {
         this.sync = new Sync(count);
     }
 
@@ -86,19 +85,14 @@ public class ResettableCountDownLatch {
     }
 
     public void countDown() {
-        sync.releaseShared(1);
+        countDown(1);
+    }
+
+    public void countDown(int qty) {
+        sync.releaseShared(qty);
     }
 
     public long getCount() {
         return sync.getCount();
-    }
-
-    public void reset(int count) {
-        sync.reset(count);
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "[Count = " + sync.getCount() + "]";
     }
 }

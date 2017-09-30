@@ -81,6 +81,7 @@ public final class HeteroMap implements Iterable<Map.Entry<Key<?>, Object>> {
         return '{' + Strings.join(',', map.entrySet()) + '}';
     }
 
+    @SuppressWarnings("unchecked")
     public Map<String, Object> toStringObjectMap() {
         List<Key> keys = new ArrayList<>(map.keySet());
         Collections.sort(keys, (a, b) -> {
