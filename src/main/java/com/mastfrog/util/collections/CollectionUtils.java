@@ -59,6 +59,21 @@ public final class CollectionUtils {
     }
 
     /**
+     * Create a set from some arguments.
+     *
+     * @param <T> The type
+     * @param args The arguments
+     * @return A set
+     */
+    public static <T> Set<T> setOf(T... args) {
+        Set<T> set = new LinkedHashSet<>();
+        for (T t : args) {
+            set.add(t);
+        }
+        return set;
+    }
+
+    /**
      * Create a map that, when a call to get() would return null, uses a
      * supplier to create a new value, adds it and returns that.
      *

@@ -55,6 +55,7 @@ public final class PortFinder {
         LAST_START_PORT = result;
         if (LAST_START_PORT > 65535) {
             LAST_START_PORT = BASE_START_PORT;
+            result = BASE_START_PORT;
         }
         return result;
     }
