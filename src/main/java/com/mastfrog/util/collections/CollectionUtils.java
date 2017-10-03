@@ -65,6 +65,7 @@ public final class CollectionUtils {
      * @param args The arguments
      * @return A set
      */
+    @SafeVarargs
     public static <T> Set<T> setOf(T... args) {
         Set<T> set = new LinkedHashSet<>();
         for (T t : args) {

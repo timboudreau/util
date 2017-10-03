@@ -193,6 +193,7 @@ public final class Checks {
      * and do not need such checking)
      * @throws NullArgumentException if the passed array is null
      */
+    @SafeVarargs
     public static <T> T[] noNullElements(String name, T... arr) {
         if (disabled) {
             return arr;
