@@ -83,4 +83,8 @@ final class ConvertIterator<T, R> implements ListIterator<R> {
     public void add(R e) {
         orig.add(converter.unconvert(e));
     }
+
+    public String toString() {
+        return "ConvertIterator with " + converter + " over " + orig;
+    }
 }

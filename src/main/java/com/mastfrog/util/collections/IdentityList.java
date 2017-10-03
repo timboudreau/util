@@ -1,4 +1,4 @@
-/* 
+/*
  * The MIT License
  *
  * Copyright 2013 Tim Boudreau.
@@ -46,13 +46,13 @@ final class IdentityList<T> implements List<T> {
 
     public IdentityList() {
     }
-    
+
     private IdentityList(boolean ignored, List<Identity<T>> l) {
         //ignored param just ensures that the erasure is not the same
         //as the method taking a collection
         this.l.addAll(l);
     }
-    
+
     public IdentityList(Collection<? extends T> c) {
         for (T t : c) {
             add(t);
@@ -236,18 +236,18 @@ final class IdentityList<T> implements List<T> {
     public List<T> subList(int fromIndex, int toIndex) {
         return new IdentityList<>(true, l.subList(fromIndex, toIndex));
     }
-    
+
     @Override
     @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
     public boolean equals(Object o) {
         return o == this;
     }
-    
+
     @Override
     public int hashCode() {
         return System.identityHashCode(this);
     }
-    
+
     @Override
     public String toString() {
         return Strings.join(',', this);
