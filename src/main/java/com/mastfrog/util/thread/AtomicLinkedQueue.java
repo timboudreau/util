@@ -47,6 +47,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
     // A basic linked list structure, where the head is found by
     // iterating backwards
     private AtomicReference<MessageEntry<Message>> tail;
+    private Runnable onAdd;
 
     /**
      * Create the a queue and add the first element.
@@ -102,10 +103,41 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
      */
     public AtomicLinkedQueue<Message> add(final Message message) {
         tail.getAndUpdate(new Applier<>(notNull("message", message)));
+        if (onAdd != null) {
+            onAdd.run();
+        }
         return this;
     }
 
-    static class Applier<Message> implements UnaryOperator<MessageEntry<Message>> {
+    /**
+     * Provide a runnable to invoke on every add. <i><b>Important:</b> - this is
+     * a mechanism for you to <b>schedule</b> something to be done with the
+     * queue - schedule a job or notify a backgroun thread. Do not do real work
+     * here, and especially do not call anything that synchronizes or
+     * blocks.</i> The idea here is simply to provide a more flexible mechanism
+     * than a thread latch or similar can offer so as not to assume that waking
+     * up a thread is the only possible thing one might want.
+     *
+     * @param run A runnable
+     * @return this
+     */
+    public AtomicLinkedQueue onAdd(Runnable run) {
+        this.onAdd = run;
+        return this;
+    }
+
+    /**
+     * Convenience method to trigger a OneThreadLatch on add.
+     *
+     * @param latch The latch
+     * @return this
+     */
+    public AtomicLinkedQueue onAdd(OneThreadLatch latch) {
+        this.onAdd = latch::releaseOne;
+        return this;
+    }
+
+    private static class Applier<Message> implements UnaryOperator<MessageEntry<Message>> {
 
         private final Message message;
 
@@ -129,7 +161,6 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
      * @return A list of messages
      */
     public List<Message> drain() {
-        // Do the minimal amount under the lock
         MessageEntry<Message> oldTail = tail.getAndSet(null);
         // Populate the list iterating backwards from the tail
         if (oldTail != null) {
@@ -141,6 +172,27 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
             return all;
         }
         return Collections.emptyList();
+    }
+
+    /**
+     * Drain the queue to an existing list.  Note that the queue
+     * will be drained to index 0 in the list - if it has existing
+     * contents, those will be pushed forward.
+     *
+     * @param all The list
+     * @return the list
+     */
+    public List<Message> drainTo(List<Message> all) {
+        MessageEntry<Message> oldTail = tail.getAndSet(null);
+        // Populate the list iterating backwards from the tail
+        if (oldTail != null) {
+            if (oldTail.prev == null) {
+                all.add(oldTail.message);
+                return all;
+            }
+            oldTail.drainTo(all);
+        }
+        return all;
     }
 
     /**
@@ -195,22 +247,24 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
     }
 
     /**
-     * Divide the contents of this queue into two others based on matching the passed predicate, and
-     * clear this queue.
+     * Divide the contents of this queue into two others based on matching the
+     * passed predicate, and clear this queue.
      *
      * @param pred A predicate
-     * @param c A consumer which will be called with two queues, accepted and rejected in that argument order
+     * @param c A consumer which will be called with two queues, accepted and
+     * rejected in that argument order
      */
     public void filterAndDrain(Predicate<Message> pred, BiConsumer<AtomicLinkedQueue<Message>, AtomicLinkedQueue<Message>> c) {
         filter(tail.getAndSet(null), pred, c);
     }
 
     /**
-     * Divide the contents of this queue into two others based on matching the passed predicate, not
-     * modifying.
+     * Divide the contents of this queue into two others based on matching the
+     * passed predicate, not modifying.
      *
      * @param pred A predicate
-     * @param c A consumer which will be called with two queues, accepted and rejected in that argument order
+     * @param c A consumer which will be called with two queues, accepted and
+     * rejected in that argument order
      */
     public void filter(Predicate<Message> pred, BiConsumer<AtomicLinkedQueue<Message>, AtomicLinkedQueue<Message>> c) {
         filter(tail.get(), pred, c);
