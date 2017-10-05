@@ -24,11 +24,13 @@
 package com.mastfrog.util.thread;
 
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Manages a pool of ByteBuffers for concurrent writing without allocating a new
@@ -101,6 +103,7 @@ public final class BufferPool {
                 all.add(h.buf);
             }
         }
+        Collections.sort(all);
         return all;
     }
 
@@ -108,14 +111,16 @@ public final class BufferPool {
      * Holds one buffer - obtain it from buffer(), and call close() to return
      * it to the pool.
      */
-    public final class BufferHolder extends QuietAutoCloseable {
+    public final class BufferHolder extends QuietAutoCloseable implements Comparable<BufferHolder> {
 
         final ByteBuffer buf = ByteBuffer.allocateDirect(bufferSize);
         private final AtomicBoolean inUse = new AtomicBoolean(false);
+        private final AtomicLong lastObtained = new AtomicLong();
 
         boolean open() {
             if (inUse.compareAndSet(false, true)) {
                 inUseCount.incrementAndGet();
+                lastObtained.set(System.nanoTime());
                 return true;
             }
             return false;
@@ -140,6 +145,13 @@ public final class BufferPool {
             } else if (numInUse < 0) {
                 inUseCount.set(0);
             }
+        }
+
+        @Override
+        public int compareTo(BufferHolder o) {
+            long mine = lastObtained.get();
+            long theirs = o.lastObtained.get();
+            return mine == theirs ? 0 : mine > theirs ? 1 : -1;
         }
     }
 }
