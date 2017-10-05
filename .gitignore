@@ -10,3 +10,5 @@
 target/*
 /jdk8-stubs/target/
 /nbproject/
+nb-configuration.xml
+

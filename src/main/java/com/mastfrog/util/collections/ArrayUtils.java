@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 /**
@@ -202,6 +203,149 @@ public class ArrayUtils {
         for (int i = 0; i < result.length; i++) {
             result[i] = it.next().longValue();
         }
+        return result;
+    }
+
+    /**
+     * Fisher-Yates shuffle.
+     *
+     * @param <T> The type
+     * @param rnd A random
+     * @param array An array
+     */
+    public static <T> void shuffle(Random rnd, T[] array) {
+        for (int i = 0; i < array.length - 2; i++) {
+            int r = rnd.nextInt(array.length);
+            if (i != r) {
+                T hold = array[i];
+                array[i] = array[r];
+                array[r] = hold;
+            }
+        }
+    }
+
+    /**
+     * Fisher-Yates shuffle.
+     *
+     * @param rnd A random
+     * @param array An array
+     */
+    public static void shuffle(Random rnd, long[] array) {
+        for (int i = 0; i < array.length - 2; i++) {
+            int r = rnd.nextInt(array.length);
+            if (i != r) {
+                long hold = array[i];
+                array[i] = array[r];
+                array[r] = hold;
+            }
+        }
+    }
+
+    /**
+     * Fisher-Yates shuffle.
+     *
+     * @param rnd A random
+     * @param array An array
+     */
+    public static void shuffle(Random rnd, int[] array) {
+        for (int i = 0; i < array.length - 2; i++) {
+            int r = rnd.nextInt(array.length);
+            if (i != r) {
+                int hold = array[i];
+                array[i] = array[r];
+                array[r] = hold;
+            }
+        }
+    }
+
+    /**
+     * Fisher-Yates shuffle.
+     *
+     * @param rnd A random
+     * @param array An array
+     */
+    public static void shuffle(Random rnd, char[] array) {
+        for (int i = 0; i < array.length - 2; i++) {
+            int r = rnd.nextInt(array.length);
+            if (i != r) {
+                char hold = array[i];
+                array[i] = array[r];
+                array[r] = hold;
+            }
+        }
+    }
+
+    /**
+     * Fisher-Yates shuffle.
+     *
+     * @param rnd A random
+     * @param array An array
+     */
+    public static void shuffle(Random rnd, byte[] array) {
+        for (int i = 0; i < array.length - 2; i++) {
+            int r = rnd.nextInt(array.length);
+            if (i != r) {
+                byte hold = array[i];
+                array[i] = array[r];
+                array[r] = hold;
+            }
+        }
+    }
+
+    /**
+     * Extract a subsequence from an array.
+     *
+     * @param array The array
+     * @param start The start
+     * @param length The length
+     * @return an array
+     */
+    public static char[] extract(char[] array, int start, int length) {
+        char[] result = new char[length];
+        System.arraycopy(array, 0, result, start, length);
+        return result;
+    }
+
+    /**
+     * Extract a subsequence from an array.
+     *
+     * @param array The array
+     * @param start The start
+     * @param length The length
+     * @return an array
+     */
+    public static int[] extract(int[] array, int start, int length) {
+        int[] result = new int[length];
+        System.arraycopy(array, 0, result, start, length);
+        return result;
+    }
+
+    /**
+     * Extract a subsequence from an array.
+     *
+     * @param array The array
+     * @param start The start
+     * @param length The length
+     * @return an array
+     */
+    public static long[] extract(long[] array, int start, int length) {
+        long[] result = new long[length];
+        System.arraycopy(array, 0, result, start, length);
+        return result;
+    }
+
+    /**
+     * Extract a subsequence from an array.
+     *
+     * @param array The array
+     * @param start The start
+     * @param length The length
+     * @return an array
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T[] extract(T[] array, int start, int length) {
+        T[] result = (T[]) Array.newInstance(array.getClass().getComponentType());
+        System.arraycopy(array, 0, result, start, length);
         return result;
     }
 }

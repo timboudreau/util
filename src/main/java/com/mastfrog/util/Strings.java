@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util;
 
+import com.mastfrog.util.collections.ArrayUtils;
 import com.mastfrog.util.collections.CollectionUtils;
 import com.mastfrog.util.streams.HashingInputStream;
 import com.mastfrog.util.streams.HashingOutputStream;
@@ -40,6 +41,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -982,5 +984,23 @@ public final class Strings {
         List<String> result = new ArrayList<>(tgs);
         Collections.sort(result);
         return result;
+    }
+
+    /**
+     * Shuffle the characters in a string, and then extract some number
+     * of characters from it as a new string to return.
+     *
+     * @param rnd A random
+     * @param s The string
+     * @param targetLength The desired length of the resulting string, limited
+     * by the length of the input string
+     * @return A new string containing a random choice of characters from the
+     * original.
+     */
+    public static String shuffleAndExtract(Random rnd, String s, int targetLength) {
+        targetLength = Math.min(targetLength, s.length());
+        char[] c = s.toCharArray();
+        ArrayUtils.shuffle(rnd, c);
+        return new String(ArrayUtils.extract(c, 0, targetLength));
     }
 }

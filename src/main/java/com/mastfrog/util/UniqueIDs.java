@@ -60,8 +60,31 @@ public final class UniqueIDs {
                 + "a file.  Not recommended for production use.");
     }
 
+    static UniqueIDs INSTANCE;
+
+    @Deprecated
     public static UniqueIDs createNoFile() throws IOException {
-        return new UniqueIDs((File) null);
+        if (INSTANCE == null) {
+            return INSTANCE = new UniqueIDs((File) null);
+        }
+        return INSTANCE;
+    }
+
+    /**
+     * Create an instance of UniqueIDs with its system-random component
+     * initialized fresh; another instance on the same system will not usually
+     * recognize ids it creates as coming from it, but the results have more
+     * entropy.
+     *
+     * @return A UniqueIDs instance, VM-wide
+     */
+    public static UniqueIDs noFile() {
+        try {
+            return createNoFile();
+        } catch (IOException ex) {
+            // Will never be thrown
+            return Exceptions.chuck(ex);
+        }
     }
 
     public UniqueIDs(Path path) throws IOException {
@@ -86,7 +109,7 @@ public final class UniqueIDs {
         // XOR mac addresses of all network cards
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-        byte[] addrBytes = networkSignature =networkInterfaceSignature();
+        byte[] addrBytes = networkSignature = networkInterfaceSignature();
         // Load or generate a created-on-first-use identifier for
         // this application
         if (appfile != null && appfile.exists()) {

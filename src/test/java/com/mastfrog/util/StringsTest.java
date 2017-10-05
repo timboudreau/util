@@ -24,10 +24,14 @@
  */
 package com.mastfrog.util;
 
+import com.mastfrog.util.collections.CollectionUtils;
 import com.mastfrog.util.strings.ComparableCharSequence;
 import com.mastfrog.util.strings.EightBitStrings;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
+import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -292,5 +296,19 @@ public class StringsTest {
         String searchFor = "gzip";
         String searchIn = "identity;q=1, *;q=0";
         assertFalse(Strings.charSequenceContains(searchIn, searchFor, true));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testShuffleAndExtract() {
+        Random rnd = new Random(34948394);
+        String s = "HelloWorldAndZebras";
+        Set<Character> chars = new HashSet<>((List<Character>) CollectionUtils.toList(s.toCharArray()));
+        for (int i = 0; i < 10; i++) {
+            String t = Strings.shuffleAndExtract(rnd, s, 4);
+            for (char c : t.toCharArray()) {
+                assertTrue(chars.contains(c));
+            }
+        }
     }
 }

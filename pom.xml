@@ -16,7 +16,8 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.20.1</version>
                 <configuration>
-                    <parallel>methods</parallel>
+                    <forkCount>8</forkCount>
+                    <parallel>all</parallel>
                     <threadCount>10</threadCount>
                 </configuration>
             </plugin>
