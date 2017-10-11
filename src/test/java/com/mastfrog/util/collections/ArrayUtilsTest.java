@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.collections;
 
+import static com.mastfrog.util.collections.ArrayUtils.arrayOf;
 import static com.mastfrog.util.collections.ArrayUtils.concatenate;
 import static com.mastfrog.util.collections.ArrayUtils.concatenateAll;
 import static com.mastfrog.util.collections.ArrayUtils.dedup;
@@ -31,6 +32,8 @@ import static com.mastfrog.util.collections.ArrayUtils.emptyForNull;
 import static com.mastfrog.util.collections.ArrayUtils.flatten;
 import java.util.Arrays;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import org.junit.Test;
 
@@ -79,6 +82,7 @@ public class ArrayUtilsTest {
         assertArrayEquals(new Object[]{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"}, cc);
     }
 
+    @Test
     public void testEmptyForNull() {
         Object[] a = new Object[]{"a", "b", "c"};
         Object[] b = emptyForNull(a);
@@ -88,4 +92,50 @@ public class ArrayUtilsTest {
         assertArrayEquals(new Object[0], c);
     }
 
+    @Test
+    public void testCopy() {
+        String[] s = {"a", "b", "c", "d"};
+        String[] b = ArrayUtils.copyOf(s);
+        assertNotSame(s, b);
+        assertArrayEquals(s, b);
+    }
+
+    @Test
+    public void testReverseInPlace() {
+        String[] s = {"a", "b", "c", "d"};
+        String[] old = s;
+        s = ArrayUtils.reverseInPlace(s);
+        assertSame(old, s);
+        assertArrayEquals(new String[]{"d", "c", "b", "a"}, s);
+
+        s = new String[]{"a", "b", "c", "d", "e"};
+        old = s;
+        s = ArrayUtils.reverseInPlace(s);
+        assertSame(old, s);
+        assertArrayEquals(new String[]{"e", "d", "c", "b", "a"}, s);
+    }
+
+    @Test
+    public void testReversed() {
+        String[] s = {"a", "b", "c", "d"};
+        String[] old = s;
+        s = ArrayUtils.reversed(s);
+        assertNotSame(old, s);
+        assertArrayEquals(new String[]{"d", "c", "b", "a"}, s);
+
+        s = new String[]{"a", "b", "c", "d", "e"};
+        old = s;
+        s = ArrayUtils.reversed(s);
+        assertNotSame(old, s);
+        assertArrayEquals(new String[]{"e", "d", "c", "b", "a"}, s);
+    }
+
+    @Test
+    public void testArrayOf() {
+        String[] foos = arrayOf("foo", 6);
+        assertEquals(6, foos.length);
+        for (int i = 0; i < foos.length; i++) {
+            assertEquals("foo", foos[i]);
+        }
+    }
 }

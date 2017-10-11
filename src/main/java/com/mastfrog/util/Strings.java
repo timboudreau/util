@@ -30,6 +30,8 @@ import com.mastfrog.util.streams.HashingOutputStream;
 import com.mastfrog.util.strings.AppendableCharSequence;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.ByteBuffer;
+import java.nio.LongBuffer;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -987,8 +989,8 @@ public final class Strings {
     }
 
     /**
-     * Shuffle the characters in a string, and then extract some number
-     * of characters from it as a new string to return.
+     * Shuffle the characters in a string, and then extract some number of
+     * characters from it as a new string to return.
      *
      * @param rnd A random
      * @param s The string
@@ -1002,5 +1004,49 @@ public final class Strings {
         char[] c = s.toCharArray();
         ArrayUtils.shuffle(rnd, c);
         return new String(ArrayUtils.extract(c, 0, targetLength));
+    }
+
+    public static StringBuilder appendPaddedHex(byte val, StringBuilder sb) {
+        String sval = Integer.toHexString(val & 0xFF);
+        if (sval.length() == 1) {
+            sb.append('0');
+        }
+        return sb.append(sval);
+    }
+
+    public static StringBuilder appendPaddedHex(short val, StringBuilder sb) {
+        String sval = Integer.toHexString(val & 0xFFFF);
+        for (int i = 0; i < 4 - sval.length(); i++) {
+            sb.append('0');
+        }
+        return sb.append(sval);
+    }
+
+    public static StringBuilder appendPaddedHex(int val, StringBuilder sb) {
+        String sval = Integer.toHexString(val & 0xFFFFFFFF);
+        for (int i = 0; i < 8 - sval.length(); i++) {
+            sb.append('0');
+        }
+        return sb.append(sval);
+    }
+
+    public static String toPaddedHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            appendPaddedHex(b, sb);
+        }
+        return sb.toString();
+    }
+
+    public static String toNonPaddedBase36(byte[] bytes) {
+        if (bytes.length % 8 != 0) {
+            throw new IllegalArgumentException("Byte count must be divisible by 8");
+        }
+        LongBuffer buf = ByteBuffer.wrap(bytes).asLongBuffer();
+        StringBuilder sb = new StringBuilder();
+        while (buf.remaining() > 0) {
+            sb.append(Long.toString(buf.get(), 36));
+        }
+        return sb.toString();
     }
 }

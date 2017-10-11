@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.collections;
 
+import static com.mastfrog.util.Checks.notNull;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -342,10 +343,141 @@ public class ArrayUtils {
      * @param length The length
      * @return an array
      */
+    public static byte[] extract(byte[] array, int start, int length) {
+        byte[] result = new byte[length];
+        System.arraycopy(array, 0, result, start, length);
+        return result;
+    }
+
+    /**
+     * Extract a subsequence from an array.
+     *
+     * @param array The array
+     * @param start The start
+     * @param length The length
+     * @return an array
+     */
     @SuppressWarnings("unchecked")
     public static <T> T[] extract(T[] array, int start, int length) {
         T[] result = (T[]) Array.newInstance(array.getClass().getComponentType());
         System.arraycopy(array, 0, result, start, length);
+        return result;
+    }
+
+    public static <T> T[] reversed(T[] array) {
+        return reverseInPlace(copyOf(array));
+    }
+
+    public static <T> T[] reverseInPlace(T[] array) {
+        if (array.length < 2) {
+            return array;
+        }
+        for (int i = 0; i < array.length / 2; i++) {
+            T hold = array[i];
+            array[i] = array[array.length - (i + 1)];
+            array[array.length - (i + 1)] = hold;
+        }
+        return array;
+    }
+
+    public static byte[] reversed(byte[] array) {
+        return reverseInPlace(copyOf(array));
+    }
+
+    public static byte[] reverseInPlace(byte[] array) {
+        if (array.length < 2) {
+            return array;
+        }
+        for (int i = 0; i < array.length / 2; i++) {
+            byte hold = array[i];
+            array[i] = array[array.length - (i + 1)];
+            array[array.length - (i + 1)] = hold;
+        }
+        return array;
+    }
+
+    public static int[] reversed(int[] array) {
+        return reverseInPlace(copyOf(array));
+    }
+
+    public static int[] reverseInPlace(int[] array) {
+        if (array.length < 2) {
+            return array;
+        }
+        for (int i = 0; i < array.length / 2; i++) {
+            int hold = array[i];
+            array[i] = array[array.length - (i + 1)];
+            array[array.length - (i + 1)] = hold;
+        }
+        return array;
+    }
+
+    public static char[] reversed(char[] array) {
+        return reverseInPlace(copyOf(array));
+    }
+
+    public static char[] reverseInPlace(char[] array) {
+        if (array.length < 2) {
+            return array;
+        }
+        for (int i = 0; i < array.length / 2; i++) {
+            char hold = array[i];
+            array[i] = array[array.length - (i + 1)];
+            array[array.length - (i + 1)] = hold;
+        }
+        return array;
+    }
+
+    public static long[] reversed(long[] array) {
+        return reverseInPlace(copyOf(array));
+    }
+
+    public static long[] reverseInPlace(long[] array) {
+        if (array.length < 2) {
+            return array;
+        }
+        for (int i = 0; i < array.length / 2; i++) {
+            long hold = array[i];
+            array[i] = array[array.length - (i + 1)];
+            array[array.length - (i + 1)] = hold;
+        }
+        return array;
+    }
+
+    public static <T> T[] copyOf(T[] array) {
+        return Arrays.copyOf(array, array.length);
+    }
+
+    public static int[] copyOf(int[] array) {
+        return Arrays.copyOf(array, array.length);
+    }
+
+    public static long[] copyOf(long[] array) {
+        return Arrays.copyOf(array, array.length);
+    }
+
+    public static char[] copyOf(char[] array) {
+        return Arrays.copyOf(array, array.length);
+    }
+
+    public static byte[] copyOf(byte[] array) {
+        return Arrays.copyOf(array, array.length);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Set<Integer> toSet(int[] ints) {
+        return new HashSet<>((Collection<? extends Integer>) CollectionUtils.<Integer>toList(ints));
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Set<Long> toSet(long[] ints) {
+        return new HashSet<>((Collection<? extends Long>) CollectionUtils.<Long>toList(ints));
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T[] arrayOf(T obj, int length) {
+        T[] result = (T[]) Array.newInstance(notNull("obj", obj).getClass(), length);
+        Arrays.fill(result, obj);
         return result;
     }
 }
