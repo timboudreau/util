@@ -1049,4 +1049,24 @@ public final class Strings {
         }
         return sb.toString();
     }
+
+    public static String toDelimitedPaddedBase36(byte[] bytes) {
+        if (bytes.length % 8 != 0) {
+            throw new IllegalArgumentException("Byte count must be divisible by 8");
+        }
+        LongBuffer buf = ByteBuffer.wrap(bytes).asLongBuffer();
+        StringBuilder sb = new StringBuilder();
+        while (buf.remaining() > 0) {
+            long val = buf.get();
+            if (val >= 0) {
+                if (sb.length() > 0) {
+                    sb.append('~');
+                }
+                sb.append(Long.toString(val, 36));
+            } else {
+                sb.append(Long.toString(val, 36));
+            }
+        }
+        return sb.toString();
+    }
 }
