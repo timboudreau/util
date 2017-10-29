@@ -28,13 +28,18 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
+import java.util.Date;
+import java.util.Locale;
 
 /**
  * A few utility methods to reduce the boilerplate involved in using JDK 8's
@@ -45,10 +50,17 @@ import java.time.temporal.ChronoUnit;
  */
 public class TimeUtil {
 
+    public static final DateTimeFormatter ISO_INSTANT = new DateTimeFormatterBuilder()
+            .parseCaseInsensitive()
+            .appendInstant()
+            .toFormatter(Locale.US);
+
+    public static final ZoneId GMT = ZoneId.of("GMT");
+
     private TimeUtil() {
     }
 
-    private static final DateTimeFormatter ISO2822DateFormat = new DateTimeFormatterBuilder()
+    public static final DateTimeFormatter ISO2822DateFormat = new DateTimeFormatterBuilder()
             .appendText(ChronoField.DAY_OF_WEEK, TextStyle.SHORT_STANDALONE).appendLiteral(", ")
             .appendText(ChronoField.DAY_OF_MONTH, TextStyle.FULL).appendLiteral(" ")
             .appendText(ChronoField.MONTH_OF_YEAR, TextStyle.SHORT).appendLiteral(" ")
@@ -57,6 +69,88 @@ public class TimeUtil {
             .appendValue(ChronoField.MINUTE_OF_HOUR, 2).appendLiteral(":")
             .appendValue(ChronoField.SECOND_OF_MINUTE, 2).appendLiteral(" ")
             .appendOffsetId().toFormatter();
+
+    public static String toIsoFormat(ZonedDateTime zdt) {
+        return zdt.format(ISO_INSTANT);
+    }
+
+    public static String toIsoFormat(LocalDateTime ldt) {
+        ZoneOffset off = ZoneOffset.systemDefault().getRules().getOffset(ldt);
+        Instant inst = ldt.toInstant(off);
+        return toIsoFormat(inst);
+    }
+
+    public static String toIsoFormat(long unixTimestamp) {
+        return toIsoFormat(fromUnixTimestamp(unixTimestamp));
+    }
+
+    public static String toIsoFormat(OffsetDateTime odt) {
+        return toIsoFormat(fromUnixTimestamp(toUnixTimestamp(odt)));
+    }
+
+    public static String toIsoFormat(Instant inst) {
+        return toIsoFormat(fromUnixTimestamp(inst.toEpochMilli()));
+    }
+
+    public static String toIsoFormat(Date date) {
+        return toIsoFormat(toZonedDateTime(date));
+    }
+
+    public static ZonedDateTime fromIsoFormat(String fmt) {
+        return ZonedDateTime.parse(fmt);
+    }
+
+    public static long timestampFromIsoFormat(String fmt) {
+        ZonedDateTime zdt = fromIsoFormat(fmt);
+        return toUnixTimestamp(zdt);
+    }
+
+    public static OffsetDateTime offsetFromIsoFormat(String fmt) {
+        ZonedDateTime zdt = fromIsoFormat(fmt);
+        return zdt.toOffsetDateTime();
+    }
+
+    public static LocalDateTime localFromIsoFormat(String fmt) {
+        ZonedDateTime zdt = fromIsoFormat(fmt);
+        return LocalDateTime.ofInstant(zdt.toInstant(), ZoneOffset.systemDefault().getRules().getOffset(zdt.toInstant()));
+    }
+
+    public static LocalDateTime localFromIsoFormatGMT(String fmt) {
+        ZonedDateTime zdt = fromIsoFormat(fmt);
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(toUnixTimestamp(zdt)), GMT);
+    }
+
+    public static Instant instantFromIsoFormat(String fmt) {
+        return fromIsoFormat(fmt).toInstant();
+    }
+
+    public static boolean equals(ZonedDateTime a, ZonedDateTime b) {
+        return toUnixTimestamp(a) == toUnixTimestamp(b);
+    }
+
+    public static boolean equals(OffsetDateTime a, OffsetDateTime b) {
+        return toUnixTimestamp(a) == toUnixTimestamp(b);
+    }
+
+    public static boolean equals(LocalDateTime a, LocalDateTime b) {
+        return toUnixTimestampGMT(a) == toUnixTimestampGMT(b);
+    }
+
+    public static boolean equals(OffsetDateTime a, ZonedDateTime b) {
+        return toUnixTimestamp(a) == toUnixTimestamp(b);
+    }
+
+    public static boolean equals(LocalDateTime a, ZonedDateTime b) {
+        return toUnixTimestampSystemDefault(a) == toUnixTimestamp(b);
+    }
+
+    public static boolean equals(LocalDateTime a, OffsetDateTime b) {
+        return toUnixTimestampSystemDefault(a) == toUnixTimestamp(b);
+    }
+
+    public static ZonedDateTime toZonedDateTime(Date date) {
+        return fromUnixTimestamp(date.getTime());
+    }
 
     /**
      * Get a ZonedDateTime from ISO 2822 HTTP header formatted date.
@@ -102,6 +196,38 @@ public class TimeUtil {
     }
 
     /**
+     * Convert a LocalDateTime to epoch millis, assuming time zone GMT.
+     *
+     * @param dateTime A zoned date time
+     * @return epoch millis
+     */
+    public static long toUnixTimestampGMT(LocalDateTime dateTime) {
+        Checks.notNull("dateTime", dateTime);
+        return dateTime.toInstant(GMT.getRules().getOffset(dateTime)).toEpochMilli();
+    }
+
+    /**
+     * Convert a LocalDateTime to epoch millis, assuming time zone GMT.
+     *
+     * @param dateTime A zoned date time
+     * @return epoch millis
+     */
+    public static long toUnixTimestampSystemDefault(LocalDateTime dateTime) {
+        Checks.notNull("dateTime", dateTime);
+        return dateTime.toInstant(ZoneId.systemDefault().getRules().getOffset(dateTime)).toEpochMilli();
+    }
+
+    /**
+     * Convert an OffsetDateTime to an epoch millis unix timestamp.
+     *
+     * @param dt An OffsetDateTime
+     * @return a long representing millis since 1/1/1970
+     */
+    public static long toUnixTimestamp(OffsetDateTime dt) {
+        return dt.toInstant().toEpochMilli();
+    }
+
+    /**
      * Convert a ZonedDateTime to ISO 2822 format.
      *
      * @param dateTime A date time
@@ -122,6 +248,39 @@ public class TimeUtil {
     public static ZonedDateTime fromUnixTimestamp(long timestamp) {
         ZonedDateTime ldt = fromUnixTimestamp(timestamp, ZoneId.systemDefault());
         return ldt;
+    }
+
+    /**
+     * Convert a unix timestamp (epoch milliseconds) to a LocalDateTime using
+     * the current system time zone.
+     *
+     * @param timestamp A unix timestamp
+     * @return A zoned date time
+     */
+    public static LocalDateTime localFromUnixTimestamp(long timestamp) {
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault());
+    }
+
+    /**
+     * Convert a unix timestamp (epoch milliseconds) to a LocalDateTime using
+     * the current system time zone.
+     *
+     * @param timestamp A unix timestamp
+     * @return A zoned date time
+     */
+    public static LocalDateTime localFromUnixTimestampGMT(long timestamp) {
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), GMT);
+    }
+
+    /**
+     * Convert a unix timestamp (epoch milliseconds) to a LocalDateTime using
+     * the current system time zone.
+     *
+     * @param timestamp A unix timestamp
+     * @return A zoned date time
+     */
+    public static OffsetDateTime offsetFromUnixTimestamp(long timestamp) {
+        return OffsetDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault());
     }
 
     /**

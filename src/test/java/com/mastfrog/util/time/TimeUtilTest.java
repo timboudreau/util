@@ -25,7 +25,12 @@ package com.mastfrog.util.time;
 
 import com.mastfrog.util.time.TimeUtil;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.Date;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -34,11 +39,54 @@ import static org.junit.Assert.*;
  * @author Tim Boudreau
  */
 public class TimeUtilTest {
+    private final String s = "Mon, 29 May 2017 03:33:57 -04:00";
+    private final long millis = 1496043237000L;
+
+    @Test
+    public void testOtherConversions() {
+        ZonedDateTime zdt = TimeUtil.fromUnixTimestamp(millis);
+        LocalDateTime ldt = TimeUtil.localFromUnixTimestamp(millis);
+        OffsetDateTime odt = TimeUtil.offsetFromUnixTimestamp(millis);
+
+        assertEquals(millis, TimeUtil.toUnixTimestamp(odt));
+        assertEquals(millis, TimeUtil.toUnixTimestamp(zdt));
+        assertEquals(millis, TimeUtil.toUnixTimestampSystemDefault(ldt));
+    }
+
+    @Test
+    public void testIsoStrings() {
+        ZonedDateTime zdt = TimeUtil.fromUnixTimestamp(millis);
+        LocalDateTime ldt = zdt.toLocalDateTime();
+        OffsetDateTime odt = TimeUtil.offsetFromUnixTimestamp(millis);
+        Instant ins = Instant.ofEpochMilli(millis);
+        Date date = new Date(millis);
+
+        String z = TimeUtil.toIsoFormat(zdt);
+        String l = TimeUtil.toIsoFormat(ldt);
+        String o = TimeUtil.toIsoFormat(odt);
+        String i = TimeUtil.toIsoFormat(ins);
+        String d = TimeUtil.toIsoFormat(date);
+
+        assertEquals("local", z, l);
+        assertEquals("offset", z, o);
+        assertEquals("instant", z, i);
+        assertEquals("date", z, d);
+
+        ZonedDateTime z2 = TimeUtil.fromIsoFormat(z);
+        LocalDateTime loc = TimeUtil.localFromIsoFormat(l);
+        OffsetDateTime off = TimeUtil.offsetFromIsoFormat(o);
+        Instant inst = TimeUtil.instantFromIsoFormat(i);
+
+        assertTrue(TimeUtil.equals(zdt, z2));
+        assertTrue(odt + " vs " + off, TimeUtil.equals(odt, off));
+        assertEquals(ins + " vs " + inst, ins, inst);
+        assertEquals(ldt.toInstant(ZoneOffset.UTC), loc.toInstant(ZoneOffset.UTC));
+        assertTrue(ldt + " vs " + loc, TimeUtil.equals(ldt, loc));
+
+    }
 
     @Test
     public void testConversions() {
-        String s = "Mon, 29 May 2017 03:33:57 -04:00";
-        long millis = 1496043237000L;
 
         ZonedDateTime zdt = TimeUtil.fromUnixTimestamp(millis);
         long test = TimeUtil.toUnixTimestamp(zdt);
