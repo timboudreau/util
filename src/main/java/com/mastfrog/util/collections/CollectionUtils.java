@@ -60,6 +60,40 @@ public final class CollectionUtils {
     }
 
     /**
+     * Convert a set of objects to a Map where the value for
+     * each entry in the set is <code>true</code>.
+     *
+     * @param <T>
+     * @param set
+     * @return
+     */
+    public static <T> Map<T, Boolean> toMap(Set<T> set) {
+        Map<T,Boolean> result = new HashMap<>();
+        for (T t : set) {
+            result.put(t, true);
+        }
+        return result;
+    }
+
+    /**
+     * Convert a map of objects to booleans to a set of those
+     * keys for which the value is <code>true</code>.
+     *
+     * @param <T> The type
+     * @param map A map
+     * @return A set
+     */
+    public static <T> Set<T> toSet(Map<T, Boolean> map) {
+        Set<T> result = new HashSet<>(map.size());
+        for (Map.Entry<T,Boolean> e : map.entrySet()) {
+            if (Boolean.TRUE.equals(e.getValue())) {
+                result.add(e.getKey());
+            }
+        }
+        return result;
+    }
+
+    /**
      * Create a set from some arguments.
      *
      * @param <T> The type
