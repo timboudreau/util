@@ -108,9 +108,8 @@ public final class Checks {
             return val;
         }
         notNull("name", name);
-        notNull(name, val);
         if (val.longValue() < 0) {
-            throw new IllegalArgumentException(name + " cannot be a negative number");
+            throw new IllegalArgumentException(name + " cannot be a negative number but is " + val);
         }
         return val;
     }
@@ -127,9 +126,8 @@ public final class Checks {
             return val;
         }
         notNull("name", name);
-        notNull(name, val);
         if (val < 0) {
-            throw new IllegalArgumentException(name + " cannot be a negative number");
+            throw new IllegalArgumentException(name + " cannot be a negative number but is " + val);
         }
         return val;
     }
@@ -146,9 +144,55 @@ public final class Checks {
             return val;
         }
         notNull("name", name);
-        notNull(name, val);
         if (val < 0) {
-            throw new IllegalArgumentException(name + " cannot be a negative number");
+            throw new IllegalArgumentException(name + " cannot be a negative number but is " + val);
+        }
+        return val;
+    }
+
+    public static <T extends Number> T greaterThanOne(String name, T val) {
+        if (disabled) {
+            return val;
+        }
+        notNull("name", name);
+        if (val.longValue() < 1) {
+            throw new IllegalArgumentException(name + " cannot be < 1 but is " + val);
+        }
+        return val;
+    }
+
+    /**
+     * Determine that the passed argument &gt;=0.
+     *
+     * @param name The name of the argument
+     * @param val The value
+     * @throws IllegalArgumentException if the number is negative
+     */
+    public static int greaterThanOne(String name, int val) {
+        if (disabled) {
+            return val;
+        }
+        notNull("name", name);
+        if (val < 1) {
+            throw new IllegalArgumentException(name + " cannot be < 1 but is " + val);
+        }
+        return val;
+    }
+
+    /**
+     * Determine that the passed argument &gt;=1.
+     *
+     * @param name The name of the argument
+     * @param val The value
+     * @throws IllegalArgumentException if the number is negative
+     */
+    public static long greaterThanOne(String name, long val) {
+        if (disabled) {
+            return val;
+        }
+        notNull("name", name);
+        if (val < 1) {
+            throw new IllegalArgumentException(name + " cannot be < 1 but is " + val);
         }
         return val;
     }
