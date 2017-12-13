@@ -27,6 +27,7 @@ import java.io.File;
 import java.lang.reflect.Array;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -168,7 +169,7 @@ public final class Checks {
      * @param val The value
      * @throws IllegalArgumentException if the number is negative
      */
-    public static int greaterThanOne(String name, int val) {
+    public static int greaterThanZero(String name, int val) {
         if (disabled) {
             return val;
         }
@@ -186,7 +187,7 @@ public final class Checks {
      * @param val The value
      * @throws IllegalArgumentException if the number is negative
      */
-    public static long greaterThanOne(String name, long val) {
+    public static long greaterThanZero(String name, long val) {
         if (disabled) {
             return val;
         }
@@ -512,7 +513,7 @@ public final class Checks {
     }
 
     /**
-     * Test that file exists.
+     * Test that file exists and is a file not a folder.
      *
      * @param file The file
      */
@@ -524,6 +525,24 @@ public final class Checks {
         if (!file.exists() || !file.isFile()) {
             throw new IllegalArgumentException(file + " does not exist or is not a regular file");
         }
+    }
+
+
+    /**
+     * Test that file exists and is a file not a folder.
+     *
+     * @param file The file
+     * @param paramName The name of the method parameter
+     */
+    public static File fileExists(String paramName, File file) {
+        if (disabled) {
+            return file;
+        }
+        notNull(paramName, file);
+        if (!file.exists() || !file.isFile()) {
+            throw new IllegalArgumentException(paramName + " does not exist or is not a regular file: " + file);
+        }
+        return file;
     }
 
     /**
@@ -542,6 +561,27 @@ public final class Checks {
     }
 
     /**
+     * Test that a file exists and is a folder.
+     *
+     * @param file The file
+     */
+    public static File folderExists(String paramName, File file) {
+        if (disabled) {
+            return file;
+        }
+        notNull(paramName, file);
+        Path pth = file.toPath();
+        if (!file.exists()) {
+            throw new IllegalArgumentException(paramName + " does not exist: " + file);
+        }
+        if (!file.isDirectory()) {
+            throw new IllegalArgumentException(paramName+ " is not a directory: " + file);
+        }
+        return file;
+    }
+
+
+    /**
      * Test that a file exists and the current user has read permission.
      *
      * @param file A file
@@ -554,6 +594,37 @@ public final class Checks {
         if (!file.canRead()) {
             throw new IllegalArgumentException("Read permission missing on " + file);
         }
+    }
+
+    /**
+     * Test that a file exists and the current user has read permission.
+     *
+     * @param file A file
+     */
+    public static File readable(String paramName, File file) {
+        if (disabled) {
+            return file;
+        }
+        fileExists(paramName, file);
+        if (!file.canRead()) {
+            throw new IllegalArgumentException(paramName + " exists and is a file but is not readable: " + file);
+        }
+        return file;
+    }
+
+    /**
+     * Test that a file exists and the current user has read permission.
+     *
+     * @param file A file
+     */
+    public static File readableAndNonZeroLength(String paramName, File file) {
+        if (disabled) {
+            return file;
+        }
+        if (readable(paramName, file).length() == 0) {
+            throw new IllegalArgumentException(paramName + " exists and is a file but is not readable: " + file);
+        }
+        return file;
     }
 
     /**

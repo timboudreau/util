@@ -60,15 +60,15 @@ public final class CollectionUtils {
     }
 
     /**
-     * Convert a set of objects to a Map where the value for
-     * each entry in the set is <code>true</code>.
+     * Convert a set of objects to a Map where the value for each entry in the
+     * set is <code>true</code>.
      *
      * @param <T>
      * @param set
      * @return
      */
     public static <T> Map<T, Boolean> toMap(Set<T> set) {
-        Map<T,Boolean> result = new HashMap<>();
+        Map<T, Boolean> result = new HashMap<>();
         for (T t : set) {
             result.put(t, true);
         }
@@ -76,8 +76,8 @@ public final class CollectionUtils {
     }
 
     /**
-     * Convert a map of objects to booleans to a set of those
-     * keys for which the value is <code>true</code>.
+     * Convert a map of objects to booleans to a set of those keys for which the
+     * value is <code>true</code>.
      *
      * @param <T> The type
      * @param map A map
@@ -85,7 +85,7 @@ public final class CollectionUtils {
      */
     public static <T> Set<T> toSet(Map<T, Boolean> map) {
         Set<T> result = new HashSet<>(map.size());
-        for (Map.Entry<T,Boolean> e : map.entrySet()) {
+        for (Map.Entry<T, Boolean> e : map.entrySet()) {
             if (Boolean.TRUE.equals(e.getValue())) {
                 result.add(e.getKey());
             }
@@ -738,13 +738,35 @@ public final class CollectionUtils {
      * @param b The second collection
      * @return A set containing the intersection
      */
+    @SuppressWarnings("unchecked")
     public static <T> Set<T> intersection(Collection<T> a, Collection<T> b) {
+        if (a instanceof IntSet && b instanceof IntSet) {
+            return (Set<T>) ((IntSet) a).intersection((IntSet) b);
+        }
         Set<T> result = new HashSet<>(a);
         if (a == b) {
             return result;
         }
         result.retainAll(b);
         return result;
+    }
+
+    /**
+     * Compute the disjunction of two collections, returning the set of elements
+     * from <code>b</code> which are not in <code>a</code>.
+     *
+     * @param <T> The type
+     * @param a A set
+     * @param b A set
+     * @return The elements of b which are not in a
+     */
+    public static <T> Set<T> disjunction(Collection<T> a, Collection<T> b) {
+        if (a == b) {
+            return Collections.emptySet();
+        }
+        Set<T> bs = new HashSet<>(b);
+        bs.removeAll(a);
+        return bs;
     }
 
     /**

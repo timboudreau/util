@@ -1,7 +1,7 @@
-/* 
+/*
  * The MIT License
  *
- * Copyright 2013 Tim Boudreau.
+ * Copyright 2017 Tim Boudreau.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,15 +21,41 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util.thread;
+package com.mastfrog.util.function;
+
+import com.mastfrog.util.Exceptions;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
- * Simply overloads close() to not throw Exception
+ * Supplier interface which can throw exceptions.
  *
  * @author Tim Boudreau
  */
-public abstract class QuietAutoCloseable implements AutoCloseable, NonThrowingAutoCloseable {
+@FunctionalInterface
+public interface ThrowingSupplier<T> {
 
-    @Override
-    public abstract void close();
+    T get() throws Exception;
+
+    /**
+     * Get a view of this object as a Java supplier (which can throw undeclared
+     * exception).
+     *
+     * @return A supplier
+     */
+    default Supplier<T> asSupplier() {
+        return () -> {
+            try {
+                return ThrowingSupplier.this.get();
+            } catch (Exception e) {
+                return Exceptions.chuck(e);
+            }
+        };
+    }
+
+    default <R> ThrowingSupplier<R> adapt(Function<T, R> func) {
+        return () -> {
+            return func.apply(ThrowingSupplier.this.get());
+        };
+    }
 }

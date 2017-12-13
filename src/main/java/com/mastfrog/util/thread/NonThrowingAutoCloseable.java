@@ -1,7 +1,7 @@
-/* 
+/*
  * The MIT License
  *
- * Copyright 2013 Tim Boudreau.
+ * Copyright 2017 Tim Boudreau.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,15 +21,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 package com.mastfrog.util.thread;
 
 /**
- * Simply overloads close() to not throw Exception
  *
  * @author Tim Boudreau
  */
-public abstract class QuietAutoCloseable implements AutoCloseable, NonThrowingAutoCloseable {
-
+@FunctionalInterface
+public interface NonThrowingAutoCloseable extends AutoCloseable {
     @Override
-    public abstract void close();
+    void close();
 }

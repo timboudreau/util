@@ -1,7 +1,7 @@
-/* 
+/*
  * The MIT License
  *
- * Copyright 2013 Tim Boudreau.
+ * Copyright 2017 Tim Boudreau.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,15 +21,37 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util.thread;
+package com.mastfrog.util.function;
+
+import com.mastfrog.util.Exceptions;
 
 /**
- * Simply overloads close() to not throw Exception
+ * A runnable-alike that can throw Exceptions.
  *
  * @author Tim Boudreau
  */
-public abstract class QuietAutoCloseable implements AutoCloseable, NonThrowingAutoCloseable {
+@FunctionalInterface
+public interface ThrowingRunnable {
 
-    @Override
-    public abstract void close();
+    /**
+     * Do whatever work this object does.
+     *
+     * @throws Exception If something goes wrong
+     */
+    void run() throws Exception;
+
+    /**
+     * Creates a Java Runnable which may throw undeclared exceptions.
+     *
+     * @return A runnable
+     */
+    default Runnable toRunnable() {
+        return () -> {
+            try {
+                ThrowingRunnable.this.run();
+            } catch (Exception e) {
+                Exceptions.chuck(e);
+            }
+        };
+    }
 }

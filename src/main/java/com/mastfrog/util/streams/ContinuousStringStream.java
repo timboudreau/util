@@ -20,6 +20,10 @@ public final class ContinuousStringStream implements AutoCloseable {
         readBuffer = ByteBuffer.allocateDirect(readBufferSizeInBytes);
     }
 
+    public boolean isOpen() {
+        return fileChannel.isOpen();
+    }
+
     int bufferSize() {
         return readBuffer.capacity();
     }

@@ -57,4 +57,29 @@ public final class FactoryThreadLocal<T> {
         }
         return result;
     }
+
+    /**
+     * Set the object for this thread.
+     *
+     * @param obj The object
+     */
+    public void set(T obj) {
+        threadLocal.set(obj);
+    }
+
+    /**
+     * Get an autocloseable which sets the value, and restores the default
+     * value afterward.
+     *
+     * @param val
+     * @return
+     */
+    public NonThrowingAutoCloseable open(T val) {
+        set(val);
+        return this::clear;
+    }
+
+    public void clear() {
+        set(factory.get());
+    }
 }

@@ -40,6 +40,8 @@ import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A few utility methods to reduce the boilerplate involved in using JDK 8's
@@ -69,6 +71,42 @@ public class TimeUtil {
             .appendValue(ChronoField.MINUTE_OF_HOUR, 2).appendLiteral(":")
             .appendValue(ChronoField.SECOND_OF_MINUTE, 2).appendLiteral(" ")
             .appendOffsetId().toFormatter();
+
+    private static final DateTimeFormatter SORTABLE_STRING_FORMAT = new DateTimeFormatterBuilder()
+            .appendValue(ChronoField.YEAR, 4).appendLiteral('-')
+            .appendValue(ChronoField.MONTH_OF_YEAR, 2).appendLiteral('-')
+            .appendValue(ChronoField.DAY_OF_MONTH, 2).appendLiteral('.')
+            .appendValue(ChronoField.HOUR_OF_DAY, 2).appendLiteral('-')
+            .appendValue(ChronoField.MINUTE_OF_HOUR, 2).appendLiteral('-')
+            .appendValue(ChronoField.SECOND_OF_MINUTE, 2).appendLiteral('-')
+            .appendValue(ChronoField.NANO_OF_SECOND, 9)
+            .toFormatter();
+
+    private static final Pattern SORTABLE = Pattern.compile("^([\\d]{4}-[\\-\\d\\.]*\\.)(\\d+).*?");
+    /**
+     * Generates dates such as "2012-12-25.00-24-01-00000000" which can
+     * be used for file names and sorted.
+     * @param zdt
+     * @return
+     */
+    public static String toSortableStringFormat(ZonedDateTime zdt) {
+        return zdt.format(SORTABLE_STRING_FORMAT);
+    }
+
+    /**
+     * Gets a sortable date format from a string.  Allows trailing
+     * content, so file names can be directly converted.
+     * 
+     * @param s The input string
+     * @return A zoned date time
+     */
+    public static ZonedDateTime fromSortableDateFormat(String s) {
+        Matcher m = SORTABLE.matcher(s);
+        if (m.matches()) {
+            s = m.group(1) + m.group(2) + m.group(3);
+        }
+        return ZonedDateTime.parse(s, SORTABLE_STRING_FORMAT);
+    }
 
     public static String toIsoFormat(ZonedDateTime zdt) {
         return zdt.format(ISO_INSTANT);

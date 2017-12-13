@@ -1,8 +1,19 @@
 package com.mastfrog.util.streams;
 
+import static com.mastfrog.util.Checks.nonNegative;
+import static com.mastfrog.util.Checks.nonZero;
+import static com.mastfrog.util.Checks.notNull;
+import static com.mastfrog.util.Checks.readableAndNonZeroLength;
+import com.mastfrog.util.Exceptions;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -20,12 +31,47 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
     private final CharsetDecoder charsetDecoder;
     private final LinkedList<CharSequence> queuedLines = new LinkedList<>();
     private String cachedPartialNextLine = null;
-    private final int charsPerBuffer;
+    private final int byteCount;
 
     public ContinuousLineStream(ContinuousStringStream stringStream, CharsetDecoder charsetDecoder, int charsPerBuffer) {
         this.stringStream = stringStream;
         this.charsetDecoder = charsetDecoder;
-        this.charsPerBuffer = charsPerBuffer;
+        float bytesPerChar = Math.max(1F, 1F / charsetDecoder.averageCharsPerByte());
+        this.byteCount = Math.max(512, (int) (charsPerBuffer * bytesPerChar));
+    }
+
+    /**
+     * Create a UTF-8 line stream with a buffer size of 8192 bytes.
+     *
+     * @param file The file
+     * @return
+     * @throws IllegalArgumentException if the file is not readable
+     */
+    public static ContinuousLineStream of(File file) {
+        return of(file, 8192);
+    }
+
+    public static ContinuousLineStream of(File file, int bufferSize) {
+        return of(file, bufferSize, UTF_8);
+    }
+
+    public static ContinuousLineStream of(File file, int bufferSize, Charset charset) {
+        try {
+            nonZero("bufferSize", nonNegative("bufferSize", bufferSize));
+            notNull("charset", charset);
+            readableAndNonZeroLength("file", file);
+            ContinuousStringStream stream = new ContinuousStringStream(new FileInputStream(file).getChannel(), bufferSize);
+            CharsetDecoder decoder = charset.newDecoder();
+            return new ContinuousLineStream(stream, decoder, bufferSize);
+        } catch (FileNotFoundException ex) {
+            // readableAndNonZeroLength will throw an IllegalArgumentException before any
+            // FileNotFoundException could be thrown
+            return Exceptions.chuck(ex);
+        }
+    }
+
+    public boolean isOpen() {
+        return stringStream.isOpen();
     }
 
     private void check() throws IOException {
@@ -95,7 +141,7 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
     }
 
     private CharBuffer readCharacters() throws IOException {
-        CharBuffer characterData = CharBuffer.allocate(charsPerBuffer);
+        CharBuffer characterData = ByteBuffer.allocateDirect(byteCount).asCharBuffer();
         stringStream.decode(characterData, charsetDecoder);
         characterData.flip();
         return characterData;
