@@ -28,6 +28,7 @@ import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.security.SecureRandom;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Utility class for finding an unused port.
@@ -51,11 +52,12 @@ public final class PortFinder {
     private static final int BASE_START_PORT = 4000;
     private static int LAST_START_PORT = BASE_START_PORT;
     static synchronized int nextStartPort() {
-        int result = LAST_START_PORT + 200;
+        int result = (int) (LAST_START_PORT + 5 + ((System.currentTimeMillis() % 1000) * 4)) +
+                ThreadLocalRandom.current().nextInt(30);
         LAST_START_PORT = result;
         if (LAST_START_PORT > 65535) {
             LAST_START_PORT = BASE_START_PORT;
-            result = BASE_START_PORT;
+            result = BASE_START_PORT + ThreadLocalRandom.current().nextInt(1000);
         }
         return result;
     }
