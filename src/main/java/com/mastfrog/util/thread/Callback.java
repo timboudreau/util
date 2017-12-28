@@ -23,6 +23,9 @@
  */
 package com.mastfrog.util.thread;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
+
 /**
  * A NodeJS style functional callback - use with Receiver.of() for older APIs
  * that take Receiver.
@@ -33,4 +36,40 @@ package com.mastfrog.util.thread;
 public interface Callback<T> {
 
     public void receive(Throwable err, T obj);
+
+    default Callback<T> attachTo(CompletableFuture<T> fut) {
+        fut.whenComplete((T t, Throwable u) -> {
+            receive(u, t);
+        });
+        return this;
+    }
+
+    static <T> Callback<T> fromCompletableFuture(CompletableFuture<T> fut) {
+        return (Throwable err, T obj) -> {
+            if (err != null) {
+                fut.completeExceptionally(err);
+            } else {
+                fut.complete(obj);
+            }
+        };
+    }
+
+    static <T> Callback<T> fromCompletableFuture(CompletableFuture<T> fut, Supplier<T> ifNullResult) {
+        return (Throwable err, T obj) -> {
+            if (err != null) {
+                fut.completeExceptionally(err);
+            } else {
+                if (obj == null) {
+                    try {
+                        fut.complete(ifNullResult.get());
+                    } catch (Exception ex) {
+                        fut.completeExceptionally(ex);
+                    }
+                } else {
+                    fut.complete(obj);
+                }
+            }
+        };
+    }
+
 }
