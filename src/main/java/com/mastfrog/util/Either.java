@@ -21,26 +21,28 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package com.mastfrog.util;
+
+import com.mastfrog.util.function.ThrowingConsumer;
+import java.util.function.Function;
 
 /**
  * Optional-like wrapper where a value may be one of two types.
  *
  * @author Tim Boudreau
  */
-public class Either<A,B> {
+public class Either<A, B> {
 
     private final Class<B> bType;
     private final Class<A> aType;
     private A a;
     private B b;
-    
+
     public Either(Class<A> aType, Class<B> bType) {
         this.aType = aType;
         this.bType = bType;
     }
-    
+
     public void set(Object o) {
         if (o == null) {
             a = null;
@@ -52,10 +54,35 @@ public class Either<A,B> {
             b = bType.cast(o);
             a = null;
         } else {
-            throw new ClassCastException (o + " is neither " + aType.getName() + " nor " + bType.getName());
+            throw new ClassCastException(o + " is neither " + aType.getName() + " nor " + bType.getName());
         }
     }
-    
+
+    public Either<A, B> withValue(ThrowingConsumer<A> aCons, ThrowingConsumer<B> bCons) throws Exception {
+        if (isPresent()) {
+            if (a != null) {
+                aCons.apply(a);
+            } else {
+                bCons.apply(b);
+            }
+        } else {
+            throw new IllegalStateException("No value present");
+        }
+        return this;
+    }
+
+    public <R> R withValue(Function<A, R> aFunc, Function<B, R> bFunc) {
+        if (isPresent()) {
+            if (a != null) {
+                return aFunc.apply(a);
+            } else {
+                return bFunc.apply(b);
+            }
+        } else {
+            throw new IllegalStateException("No value present");
+        }
+    }
+
     public boolean isPresent() {
         return a != null || b != null;
     }
@@ -63,23 +90,23 @@ public class Either<A,B> {
     public boolean isA() {
         return a != null;
     }
-    
+
     public boolean isB() {
-        return  b != null;
+        return b != null;
     }
-    
+
     public void setA(A a) {
         set(a);
     }
-    
+
     public void setB(B b) {
         set(b);
     }
-    
+
     public A getA() {
         return a;
     }
-    
+
     public B getB() {
         return b;
     }

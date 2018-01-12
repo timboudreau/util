@@ -1038,6 +1038,10 @@ public final class Strings {
         return sb.toString();
     }
 
+    public static String toBase64(byte[] bytes) {
+        return Base64.getEncoder().encodeToString(bytes);
+    }
+
     public static String toNonPaddedBase36(byte[] bytes) {
         if (bytes.length % 8 != 0) {
             throw new IllegalArgumentException("Byte count must be divisible by 8");

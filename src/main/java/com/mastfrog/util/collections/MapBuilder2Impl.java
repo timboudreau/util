@@ -72,5 +72,10 @@ final class MapBuilder2Impl<T, R> implements MapBuilder2<T, R> {
             parent.data.put(key, value);
             return parent;
         }
+
+        @Override
+        public Map<T, R> finallyTo(R value) {
+            return to(value).build();
+        }
     }
 }

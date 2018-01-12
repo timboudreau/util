@@ -25,6 +25,7 @@ package com.mastfrog.util.collections;
 
 import com.mastfrog.util.Checks;
 import static com.mastfrog.util.Checks.notNull;
+import com.mastfrog.util.collections.MapBuilder2.HashingMapBuilder;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -100,8 +101,53 @@ public final class CollectionUtils {
      * @param args The arguments
      * @return A set
      */
+    public static <T> Set<T> setOf(T a) {
+        return Collections.singleton(a);
+    }
+
+    /**
+     * Create a set from some arguments.
+     *
+     * @param <T> The type
+     * @param args The arguments
+     * @return A set
+     */
+    public static <T> Set<T> setOf(T a, T b) {
+        Set<T> set = new LinkedHashSet<>(2);
+        set.add(a);
+        set.add(b);
+        return set;
+    }
+
+    /**
+     * Create a set from some arguments.
+     *
+     * @param <T> The type
+     * @return A set
+     */
+    public static <T> Set<T> setOf(T a, T b, T c) {
+        Set<T> set = new LinkedHashSet<>(2);
+        set.add(a);
+        set.add(b);
+        set.add(c);
+        return set;
+    }
+
+    /**
+     * Create a set from some arguments.
+     *
+     * @param <T> The type
+     * @param args The arguments
+     * @return A set
+     */
     @SafeVarargs
     public static <T> Set<T> setOf(T... args) {
+        if (args.length == 0) {
+            return Collections.emptySet();
+        }
+        if (args.length == 1) {
+            return Collections.singleton(args[0]);
+        }
         Set<T> set = new LinkedHashSet<>();
         for (T t : args) {
             set.add(t);
@@ -367,6 +413,35 @@ public final class CollectionUtils {
     public static <T> T[] toArray(Collection<T> coll, Class<? super T> type) {
         return coll.<T>toArray(genericArray(type, coll.size()));
     }
+
+    public static <T,R> HashingMapBuilder<T,R> hashingMap(Function<Object,byte[]> byteConverter) {
+        return CollectionUtils.<T,R>map().toHashingMapBuilder("SHA-1", byteConverter);
+    }
+
+    public static <T,R> HashingMapBuilder<T,R> hashingMapWithAlgorithm(String alg, Function<Object,byte[]> byteConverter) {
+        return CollectionUtils.<T,R>map().toHashingMapBuilder("SHA-1");
+    }
+
+    public static <T,R> HashingMapBuilder<T,R> hashingMapWithAlgorithm(String alg) {
+        return CollectionUtils.<T,R>map().toHashingMapBuilder("SHA-1");
+    }
+
+    public static <T,R> HashingMapBuilder<T,R> hashingMap() {
+        return CollectionUtils.<T,R>map().toHashingMapBuilder("SHA-1");
+    }
+
+    /**
+     * Create a map builder which
+     *
+     * @param <T>
+     * @param <R>
+     * @param key
+     * @return
+     */
+    public static <T,R> HashingMapBuilder.HashingValueBuilder<T,R> hashingMap(T key) {
+        return CollectionUtils.<T,R>map().toHashingMapBuilder("SHA-1").map(key);
+    }
+
 
     /**
      * Create a map builder.
