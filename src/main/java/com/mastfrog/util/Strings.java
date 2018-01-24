@@ -540,6 +540,20 @@ public final class Strings {
         return sb.toString();
     }
 
+    public static <T> String join(char delim, Iterable<T> parts, Function<T, String> stringConvert) {
+        StringBuilder sb = new StringBuilder(256);
+        for (Iterator<T> it = parts.iterator(); it.hasNext();) {
+            String sv = stringConvert.apply(it.next());
+            if (sv != null && !sv.isEmpty()) {
+                if (sb.length() > 0) {
+                    sb.append(',');
+                }
+                sb.append(sv);
+            }
+        }
+        return sb.toString();
+    }
+
     private static final SingleCharSequence CR = new SingleCharSequence('\n');
     private static final SingleCharSequence COMMA = new SingleCharSequence(',');
     private static final SingleCharSequence DOT = new SingleCharSequence('.');
