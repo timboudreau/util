@@ -96,7 +96,7 @@ public class TimeUtil {
     /**
      * Gets a sortable date format from a string.  Allows trailing
      * content, so file names can be directly converted.
-     * 
+     *
      * @param s The input string
      * @return A zoned date time
      */
@@ -163,31 +163,89 @@ public class TimeUtil {
     }
 
     public static boolean equals(ZonedDateTime a, ZonedDateTime b) {
+        if (a == b) {
+            return true;
+        }
+        if ((a == null) && (b == null)) {
+            return true;
+        }
+        if ((a == null) != (b == null)) {
+            return false;
+        }
         return toUnixTimestamp(a) == toUnixTimestamp(b);
     }
 
     public static boolean equals(OffsetDateTime a, OffsetDateTime b) {
+        if (a == b) {
+            return true;
+        }
+        if ((a == null) && (b == null)) {
+            return true;
+        }
+        if ((a == null) != (b == null)) {
+            return false;
+        }
         return toUnixTimestamp(a) == toUnixTimestamp(b);
     }
 
     public static boolean equals(LocalDateTime a, LocalDateTime b) {
+        if (a == b) {
+            return true;
+        }
+        if ((a == null) && (b == null)) {
+            return true;
+        }
+        if ((a == null) != (b == null)) {
+            return false;
+        }
         return toUnixTimestampGMT(a) == toUnixTimestampGMT(b);
     }
 
     public static boolean equals(OffsetDateTime a, ZonedDateTime b) {
+        if ((a == null) && (b == null)) {
+            return true;
+        }
+        if ((a == null) != (b == null)) {
+            return false;
+        }
         return toUnixTimestamp(a) == toUnixTimestamp(b);
     }
 
     public static boolean equals(LocalDateTime a, ZonedDateTime b) {
+        if ((a == null) && (b == null)) {
+            return true;
+        }
+        if ((a == null) != (b == null)) {
+            return false;
+        }
         return toUnixTimestampSystemDefault(a) == toUnixTimestamp(b);
     }
 
     public static boolean equals(LocalDateTime a, OffsetDateTime b) {
+        if ((a == null) && (b == null)) {
+            return true;
+        }
+        if ((a == null) != (b == null)) {
+            return false;
+        }
         return toUnixTimestampSystemDefault(a) == toUnixTimestamp(b);
     }
 
     public static ZonedDateTime toZonedDateTime(Date date) {
         return fromUnixTimestamp(date.getTime());
+    }
+
+    public static Date toDate(ZonedDateTime time) {
+        return new Date(time.toInstant().toEpochMilli());
+    }
+
+    public static Date toDate(OffsetDateTime odt) {
+        return new Date(odt.toInstant().toEpochMilli());
+    }
+
+    public static Date toDate(LocalDateTime ldt) {
+        ZoneOffset offset = ZoneOffset.systemDefault().getRules().getOffset(ldt);
+        return new Date(ldt.toInstant(offset).toEpochMilli());
     }
 
     /**
