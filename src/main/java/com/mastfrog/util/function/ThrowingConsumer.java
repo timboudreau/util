@@ -57,4 +57,11 @@ public interface ThrowingConsumer<T> {
             ThrowingConsumer.this.apply(conversion.apply(r));
         };
     }
+
+    default ThrowingConsumer<T> then(ThrowingConsumer<T> next) {
+        return (T obj) -> {
+            ThrowingConsumer.this.apply(obj);
+            next.apply(obj);
+        };
+    }
 }
