@@ -141,7 +141,7 @@ public class Backoff {
     }
 
     @FunctionalInterface
-    interface ThrowingProducer<T> {
+    public interface ThrowingProducer<T> {
 
         T get(int iteration) throws Exception;
 
