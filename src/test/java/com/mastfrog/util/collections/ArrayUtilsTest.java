@@ -30,6 +30,7 @@ import static com.mastfrog.util.collections.ArrayUtils.dedup;
 import static com.mastfrog.util.collections.ArrayUtils.dedupByType;
 import static com.mastfrog.util.collections.ArrayUtils.emptyForNull;
 import static com.mastfrog.util.collections.ArrayUtils.flatten;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import java.util.Arrays;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -42,6 +43,63 @@ import org.junit.Test;
  * @author Tim Boudreau
  */
 public class ArrayUtilsTest {
+
+    @Test
+    public void testMultiConcatenateByteArrays() {
+        byte[] a = "Hello".getBytes(UTF_8);
+        byte[] b = " there, ".getBytes(UTF_8);
+        byte[] c = "you ".getBytes(UTF_8);
+        byte[] d = "crazy".getBytes(UTF_8);
+        byte[] e = " concatenator".getBytes(UTF_8);
+        byte[] f = " of ".getBytes(UTF_8);
+        byte[] g = "arrays!".getBytes(UTF_8);
+        byte[] all = ArrayUtils.concatenate(a, b, c, d, e, f, g);
+        assertEquals("Hello there, you crazy concatenator of arrays!",
+                new String(all, UTF_8));
+    }
+
+    @Test
+    public void testSplitByteArray() {
+        byte[] bytes = "Hello there, you crazy concatenator of arrays!".getBytes(UTF_8);
+        byte[][] split = ArrayUtils.split(bytes, 6);
+        String a = new String(split[0], UTF_8);
+        String b = new String(split[1], UTF_8);
+        assertEquals("Hello ", a);
+        assertEquals("there, you crazy concatenator of arrays!", b);
+    }
+
+    @Test
+    public void testMultiSplitByteArray() {
+        byte[] bytes = "Hello there, you crazy concatenator of arrays!".getBytes(UTF_8);
+        byte[][] split = ArrayUtils.split(bytes, 6, 12);
+        String a = new String(split[0], UTF_8);
+        String b = new String(split[1], UTF_8);
+        String c = new String(split[2], UTF_8);
+        assertEquals("Hello ", a);
+        assertEquals("there,", b);
+        assertEquals(" you crazy concatenator of arrays!", c);
+    }
+
+    @Test
+    public void testMegaMultiSplitByteArray() {
+        byte[] bytes = "Hello there, you crazy concatenator of arrays!".getBytes(UTF_8);
+        byte[][] split = ArrayUtils.split(bytes, 6, 12, 16, 22, 32, 36);
+        String a = new String(split[0], UTF_8);
+        String b = new String(split[1], UTF_8);
+        String c = new String(split[2], UTF_8);
+        String d = new String(split[3], UTF_8);
+        String e = new String(split[4], UTF_8);
+        String f = new String(split[5], UTF_8);
+        String g = new String(split[6], UTF_8);
+        assertEquals("Hello ", a);
+        assertEquals("there,", b);
+        assertEquals(" you", c);
+        assertEquals(" crazy", d);
+        assertEquals(" concatena", e);
+        assertEquals("tor ", f);
+        assertEquals("of arrays!", g);
+        assertEquals(new String(bytes, UTF_8), a + b + c + d + e + f + g);
+    }
 
     @Test
     public void testConcatAndMore() {

@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util;
 
+import static com.mastfrog.util.Checks.notNull;
 import com.mastfrog.util.collections.ArrayUtils;
 import com.mastfrog.util.collections.CollectionUtils;
 import com.mastfrog.util.streams.HashingInputStream;
@@ -42,9 +43,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.function.Function;
 
 /**
@@ -99,6 +103,90 @@ public final class Strings {
             return seq;
         }
         return seq.subSequence(start, end);
+    }
+
+    /**
+     * Trim a list of strings, removing any strings which are empty after
+     * trimming, and returning a new list with the same traversal order as the
+     * original. The resulting list is mutable.
+     *
+     * @param strings A list of strings
+     * @return A new list of those strings, trimmed and empty strings pruned
+     */
+    public static List<String> trim(List<String> strings) {
+        if (notNull("strings", strings).isEmpty()) {
+            return strings;
+        }
+        List<String> result;
+        if (strings instanceof LinkedList<?>) {
+            result = new LinkedList<>();
+        } else {
+            result = new ArrayList<>();
+        }
+        for (String s : strings) {
+            String trimmed = s.trim();
+            if (!trimmed.isEmpty()) {
+                result.add(s.trim());
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Trim a set of strings, removing any strings which are empty after
+     * trimming, and returning a new set. If the original set was a
+     * <code>SortedSet</code>, the result will be too. Otherwise the resulting
+     * set will retain the traversal order of the input set. The resulting set
+     * is mutable.
+     *
+     * @param strings A set of strings
+     * @return A new set of those strings, trimmed and empty strings pruned
+     */
+    public static Set<String> trim(Set<String> strings) {
+        if (notNull("strings", strings).isEmpty()) {
+            return strings;
+        }
+        Set<String> result;
+        if (strings instanceof SortedSet<?>) {
+            result = new TreeSet<>();
+        } else {
+            result = new LinkedHashSet<>();
+        }
+        for (String s : strings) {
+            String trimmed = s.trim();
+            if (!trimmed.isEmpty()) {
+                result.add(trimmed);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Take an array of strings, and return an array of trimmed strings,
+     * removing any empty strings.
+     *
+     * @param in An array of strings
+     * @return A new array of trimmed strings;
+     */
+    public static String[] trim(String[] in) {
+        if (notNull("in", in).length == 0) {
+            return in;
+        }
+        String[] result = ArrayUtils.copyOf(in);
+        int last = 0;
+        for (int i = 0; i < result.length; i++) {
+            String trimmed = result[i].trim();
+            if (!trimmed.isEmpty()) {
+                result[last++] = trimmed;
+            }
+        }
+        if (last == 0) {
+            return new String[0];
+        }
+        if (last != in.length) {
+            result = ArrayUtils.extract(result, 0, last);
+        }
+        return result;
     }
 
     /**
@@ -333,9 +421,22 @@ public final class Strings {
      * @return a new array of CharSequences
      */
     public static CharSequence[] trim(CharSequence[] seqs) {
-        CharSequence[] result = new CharSequence[seqs.length];
-        for (int i = 0; i < seqs.length; i++) {
-            result[i] = trim(seqs[i]);
+        if (notNull("seqs", seqs).length == 0) {
+            return seqs;
+        }
+        CharSequence[] result = ArrayUtils.copyOf(seqs);
+        int last = 0;
+        for (int i = 0; i < result.length; i++) {
+            CharSequence trimmed = trim(result[i]);
+            if (trimmed.length() != 0) {
+                result[last++] = trimmed;
+            }
+        }
+        if (last == 0) {
+            return new CharSequence[0];
+        }
+        if (last != seqs.length) {
+            result = ArrayUtils.extract(result, 0, last);
         }
         return result;
     }
@@ -592,18 +693,24 @@ public final class Strings {
         }
     }
 
-//    public static List<CharSequence> splitToList(char delim, CharSequence seq) {
-//        Checks.notNull("seq", seq);
-//        List<CharSequence> seqs = new ArrayList<>(5);
-//        split(delim, seq, (val) -> {
-//            seqs.add(val);
-//            return true;
-//        });
-//        return seqs;
-//    }
     public static CharSequence[] split(char delim, CharSequence seq) {
         List<CharSequence> l = splitToList(delim, seq);
         return l.toArray(new CharSequence[l.size()]);
+    }
+
+    public static String[] split(char delim, String seq) {
+        List<String> result = new ArrayList<>(20);
+        int max = seq.length();
+        int start = 0;
+        for (int i = 0; i < max; i++) {
+            char c = seq.charAt(i);
+            boolean last = i == max - 1;
+            if (c == delim || last) {
+                result.add(seq.substring(start, last ? c == delim ? i : i + 1 : i));
+                start = i + 1;
+            }
+        }
+        return result.toArray(new String[result.size()]);
     }
 
     public static List<CharSequence> splitToList(char delimiter, CharSequence seq) {
@@ -1048,6 +1155,58 @@ public final class Strings {
         StringBuilder sb = new StringBuilder();
         for (byte b : bytes) {
             appendPaddedHex(b, sb);
+        }
+        return sb.toString();
+    }
+
+    public static String toPaddedHex(byte[] bytes, String delimiter) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < bytes.length; i++) {
+            byte b = bytes[i];
+            appendPaddedHex(b, sb);
+            if (i != bytes.length) {
+                sb.append(delimiter);
+            }
+        }
+        return sb.toString();
+    }
+
+    public static String toPaddedHex(short[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (short b : bytes) {
+            appendPaddedHex(b, sb);
+        }
+        return sb.toString();
+    }
+
+    public static String toPaddedHex(short[] bytes, String delimiter) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < bytes.length; i++) {
+            short b = bytes[i];
+            appendPaddedHex(b, sb);
+            if (i != bytes.length) {
+                sb.append(delimiter);
+            }
+        }
+        return sb.toString();
+    }
+
+    public static String toPaddedHex(int[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (int b : bytes) {
+            appendPaddedHex(b, sb);
+        }
+        return sb.toString();
+    }
+
+    public static String toPaddedHex(int[] bytes, String delimiter) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < bytes.length; i++) {
+            int b = bytes[i];
+            appendPaddedHex(b, sb);
+            if (i != bytes.length) {
+                sb.append(delimiter);
+            }
         }
         return sb.toString();
     }

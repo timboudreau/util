@@ -23,8 +23,11 @@
  */
 package com.mastfrog.util.collections;
 
+import com.mastfrog.util.Checks;
+import static com.mastfrog.util.Checks.nonNegative;
 import static com.mastfrog.util.Checks.notNull;
 import java.lang.reflect.Array;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -69,6 +72,124 @@ public class ArrayUtils {
     @SuppressWarnings("unchecked")
     public static <T> T[] concatenate(T[] a, T[] b) {
         T[] nue = (T[]) Array.newInstance(a.getClass().getComponentType(), a.length + b.length);
+        System.arraycopy(a, 0, nue, 0, a.length);
+        System.arraycopy(b, 0, nue, a.length, b.length);
+        return nue;
+    }
+
+    public static byte[][] split(byte[] arr, int splitPoint) {
+        Checks.greaterThanZero("splitPoint", splitPoint);
+        notNull("arr", arr);
+        if (splitPoint >= arr.length) {
+            throw new IllegalArgumentException("splitPoint - " + splitPoint
+                    + " must be < the array's length of " + arr.length);
+        }
+        byte[] a = new byte[splitPoint];
+        byte[] b = new byte[arr.length - splitPoint];
+        System.arraycopy(arr, 0, a, 0, splitPoint);
+        System.arraycopy(arr, splitPoint, b, 0, b.length);
+        return new byte[][]{a, b};
+    }
+
+    public static byte[][] split(byte[] arr, int splitPoint1, int splitPoint2) {
+        Checks.greaterThanZero("splitPoint1", splitPoint1);
+        Checks.greaterThanZero("splitPoint2", splitPoint2);
+        if (splitPoint2 <= splitPoint1) {
+            throw new IllegalArgumentException("splitPoint2 must be "
+                    + "> splitPoint1: " + splitPoint1 + "," + splitPoint2);
+        }
+        if (splitPoint1 >= notNull("arr", arr).length) {
+            throw new IllegalArgumentException("splitPoint1 - " + splitPoint1
+                    + " - is greater than the array size of " + arr.length);
+        }
+        if (splitPoint2 >= arr.length) {
+            throw new IllegalArgumentException("splitPoint2 - " + splitPoint2
+                    + " - is greater than the array size of " + arr.length);
+        }
+        byte[] a = new byte[splitPoint1];
+        byte[] b = new byte[splitPoint2 - splitPoint1];
+        byte[] c = new byte[arr.length - splitPoint2];
+        System.arraycopy(arr, 0, a, 0, splitPoint1);
+        System.arraycopy(arr, splitPoint1, b, 0, b.length);
+        System.arraycopy(arr, splitPoint2, c, 0, c.length);
+        return new byte[][]{a, b, c};
+    }
+
+    public static byte[][] split(byte[] arr, int splitPoint1, int splitPoint2, int splitPoint3, int... more) {
+        Checks.greaterThanZero("splitPoint1", splitPoint1);
+        Checks.greaterThanZero("splitPoint2", splitPoint2);
+        if (splitPoint2 <= splitPoint1) {
+            throw new IllegalArgumentException("splitPoint2 must be "
+                    + "> splitPoint1: " + splitPoint1 + "," + splitPoint2);
+        }
+        if (splitPoint1 >= notNull("arr", arr).length) {
+            throw new IllegalArgumentException("splitPoint1 - " + splitPoint1
+                    + " - is greater than the array size of " + arr.length);
+        }
+        if (splitPoint2 >= arr.length) {
+            throw new IllegalArgumentException("splitPoint2 - " + splitPoint2
+                    + " - is greater than the array size of " + arr.length);
+        }
+        byte[] a = new byte[splitPoint1];
+        byte[] b = new byte[splitPoint2 - splitPoint1];
+        byte[] c = new byte[splitPoint3 - splitPoint2];
+        byte[] d = new byte[(more.length > 0 ? more[0] : arr.length) - splitPoint3];
+        System.arraycopy(arr, 0, a, 0, splitPoint1);
+        System.arraycopy(arr, splitPoint1, b, 0, b.length);
+        System.arraycopy(arr, splitPoint2, c, 0, c.length);
+        System.arraycopy(arr, splitPoint3, d, 0, d.length);
+        if (more.length == 0) {
+            return new byte[][]{a, b, c, d};
+        }
+        List<byte[]> all = new ArrayList<>(4 + more.length);
+        all.addAll(Arrays.asList(a, b, c, d));
+        for (int i = 1; i < more.length; i++) {
+            byte[] nue = new byte[more[i] - more[i - 1]];
+            System.arraycopy(arr, more[i - 1], nue, 0, nue.length);
+            all.add(nue);
+            if (i == more.length - 1 && arr.length - more[i] > 0) {
+                nue = new byte[arr.length - more[i]];
+                System.arraycopy(arr, more[i], nue, 0, nue.length);
+                all.add(nue);
+            }
+        }
+        return all.toArray(new byte[all.size()][]);
+    }
+
+    public static byte[] concatenate(byte[] a, byte[] b, byte[]... cs) {
+        int total = a.length + b.length;
+        for (byte[] c : cs) {
+            total += c.length;
+        }
+        byte[] result = new byte[total];
+        int pos = 0;
+        System.arraycopy(a, pos, result, 0, a.length);
+        pos += a.length;
+        System.arraycopy(b, 0, result, pos, b.length);
+        pos += b.length;
+        for (byte[] c : cs) {
+            System.arraycopy(c, 0, result, pos, c.length);
+            pos += c.length;
+        }
+        return result;
+    }
+
+    public static byte[] concatenate(byte[] a, byte[] b) {
+        byte[] nue = new byte[a.length + b.length];
+        System.arraycopy(a, 0, nue, 0, a.length);
+        System.arraycopy(b, 0, nue, a.length, b.length);
+        return nue;
+    }
+
+    public static int[] concatenate(int[] a, int[] b) {
+        int[] nue = new int[a.length + b.length];
+        System.arraycopy(a, 0, nue, 0, a.length);
+        System.arraycopy(b, 0, nue, a.length, b.length);
+        return nue;
+    }
+
+    public static long[] concatenate(long[] a, long[] b) {
+        long[] nue = new long[a.length + b.length];
         System.arraycopy(a, 0, nue, 0, a.length);
         System.arraycopy(b, 0, nue, a.length, b.length);
         return nue;
@@ -303,7 +424,7 @@ public class ArrayUtils {
      */
     public static char[] extract(char[] array, int start, int length) {
         char[] result = new char[length];
-        System.arraycopy(array, 0, result, start, length);
+        System.arraycopy(array, start, result, 0, length);
         return result;
     }
 
@@ -317,7 +438,7 @@ public class ArrayUtils {
      */
     public static int[] extract(int[] array, int start, int length) {
         int[] result = new int[length];
-        System.arraycopy(array, 0, result, start, length);
+        System.arraycopy(array, start, result, 0, length);
         return result;
     }
 
@@ -331,7 +452,7 @@ public class ArrayUtils {
      */
     public static long[] extract(long[] array, int start, int length) {
         long[] result = new long[length];
-        System.arraycopy(array, 0, result, start, length);
+        System.arraycopy(array, start, result, 0, length);
         return result;
     }
 
@@ -345,7 +466,21 @@ public class ArrayUtils {
      */
     public static byte[] extract(byte[] array, int start, int length) {
         byte[] result = new byte[length];
-        System.arraycopy(array, 0, result, start, length);
+        System.arraycopy(array, start, result, 0, length);
+        return result;
+    }
+
+    /**
+     * Extract a subsequence from an array of Strings.
+     *
+     * @param array The array
+     * @param start The start
+     * @param length The length
+     * @return an array
+     */
+    public static String[] extract(String[] array, int start, int length) {
+        String[] result = new String[length];
+        System.arraycopy(array, start, result, 0, length);
         return result;
     }
 
@@ -359,8 +494,21 @@ public class ArrayUtils {
      */
     @SuppressWarnings("unchecked")
     public static <T> T[] extract(T[] array, int start, int length) {
-        T[] result = (T[]) Array.newInstance(array.getClass().getComponentType());
-        System.arraycopy(array, 0, result, start, length);
+        notNull("array", array);
+        nonNegative("length", length);
+        if (start + length > array.length) {
+            throw new IllegalArgumentException("Extract past end of array - start="
+                    + start + " + len=" + length + " = " + (start + length)
+                    + " in array of length " + array.length);
+        }
+        T[] result;
+        try {
+            result = (T[]) Array.newInstance(array.getClass().getComponentType(), length);
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Exception creating array of type "
+                    + array.getClass().getComponentType() + " for " + array, ex);
+        }
+        System.arraycopy(array, start, result, 0, length);
         return result;
     }
 
@@ -478,6 +626,22 @@ public class ArrayUtils {
     public static <T> T[] arrayOf(T obj, int length) {
         T[] result = (T[]) Array.newInstance(notNull("obj", obj).getClass(), length);
         Arrays.fill(result, obj);
+        return result;
+    }
+
+    public static BigInteger[] toBigIntegers(long[] vals) {
+        BigInteger[] result = new BigInteger[vals.length];
+        for (int i = 0; i < vals.length; i++) {
+            result[i] = BigInteger.valueOf(vals[i]);
+        }
+        return result;
+    }
+
+    public static BigInteger[] toBigIntegers(int[] vals) {
+        BigInteger[] result = new BigInteger[vals.length];
+        for (int i = 0; i < vals.length; i++) {
+            result[i] = BigInteger.valueOf(vals[i]);
+        }
         return result;
     }
 }

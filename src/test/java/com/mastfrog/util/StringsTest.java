@@ -25,13 +25,18 @@
 package com.mastfrog.util;
 
 import com.mastfrog.util.collections.CollectionUtils;
+import static com.mastfrog.util.collections.CollectionUtils.setOf;
 import com.mastfrog.util.strings.ComparableCharSequence;
 import com.mastfrog.util.strings.EightBitStrings;
 import java.util.Arrays;
+import static java.util.Arrays.asList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -311,4 +316,58 @@ public class StringsTest {
             }
         }
     }
+
+    public static final String[] TRIMMABLE = new String[]{" some", "strings", " that ", "   need\t", "trimming\n "};
+    private static final String TRIMMABLE_TRIMMED_COMMA_DELIM
+            = "some,strings,that,need,trimming";
+    private static final String[] TRIMMABLE_TRIMMED = TRIMMABLE_TRIMMED_COMMA_DELIM.split(",");
+    @Test
+    public void testTrimStringArray() {
+        String[] in = TRIMMABLE;
+        String[] expect = TRIMMABLE_TRIMMED;
+        assertArrayEquals(expect, Strings.trim(in));
+        assertEquals("Input array should not have been altered", " some", in[0]);
+        in = new String[]{"", " some", "\n", "strings", " that ", "   ", "   need\t", "trimming\n ", " "};
+        assertArrayEquals(expect, Strings.trim(in));
+        in = new String[]{"", " ", ""};
+        assertArrayEquals(new String[0], Strings.trim(in));
+    }
+
+    @Test
+    public void testTrimCharSequenceArray() {
+        EightBitStrings ebs = new EightBitStrings(false, true, true);
+        CharSequence[] in = new CharSequence[]{ebs.create("  some"), ebs.create("strings"), ebs.create(" that "),
+            ebs.create("   need\t"), ebs.create("trimming\n")};
+        CharSequence[] got = Strings.trim(in);
+        assertEquals("some,strings,that,need,trimming", Strings.join(',', got).toString());
+
+        assertEquals("Input array should not have been altered", ebs.create("  some"), in[0]);
+        in = new CharSequence[]{ebs.create("  some"), ebs.create(""), ebs.create("strings"),
+            ebs.create("\n"), ebs.create(" that "), ebs.create("   "),
+            ebs.create("   need\t"), ebs.create("trimming\n"), ebs.create(" "), ebs.create("\t")};
+        got = Strings.trim(in);
+        assertEquals("some,strings,that,need,trimming", Strings.join(',', got).toString());
+    }
+
+    @Test
+    public void testTrimStringSet() {
+        Set<String> in = setOf(TRIMMABLE);
+        Set<String> got = Strings.trim(in);
+        assertEquals(setOf(TRIMMABLE_TRIMMED), got);
+        assertEquals("Input list should not have been altered", TRIMMABLE[0], in.iterator().next());
+
+        in = new TreeSet<>(in);
+        got = Strings.trim(in);
+        assertEquals(new TreeSet<>(Arrays.asList(TRIMMABLE_TRIMMED)), got);
+        assertTrue(got instanceof SortedSet<?>);
+    }
+
+    @Test
+    public void testTrimStringList() {
+        List<String> in = Arrays.asList(TRIMMABLE);
+        List<String> got = Strings.trim(in);
+        assertEquals(asList(TRIMMABLE_TRIMMED), got);
+        assertEquals("Input list should not have been altered", TRIMMABLE[0], in.iterator().next());
+    }
+
 }
