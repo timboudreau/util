@@ -60,6 +60,15 @@ import java.util.function.Function;
  */
 public final class Strings {
 
+    public static String reverse(String s) {
+        int max = s.length() - 1;
+        char[] c = new char[max + 1];
+        for (int i = 0; i <= max; i++) {
+            c[i] = s.charAt(max - i);
+        }
+        return new String(c);
+    }
+
     /**
      * Trim a CharSequence returning a susbsequence.
      *

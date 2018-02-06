@@ -370,4 +370,11 @@ public class StringsTest {
         assertEquals("Input list should not have been altered", TRIMMABLE[0], in.iterator().next());
     }
 
+    @Test
+    public void testReverse() {
+        assertEquals("edcba", Strings.reverse("abcde"));
+        assertEquals("", Strings.reverse(""));
+        assertEquals("fedcba", Strings.reverse("abcdef"));
+    }
+
 }

@@ -83,9 +83,11 @@ public class TimeUtil {
             .toFormatter();
 
     private static final Pattern SORTABLE = Pattern.compile("^([\\d]{4}-[\\-\\d\\.]*\\.)(\\d+).*?");
+
     /**
-     * Generates dates such as "2012-12-25.00-24-01-00000000" which can
-     * be used for file names and sorted.
+     * Generates dates such as "2012-12-25.00-24-01-00000000" which can be used
+     * for file names and sorted.
+     *
      * @param zdt
      * @return
      */
@@ -94,8 +96,8 @@ public class TimeUtil {
     }
 
     /**
-     * Gets a sortable date format from a string.  Allows trailing
-     * content, so file names can be directly converted.
+     * Gets a sortable date format from a string. Allows trailing content, so
+     * file names can be directly converted.
      *
      * @param s The input string
      * @return A zoned date time
@@ -246,6 +248,10 @@ public class TimeUtil {
     public static Date toDate(LocalDateTime ldt) {
         ZoneOffset offset = ZoneOffset.systemDefault().getRules().getOffset(ldt);
         return new Date(ldt.toInstant(offset).toEpochMilli());
+    }
+
+    public static ZonedDateTime nowGMT() {
+        return ZonedDateTime.now().withZoneSameInstant(GMT);
     }
 
     /**
