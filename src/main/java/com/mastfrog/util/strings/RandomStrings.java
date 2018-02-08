@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.strings;
 
+import com.mastfrog.util.collections.ArrayUtils;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -58,6 +59,21 @@ public class RandomStrings {
 
     public String get() {
         return get(24);
+    }
+
+    public String randomChars(int count) {
+        char[] result = new char[count];
+        char[] an = ArrayUtils.copyOf(ALPHANUM);
+        ArrayUtils.shuffle(random, an);
+        if (result.length < an.length) {
+            System.arraycopy(an, 0, result, 0, result.length);
+        } else {
+            System.arraycopy(an, 0, result, 0, an.length);
+            for (int i = an.length; i < result.length; i++) {
+                result[i] = ALPHANUM[random.nextInt(ALPHANUM.length)];
+            }
+        }
+        return new String(result);
     }
 
     public String get(int length) {

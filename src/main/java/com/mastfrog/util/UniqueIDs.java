@@ -135,6 +135,9 @@ public final class UniqueIDs {
     static byte[] networkInterfaceSignature() throws SocketException {
         byte[] addrBytes = new byte[6];
         for (NetworkInterface i : CollectionUtils.toIterable(NetworkInterface.getNetworkInterfaces())) {
+            if (i == null) { // docker on mac os
+                continue;
+            }
             if (!i.isLoopback() && !i.isVirtual()) {
                 byte[] macAddress = i.getHardwareAddress();
                 if (macAddress != null) {
@@ -164,7 +167,7 @@ public final class UniqueIDs {
     private static final char[] ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz0123456789~".toCharArray();
 
     private String bytesToString(byte[] bytes) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(36);
         for (int i = 0; i < bytes.length - (bytes.length % 3); i += 3) {
             // Top 6 bits of byte i
             int value1 = bytes[i] >> 2;
