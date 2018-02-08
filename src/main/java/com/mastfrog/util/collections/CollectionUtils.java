@@ -76,6 +76,15 @@ public final class CollectionUtils {
         return result;
     }
 
+    public static <T, R> Map<T, R> toMap(Collection<R> coll, Function<R, T> func) {
+        Map<T, R> result = new LinkedHashMap<>();
+        coll.stream().forEach(r -> {
+            T key = func.apply(r);
+            result.put(key, r);
+        });
+        return result;
+    }
+
     /**
      * Convert a map of objects to booleans to a set of those keys for which the
      * value is <code>true</code>.
@@ -414,20 +423,20 @@ public final class CollectionUtils {
         return coll.<T>toArray(genericArray(type, coll.size()));
     }
 
-    public static <T,R> HashingMapBuilder<T,R> hashingMap(Function<Object,byte[]> byteConverter) {
-        return CollectionUtils.<T,R>map().toHashingMapBuilder("SHA-1", byteConverter);
+    public static <T, R> HashingMapBuilder<T, R> hashingMap(Function<Object, byte[]> byteConverter) {
+        return CollectionUtils.<T, R>map().toHashingMapBuilder("SHA-1", byteConverter);
     }
 
-    public static <T,R> HashingMapBuilder<T,R> hashingMapWithAlgorithm(String alg, Function<Object,byte[]> byteConverter) {
-        return CollectionUtils.<T,R>map().toHashingMapBuilder("SHA-1");
+    public static <T, R> HashingMapBuilder<T, R> hashingMapWithAlgorithm(String alg, Function<Object, byte[]> byteConverter) {
+        return CollectionUtils.<T, R>map().toHashingMapBuilder("SHA-1");
     }
 
-    public static <T,R> HashingMapBuilder<T,R> hashingMapWithAlgorithm(String alg) {
-        return CollectionUtils.<T,R>map().toHashingMapBuilder("SHA-1");
+    public static <T, R> HashingMapBuilder<T, R> hashingMapWithAlgorithm(String alg) {
+        return CollectionUtils.<T, R>map().toHashingMapBuilder("SHA-1");
     }
 
-    public static <T,R> HashingMapBuilder<T,R> hashingMap() {
-        return CollectionUtils.<T,R>map().toHashingMapBuilder("SHA-1");
+    public static <T, R> HashingMapBuilder<T, R> hashingMap() {
+        return CollectionUtils.<T, R>map().toHashingMapBuilder("SHA-1");
     }
 
     /**
@@ -438,10 +447,9 @@ public final class CollectionUtils {
      * @param key
      * @return
      */
-    public static <T,R> HashingMapBuilder.HashingValueBuilder<T,R> hashingMap(T key) {
-        return CollectionUtils.<T,R>map().toHashingMapBuilder("SHA-1").map(key);
+    public static <T, R> HashingMapBuilder.HashingValueBuilder<T, R> hashingMap(T key) {
+        return CollectionUtils.<T, R>map().toHashingMapBuilder("SHA-1").map(key);
     }
-
 
     /**
      * Create a map builder.
