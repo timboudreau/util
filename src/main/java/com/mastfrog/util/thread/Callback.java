@@ -39,15 +39,15 @@ public interface Callback<T> {
 
     public void receive(Throwable err, T obj);
 
-    default Callback<T> attachIfError(CompletionStage<T> fut, ThrowingConsumer<T> cons) {
-        fut.whenComplete((T t, Throwable u) -> {
+    default <R> Callback<T> attachIfError(CompletionStage<R> fut, ThrowingConsumer<R> cons) {
+        fut.whenComplete((R t, Throwable u) -> {
             if (u != null) {
-                receive(u, t);
+                receive(u, null);
             } else {
                 try {
                     cons.apply(t);
                 } catch (Exception ex) {
-                    receive(ex, t);
+                    receive(ex, null);
                 }
             }
         });
