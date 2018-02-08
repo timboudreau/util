@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.thread;
 
+import com.mastfrog.util.function.ThrowingConsumer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
@@ -37,6 +38,21 @@ import java.util.function.Supplier;
 public interface Callback<T> {
 
     public void receive(Throwable err, T obj);
+
+    default Callback<T> attachIfError(CompletionStage<T> fut, ThrowingConsumer<T> cons) {
+        fut.whenComplete((T t, Throwable u) -> {
+            if (u != null) {
+                receive(u, t);
+            } else {
+                try {
+                    cons.apply(t);
+                } catch (Exception ex) {
+                    receive(ex, t);
+                }
+            }
+        });
+        return this;
+    }
 
     default Callback<T> attachTo(CompletionStage<T> fut) {
         fut.whenComplete((T t, Throwable u) -> {
