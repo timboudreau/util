@@ -60,6 +60,41 @@ public final class CollectionUtils {
     private CollectionUtils() {
     }
 
+    public static <T, R> Set<R> transform(Set<T> list, Function<T, R> xform) {
+        Set<R> result = new LinkedHashSet<>();
+        list.stream().forEach(t -> {
+            R r = xform.apply(t);
+            if (r != null) {
+                result.add(r);
+            }
+        });
+        return result;
+    }
+
+    public static <T, R> List<R> transform(List<T> list, Function<T, R> xform) {
+        List<R> result = new ArrayList<>();
+        list.stream().forEach(t -> {
+            R r = xform.apply(t);
+            if (r != null) {
+                result.add(r);
+            }
+        });
+        return result;
+    }
+
+    @SafeVarargs
+    public static <T, R> List<R> transform(Function<T, R> xform, T... args) {
+        List<R> result = new ArrayList<>();
+        for (T obj : args) {
+            R r = xform.apply(obj);
+            if (r != null) {
+                result.add(r);
+            }
+        }
+        return result;
+    }
+
+
     /**
      * Convert a set of objects to a Map where the value for each entry in the
      * set is <code>true</code>.
