@@ -34,6 +34,9 @@ import java.util.concurrent.CompletionStage;
 public interface EnhCompletionStage<T> extends CompletionStage<T> {
 
     default EnhCompletionStage<T> forwardExceptions(CompletableFuture<T> other) {
+        if (other == this) {
+            throw new IllegalArgumentException("Cannot forward exceptions from self");
+        }
         this.whenComplete((t, thrown) -> {
             if (thrown != null) {
                 other.completeExceptionally(thrown);

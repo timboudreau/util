@@ -34,6 +34,9 @@ import java.util.function.Predicate;
 public class EnhCompletableFuture<T> extends CompletableFuture<T> implements EnhCompletionStage<T>, CompletionStage<T> {
 
     public final EnhCompletableFuture<T> listenTo(CompletionStage<?> other) {
+        if (other == this) {
+            throw new IllegalArgumentException("Cannot listen to self");
+        }
         other.whenCompleteAsync((t, thrown) -> {
             if (thrown != null) {
                 completeExceptionally(thrown);
@@ -43,6 +46,9 @@ public class EnhCompletableFuture<T> extends CompletableFuture<T> implements Enh
     }
 
     public final EnhCompletableFuture<T> attachTo(CompletionStage<T> other) {
+        if (other == this) {
+            throw new IllegalArgumentException("Cannot attach to self");
+        }
         other.whenComplete((t, thrown) -> {
             if (thrown != null) {
                 completeExceptionally(thrown);
@@ -51,6 +57,10 @@ public class EnhCompletableFuture<T> extends CompletableFuture<T> implements Enh
             }
         });
         return this;
+    }
+
+    public EnhCompletionStage<T> forwardExceptions(CompletableFuture<T> other) {
+        return (EnhCompletionStage<T>) EnhCompletionStage.super.forwardExceptions(other);
     }
 
     public <R> EnhCompletableFuture<R> chain(ThrowingBiConsumer<EnhCompletableFuture<R>, T> next) {
