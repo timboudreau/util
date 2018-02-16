@@ -42,6 +42,17 @@ public class EnhCompletableFuture<T> extends CompletableFuture<T> implements Enh
         return this;
     }
 
+    public final EnhCompletableFuture<T> attachTo(CompletionStage<T> other) {
+        other.whenComplete((t, thrown) -> {
+            if (thrown != null) {
+                completeExceptionally(thrown);
+            } else {
+                complete(t);
+            }
+        });
+        return this;
+    }
+
     public <R> EnhCompletableFuture<R> chain(ThrowingBiConsumer<EnhCompletableFuture<R>, T> next) {
         EnhCompletableFuture<R> fut = new EnhCompletableFuture<>();
         whenComplete((t, thrown) -> {
