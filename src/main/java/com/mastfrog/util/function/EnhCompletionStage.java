@@ -25,8 +25,10 @@ package com.mastfrog.util.function;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Predicate;
 
 /**
+ * Adds a few useful methods to CompletionStage and CompletableFuture.
  *
  * @author Tim Boudreau
  */
@@ -40,9 +42,33 @@ public interface EnhCompletionStage<T> extends CompletionStage<T> {
             } else {
                 try {
                     result.complete(xform.apply(t));
-                } catch (Exception ex) {
+                } catch (Throwable ex) {
                     result.completeExceptionally(ex);
                 }
+            }
+        });
+        return result;
+    }
+
+    /**
+     * Pass a consumer to be called if this stage completes normally; it is
+     * assumed that other code will already handle any errors.
+     *
+     * @param consumer A consumer
+     * @return this
+     */
+    default EnhCompletableFuture<T> onSuccess(ThrowingConsumer<T> consumer) {
+        EnhCompletableFuture<T> result = new EnhCompletableFuture<>();
+        whenComplete((t, thrown) -> {
+            if (thrown != null) {
+                result.completeExceptionally(thrown);
+                return;
+            }
+            try {
+                consumer.apply(t);
+                result.complete(t);
+            } catch (Throwable ex) {
+                result.completeExceptionally(ex);
             }
         });
         return result;
@@ -59,4 +85,86 @@ public interface EnhCompletionStage<T> extends CompletionStage<T> {
         });
         return this;
     }
+
+    default <R> EnhCompletableFuture<R> chain(ThrowingBiConsumer<EnhCompletableFuture<R>, T> next) {
+        EnhCompletableFuture<R> fut = new EnhCompletableFuture<>();
+        whenComplete((t, thrown) -> {
+            if (thrown != null) {
+                fut.completeExceptionally(thrown);
+            } else {
+                try {
+                    next.apply(fut, t);
+                } catch (Throwable ex) {
+                    fut.completeExceptionally(ex);
+                }
+            }
+        });
+        return fut;
+    }
+
+    @SuppressWarnings("UseSpecificCatch")
+    default <R> EnhCompletableFuture<R> chainConditionally(Predicate<T> test, ThrowingBiConsumer<EnhCompletableFuture<R>, T> next) {
+        EnhCompletableFuture<R> fut = new EnhCompletableFuture<>();
+        whenComplete((t, thrown) -> {
+            if (thrown != null) {
+                fut.completeExceptionally(thrown);
+            } else {
+                try {
+                    if (test.test(t)) {
+                        next.apply(fut, t);
+                    }
+                } catch (Throwable ex) {
+                    fut.completeExceptionally(ex);
+                }
+            }
+        });
+        return fut;
+    }
+
+    @SuppressWarnings("UseSpecificCatch")
+    default <R, S> EnhCompletableFuture<?> heteroChainConditionally(Predicate<T> test, ThrowingBiConsumer<EnhCompletableFuture<? super R>, T> ifTrue, ThrowingBiConsumer<CompletableFuture<? super S>, T> ifFalse) {
+        EnhCompletableFuture<Object> fut = new EnhCompletableFuture<>();
+        whenComplete((t, thrown) -> {
+            if (thrown != null) {
+                fut.completeExceptionally(thrown);
+            } else {
+                if (test.test(t)) {
+                    try {
+                        if (test.test(t)) {
+                            ifTrue.apply(fut, t);
+                        } else {
+                            ifFalse.apply(fut, t);
+                        }
+                    } catch (Throwable ex) {
+                        fut.completeExceptionally(ex);
+                    }
+                }
+            }
+        });
+        return fut;
+    }
+
+    @SuppressWarnings("UseSpecificCatch")
+    default <R, S> EnhCompletableFuture<R> chainConditionally(Predicate<T> test, ThrowingBiConsumer<EnhCompletableFuture<R>, T> ifTrue, ThrowingBiConsumer<EnhCompletableFuture<R>, T> ifFalse) {
+        EnhCompletableFuture<R> fut = new EnhCompletableFuture<>();
+        whenComplete((t, thrown) -> {
+            if (thrown != null) {
+                fut.completeExceptionally(thrown);
+            } else {
+                if (test.test(t)) {
+                    try {
+                        if (test.test(t)) {
+                            ifTrue.apply(fut, t);
+                        } else {
+                            ifFalse.apply(fut, t);
+                        }
+                    } catch (Throwable ex) {
+                        fut.completeExceptionally(ex);
+                    }
+                }
+            }
+        });
+        return fut;
+    }
+
 }

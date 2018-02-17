@@ -25,7 +25,6 @@ package com.mastfrog.util.function;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Predicate;
 
 /**
  *
@@ -62,86 +61,5 @@ public class EnhCompletableFuture<T> extends CompletableFuture<T> implements Enh
     public EnhCompletionStage<T> forwardExceptions(CompletableFuture<?> other) {
         EnhCompletionStage.super.forwardExceptions(other);
         return this;
-    }
-
-    public <R> EnhCompletableFuture<R> chain(ThrowingBiConsumer<EnhCompletableFuture<R>, T> next) {
-        EnhCompletableFuture<R> fut = new EnhCompletableFuture<>();
-        whenComplete((t, thrown) -> {
-            if (thrown != null) {
-                fut.completeExceptionally(thrown);
-            } else {
-                try {
-                    next.apply(fut, t);
-                } catch (Throwable ex) {
-                    fut.completeExceptionally(ex);
-                }
-            }
-        });
-        return fut;
-    }
-
-    @SuppressWarnings("UseSpecificCatch")
-    public <R> EnhCompletableFuture<R> chainConditionally(Predicate<T> test, ThrowingBiConsumer<EnhCompletableFuture<R>, T> next) {
-        EnhCompletableFuture<R> fut = new EnhCompletableFuture<>();
-        whenComplete((t, thrown) -> {
-            if (thrown != null) {
-                fut.completeExceptionally(thrown);
-            } else {
-                try {
-                    if (test.test(t)) {
-                        next.apply(fut, t);
-                    }
-                } catch (Throwable ex) {
-                    fut.completeExceptionally(ex);
-                }
-            }
-        });
-        return fut;
-    }
-
-    @SuppressWarnings("UseSpecificCatch")
-    public <R, S> EnhCompletableFuture<?> heteroChainConditionally(Predicate<T> test, ThrowingBiConsumer<EnhCompletableFuture<? super R>, T> ifTrue, ThrowingBiConsumer<CompletableFuture<? super S>, T> ifFalse) {
-        EnhCompletableFuture<Object> fut = new EnhCompletableFuture<>();
-        whenComplete((t, thrown) -> {
-            if (thrown != null) {
-                fut.completeExceptionally(thrown);
-            } else {
-                if (test.test(t)) {
-                    try {
-                        if (test.test(t)) {
-                            ifTrue.apply(fut, t);
-                        } else {
-                            ifFalse.apply(fut, t);
-                        }
-                    } catch (Throwable ex) {
-                        fut.completeExceptionally(ex);
-                    }
-                }
-            }
-        });
-        return fut;
-    }
-
-    @SuppressWarnings("UseSpecificCatch")
-    public <R, S> EnhCompletableFuture<R> chainConditionally(Predicate<T> test, ThrowingBiConsumer<EnhCompletableFuture<R>, T> ifTrue, ThrowingBiConsumer<EnhCompletableFuture<R>, T> ifFalse) {
-        EnhCompletableFuture<R> fut = new EnhCompletableFuture<>();
-        whenComplete((t, thrown) -> {
-            if (thrown != null) {
-                fut.completeExceptionally(thrown);
-            } else {
-                if (test.test(t)) {
-                    try {
-                        if (test.test(t)) {
-                            ifTrue.apply(fut, t);
-                        } else {
-                            ifFalse.apply(fut, t);
-                        }
-                    } catch (Throwable ex) {
-                        fut.completeExceptionally(ex);
-                    }
-                }
-            }
-        });
-        return fut;
     }
 }
