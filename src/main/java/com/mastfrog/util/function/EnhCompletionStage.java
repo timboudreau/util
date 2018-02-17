@@ -21,7 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package com.mastfrog.util.function;
 
 import java.util.concurrent.CompletableFuture;
@@ -33,7 +32,23 @@ import java.util.concurrent.CompletionStage;
  */
 public interface EnhCompletionStage<T> extends CompletionStage<T> {
 
-    default EnhCompletionStage<T> forwardExceptions(CompletableFuture<T> other) {
+    default <R> EnhCompletionStage<R> transform(ThrowingFunction<? super T, ? extends R> xform) {
+        EnhCompletableFuture<R> result = new EnhCompletableFuture<>();
+        whenComplete((t, thrown) -> {
+            if (thrown != null) {
+                result.completeExceptionally(thrown);
+            } else {
+                try {
+                    result.complete(xform.apply(t));
+                } catch (Exception ex) {
+                    result.completeExceptionally(ex);
+                }
+            }
+        });
+        return result;
+    }
+
+    default EnhCompletionStage<T> forwardExceptions(CompletableFuture<?> other) {
         if (other == this) {
             throw new IllegalArgumentException("Cannot forward exceptions from self");
         }

@@ -45,7 +45,7 @@ public class EnhCompletableFuture<T> extends CompletableFuture<T> implements Enh
         return this;
     }
 
-    public final EnhCompletableFuture<T> attachTo(CompletionStage<T> other) {
+    public final EnhCompletableFuture<T> attachTo(CompletionStage<? extends T> other) {
         if (other == this) {
             throw new IllegalArgumentException("Cannot attach to self");
         }
@@ -59,8 +59,9 @@ public class EnhCompletableFuture<T> extends CompletableFuture<T> implements Enh
         return this;
     }
 
-    public EnhCompletionStage<T> forwardExceptions(CompletableFuture<T> other) {
-        return (EnhCompletionStage<T>) EnhCompletionStage.super.forwardExceptions(other);
+    public EnhCompletionStage<T> forwardExceptions(CompletableFuture<?> other) {
+        EnhCompletionStage.super.forwardExceptions(other);
+        return this;
     }
 
     public <R> EnhCompletableFuture<R> chain(ThrowingBiConsumer<EnhCompletableFuture<R>, T> next) {
