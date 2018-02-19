@@ -644,4 +644,29 @@ public class ArrayUtils {
         }
         return result;
     }
+
+    /**
+     * Constant time equality test, designed not to be faster but to be immune
+     * to timing attacks. Slower than Arrays.equals(), but useful in
+     * cryptography where the time it takes to compute something can be
+     * <a href="http://codahale.com/a-lesson-in-timing-attacks/">
+     * used in an attack</a>.
+     */
+    public static boolean timingSafeEquals(byte[] first, byte[] second) {
+        if (first == null) {
+            return second == null;
+        } else if (second == null) {
+            return false;
+        } else if (second.length <= 0) {
+            return first.length <= 0;
+        }
+        byte result = (byte) ((first.length == second.length) ? 0 : 1);
+        int j = 0;
+        for (int i = 0; i < first.length; ++i) {
+            result |= first[i] ^ second[j];
+            j = (j + 1) % second.length;
+        }
+        return result == 0;
+    }
+
 }

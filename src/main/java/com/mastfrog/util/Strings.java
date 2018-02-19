@@ -707,6 +707,58 @@ public final class Strings {
         return l.toArray(new CharSequence[l.size()]);
     }
 
+    private static CharSequence[] splitOnce(char c, CharSequence cs) {
+        int max = cs.length();
+        int splitAt = -1;
+        for (int i = 0; i < cs.length(); i++) {
+            if (c == cs.charAt(i)) {
+                splitAt = i;
+                break;
+            }
+        }
+        if (splitAt == -1) {
+            return new CharSequence[]{cs};
+        }
+        CharSequence left = cs.subSequence(0, splitAt);
+        if (splitAt < max - 1) {
+            CharSequence right = cs.subSequence(splitAt + 1, max);
+            return new CharSequence[]{left, right};
+        }
+        return new CharSequence[]{left};
+    }
+
+    public static String[] splitOnce(char c, String cs) {
+        int max = cs.length();
+        int splitAt = -1;
+        for (int i = 0; i < cs.length(); i++) {
+            if (c == cs.charAt(i)) {
+                splitAt = i;
+                break;
+            }
+        }
+        if (splitAt == -1) {
+            return new String[]{cs};
+        }
+        String left = cs.subSequence(0, splitAt).toString();
+        if (splitAt < max - 1) {
+            String right = cs.subSequence(splitAt + 1, max).toString();
+            return new String[]{left, right};
+        }
+        return new String[]{left};
+    }
+
+    public static final CharSequence stripDoubleQuotes(CharSequence cs) {
+        if (cs.length() >= 2) {
+            if (cs.charAt(0) == '"') {
+                cs = cs.subSequence(1, cs.length());
+            }
+            if (cs.charAt(cs.length() - 1) == '"') {
+                cs = cs.subSequence(0, cs.length() - 1);
+            }
+        }
+        return cs;
+    }
+
     public static String[] split(char delim, String seq) {
         List<String> result = new ArrayList<>(20);
         int max = seq.length();
@@ -1254,5 +1306,59 @@ public final class Strings {
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * String equality test which is slower than String.equals(), but is
+     * constant-time, so useful in cryptography to avoid a
+     * <a href="http://codahale.com/a-lesson-in-timing-attacks/">timing
+     * attack</a>.
+     */
+    public static boolean timingSafeEquals(String first, String second) {
+        if (first == null) {
+            return second == null;
+        } else if (second == null) {
+            return false;
+        } else if (second.length() <= 0) {
+            return first.length() <= 0;
+        }
+        char[] firstChars = first.toCharArray();
+        char[] secondChars = second.toCharArray();
+        char result = (char) ((firstChars.length == secondChars.length) ? 0 : 1);
+        int j = 0;
+        for (int i = 0; i < firstChars.length; ++i) {
+            result |= firstChars[i] ^ secondChars[j];
+            j = (j + 1) % secondChars.length;
+        }
+        return result == 0;
+    }
+
+    /**
+     * String equality test which is slower than String.equals(), but is
+     * constant-time, so useful in cryptography to avoid a
+     * <a href="http://codahale.com/a-lesson-in-timing-attacks/">timing
+     * attack</a>.
+     *
+     * @param first The first character sequence
+     * @param second The second character sequence
+     * @return Whether or not the two sequences are equal
+     */
+    public static boolean timingSafeEquals(CharSequence first, CharSequence second) {
+        if (first == null) {
+            return second == null;
+        } else if (second == null) {
+            return false;
+        } else if (second.length() <= 0) {
+            return first.length() <= 0;
+        }
+        int firstLength = first.length();
+        int secondLength = second.length();
+        char result = (char) ((firstLength == secondLength) ? 0 : 1);
+        int j = 0;
+        for (int i = 0; i < firstLength; ++i) {
+            result |= first.charAt(i) ^ second.charAt(j);
+            j = (j + 1) % secondLength;
+        }
+        return result == 0;
     }
 }
