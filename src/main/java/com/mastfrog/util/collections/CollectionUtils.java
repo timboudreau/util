@@ -94,7 +94,6 @@ public final class CollectionUtils {
         return result;
     }
 
-
     /**
      * Convert a set of objects to a Map where the value for each entry in the
      * set is <code>true</code>.
@@ -752,6 +751,29 @@ public final class CollectionUtils {
     }
 
     /**
+     * Represent a collection of list iterators as one without copying data.
+     *
+     * @param <T> The list type
+     * @param iterators Some iterators
+     * @return A list iterator
+     */
+    public static <T> ListIterator<T> combineListIterators(List<ListIterator<T>> iterators) {
+        return iterators.isEmpty() ? Collections.emptyListIterator() : new MergeListIterator<>(iterators);
+    }
+
+    /**
+     * Merge together two list iterators without copying data.
+     *
+     * @param <T> The type
+     * @param a One iterator
+     * @param b Another iterator
+     * @return A single iterator wrapping both
+     */
+    public static <T> ListIterator<T> combineListIterators(ListIterator<T> a, ListIterator<T> b) {
+        return new MergeListIterator<>(Arrays.asList(a, b));
+    }
+
+    /**
      * Combine two iterators
      *
      * @param <T> The type
@@ -764,6 +786,44 @@ public final class CollectionUtils {
         Checks.notNull("b", b);
         return new MergeIterator<>(Arrays.asList(a, b));
     }
+
+    /**
+     * Combines two lists into a single list that proxies both, without copying
+     * data.
+     *
+     * @param <T> The list type
+     * @param a The first list
+     * @param b The second list
+     * @return A list that combines both arguments
+     */
+    public static <T> List<T> combinedList(List<T> a, List<T> b) {
+        return combinedList(Arrays.asList(a, b));
+    }
+
+    /**
+     * Combines multiple lists into a single list that proxies both, without
+     * copying data.
+     *
+     * @param <T> The list type
+     * @param lists A list of lists
+     * @return A list that combines both arguments
+     */
+    public static <T> List<T> combinedList(List<List<T>> lists) {
+        return notNull("lists", lists).isEmpty() ? Collections.emptyList() : new MultiList<>(lists);
+    }
+
+    /**
+     * Combines multiple collections into a single list that proxies both,
+     * without copying data.
+     *
+     * @param <T>
+     * @param lists
+     * @return
+     */
+    public static <T> List<T> combinedList(Collection<? extends Collection<T>> lists) {
+        return notNull("lists", lists).isEmpty() ? Collections.emptyList() : new MultiList<>(lists);
+    }
+
 
     /**
      * Create an iterator that contains exactly one object.

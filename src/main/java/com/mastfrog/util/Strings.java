@@ -31,6 +31,9 @@ import com.mastfrog.util.streams.HashingOutputStream;
 import com.mastfrog.util.strings.AppendableCharSequence;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.nio.charset.Charset;
@@ -759,6 +762,46 @@ public final class Strings {
         return cs;
     }
 
+    /**
+     * URL encodes using UTF-8 and silently rethrowing the irritating
+     * UnsupportedEncodingException that otherwise would need to be caught if
+     * any JVM actually didn't support UTF-8.
+     *
+     * @param str The string to encode
+     * @return An encoded string
+     */
+    public static String urlEncode(String str) {
+        try {
+            return URLEncoder.encode(notNull("str", str), "UTF-8");
+        } catch (UnsupportedEncodingException ex) {
+            return Exceptions.chuck(ex);
+        }
+    }
+
+    /**
+     * URL decodes using UTF-8 and silently rethrowing the irritating
+     * UnsupportedEncodingException that otherwise would need to be caught if
+     * any JVM actually didn't support UTF-8.
+     *
+     * @param str The string to decode
+     * @return An decoded string
+     */
+    public static String urlDecode(String str) {
+        try {
+            return URLDecoder.decode(notNull("str", str), "UTF-8");
+        } catch (UnsupportedEncodingException ex) {
+            return Exceptions.chuck(ex);
+        }
+    }
+
+    /**
+     * Split a string using a single-character delimiter; faster than
+     * String.split() with regex.
+     *
+     * @param delim The delimiter character
+     * @param seq The string
+     * @return An array of strings
+     */
     public static String[] split(char delim, String seq) {
         List<String> result = new ArrayList<>(20);
         int max = seq.length();
@@ -789,6 +832,16 @@ public final class Strings {
         return result;
     }
 
+    /**
+     * Split a string on a delimiter such as a comma, trimming the results and
+     * eliminating empty and duplicate strings. So for
+     * <code>foo,foo,,bar, foo,   bar</code> you get back a set of
+     * <code>foo,bar</code>.
+     *
+     * @param delim The delimiter
+     * @param seq The string to split
+     * @return A set of strings
+     */
     public static Set<CharSequence> splitUniqueNoEmpty(char delim, CharSequence seq) {
         Set<CharSequence> result = new LinkedHashSet<>();
         split(delim, seq, (s) -> {
@@ -825,6 +878,15 @@ public final class Strings {
         }
     }
 
+    /**
+     * Determine if a character sequence starts with another sequence without
+     * having to convert it to a string.
+     *
+     * @param target The target character sequence
+     * @param start The proposed starting character sequence
+     * @return True if the second argument is exactly the same characters as
+     * that many initial characters of the first argument
+     */
     public static boolean startsWith(CharSequence target, CharSequence start) {
         int targetLength = target.length();
         int startLength = start.length();
@@ -839,6 +901,15 @@ public final class Strings {
         return true;
     }
 
+    /**
+     * Determine if a character sequence starts with another sequence without
+     * having to convert it to a string, and ignoring case.
+     *
+     * @param target The target character sequence
+     * @param start The proposed starting character sequence
+     * @return True if the second argument is exactly the same characters as
+     * that many initial characters of the first argument, ignoring case
+     */
     public static boolean startsWithIgnoreCase(CharSequence target, CharSequence start) {
         int targetLength = target.length();
         int startLength = start.length();
@@ -853,6 +924,13 @@ public final class Strings {
         return true;
     }
 
+    /**
+     * Determine if two character sequences are the same, ignoring case.
+     *
+     * @param a The first sequence
+     * @param b The second sequence
+     * @return Whether or not they are equal, ignoring case
+     */
     public static boolean contentEqualsIgnoreCase(CharSequence a, CharSequence b) {
         int len = a.length();
         if (b.length() != len) {
@@ -866,6 +944,16 @@ public final class Strings {
         return true;
     }
 
+    /**
+     * Determine if one character sequence contains another, optionally ignoring
+     * case, without converting to String.
+     *
+     * @param container The sequence to look in
+     * @param contained The sequence to look for
+     * @param ignoreCase If true, do case-insensitive comparison
+     * @return True if the first argument contains the second, optionally
+     * ignoring case
+     */
     public static boolean charSequenceContains(CharSequence container, CharSequence contained, boolean ignoreCase) {
         if (!ignoreCase && container instanceof String && contained instanceof String) {
             return ((String) container).contains(contained);
@@ -892,6 +980,13 @@ public final class Strings {
         return false;
     }
 
+    /**
+     * Parse an integer from a character sequence without converting to String.
+     *
+     * @param seq The character sequence
+     * @return An integer
+     * @throws NumberFormatException for all the usual reasons
+     */
     public static int parseInt(CharSequence seq) {
         int result = 0;
         int max = seq.length() - 1;
@@ -931,6 +1026,13 @@ public final class Strings {
         return negative ? -result : result;
     }
 
+    /**
+     * Parse an long from a character sequence without converting to String.
+     *
+     * @param seq The character sequence
+     * @return An integer
+     * @throws NumberFormatException for all the usual reasons
+     */
     public static long parseLong(CharSequence seq) {
         long result = 0;
         int max = seq.length() - 1;
@@ -970,6 +1072,14 @@ public final class Strings {
         return negative ? -result : result;
     }
 
+    /**
+     * Find the first index of a character in a character sequence, without
+     * converting to String.
+     *
+     * @param c A character
+     * @param seq The sequence
+     * @return The first index or -1
+     */
     public static int indexOf(char c, CharSequence seq) {
         int max = seq.length();
         for (int i = 0; i < max; i++) {
@@ -980,6 +1090,14 @@ public final class Strings {
         return -1;
     }
 
+    /**
+     * Find the last index of a character in a character sequence, without
+     * converting to String.
+     *
+     * @param c A character
+     * @param seq The sequence
+     * @return The first index or -1
+     */
     public static int lastIndexOf(char c, CharSequence seq) {
         int max = seq.length() - 1;
         for (int i = max; i >= 0; i--) {
@@ -1104,6 +1222,13 @@ public final class Strings {
         return false;
     }
 
+    /**
+     * Convert a camel-case sequence to hyphenated, e.g. thisThingIsWeird -&gt;
+     * this-thing-is-weird.
+     *
+     * @param s A camel case sequence
+     * @return A hyphenated sequence
+     */
     public static String camelCaseToDashes(CharSequence s) {
         StringBuilder sb = new StringBuilder();
         int max = s.length();
@@ -1119,6 +1244,13 @@ public final class Strings {
         return sb.toString();
     }
 
+    /**
+     * Convert hyphenated words to camel case, e.g. this-thing-is-weird -&gt;
+     * thisThingIsWeird.
+     *
+     * @param s A hyphenated sequence
+     * @return A camel case string
+     */
     public static String dashesToCamelCase(CharSequence s) {
         StringBuilder sb = new StringBuilder();
         boolean upcase = true;
@@ -1138,6 +1270,12 @@ public final class Strings {
         return sb.toString();
     }
 
+    /**
+     * Get a SHA-1 hash of a string encoded as Base64.
+     *
+     * @param s The string
+     * @return The base 64 SHA-1 hash of the string
+     */
     public static String hash(String s) {
         try {
             return hash(s, "SHA-1");
@@ -1146,9 +1284,28 @@ public final class Strings {
         }
     }
 
+    /**
+     * Get a URL-safe SHA-1 hash of a string encoded as Base64.
+     *
+     * @param s The string
+     * @return The url-safe base 64 SHA-1 hash of the string
+     */
+    public static String urlHash(String s) {
+        try {
+            return urlHash(s, "SHA-1");
+        } catch (NoSuchAlgorithmException ex) {
+            return Exceptions.chuck(ex);
+        }
+    }
+
     public static String hash(String s, String algorithm) throws NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance(algorithm);
         return Base64.getEncoder().encodeToString(digest.digest(s.getBytes(Charset.forName("UTF-8"))));
+    }
+
+    public static String urlHash(String s, String algorithm) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance(algorithm);
+        return Base64.getUrlEncoder().encodeToString(digest.digest(s.getBytes(Charset.forName("UTF-8"))));
     }
 
     public static List<String> commaDelimitedToList(String commas, int lengthLimit) {

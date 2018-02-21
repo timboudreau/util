@@ -40,6 +40,10 @@ public interface MapBuilder2<T, R> {
 
     ValueBuilder<T, R> map(T key);
 
+    default MapBuilder2<T, R> map(T key, R val) {
+        return map(key).to(val);
+    }
+
     public interface ValueBuilder<T, R> {
 
         MapBuilder2<T, R> to(R value);

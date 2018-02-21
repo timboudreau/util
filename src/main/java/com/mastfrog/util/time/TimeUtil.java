@@ -59,6 +59,9 @@ public class TimeUtil {
 
     public static final ZoneId GMT = ZoneId.of("GMT");
 
+    public static final ZonedDateTime EPOCH
+            = ZonedDateTime.ofInstant(Instant.ofEpochMilli(0), GMT);
+
     private TimeUtil() {
     }
 
