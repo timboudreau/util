@@ -1128,6 +1128,11 @@ public final class CollectionUtils {
         public Iterator<T> iterator() {
             return iter;
         }
+
+        @Override
+        public String toString() {
+            return "Iterable wrapper for " + iter;
+        }
     }
 
     public static <T> Iterable<T> toIterable(final Enumeration<T> enumeration) {

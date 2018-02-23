@@ -38,6 +38,11 @@ final class WrapAsListIterator<T> implements ListIterator<T>{
     }
 
     @Override
+    public String toString() {
+        return getClass().getSimpleName() + "(" + iter + ")";
+    }
+
+    @Override
     public boolean hasNext() {
         return iter.hasNext();
     }
