@@ -43,6 +43,8 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -58,6 +60,73 @@ import java.util.function.ToLongFunction;
 public final class CollectionUtils {
 
     private CollectionUtils() {
+    }
+
+    /**
+     * Return a generified view of a map, filtering out any key value pairs     * that do not match the passed types.
+     *
+     * @param <T> The key type
+     * @param <R> The value type
+     * @param map A map
+     * @param t The key type
+     * @param r The value type
+     * @return A typed map
+     */
+    public static <T, R> Map<T, R> checkedMapByFilter(Map<?, ?> map, Class<T> t, Class<R> r) {
+        notNull("map", map);
+        Map<T, R> result = map instanceof SortedMap<?, ?> ? new TreeMap<>()
+                : map instanceof LinkedHashMap<?, ?> ? new LinkedHashMap<>()
+                        : new HashMap<>();
+        for (Map.Entry<?, ?> e : map.entrySet()) {
+            if (t.isInstance(e.getKey()) && r.isInstance(e.getValue())) {
+                result.put(t.cast(e.getKey()), r.cast(e.getValue()));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Simply dangerously casts the map to the requested types.
+     *
+     * @param <T> The key type
+     * @param <R> The value type
+     * @param map The map
+     * @return The same map passed in
+     */
+    @SuppressWarnings("unchecked")
+    public static <T, R> Map<T, R> uncheckedMap(Map<?, ?> map) {
+        return (Map<T, R>) map;
+    }
+
+    /**
+     * Return a generified view of a map.
+     *
+     * @param <T> The key type
+     * @param <R> The value type
+     * @param map The map
+     * @param t The key type
+     * @param r The value type
+     * @return The same map passed in, safely typed
+     * @throws ClassCastException if a type is wrong
+     */
+    @SuppressWarnings("unchecked")
+    public static <T, R> Map<T, R> checkedMap(Map<?, ?> map, Class<T> t, Class<R> r) {
+        notNull("map", map);
+        for (Map.Entry<?, ?> e : map.entrySet()) {
+            if (t != Object.class && e.getKey() != null) {
+                if (!t.isInstance(e.getKey())) {
+                    throw new ClassCastException("Key " + e.getKey() + " is not an instance of "
+                            + t.getName() + " (value " + e.getValue() + ")");
+                }
+            }
+            if (r != Object.class && e.getValue() != null) {
+                if (!r.isInstance(e.getValue())) {
+                    throw new ClassCastException("Value for key " + e.getKey() + " is not an instance of "
+                            + r.getName() + " (value " + e.getValue() + ")");
+                }
+            }
+        }
+        return (Map<T, R>) map;
     }
 
     public static <T, R> Set<R> transform(Set<T> list, Function<T, R> xform) {
@@ -823,7 +892,6 @@ public final class CollectionUtils {
     public static <T> List<T> combinedList(Collection<? extends Collection<T>> lists) {
         return notNull("lists", lists).isEmpty() ? Collections.emptyList() : new MultiList<>(lists);
     }
-
 
     /**
      * Create an iterator that contains exactly one object.
