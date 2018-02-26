@@ -23,13 +23,13 @@
  */
 package com.mastfrog.util.collections;
 
+import static com.mastfrog.util.collections.CollectionUtils.setOf;
 import com.mastfrog.util.search.Bias;
 import com.mastfrog.util.search.BinarySearch;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -143,7 +143,7 @@ class ImmutableArrayMap<T, R> implements Map<T, R>, LongFunction<T> {
 
     @Override
     public Set<T> keySet() {
-        return new HashSet<>(Arrays.asList(keys));
+        return setOf(keys);
     }
 
     @Override

@@ -25,12 +25,16 @@ package com.mastfrog.util.collections;
 
 import com.mastfrog.util.Checks;
 import static com.mastfrog.util.Checks.notNull;
+import com.mastfrog.util.Strings;
 import com.mastfrog.util.collections.MapBuilder2.HashingMapBuilder;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import static java.util.Collections.emptySet;
+import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,6 +46,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -63,7 +68,8 @@ public final class CollectionUtils {
     }
 
     /**
-     * Return a generified view of a map, filtering out any key value pairs     * that do not match the passed types.
+     * Return a generified view of a map, filtering out any key value pairs *
+     * that do not match the passed types.
      *
      * @param <T> The key type
      * @param <R> The value type
@@ -224,25 +230,150 @@ public final class CollectionUtils {
      * @param args The arguments
      * @return A set
      */
+    @SuppressWarnings("unchecked")
     public static <T> Set<T> setOf(T a, T b) {
-        Set<T> set = new LinkedHashSet<>(2);
-        set.add(a);
-        set.add(b);
-        return set;
+        if (Objects.equals(a, b)) {
+            return Collections.singleton(a);
+        }
+        return new ArraySet<>(false, a, b);
     }
 
     /**
-     * Create a set from some arguments.
+     * Create a mutable set from some arguments.
      *
      * @param <T> The type
      * @return A set
      */
+    @SafeVarargs
+    public static <T> Set<T> mutableSetOf(T... args) {
+        Set<T> result = new LinkedHashSet<>();
+        for (T t : args) {
+            result.add(t);
+        }
+        return result;
+    }
+
+    /**
+     * Create a set from some arguments. The type of the returned set may vary
+     * depending on the arguments, and will usually be immutable.
+     *
+     * @param <T> The type
+     * @return A set
+     */
+    @SuppressWarnings("unchecked")
     public static <T> Set<T> setOf(T a, T b, T c) {
-        Set<T> set = new LinkedHashSet<>(2);
-        set.add(a);
-        set.add(b);
-        set.add(c);
-        return set;
+        if (a instanceof String && b instanceof String && c instanceof String) {
+            return (Set<T>) arraySetOf((String) a, (String) b, (String) c);
+        } else if (a instanceof CharSequence && b instanceof CharSequence && c instanceof CharSequence) {
+            return (Set<T>) charSequenceSetOf((CharSequence) a, (CharSequence) b, (CharSequence) c);
+        } else if (a instanceof Enum<?> && b instanceof Enum<?> && c instanceof Enum<?>
+                && a.getClass() == b.getClass() && a.getClass() == c.getClass()) {
+            EnumSet es = EnumSet.noneOf((Class<Enum>) a.getClass());
+            es.add(a);
+            es.add(b);
+            es.add(c);
+            return es;
+        }
+        boolean abEqual = Objects.equals(a, b);
+        boolean acEqual = Objects.equals(a, c);
+        if (abEqual && acEqual) {
+            return Collections.singleton(a);
+        } else if (abEqual && !acEqual) {
+            return new ArraySet<>(false, a, c);
+        } else if (acEqual && !abEqual) {
+            return new ArraySet<>(false, a, b);
+        } else {
+            return new ArraySet<>(false, a, b, c);
+        }
+    }
+
+    static final class IdentityComparator implements Comparator<Object> {
+
+        @Override
+        public int compare(Object o1, Object o2) {
+            int a = System.identityHashCode(o1);
+            int b = System.identityHashCode(o2);
+            return a == b ? 0 : a > b ? 1 : -1;
+        }
+    }
+
+    @SafeVarargs
+    public static <T> Set<T> identitySet(T... objs) {
+        return new ArrayBinarySet<>(false, true, new IdentityComparator(), objs);
+    }
+
+    /**
+     * Create an array-backed immutable set which uses binary search for
+     * lookups, and may use the passed comparator for membership tests (allowing
+     * for creation of sets with alternate membership requirements, such as
+     * case-insensitive string sets). The returned set is faster than a hash set
+     * for iteration, but may be slower than a hash set for membership tests -
+     * the performance difference depends on how much work the comparator does.
+     *
+     * @param <T>
+     * @param comp
+     * @param useComparatorForMembershipTest
+     * @param objs
+     * @return
+     */
+    @SafeVarargs
+    public static <T> Set<T> arraySetOf(Comparator<T> comp, boolean useComparatorForMembershipTest, T... objs) {
+        if (objs.length == 0) {
+            return emptySet();
+        }
+        return new ArrayBinarySet<>(true, useComparatorForMembershipTest, comp, objs);
+    }
+
+    @SafeVarargs
+    public static <T> Set<T> arraySetOf(Comparator<T> comp, T... objs) {
+        return arraySetOf(comp, false, objs);
+    }
+
+    @SafeVarargs
+    public static <T extends Comparable<T>> Set<T> arraySetOf(T... objs) {
+        if (objs.length == 0) {
+            return emptySet();
+        }
+        return new ArrayBinarySet<>(true, false, new ComparableComparator<>(), objs);
+    }
+
+    public static Set<CharSequence> charSequenceSetOf(CharSequence... objs) {
+        if (objs.length == 0) {
+            return emptySet();
+        }
+        return new ArrayBinarySet<>(true, false, Strings.charSequenceComparator(false), objs);
+    }
+
+    public static Set<String> caseInsensitiveStringSet(String... str) {
+        if (str.length == 0) {
+            return emptySet();
+        }
+        return new ArrayBinarySet<>(true, true, new StringComparator(), str);
+    }
+
+    public static Set<CharSequence> caseInsensitiveCharSequenceSet(CharSequence... str) {
+        if (str.length == 0) {
+            return emptySet();
+        }
+        return new ArrayBinarySet<>(true, true, Strings.charSequenceComparator(true), str);
+    }
+
+    static final class StringComparator implements Comparator<String> {
+
+        @Override
+        public int compare(String o1, String o2) {
+            return o1.compareToIgnoreCase(o2);
+        }
+
+    }
+
+    static final class ComparableComparator<T extends Comparable<T>> implements Comparator<T> {
+
+        @Override
+        public int compare(T o1, T o2) {
+            return o1.compareTo(o2);
+        }
+
     }
 
     /**
@@ -253,12 +384,34 @@ public final class CollectionUtils {
      * @return A set
      */
     @SafeVarargs
+    @SuppressWarnings("unchecked")
     public static <T> Set<T> setOf(T... args) {
         if (args.length == 0) {
             return Collections.emptySet();
         }
         if (args.length == 1) {
             return Collections.singleton(args[0]);
+        }
+        if (args.length == 2) {
+            return setOf(args[0], args[1]);
+        }
+        if (args.length == 3) {
+            return setOf(args[0], args[1], args[2]);
+        }
+        if (Enum.class.isAssignableFrom(args.getClass().getComponentType())) {
+            Set result = EnumSet.noneOf((Class<? extends Enum>) args.getClass().getComponentType());
+            for (T t : args) {
+                result.add(t);
+            }
+            return result;
+        }
+        if (Comparable.class.isAssignableFrom(args.getClass().getComponentType())) {
+            if (args.length < 30) {
+                return new ArrayBinarySet(true, false, new ComparableComparator(), args);
+            }
+        }
+        if (args.length < 10) {
+            return new ArraySet<>(true, args);
         }
         Set<T> set = new LinkedHashSet<>();
         for (T t : args) {

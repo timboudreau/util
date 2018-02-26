@@ -24,6 +24,7 @@
 
 package com.mastfrog.util.collections;
 
+import com.mastfrog.util.collections.CollectionUtils.ComparableComparator;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -32,7 +33,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.ConcurrentModificationException;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -526,15 +526,17 @@ final class ArrayIntMap<T> implements IntMap<T> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Set<Entry<Integer, T>> entrySet() {
         int max = size();
-        Set<Entry<Integer, T>> result = new HashSet<>();
+        ME[] mes = (ME[]) Array.newInstance(ME.class, max);
         for (int i = 0; i < max; i++) {
-            result.add(new ME(i));
+            mes[i] = new ME(i);
         }
-        return result;
+        return new ArrayBinarySet<>(false, false, new ComparableComparator(), mes);
     }
 
+    @Override
     public int hashCode() {
         // Will produce the same result as AbstractMap / HashMap
         int h = 0;
@@ -544,7 +546,13 @@ final class ArrayIntMap<T> implements IntMap<T> {
         return h;
     }
 
+    @Override
     public boolean equals(Object o) {
+        if (o == null) {
+            return false;
+        } else if (o == this) {
+            return true;
+        }
         if (o instanceof Map<?, ?>) {
             if (((Map<?, ?>) o).size() == size()) {
                 for (Map.Entry<?, ?> e : ((Map<?, ?>) o).entrySet()) {
@@ -626,7 +634,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
         }
     }
 
-    private class ME implements Map.Entry<Integer, T> {
+    private class ME implements Map.Entry<Integer, T>, Comparable<ME> {
 
         private final int ix;
 
@@ -682,6 +690,11 @@ final class ArrayIntMap<T> implements IntMap<T> {
 
         public int hashCode() {
             return ix;
+        }
+
+        @Override
+        public int compareTo(ME o) {
+            return ix == o.ix ? 0 : ix > o.ix ? 1 : -1;
         }
     }
 
