@@ -29,6 +29,7 @@ import com.mastfrog.util.collections.CollectionUtils;
 import com.mastfrog.util.streams.HashingInputStream;
 import com.mastfrog.util.streams.HashingOutputStream;
 import com.mastfrog.util.strings.AppendableCharSequence;
+import com.mastfrog.util.time.TimeUtil;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
@@ -39,11 +40,18 @@ import java.nio.LongBuffer;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -1517,5 +1525,110 @@ public final class Strings {
             j = (j + 1) % secondLength;
         }
         return result == 0;
+    }
+
+    public static CharSequence replaceAll(final char c, String replacement, CharSequence in) {
+        if (indexOf(c, in) < 0) {
+            return in;
+        }
+        StringBuilder sb = new StringBuilder(in.length() + 4);
+        int max = in.length();
+        for (int i = 0; i < max; i++) {
+            char cc = in.charAt(i);
+            if (cc == c) {
+                sb.append(replacement);
+            } else {
+                sb.append(cc);
+            }
+        }
+        return sb;
+    }
+
+    public static CharSequence quickJson(Object... args) {
+        if ((args.length % 2) != 0) {
+            throw new IllegalArgumentException("Odd number of arguments: " + join(',', args));
+        }
+        ConcatCharSequence sb = new ConcatCharSequence('{');
+        for (int i = 0; i < args.length; i += 2) {
+            CharSequence key = jsonArgument(args[i]);
+            CharSequence val = jsonArgument(args[i + 1]);
+            sb.append(key).append(':').append(val);
+            if (i != args.length - 2) {
+                sb.append(',');
+            }
+        }
+        return sb.append('}');
+    }
+
+    private static CharSequence jsonArgument(Object o) {
+        if (o instanceof Collection<?> || (o != null && o.getClass().isArray())) {
+            if (o.getClass().isArray()) {
+                o = CollectionUtils.toList(o);
+            }
+            Collection<?> c = (Collection<?>) o;
+            ConcatCharSequence sq = new ConcatCharSequence(c.size() + 4);
+            sq.append(singleChar('['));
+            for (Iterator<?> it = c.iterator(); it.hasNext();) {
+                Object o1 = it.next();
+                sq.append(jsonArgument(o1));
+                if (it.hasNext()) {
+                    sq.append(singleChar(','));
+                }
+            }
+            sq.append(singleChar(']'));
+            return sq;
+        }
+        if (o != null
+                && !(o instanceof Number)
+                && !(o instanceof CharSequence)
+                && !(o instanceof Boolean)
+                && !(o instanceof Date)
+                && !(o instanceof ZonedDateTime)
+                && !(o instanceof OffsetDateTime)
+                && !(o instanceof LocalDateTime)
+                && !(o instanceof Duration)
+                && !(o instanceof Instant)
+                && !(o instanceof Enum<?>)) {
+            throw new IllegalArgumentException("quickJson does not support " + o.getClass().getName());
+        }
+        return escapeJson(o);
+    }
+
+    private static CharSequence escapeJson(Object o) {
+        if (o instanceof Date) {
+            Date d = (Date) o;
+            return quote(TimeUtil.toIsoFormat(d));
+        } else if (o instanceof ZonedDateTime) {
+            ZonedDateTime zdt = (ZonedDateTime) o;
+            return quote(TimeUtil.toIsoFormat(zdt));
+        } else if (o instanceof OffsetDateTime) {
+            OffsetDateTime odt = (OffsetDateTime) o;
+            return quote(TimeUtil.toIsoFormat(odt));
+        } else if (o instanceof LocalDateTime) {
+            LocalDateTime ldt = (LocalDateTime) o;
+            return quote(TimeUtil.toIsoFormat(ldt));
+        } else if (o instanceof Instant) {
+            Instant ins = (Instant) o;
+            return quote(TimeUtil.toIsoFormat(ins));
+        } else if (o instanceof Duration) {
+            Duration dur = (Duration) o;
+            return quote(TimeUtil.format(dur));
+        } else if (o instanceof Enum<?>) {
+            return quote(((Enum<?>) o).name());
+        } else if (o instanceof Number || o instanceof Boolean) {
+            return o.toString();
+        } else if (o == null) {
+            return "null";
+        }
+
+        String stringRep = o.toString();
+        CharSequence result = replaceAll('"', "\\\"", stringRep);
+        result = replaceAll('\n', "\\n", result);
+        result = replaceAll('\t', "\\t", result);
+        return '"' + result.toString() + '"';
+    }
+
+    private static String quote(String s) {
+        return '"' + s + '"';
     }
 }
