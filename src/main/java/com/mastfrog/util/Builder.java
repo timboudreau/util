@@ -65,4 +65,8 @@ public interface Builder<ElementType, CreateType, BuilderType extends Builder<El
      * the elements that were passed to it
      */
     CreateType create();
+
+    default CreateType build() {
+        return create();
+    }
 }

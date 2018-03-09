@@ -234,7 +234,7 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
         try {
             return hasMoreLines();
         } catch (IOException ex) {
-            throw new RuntimeException(ex);
+            return Exceptions.chuck(ex);
         }
     }
 

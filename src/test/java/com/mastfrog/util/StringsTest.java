@@ -24,6 +24,7 @@
  */
 package com.mastfrog.util;
 
+import com.mastfrog.util.collections.ArrayUtils;
 import com.mastfrog.util.collections.CollectionUtils;
 import static com.mastfrog.util.collections.CollectionUtils.setOf;
 import com.mastfrog.util.strings.ComparableCharSequence;
@@ -40,6 +41,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Test;
@@ -326,6 +328,7 @@ public class StringsTest {
         String[] in = TRIMMABLE;
         String[] expect = TRIMMABLE_TRIMMED;
         assertArrayEquals(expect, Strings.trim(in));
+        assertSame(TRIMMABLE, in);
         assertEquals("Input array should not have been altered", " some", in[0]);
         in = new String[]{"", " some", "\n", "strings", " that ", "   ", "   need\t", "trimming\n ", " "};
         assertArrayEquals(expect, Strings.trim(in));
@@ -351,10 +354,9 @@ public class StringsTest {
 
     @Test
     public void testTrimStringSet() {
-        Set<String> in = setOf(TRIMMABLE);
+        Set<String> in = setOf(ArrayUtils.copyOf(TRIMMABLE));
         Set<String> got = Strings.trim(in);
-        assertEquals(setOf(TRIMMABLE_TRIMMED), got);
-        assertEquals("Input list should not have been altered", TRIMMABLE[0], in.iterator().next());
+        assertEquals(setOf(ArrayUtils.copyOf(TRIMMABLE_TRIMMED)), got);
 
         in = new TreeSet<>(in);
         got = Strings.trim(in);
@@ -377,4 +379,12 @@ public class StringsTest {
         assertEquals("fedcba", Strings.reverse("abcdef"));
     }
 
+    @Test
+    public void testStartsWithIgnoreCase() {
+        assertTrue(Strings.startsWithIgnoreCase("Bearer abcd", "bearer"));
+        assertTrue(Strings.startsWithIgnoreCase("bearer abcd", "bearer"));
+        assertFalse(Strings.startsWithIgnoreCase("bear", "bearer"));
+        assertFalse(Strings.startsWithIgnoreCase("", "bearer"));
+        assertFalse(Strings.startsWithIgnoreCase("woogle", "bearer"));
+    }
 }
