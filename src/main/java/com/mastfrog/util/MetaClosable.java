@@ -1,5 +1,6 @@
 package com.mastfrog.util;
 
+import com.mastfrog.util.thread.NonThrowingAutoCloseable;
 import com.mastfrog.util.thread.QuietAutoCloseable;
 
 /**
@@ -17,7 +18,7 @@ public class MetaClosable extends QuietAutoCloseable {
         this.close = close;
     }
 
-    public static MetaClosable of(AutoCloseable... closes) {
+    public static NonThrowingAutoCloseable of(AutoCloseable... closes) {
         return new MetaClosable(closes);
     }
 
