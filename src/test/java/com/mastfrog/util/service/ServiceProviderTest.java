@@ -26,6 +26,7 @@ package com.mastfrog.util.service;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
@@ -40,12 +41,16 @@ public class ServiceProviderTest {
         Iterator<AbstractWoogle> woogs = ServiceLoader.load(AbstractWoogle.class).iterator();
         assertTrue(woogs.hasNext());
         AbstractWoogle first = woogs.next();
+        assertNotNull(first);
         assertTrue(woogs.hasNext());
         AbstractWoogle second = woogs.next();
+        assertNotNull(second);
         assertFalse(woogs.hasNext());
 
-        assertTrue(first instanceof ConcreteWoogle);
-        assertTrue(second instanceof AnotherWoogle);
+        assertTrue(first.getClass().getName(), first instanceof ConcreteWoogle || first instanceof AnotherWoogle);
+        assertTrue(second.getClass().getName() + " and " + first.getClass().getName(),
+                (second instanceof AnotherWoogle || second instanceof ConcreteWoogle));
+        assertFalse(first.getClass() == second.getClass());
     }
 
 }
