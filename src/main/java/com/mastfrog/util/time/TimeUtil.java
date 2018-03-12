@@ -254,7 +254,7 @@ public class TimeUtil {
     }
 
     public static ZonedDateTime nowGMT() {
-        return ZonedDateTime.now().withZoneSameInstant(GMT);
+        return ZonedDateTime.now().with(ChronoField.MICRO_OF_SECOND, 0).withZoneSameInstant(GMT);
     }
 
     /**
