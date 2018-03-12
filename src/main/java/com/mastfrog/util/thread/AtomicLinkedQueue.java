@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 /**
@@ -175,9 +176,9 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
     }
 
     /**
-     * Drain the queue to an existing list.  Note that the queue
-     * will be drained to index 0 in the list - if it has existing
-     * contents, those will be pushed forward.
+     * Drain the queue to an existing list. Note that the queue will be drained
+     * to index 0 in the list - if it has existing contents, those will be
+     * pushed forward.
      *
      * @param all The list
      * @return the list
@@ -342,6 +343,51 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
             tail = tail.prev;
         }
         return sb.toString();
+    }
+
+    @SuppressWarnings("unchecked")
+    public Message pop() {
+        if (tail == null) {
+            return null;
+        }
+        Object[] m = new Object[1];
+        tail.getAndUpdate(msg -> {
+            if (msg == null) {
+                return null;
+            }
+            m[0] = msg.message;
+            return msg.prev;
+        });
+        return (Message) m[0];
+    }
+
+    public Message pop(Supplier<Message> ifNone) {
+        Message result = pop();
+        return result == null ? ifNone.get() : result;
+    }
+
+    public boolean removeByIdentity(Message msg) {
+        if (tail == null) {
+            return false;
+        }
+        boolean[] removed = new boolean[1];
+        tail.getAndUpdate(t -> {
+            if (t != null && t.message == msg) {
+                return t.prev;
+            } else {
+                while (t != null) {
+                    MessageEntry<Message> nxt = t.prev;
+                    if (nxt != null && nxt.message == msg) {
+                        removed[0] = true;
+                        t.prev = nxt.prev;
+                        break;
+                    }
+                    t = nxt;
+                }
+            }
+            return t;
+        });
+        return removed[0];
     }
 
     /**

@@ -1139,13 +1139,13 @@ public final class CollectionUtils {
      */
     @SuppressWarnings("unchecked")
     public static <T> Set<T> intersection(Collection<T> a, Collection<T> b) {
+        if (a == b) {
+            return a instanceof Set<?> ? (Set<T>) a : new HashSet<>(a);
+        }
         if (a instanceof IntSet && b instanceof IntSet) {
             return (Set<T>) ((IntSet) a).intersection((IntSet) b);
         }
         Set<T> result = new HashSet<>(a);
-        if (a == b) {
-            return result;
-        }
         result.retainAll(b);
         return result;
     }
