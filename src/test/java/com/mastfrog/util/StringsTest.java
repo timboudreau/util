@@ -25,6 +25,7 @@
 package com.mastfrog.util;
 
 import com.mastfrog.util.collections.ArrayUtils;
+import static com.mastfrog.util.Strings.quickJson;
 import com.mastfrog.util.collections.CollectionUtils;
 import static com.mastfrog.util.collections.CollectionUtils.setOf;
 import com.mastfrog.util.strings.ComparableCharSequence;
@@ -366,7 +367,7 @@ public class StringsTest {
 
     @Test
     public void testTrimStringList() {
-        List<String> in = Arrays.asList(TRIMMABLE);
+        List<String> in = asList(TRIMMABLE);
         List<String> got = Strings.trim(in);
         assertEquals(asList(TRIMMABLE_TRIMMED), got);
         assertEquals("Input list should not have been altered", TRIMMABLE[0], in.iterator().next());
@@ -386,5 +387,13 @@ public class StringsTest {
         assertFalse(Strings.startsWithIgnoreCase("bear", "bearer"));
         assertFalse(Strings.startsWithIgnoreCase("", "bearer"));
         assertFalse(Strings.startsWithIgnoreCase("woogle", "bearer"));
+    }
+
+    @Test
+    public void testSimpleJson() {
+        CharSequence cs = quickJson("name", "Joe", "age", 29, "single", true, "arr", new int[] {3, 5, 10},
+                "thingWithQuotes", "He said \"WTF?!\"\nthen\ttabbed");
+        assertEquals("{\"name\":\"Joe\",\"age\":29,\"single\":true,\"arr\":[3,5,10],\"thingWithQuotes\":\"He said \\\"WTF?!\\\"\\nthen\\ttabbed\"}",
+                cs.toString());
     }
 }

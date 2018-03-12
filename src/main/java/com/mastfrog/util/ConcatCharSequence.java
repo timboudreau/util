@@ -24,7 +24,6 @@
 package com.mastfrog.util;
 
 import java.io.IOException;
-import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,7 +36,31 @@ import java.util.List;
  */
 public final class ConcatCharSequence implements CharSequence, Appendable {
 
-    private final List<CharSequence> chars = new ArrayList<>(10);
+    private final List<CharSequence> chars;
+
+    public ConcatCharSequence() {
+        chars = new ArrayList<>(10);
+    }
+
+    public ConcatCharSequence(int val) {
+        chars = new ArrayList(val);
+    }
+
+    public ConcatCharSequence(char c) {
+        this();
+        chars.add(Strings.singleChar(c));
+    }
+
+    public ConcatCharSequence(CharSequence initial) {
+        this();
+        chars.add(initial);
+    }
+
+    public ConcatCharSequence append(char ch) {
+        chars.add(Strings.singleChar(ch));
+        hash = 0;
+        return this;
+    }
 
     /**
      * Append a CharSequence.  The passed CharSequence will remain
@@ -51,8 +74,24 @@ public final class ConcatCharSequence implements CharSequence, Appendable {
         if (buffer == this) {
             throw new IllegalArgumentException("Add to self");
         }
+        if (buffer instanceof ConcatCharSequence) {
+            assert doesNotContainSelf((ConcatCharSequence) buffer) : "Indirectly adding self to self";
+            chars.addAll(((ConcatCharSequence) buffer).chars);
+            hash = 0;
+            return this;
+        }
         chars.add(buffer);
+        hash = 0;
         return this;
+    }
+
+    private boolean doesNotContainSelf(ConcatCharSequence seq) {
+        for (CharSequence cs : chars) {
+            if (cs == this) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -64,6 +103,7 @@ public final class ConcatCharSequence implements CharSequence, Appendable {
         String s = toString();
         chars.clear();
         chars.add(s);
+        hash = 0;
         return this;
     }
     
@@ -194,15 +234,6 @@ public final class ConcatCharSequence implements CharSequence, Appendable {
     @Override
     public ConcatCharSequence append(CharSequence csq, int start, int end) throws IOException {
         append(csq.subSequence(start, end));
-        return this;
-    }
-
-    @Override
-    public ConcatCharSequence append(char c) throws IOException {
-        CharBuffer cb = CharBuffer.allocate(1);
-        cb.put(c);
-        cb.flip();
-        append(cb);
         return this;
     }
 }
