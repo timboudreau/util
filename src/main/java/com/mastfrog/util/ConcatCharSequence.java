@@ -43,7 +43,7 @@ public final class ConcatCharSequence implements CharSequence, Appendable {
     }
 
     public ConcatCharSequence(int val) {
-        chars = new ArrayList(val);
+        chars = new ArrayList<>(val);
     }
 
     public ConcatCharSequence(char c) {

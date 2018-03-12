@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.service;
 
+import com.mastfrog.util.Strings;
 import java.util.List;
 import java.util.Set;
 import javax.annotation.processing.SupportedAnnotationTypes;
@@ -30,6 +31,7 @@ import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
+import javax.tools.Diagnostic;
 
 /**
  *
@@ -60,7 +62,8 @@ public final class ServiceProviderAnnotationProcessor extends AbstractRegistrati
             return;
         }
         List<String> classNames = super.classNames(e, ServiceProvider.class, "value");
-        System.out.println("HANDLE ONE: " + classNames);
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating META-INF/services registration(s) for "
+                + Strings.join(',', classNames), e);
         classNames.forEach((name) -> {
             addLine("META-INF/services/" + name, e.asType().toString(), e);
         });
