@@ -667,7 +667,7 @@ public final class Strings {
             String sv = stringConvert.apply(it.next());
             if (sv != null && !sv.isEmpty()) {
                 if (sb.length() > 0) {
-                    sb.append(',');
+                    sb.append(delim);
                 }
                 sb.append(sv);
             }
