@@ -64,6 +64,10 @@ public class OneOf<A, B> {
         return this;
     }
 
+    public Object either() {
+        return a == null ? b : a;
+    }
+
     public boolean isSet() {
         return a != null || b != null;
     }

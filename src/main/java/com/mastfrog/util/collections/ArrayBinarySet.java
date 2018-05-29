@@ -39,10 +39,10 @@ import java.util.function.Consumer;
  */
 final class ArrayBinarySet<T> extends AbstractSet<T> {
 
-    private final boolean comparatorEquality;
+    final boolean comparatorEquality;
 
-    private final Comparator<? super T> comp;
-    private final T[] objs;
+    final Comparator<? super T> comp;
+    final T[] objs;
 
     @SafeVarargs
     ArrayBinarySet(boolean check, boolean comparatorEquality, Comparator<? super T> comp, T... objs) {
@@ -83,11 +83,7 @@ final class ArrayBinarySet<T> extends AbstractSet<T> {
             return false;
         }
         if (objs.getClass().getComponentType().isInstance(o)) {
-            if (comparatorEquality) {
-                return binaryComparatorSearch((T) o);
-            } else {
-                return Arrays.binarySearch(objs, (T) o, comp) >= 0;
-            }
+            return binaryComparatorSearch((T) o);
         }
         return false;
     }
@@ -95,37 +91,46 @@ final class ArrayBinarySet<T> extends AbstractSet<T> {
     private boolean binaryComparatorSearch(T o) {
         int start = 0;
         int end = objs.length - 1;
-        return binaryComparatorSearch(o, start, end);
+        return binaryComparatorSearch(comparatorEquality, o, objs, start, end, comp) >= 0;
     }
 
-    private boolean binaryComparatorSearch(T o, int start, int end) {
-        if (start == end) {
-            return false;
+    static <T> int binaryComparatorSearch(boolean comparatorEquality, T o, T[] objs, int start, int end, Comparator<? super T> comp) {
+        if (start < 0) {
+            throw new IllegalArgumentException("Negative start " + start);
         }
-        int startCompare = compareAt(o, start);
+        if (end < 0) {
+            throw new IllegalArgumentException("Negative end " + end);
+        }
+        if (!comparatorEquality) {
+//            System.out.println("USE BINARY SEARCH");
+//            return Arrays.binarySearch(objs, start, end + 1, o, comp);
+        }
+        if (start == end) {
+            return -1;
+        }
+        int startCompare = compareAt(o, objs, start, comp);
         if (startCompare == 0) {
-            return true;
+            return start;
         }
         if (startCompare < 0) {
-            return false;
+            return -1;
         }
-        int endCompare = compareAt(o, end);
+        int endCompare = compareAt(o, objs, end, comp);
         if (endCompare == 0) {
-            return true;
+            return end;
         }
         if (endCompare > 0) {
-            return false;
+            return -1;
         }
         int amt = ((end - start) + 1) / 2;
-        if (binaryComparatorSearch(o, start + amt, end)) {
-            return true;
-        } else if (binaryComparatorSearch(o, start, end - amt)) {
-            return true;
+        int pos = binaryComparatorSearch(false, o, objs, start + amt, end, comp);
+        if (pos >= 0) {
+            return pos;
         }
-        return false;
+        return binaryComparatorSearch(false, o, objs, start, end - amt, comp);
     }
 
-    private int compareAt(T o, int position) {
+    private static <T> int compareAt(T o, T[] objs, int position, Comparator<T> comp) {
         return comp.compare(o, objs[position]);
     }
 
