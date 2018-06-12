@@ -23,7 +23,6 @@
  */
 package com.mastfrog.util;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -232,7 +231,7 @@ public final class ConcatCharSequence implements CharSequence, Appendable {
     }
 
     @Override
-    public ConcatCharSequence append(CharSequence csq, int start, int end) throws IOException {
+    public ConcatCharSequence append(CharSequence csq, int start, int end) {
         append(csq.subSequence(start, end));
         return this;
     }

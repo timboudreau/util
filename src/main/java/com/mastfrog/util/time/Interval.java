@@ -105,14 +105,14 @@ public abstract class Interval implements ReadableInterval {
 
     @Override
     public ZonedDateTime startTime() {
-        long millis = start().toEpochMilli();
-        return TimeUtil.fromUnixTimestamp(millis).withZoneSameInstant(ZoneId.systemDefault());
+        Instant start = start();
+        return ZonedDateTime.ofInstant(start, ZoneId.systemDefault());
     }
 
     @Override
     public ZonedDateTime endTime() {
-        long millis = end().toEpochMilli();
-        return TimeUtil.fromUnixTimestamp(millis).withZoneSameInstant(ZoneId.systemDefault());
+        Instant end = end();
+        return ZonedDateTime.ofInstant(end, ZoneId.systemDefault());
     }
 
     @Override
