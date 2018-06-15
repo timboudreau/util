@@ -23,10 +23,9 @@
  */
 package com.mastfrog.util.service;
 
-import com.mastfrog.util.Strings;
-import static com.mastfrog.util.collections.CollectionUtils.setOf;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -67,7 +66,7 @@ public abstract class AbstractRegistrationAnnotationProcessor<T extends Annotati
             String... annotationLegalOnFqns) {
         super(true);
         this.annotationType = annotationType;
-        this.legalOn = setOf(annotationLegalOnFqns);
+        this.legalOn = new HashSet<>(Arrays.asList(annotationLegalOnFqns));
     }
 
     protected abstract int getOrder(T anno);
@@ -141,6 +140,17 @@ public abstract class AbstractRegistrationAnnotationProcessor<T extends Annotati
         return sb.toString();
     }
 
+    protected static String join(char delim, String[] strings) {
+        StringBuilder sb = new StringBuilder(strings.length * 20);
+        for (int i = 0; i < strings.length; i++) {
+            sb.append(strings[i]);
+            if (i != strings.length -1) {
+                sb.append(delim);
+            }
+        }
+        return sb.toString();
+    }
+
     protected List<String> typeList(AnnotationMirror mirror, String param, String... failIfNotSubclassesOf) {
         List<String> result = new ArrayList<>();
         if ( mirror != null ) {
@@ -164,7 +174,7 @@ public abstract class AbstractRegistrationAnnotationProcessor<T extends Annotati
                                             }
                                         }
                                         if ( !found ) {
-                                            fail( "Not a " + Strings.join( '/', failIfNotSubclassesOf ) + " subtype: "
+                                            fail( "Not a " + join( '/', failIfNotSubclassesOf ) + " subtype: "
                                                   + av );
                                             continue;
                                         }
@@ -193,7 +203,7 @@ public abstract class AbstractRegistrationAnnotationProcessor<T extends Annotati
                                 }
                             }
                             if ( !found ) {
-                                fail( "Not a " + Strings.join( '/', failIfNotSubclassesOf ) + " subtype: " + dt );
+                                fail( "Not a " + join( '/', failIfNotSubclassesOf ) + " subtype: " + dt );
                                 continue;
                             }
                         }
@@ -250,7 +260,7 @@ public abstract class AbstractRegistrationAnnotationProcessor<T extends Annotati
                 int order = getOrder( a );
                 boolean isLegalForAnnotation = isLegalForAnnotation( e );
                 if ( !isLegalForAnnotation ) {
-                    fail( "Not a subclass of " + Strings.join( '/', legalOn ) + ": " + e.asType(), e );
+                    fail( "Not a subclass of " + join( '/', legalOn.toArray(new String[0]) ) + ": " + e.asType(), e );
                 }
                 elements.add( e );
                 if ( isLegalForAnnotation ) {
