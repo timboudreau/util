@@ -12,3 +12,5 @@ target/*
 /nbproject/
 nb-configuration.xml
 
+/annotation-processors/nbproject/
+/annotation-processors/target/

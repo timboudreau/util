@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.service;
 
+import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Set;
 import javax.annotation.processing.SupportedAnnotationTypes;
@@ -38,19 +39,23 @@ import javax.tools.Diagnostic;
  */
 @SupportedAnnotationTypes("com.mastfrog.util.service.ServiceProvider")
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
-public final class ServiceProviderAnnotationProcessor extends AbstractRegistrationAnnotationProcessor<ServiceProvider> {
+public final class ServiceProviderAnnotationProcessor extends AbstractSingleAnnotationLineOrientedRegistrationAnnotationProcessor<ServiceProvider> {
 
     public ServiceProviderAnnotationProcessor() {
         super(ServiceProvider.class, "java.lang.Object");
     }
 
     @Override
-    protected int getOrder(ServiceProvider anno) {
-        return anno.order();
+    protected int order(ServiceProvider anno) {
+        return anno instanceof ServiceProvider ?  ((ServiceProvider)anno).order() : Integer.MAX_VALUE-2;
+    }
+
+    protected boolean isAcceptable(Annotation anno) {
+        return ServiceProvider.class.isInstance(anno);
     }
 
     @Override
-    protected void handleOne(Element e, ServiceProvider anno, int order) {
+    protected void doHandleOne(Element e, ServiceProvider anno, int order) {
         Set<Modifier> modifiers = e.getModifiers();
         if (modifiers.contains(Modifier.ABSTRACT)) {
             fail("Service provider types may not be abstract", e);
@@ -60,7 +65,7 @@ public final class ServiceProviderAnnotationProcessor extends AbstractRegistrati
             fail("Service provider types must be public");
             return;
         }
-        List<String> classNames = super.classNames(e, ServiceProvider.class, "value");
+        List<String> classNames = super.classNames(e, "com.mastfrog.util.service.ServiceProvider", "value");
         processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating META-INF/services registration(s) for "
                 + AbstractRegistrationAnnotationProcessor.join(',', classNames.toArray(new String[0])), e);
         classNames.forEach((name) -> {
