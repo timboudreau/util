@@ -24,18 +24,20 @@
 
 package com.mastfrog.util.service;
 
-import java.lang.annotation.Annotation;
-
 /**
  *
  * @author Tim Boudreau
  */
-public abstract class AbstractSingleAnnotationLineOrientedRegistrationAnnotationProcessor<T extends Annotation> extends AbstractLineOrientedRegistrationAnnotationProcessor {
+@ServiceProvider(AbstractWoogle.class)
+public class YetAnotherWoogle extends AbstractWoogle {
 
-    private final Class<T> annotationType;
+    String whee;
 
-    public AbstractSingleAnnotationLineOrientedRegistrationAnnotationProcessor(Class<T> annotationType, String... annotationLegalOnFqns) {
-        super(annotationLegalOnFqns);
-        this.annotationType = annotationType;
+    public YetAnotherWoogle() {
+
+    }
+
+    public YetAnotherWoogle(int foo, String bar) {
+        
     }
 }

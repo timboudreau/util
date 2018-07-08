@@ -23,40 +23,50 @@
  */
 package com.mastfrog.util.service;
 
-import java.lang.annotation.Annotation;
+import static com.mastfrog.util.service.ServiceProviderAnnotationProcessor.SERVICE_PROVIDER_ANNOTATION_FQN;
 import java.util.List;
 import java.util.Set;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.tools.Diagnostic;
 
 /**
  *
  * @author Tim Boudreau
  */
-@SupportedAnnotationTypes("com.mastfrog.util.service.ServiceProvider")
+@SupportedAnnotationTypes(SERVICE_PROVIDER_ANNOTATION_FQN)
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
-public final class ServiceProviderAnnotationProcessor extends AbstractSingleAnnotationLineOrientedRegistrationAnnotationProcessor<ServiceProvider> {
+public final class ServiceProviderAnnotationProcessor extends AbstractLineOrientedRegistrationAnnotationProcessor {
+
+    public static final String SERVICE_PROVIDER_ANNOTATION_FQN
+            = "com.mastfrog.util.service.ServiceProvider";
+
+    private static final int DEFAULT_ORDER = Integer.MAX_VALUE / 2;
 
     public ServiceProviderAnnotationProcessor() {
-        super(ServiceProvider.class, "java.lang.Object");
+        super(true);
     }
 
     @Override
-    protected int order(ServiceProvider anno) {
-        return anno instanceof ServiceProvider ?  ((ServiceProvider)anno).order() : Integer.MAX_VALUE-2;
-    }
-
-    protected boolean isAcceptable(Annotation anno) {
-        return ServiceProvider.class.isInstance(anno);
+    protected int getOrder(AnnotationMirror anno) {
+        Integer val = utils.annotationValue(anno, "order", Integer.class);
+        return val == null ? DEFAULT_ORDER : val.intValue();
     }
 
     @Override
-    protected void doHandleOne(Element e, ServiceProvider anno, int order) {
+    protected void handleOne(Element e, AnnotationMirror anno, int order) {
         Set<Modifier> modifiers = e.getModifiers();
+        if (!(e instanceof TypeElement)) {
+            fail("@ServiceProvider is only applicable to classes");
+            return;
+        }
         if (modifiers.contains(Modifier.ABSTRACT)) {
             fail("Service provider types may not be abstract", e);
             return;
@@ -65,11 +75,57 @@ public final class ServiceProviderAnnotationProcessor extends AbstractSingleAnno
             fail("Service provider types must be public");
             return;
         }
-        List<String> classNames = super.classNames(e, "com.mastfrog.util.service.ServiceProvider", "value");
-        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generating META-INF/services registration(s) for "
-                + AbstractRegistrationAnnotationProcessor.join(',', classNames.toArray(new String[0])), e);
-        classNames.forEach((name) -> {
-            addLine("META-INF/services/" + name, e.asType().toString(), e);
-        });
+        TypeElement type = (TypeElement) e;
+        if (checkPublicConstructor(type)) {
+            List<String> classNames = utils.classNamesForAnnotationMember(e, SERVICE_PROVIDER_ANNOTATION_FQN, "value", legalOn);
+            if (classNames.isEmpty()) {
+                fail("No class name found for service registration", e, anno);
+                return;
+            }
+            boolean specifiesOrder = order != DEFAULT_ORDER;
+            String msg = "Generating META-INF/services registration(s) for " + type.getQualifiedName()
+                    + " as a " + AnnotationUtils.join(',', classNames);
+            if (specifiesOrder) {
+                msg += " with order " + order;
+            }
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, msg, e);
+            classNames.forEach((name) -> {
+                String typeName = utils.canonicalize(e.asType());
+                if (typeName == null) {
+                    fail("Could not canonicalize " + e, e);
+                    return;
+                }
+                String lineWithPositionCommentAppended = specifiesOrder ? typeName + "\n#position=" + order : typeName;
+                Line line = new Line(order, new Element[]{e}, lineWithPositionCommentAppended);
+                indexer.add("META-INF/services/" + name, line, processingEnv, e);
+            });
+        } else {
+            fail("Classes annotated with @ServiceProvider must have a default constructor, either implicitly (no declared constructors), or "
+                    + "explicitly (one constructor which is public and takes no arguments)", e, anno);
+        }
+    }
+
+    private boolean checkPublicConstructor(TypeElement e) {
+        boolean foundDefaultConstructor = false;
+        outer:
+        for (Element member : e.getEnclosedElements()) {
+            switch (member.getKind()) {
+                case CONSTRUCTOR:
+                    ExecutableElement exe = (ExecutableElement) member;
+                    List<? extends VariableElement> params = exe.getParameters();
+                    if (params == null || params.isEmpty()) {
+                        foundDefaultConstructor = true;
+                        if (!exe.getModifiers().contains(Modifier.PUBLIC)) {
+                            fail("Default constructor must be public on classes annotated with @ServiceProvider", exe);
+                            return false;
+                        }
+                        break outer;
+                    }
+                    break;
+                default:
+
+            }
+        }
+        return foundDefaultConstructor;
     }
 }

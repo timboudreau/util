@@ -29,11 +29,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.Set;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
@@ -106,31 +106,32 @@ public abstract class AnnotationIndexFactory<T extends IndexEntry> {
         }
     }
 
-    public final int add(String path, T entry, ProcessingEnvironment processingEnv, Element... associatedWith) {
-        return get(path, processingEnv).add(entry);
+    public final boolean add(String path, T entry, ProcessingEnvironment processingEnv, Element... associatedWith) {
+        AnnotationIndex<T> index = get(path, processingEnv);
+        int size = index.size();
+        int newSize = index.add(entry);
+        return newSize > size;
     }
 
     protected abstract AnnotationIndex<T> newIndex(String path);
 
     public static abstract class AnnotationIndex<T extends IndexEntry> implements Iterable<T> {
 
-        private SortedSet<T> entries = new TreeSet<>();
+//        private SortedSet<T> entries = new TreeSet<>();
+        private Set<T> entries = new HashSet<>();
 
         public final int size() {
             return entries.size();
         }
 
         public int add(T entry) {
-            List<Element> els = new ArrayList<>(5);
+            int oldSize = entries.size();
             for (T existing : entries) {
                 if (entry.equals(existing)) {
-                    els.addAll(Arrays.asList(existing.elements()));
+                    existing.addElements(entry.elements());
+                    return oldSize;
                 }
             }
-            if (!els.isEmpty()) {
-                entry.addElements(els.toArray(new Element[0]));
-            }
-            // Will replace the existing entry
             entries.add(entry);
             return entries.size();
         }
@@ -139,8 +140,9 @@ public abstract class AnnotationIndexFactory<T extends IndexEntry> {
 
         @Override
         public final Iterator<T> iterator() {
-            return Collections.unmodifiableSet(entries).iterator();
+            List<T> l = new ArrayList<>(entries);
+            Collections.sort(l);
+            return l.iterator();
         }
     }
-
 }

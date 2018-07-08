@@ -44,6 +44,8 @@ public abstract class IndexGeneratingProcessor<T extends IndexEntry> extends Abs
     private final boolean processOnFinalRound;
     protected final AnnotationIndexFactory<T> indexer;
     protected ProcessingEnvironment processingEnv;
+    protected AnnotationUtils utils;
+    private int roundIndex;
 
     protected IndexGeneratingProcessor(AnnotationIndexFactory<T> indexer) {
         this(false, indexer);
@@ -56,18 +58,32 @@ public abstract class IndexGeneratingProcessor<T extends IndexEntry> extends Abs
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
+        utils = new AnnotationUtils(processingEnv, getSupportedAnnotationTypes());
         this.processingEnv = processingEnv;
         super.init(processingEnv);
     }
 
+    protected void onBeforeRound(RoundEnvironment env, boolean processingOver, int roundIndex) {
+
+    }
+
+    protected void onAfterRound(RoundEnvironment env, boolean processingOver, int roundIndex) {
+
+    }
+
+    protected void onDone() {
+
+    }
 
     @Override
     public final boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        if (roundEnv.errorRaised()) {
+            return false;
+        }
+        boolean over = roundEnv.processingOver();
         try {
-            if (roundEnv.errorRaised()) {
-                return false;
-            }
-            if (roundEnv.processingOver()) {
+            onBeforeRound(roundEnv, over, roundIndex);
+            if (over) {
                 if (processOnFinalRound) {
                     handleProcess(annotations, roundEnv);
                 }
@@ -83,16 +99,15 @@ public abstract class IndexGeneratingProcessor<T extends IndexEntry> extends Abs
             }
             e.printStackTrace(System.err);
             return false;
+        } finally {
+            roundIndex++;
+            onAfterRound(roundEnv, over, roundIndex - 1);
         }
-    }
-
-    protected void onDone() {
-
     }
 
     protected abstract boolean handleProcess(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv);
 
-    protected final int addIndexElement(String path, T l, Element... el) {
+    protected final boolean addIndexElement(String path, T l, Element... el) {
         return indexer.add(path, l, processingEnv, el);
     }
 }

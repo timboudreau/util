@@ -42,7 +42,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -300,11 +302,12 @@ public final class Streams {
                 if (loader == null) {
                     loader = Streams.class.getClassLoader();
                 }
-                Enumeration<URL> i = loader.getResources(location);
-                if (!i.hasMoreElements()) {
-                    i = loader.getResources(location);
+                Enumeration<URL> i = loader == null ? Collections.emptyEnumeration() : loader.getResources(location);
+                // In Graal/SubstrateVM this returns null
+                if (i == null || !i.hasMoreElements()) {
+                    i = loader == null ? Collections.emptyEnumeration() : loader.getResources(location);
                 }
-                if (i.hasMoreElements()) {
+                if (i != null && i.hasMoreElements()) {
                     while (i.hasMoreElements()) {
                         URL url = i.nextElement();
                         inputStreams.add(new NamedInputStream(url, url.openStream()));
@@ -320,7 +323,7 @@ public final class Streams {
                     }
                 }
             }
-            return inputStreams.isEmpty() ? null : inputStreams.toArray(new InputStream[inputStreams.size()]);
+            return inputStreams.isEmpty() ? new InputStream[0] : inputStreams.toArray(new InputStream[inputStreams.size()]);
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
@@ -330,7 +333,7 @@ public final class Streams {
 
     public static void writeString(String s, File to) throws IOException {
         try (FileOutputStream out = new FileOutputStream(to)) {
-            out.write(s.getBytes(Charset.forName("UTF-8")));
+            out.write(s.getBytes(StandardCharsets.UTF_8));
         }
     }
 

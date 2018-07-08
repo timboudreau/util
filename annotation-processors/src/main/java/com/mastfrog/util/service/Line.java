@@ -101,7 +101,7 @@ public final class Line implements IndexEntry {
         StringBuilder sb = new StringBuilder();
         String origin = origin();
         if (origin != null && !line.contains(origin)) {
-            sb.append(comment(origin));
+            sb.append(comment(origin)).append('\n');
         }
         sb.append(line).append("\n");
         return sb.toString();

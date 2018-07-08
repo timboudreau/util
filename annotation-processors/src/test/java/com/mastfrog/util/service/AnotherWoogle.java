@@ -28,7 +28,7 @@ package com.mastfrog.util.service;
  *
  * @author Tim Boudreau
  */
-@ServiceProvider(order=10, value=AbstractWoogle.class)
+@ServiceProvider(order=23, value=AbstractWoogle.class)
 public class AnotherWoogle extends AbstractWoogle {
 
 }

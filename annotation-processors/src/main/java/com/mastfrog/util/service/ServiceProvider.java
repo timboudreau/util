@@ -38,5 +38,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface ServiceProvider {
     Class<?> value();
-    int order() default 0;
+    int order() default Integer.MAX_VALUE / 2;
 }
