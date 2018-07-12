@@ -167,6 +167,60 @@ public class TimeUtil {
         return fromIsoFormat(fmt).toInstant();
     }
 
+    public static boolean equalsToSecondsOrAfter(ZonedDateTime reference, ZonedDateTime test) {
+        if (reference == test) {
+            return true;
+        }
+        if ((reference == null) && (test == null)) {
+            return true;
+        }
+        if ((reference == null) != (test == null)) {
+            return false;
+        }
+        long aStamp = reference.with(ChronoField.MILLI_OF_SECOND, 0).toInstant().toEpochMilli();
+        long bStamp = test.with(ChronoField.MILLI_OF_SECOND, 0).toInstant().toEpochMilli();
+        return bStamp >= aStamp;
+    }
+
+    public static boolean equalsToSeconds(ZonedDateTime a, ZonedDateTime b) {
+        if (a == b) {
+            return true;
+        }
+        if ((a == null) && (b == null)) {
+            return true;
+        }
+        if ((a == null) != (b == null)) {
+            return false;
+        }
+        return equals(a.with(ChronoField.MILLI_OF_SECOND, 0), b.with(ChronoField.MILLI_OF_SECOND, 0));
+    }
+
+    public static boolean equalsToSeconds(OffsetDateTime a, OffsetDateTime b) {
+        if (a == b) {
+            return true;
+        }
+        if ((a == null) && (b == null)) {
+            return true;
+        }
+        if ((a == null) != (b == null)) {
+            return false;
+        }
+        return equals(a.with(ChronoField.MILLI_OF_SECOND, 0), b.with(ChronoField.MILLI_OF_SECOND, 0));
+    }
+
+    public static boolean equalsToSeconds(Instant a, Instant b) {
+        if (a == b) {
+            return true;
+        }
+        if ((a == null) && (b == null)) {
+            return true;
+        }
+        if ((a == null) != (b == null)) {
+            return false;
+        }
+        return a.with(ChronoField.MILLI_OF_SECOND, 0).toEpochMilli() == b.with(ChronoField.MILLI_OF_SECOND, 0).toEpochMilli();
+    }
+
     public static boolean equals(ZonedDateTime a, ZonedDateTime b) {
         if (a == b) {
             return true;

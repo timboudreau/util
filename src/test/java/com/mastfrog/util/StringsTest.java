@@ -396,4 +396,47 @@ public class StringsTest {
         assertEquals("{\"name\":\"Joe\",\"age\":29,\"single\":true,\"arr\":[3,5,10],\"thingWithQuotes\":\"He said \\\"WTF?!\\\"\\nthen\\ttabbed\"}",
                 cs.toString());
     }
+
+    @Test
+    public void testSplitEmpty() {
+        CharSequence[] seqs = Strings.split(';', "");
+        assertEquals(1, seqs.length);
+        assertEquals("", seqs[0]);
+    }
+
+    @Test
+    public void testSplitTrailing() {
+        String s = "max-age=60;includeSubDomains;";
+        CharSequence[] seqs = Strings.split(';', s);
+        assertTrue(seqs[0] instanceof String);
+        assertEquals("max-age=60", seqs[0]);
+        assertEquals("includeSubDomains", seqs[1]);
+        assertEquals(2, seqs.length);
+    }
+
+    @Test
+    public void testSplitUniqueTrailing() {
+        String s = "max-age=60;includeSubDomains;";
+        CharSequence[] seqs = Strings.splitUniqueNoEmpty(';', s).toArray(new CharSequence[0]);
+        for (int i = 0; i < seqs.length; i++) {
+            seqs[i] = Strings.trim(seqs[i]);
+        }
+        assertTrue(seqs[0] instanceof String);
+        assertEquals("max-age=60", seqs[0]);
+        assertEquals("includeSubDomains", seqs[1]);
+        assertEquals(2, seqs.length);
+    }
+
+    @Test
+    public void testSplitLambdaTrailing() {
+        String s = "max-age=60;includeSubDomains;";
+        Strings.split(';', s, cs -> {
+            if (cs.charAt(cs.length() - 1) == ';') {
+                fail ("Delimiter included: '" + cs + "'");
+            }
+            return true;
+        });
+
+    }
+
 }

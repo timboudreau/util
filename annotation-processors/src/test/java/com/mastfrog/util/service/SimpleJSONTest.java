@@ -122,4 +122,42 @@ public class SimpleJSONTest {
                 + "  ]}";
         assertEquals(expect, ser);
     }
+
+    @Test
+    public void testReflection() throws Throwable {
+        Thing1 t1 = new Thing1("isFoo", "skiddoo", 23, true, 57);
+        String s = SimpleJSON.stringify(t1, SimpleJSON.Style.MINIFIED);
+        assertEquals("{\"bar\":\"skiddoo\",\"baz\":23,\"foo\":\"isFoo\",\"quux\":true}", s);
+        OtherThing ot = new OtherThing(t1, "hey");
+        String s2 = SimpleJSON.stringify(new Object[]{ot}, SimpleJSON.Style.MINIFIED);
+        assertEquals("[{\"thing1\":{\"bar\":\"skiddoo\",\"baz\":23,\"foo\":\"isFoo\",\"quux\":true},\"whatev\":\"hey\"}]", s2);
+    }
+
+    public static final class Thing1 {
+
+        public final String foo;
+        public final String bar;
+        public final int baz;
+        public final boolean quux;
+        private final int cantSeeMe;
+
+        public Thing1(String foo, String bar, int baz, boolean quux, int cantSeeMe) {
+            this.foo = foo;
+            this.bar = bar;
+            this.baz = baz;
+            this.quux = quux;
+            this.cantSeeMe = cantSeeMe;
+        }
+    }
+
+    public static final class OtherThing {
+        public final Thing1 thing1;
+        public final String whatev;
+
+        public OtherThing(Thing1 thing1, String whatev) {
+            this.thing1 = thing1;
+            this.whatev = whatev;
+        }
+
+    }
 }

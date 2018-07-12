@@ -23,7 +23,9 @@
  */
 package com.mastfrog.util.service;
 
+import java.lang.ref.Reference;
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.Instant;
@@ -35,17 +37,26 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * A simple way to write JSON from primitive values, arrays, maps and lists,
- * for use in annotation processors where depending on a library for doing
- * this is fraught.  Date-like objects are serialized to ISO format GMT.
+ * A simple way to write JSON from primitive values, arrays, maps and lists, for
+ * use in annotation processors where depending on a library for doing this is
+ * fraught. Date-like objects are serialized to ISO format GMT.
  *
  * @author Tim Boudreau
  */
@@ -145,8 +156,11 @@ public final class SimpleJSON {
         } else if (o instanceof Boolean) {
             sb.append(Boolean.toString(((Boolean) o)));
         } else if (o instanceof Character) {
-            String s = new String(new char[]{((Character) o).charValue()});
-            write(s, sb, depth, style);
+//            String s = new String(new char[]{((Character) o).charValue()});
+//            write(s, sb, depth, style);
+            delimit('"', sb, () ->{
+                sb.append(o);
+            });
         } else if (o instanceof char[]) {
             write(new String((char[]) o), sb, depth, style);
         } else if (o instanceof byte[]) {
@@ -175,8 +189,12 @@ public final class SimpleJSON {
             });
         } else if (o instanceof List<?>) {
             writeList((List<?>) o, sb, depth, style);
+        } else if (o instanceof Collection<?>) {
+            writeList((Collection<?>) o, sb, depth, style);
         } else if (o instanceof Map<?, ?>) {
             writeMap((Map<?, ?>) o, sb, depth, style);
+        } else if (o instanceof Enum<?>) {
+            write(((Enum<?>)o).name(), sb, depth, style);
         } else if (o.getClass().isArray()) {
             int max = Array.getLength(o);
             List<Object> l = new ArrayList<>(max);
@@ -185,13 +203,62 @@ public final class SimpleJSON {
                 l.add(item);
             }
             write(l, sb, depth, style);
+        } else if (o instanceof Reference<?>) {
+            write(((Reference<?>) o).get(), sb, depth, style);
+        } else if (o instanceof Optional<?>) {
+            Optional<?> opt = (Optional<?>) o;
+            if (opt.isPresent()) {
+                write(opt.get(), sb, depth, style);
+            } else {
+                write(null, sb, depth, style);
+            }
+        } else if (o instanceof AtomicReference<?>) {
+            write(((AtomicReference<?>) o).get(), sb, depth, style);
+        } else if (o instanceof AtomicInteger) {
+            write(((AtomicInteger) o).get(), sb, depth, style);
+        } else if (o instanceof AtomicLong) {
+            write(((AtomicLong) o).get(), sb, depth, style);
+        } else if (o instanceof Class<?>) {
+            write(((Class<?>) o).getName(), sb, depth, style);
+        } else if (o instanceof Package) {
+            write(((Package) o).getName(), sb, depth, style);
+        } else if (o instanceof Throwable) {
+            Map<String,Object> t = new LinkedHashMap<>();
+            t.put("type", o.getClass().getName());
+            t.put("message", ((Throwable) o).getMessage());
+            write(t, sb, depth, style);
         } else {
-            throw new IllegalArgumentException("Don't know how to serialize " + o.getClass().getName() + " to JSON");
+            write(mapify(o), sb, depth, style);
         }
         return sb;
     }
 
-    private static void writeList(List<?> list, StringBuilder sb, int depth, Style style) {
+    private static Map<String, Object> mapify(Object o) {
+        Class<?> type = o.getClass();
+        Map<String, Object> result = new LinkedHashMap<>();
+        List<Field> fields = new ArrayList<>(Arrays.asList(type.getFields()));
+        Collections.sort(fields, (a, b) -> {
+            return a.getName().compareToIgnoreCase(b.getName());
+        });
+        for (java.lang.reflect.Field field : fields) {
+            int mods = field.getModifiers();
+            if ((mods & java.lang.reflect.Modifier.STATIC) == 0 && (mods & java.lang.reflect.Modifier.PUBLIC) == 1) {
+                try {
+                    result.put(field.getName(), field.get(o));
+                } catch (IllegalArgumentException ex) {
+                    Logger.getLogger(SimpleJSON.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (IllegalAccessException ex) {
+                    Logger.getLogger(SimpleJSON.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+        if (result.isEmpty()) {
+            return null;
+        }
+        return result;
+    }
+
+    private static void writeList(Iterable<?> list, StringBuilder sb, int depth, Style style) {
         char[] pad = style.newLinePad(depth);
         delimit('[', ']', sb, () -> {
             for (Iterator<?> it = list.iterator(); it.hasNext();) {

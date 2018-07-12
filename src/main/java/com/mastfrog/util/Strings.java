@@ -867,12 +867,19 @@ public final class Strings {
         Checks.notNull("proc", proc);
         int lastStart = 0;
         int max = seq.length();
+        if (max == 0) {
+            return;
+        }
         for (int i = 0; i < max; i++) {
             char c = seq.charAt(i);
 //            System.out.println("At " + i + " " + c + " look for " + delim);
             if (delim == c || i == max - 1) {
                 if (lastStart != i) {
-                    CharSequence sub = seq.subSequence(lastStart, i == max - 1 ? i + 1 : i);
+                    int offset = i == max - 1 ? i + 1 : i;
+                    if (i == max-1 && delim == c) {
+                        offset--;
+                    }
+                    CharSequence sub = seq.subSequence(lastStart, offset);
                     if (!proc.apply(sub)) {
                         return;
                     }
