@@ -400,8 +400,7 @@ public class StringsTest {
     @Test
     public void testSplitEmpty() {
         CharSequence[] seqs = Strings.split(';', "");
-        assertEquals(1, seqs.length);
-        assertEquals("", seqs[0]);
+        assertEquals(0, seqs.length);
     }
 
     @Test
