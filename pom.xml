@@ -1,33 +1,25 @@
 <?xml version="1.0"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <artifactId>util-parent</artifactId>
     <parent>
         <groupId>com.mastfrog</groupId>
         <artifactId>mastfrog-parent</artifactId>
         <version>2.5.0-dev</version>
         <relativePath/>
     </parent>
-    <artifactId>util</artifactId>
-    <name>Utilities</name>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.20.1</version>
-                <configuration>
-                    <forkCount>8</forkCount>
-                    <parallel>all</parallel>
-                    <threadCount>10</threadCount>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-    <url>https://github.com/timboudreau/util</url>
+    <name>Util Parent</name>
+    <description>BOM POM for Mastfrog Utilities libraries</description>
+    <packaging>pom</packaging>
+    <modules>
+        <module>util</module>
+        <module>annotation-processors</module>
+    </modules>
+    <url>https://github.com/timboudreau/numble</url>
     <scm>
-        <url>https://github.com/timboudreau/util</url>
-        <connection>scm:git:https://github.com/timboudreau/util</connection>
-        <developerConnection>git@github.com/timboudreau/util</developerConnection>
+        <url>https://github.com/timboudreau/acteur</url>
+        <connection>scm:git:https://github.com/timboudreau/numble.git</connection>
+        <developerConnection>git@github.com/timboudreau/numble.git</developerConnection>
     </scm>
     <licenses>
         <license>
@@ -42,19 +34,4 @@
             <url>https://timboudreau.com</url>
         </developer>
     </developers>
-    <repositories>
-        <repository>
-            <id>timboudreau-builds</id>
-            <name>timboudreau.com builds</name>
-            <url>https://timboudreau.com/maven/</url>
-            <releases>
-                <enabled>true</enabled>
-                <updatePolicy>never</updatePolicy>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-                <updatePolicy>never</updatePolicy>
-            </snapshots>
-        </repository>
-    </repositories>
 </project>
