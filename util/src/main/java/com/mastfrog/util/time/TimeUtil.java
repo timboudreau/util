@@ -23,7 +23,7 @@
  */
 package com.mastfrog.util.time;
 
-import com.mastfrog.util.Checks;
+import com.mastfrog.util.preconditions.Checks;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.time.Duration;

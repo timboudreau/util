@@ -21,11 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util;
+package com.mastfrog.util.preconditions;
 
 import java.io.File;
+import java.lang.reflect.Array;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * Code sanity checks, to simplify things like null checks. Use these where
@@ -42,11 +49,32 @@ public final class Checks {
     }
 
     public static long canCastToInt(String name, long value) {
-        return com.mastfrog.util.preconditions.Checks.canCastToInt(name, value);
+        if (disabled) {
+            return value;
+        }
+        if (value > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException(name + " too large for an integer: " + value);
+        }
+        if (value < Integer.MIN_VALUE) {
+            throw new IllegalArgumentException(name + " too small for an integer: " + value);
+        }
+        return value;
     }
 
     public static void atLeastOneNotNull(String msg, Object... objects) {
-        com.mastfrog.util.preconditions.Checks.atLeastOneNotNull(msg, objects);
+        if (disabled) {
+            return;
+        }
+        boolean foundNonNull = false;
+        for (Object o : objects) {
+            if (o != null) {
+                foundNonNull = true;
+                break;
+            }
+        }
+        if (!foundNonNull) {
+            throw new NullArgumentException(msg);
+        }
     }
 
     /**
@@ -58,7 +86,16 @@ public final class Checks {
      * @throws NullArgumentException if the value is null
      */
     public static <T> T notNull(String name, T val) {
-        return com.mastfrog.util.preconditions.Checks.notNull(name, val);
+        if (disabled) {
+            return val;
+        }
+        if (name == null) {
+            throw new NullPointerException("Null name");
+        }
+        if (val == null) {
+            throw new NullArgumentException(name + " is null");
+        }
+        return val;
     }
 
     /**
@@ -69,7 +106,14 @@ public final class Checks {
      * @throws IllegalArgumentException if the number is negative
      */
     public static <T extends Number> T nonNegative(String name, T val) {
-        return com.mastfrog.util.preconditions.Checks.nonNegative(name, val);
+        if (disabled) {
+            return val;
+        }
+        notNull("name", name);
+        if (val.longValue() < 0) {
+            throw new IllegalArgumentException(name + " cannot be a negative number but is " + val);
+        }
+        return val;
     }
 
     /**
@@ -80,7 +124,14 @@ public final class Checks {
      * @throws IllegalArgumentException if the number is negative
      */
     public static int nonNegative(String name, int val) {
-        return com.mastfrog.util.preconditions.Checks.nonNegative(name, val);
+        if (disabled) {
+            return val;
+        }
+        notNull("name", name);
+        if (val < 0) {
+            throw new IllegalArgumentException(name + " cannot be a negative number but is " + val);
+        }
+        return val;
     }
 
     /**
@@ -91,11 +142,25 @@ public final class Checks {
      * @throws IllegalArgumentException if the number is negative
      */
     public static long nonNegative(String name, long val) {
-        return com.mastfrog.util.preconditions.Checks.nonNegative(name, val);
+        if (disabled) {
+            return val;
+        }
+        notNull("name", name);
+        if (val < 0) {
+            throw new IllegalArgumentException(name + " cannot be a negative number but is " + val);
+        }
+        return val;
     }
 
     public static <T extends Number> T greaterThanOne(String name, T val) {
-        return com.mastfrog.util.preconditions.Checks.greaterThanOne(name, val);
+        if (disabled) {
+            return val;
+        }
+        notNull("name", name);
+        if (val.longValue() < 1) {
+            throw new IllegalArgumentException(name + " cannot be < 1 but is " + val);
+        }
+        return val;
     }
 
     /**
@@ -106,7 +171,14 @@ public final class Checks {
      * @throws IllegalArgumentException if the number is negative
      */
     public static int greaterThanZero(String name, int val) {
-        return com.mastfrog.util.preconditions.Checks.greaterThanZero(name, val);
+        if (disabled) {
+            return val;
+        }
+        notNull("name", name);
+        if (val < 1) {
+            throw new IllegalArgumentException(name + " cannot be < 1 but is " + val);
+        }
+        return val;
     }
 
     /**
@@ -117,7 +189,14 @@ public final class Checks {
      * @throws IllegalArgumentException if the number is negative
      */
     public static long greaterThanZero(String name, long val) {
-        return com.mastfrog.util.preconditions.Checks.greaterThanZero(name, val);
+        if (disabled) {
+            return val;
+        }
+        notNull("name", name);
+        if (val < 1) {
+            throw new IllegalArgumentException(name + " cannot be < 1 but is " + val);
+        }
+        return val;
     }
 
     /**
@@ -133,7 +212,18 @@ public final class Checks {
      * @throws IllegalArgumentException
      */
     public static <T> T notEmptyOrNull(String name, T array) {
-        return com.mastfrog.util.preconditions.Checks.notEmptyOrNull(name, array);
+        if (disabled) {
+            return array;
+        }
+        notNull(name, array);
+        Class<?> arrType = array.getClass();
+        if (!arrType.isArray()) {
+            throw new IllegalArgumentException("Not an array: " + array);
+        }
+        if (Array.getLength(array) == 0) {
+            throw new IllegalArgumentException(name + " has 0 length");
+        }
+        return array;
     }
 
     /**
@@ -151,7 +241,24 @@ public final class Checks {
      */
     @SafeVarargs
     public static <T> T[] noNullElements(String name, T... arr) {
-        return com.mastfrog.util.preconditions.Checks.noNullElements(name, arr);
+        if (disabled) {
+            return arr;
+        }
+        notNull(name, arr);
+        Class<?> arrType = arr.getClass();
+        if (arrType.getComponentType().isPrimitive()) {
+            throw new IllegalArgumentException("Null checks not "
+                    + "needed for primitive arrays such as "
+                    + name + " (" + arrType.getComponentType() + ")");
+
+        }
+        for (int i = 0; i < arr.length; i++) {
+            if (arr[i] == null) {
+                throw new NullArgumentException("Null element at " + i
+                        + " in " + name + " (" + Arrays.asList(arr) + ")");
+            }
+        }
+        return arr;
     }
 
     /**
@@ -162,7 +269,14 @@ public final class Checks {
      * @throws IllegalArgumentException if the value of the number equals 0
      */
     public static <T extends Number> T nonZero(String name, T val) {
-        return com.mastfrog.util.preconditions.Checks.nonZero(name, val);
+        if (disabled) {
+            return val;
+        }
+        notNull(name, val);
+        if (val.longValue() == 0) {
+            throw new IllegalStateException(name + " should not be 0");
+        }
+        return val;
     }
 
     /**
@@ -173,7 +287,13 @@ public final class Checks {
      * @throws IllegalArgumentException if the value of the number equals 0
      */
     public static int nonZero(String name, int val) {
-        return com.mastfrog.util.preconditions.Checks.nonZero(name, val);
+        if (disabled) {
+            return val;
+        }
+        if (val == 0) {
+            throw new IllegalStateException(name + " should not be 0");
+        }
+        return val;
     }
 
     /**
@@ -184,7 +304,13 @@ public final class Checks {
      * @throws IllegalArgumentException if the value of the number equals 0
      */
     public static long nonZero(String name, long val) {
-        return com.mastfrog.util.preconditions.Checks.nonZero(name, val);
+        if (disabled) {
+            return val;
+        }
+        if (val == 0) {
+            throw new IllegalStateException(name + " should not be 0");
+        }
+        return val;
     }
 
     /**
@@ -196,11 +322,29 @@ public final class Checks {
      * <i>but not if it is null</i>
      */
     public static <T extends CharSequence> T notEmpty(String name, T value) {
-        return com.mastfrog.util.preconditions.Checks.notEmpty(name, value);
+        if (disabled) {
+            return value;
+        }
+        notNull("name", name);
+        if (value instanceof String && ((String) value).isEmpty()) {
+            throw new IllegalArgumentException("String " + name
+                    + " cannot be 0-length");
+        }
+        if (value != null && value.length() == 0) {
+            throw new IllegalArgumentException("String " + name
+                    + " cannot be 0-length");
+        }
+        return value;
     }
 
     public static void notEmpty(String name, Collection<?> collection) {
-        com.mastfrog.util.preconditions.Checks.notEmpty(name, collection);
+        if (disabled) {
+            return;
+        }
+        if (collection != null && collection.isEmpty()) {
+            throw new IllegalArgumentException(name + " cannot be an empty "
+                    + "collection (" + collection + ")");
+        }
     }
 
     /**
@@ -212,7 +356,11 @@ public final class Checks {
      * @throws NullArgumentException if the passed value is null
      */
     public static <T extends CharSequence> T notNullOrEmpty(String name, T value) {
-        return com.mastfrog.util.preconditions.Checks.notNullOrEmpty(name, value);
+        if (disabled) {
+            return value;
+        }
+        notNull(name, value);
+        return notEmpty(name, value);
     }
 
     /**
@@ -228,7 +376,47 @@ public final class Checks {
      * @throws NullArgumentException if the passed char array is null
      */
     public static void mayNotContain(String name, CharSequence value, char... chars) {
-        com.mastfrog.util.preconditions.Checks.mayNotContain(name, value, chars);
+        if (disabled) {
+            return;
+        }
+        notNull("chars", chars);
+        if (value == null) {
+            return;
+        }
+        if (chars.length == 0) {
+            throw new IllegalArgumentException("0 length list of characters");
+        }
+        if (chars.length == 1) {
+            int index = indexIn(value, chars[0]);
+            if (index > 0) {
+                throw new IllegalArgumentException("Illegal character at "
+                        + index + " in " + value);
+            }
+        } else {
+            for (char c : chars) {
+                int index = indexIn(value, chars[0]);
+                if (index > 0) {
+                    throw new IllegalArgumentException("Illegal character " + c
+                            + "at " + index + " in " + value);
+                }
+            }
+        }
+    }
+
+    private static int indexIn(CharSequence seq, char c) {
+        if (seq instanceof String) {
+            return ((String) seq).indexOf(c);
+        } else if (seq instanceof StringBuilder) {
+            return ((StringBuilder) seq).indexOf("" + c);
+        } else {
+            int max = seq.length();
+            for (int i = 0; i < max; i++) {
+                if (c == seq.charAt(i)) {
+                    return i;
+                }
+            }
+        }
+        return -1;
     }
 
     /**
@@ -240,7 +428,12 @@ public final class Checks {
      * @param c A character which must be present
      */
     public static void mustContain(String name, CharSequence value, char c) {
-        com.mastfrog.util.preconditions.Checks.mustContain(name, value, c);
+        if (disabled) {
+            return;
+        }
+        if (value != null && indexIn(value, c) < 0) {
+            throw new IllegalArgumentException(name + " must contain a '" + c + "' character but does not (" + value + ")");
+        }
     }
 
     /**
@@ -253,7 +446,15 @@ public final class Checks {
      * @param collection A collection of something
      */
     public static void noDuplicates(String name, Collection<?> collection) {
-        com.mastfrog.util.preconditions.Checks.noDuplicates(name, collection);
+        if (disabled) {
+            return;
+        }
+        if (!(collection instanceof Set)) {
+            Set<Object> nue = new HashSet<>(collection);
+            if (nue.size() != collection.size()) {
+                throw new IllegalArgumentException(name + " contains duplicate entries (" + collection + ")");
+            }
+        }
     }
 
     /**
@@ -266,7 +467,12 @@ public final class Checks {
      * passed character
      */
     public static void mayNotStartWith(String name, CharSequence value, char c) {
-        com.mastfrog.util.preconditions.Checks.mayNotStartWith(name, value, c);
+        if (disabled) {
+            return;
+        }
+        if (value != null && value.length() > 0 && c == value.charAt(0)) {
+            throw new IllegalArgumentException(name + " may not start with a '" + c + "' character (" + value + ")");
+        }
     }
 
     /**
@@ -278,7 +484,15 @@ public final class Checks {
      * @throws ClassCastException if the passed object is of the wrong type
      */
     public static void isInstance(String name, Class<?> type, Object value) {
-        com.mastfrog.util.preconditions.Checks.isInstance(name, type, value);
+        if (disabled) {
+            return;
+        }
+        if (value != null) {
+            if (!type.isInstance(value)) {
+                throw new ClassCastException(value
+                        + " is not an instance of " + type.getName() + " (" + value.getClass().getName() + ")");
+            }
+        }
     }
 
     /**
@@ -294,7 +508,13 @@ public final class Checks {
      * @throws NullArgumentException if the value is null
      */
     public static void isOfLength(String name, int length, Object[] value) {
-        com.mastfrog.util.preconditions.Checks.isOfLength(name, length, value);
+        if (disabled) {
+            return;
+        }
+        notNull(name, value);
+        if (value.length != length) {
+            throw new IllegalArgumentException("value " + Objects.toString(value) + " does not have the required arguments of " + length);
+        }
     }
 
     /**
@@ -303,7 +523,13 @@ public final class Checks {
      * @param file The file
      */
     public static void fileExists(File file) {
-        com.mastfrog.util.preconditions.Checks.fileExists(file);
+        if (disabled) {
+            return;
+        }
+        notNull("file", file);
+        if (!file.exists() || !file.isFile()) {
+            throw new IllegalArgumentException(file + " does not exist or is not a regular file");
+        }
     }
 
 
@@ -314,7 +540,14 @@ public final class Checks {
      * @param paramName The name of the method parameter
      */
     public static File fileExists(String paramName, File file) {
-        return com.mastfrog.util.preconditions.Checks.fileExists(paramName, file);
+        if (disabled) {
+            return file;
+        }
+        notNull(paramName, file);
+        if (!file.exists() || !file.isFile()) {
+            throw new IllegalArgumentException(paramName + " does not exist or is not a regular file: " + file);
+        }
+        return file;
     }
 
     /**
@@ -323,7 +556,13 @@ public final class Checks {
      * @param file The file
      */
     public static void folderExists(File file) {
-        com.mastfrog.util.preconditions.Checks.folderExists(file);
+        if (disabled) {
+            return;
+        }
+        notNull("file", file);
+        if (!file.exists() || !file.isDirectory()) {
+            throw new IllegalArgumentException(file + " does not exist or is not a regular file");
+        }
     }
 
     /**
@@ -332,7 +571,18 @@ public final class Checks {
      * @param file The file
      */
     public static File folderExists(String paramName, File file) {
-        return com.mastfrog.util.preconditions.Checks.folderExists(paramName, file);
+        if (disabled) {
+            return file;
+        }
+        notNull(paramName, file);
+        Path pth = file.toPath();
+        if (!file.exists()) {
+            throw new IllegalArgumentException(paramName + " does not exist: " + file);
+        }
+        if (!file.isDirectory()) {
+            throw new IllegalArgumentException(paramName+ " is not a directory: " + file);
+        }
+        return file;
     }
 
 
@@ -342,7 +592,13 @@ public final class Checks {
      * @param file A file
      */
     public static void readable(File file) {
-        com.mastfrog.util.preconditions.Checks.readable(file);
+        if (disabled) {
+            return;
+        }
+        fileExists(file);
+        if (!file.canRead()) {
+            throw new IllegalArgumentException("Read permission missing on " + file);
+        }
     }
 
     /**
@@ -351,7 +607,14 @@ public final class Checks {
      * @param file A file
      */
     public static File readable(String paramName, File file) {
-        return com.mastfrog.util.preconditions.Checks.readable(paramName, file);
+        if (disabled) {
+            return file;
+        }
+        fileExists(paramName, file);
+        if (!file.canRead()) {
+            throw new IllegalArgumentException(paramName + " exists and is a file but is not readable: " + file);
+        }
+        return file;
     }
 
     /**
@@ -360,7 +623,13 @@ public final class Checks {
      * @param file A file
      */
     public static File readableAndNonZeroLength(String paramName, File file) {
-        return com.mastfrog.util.preconditions.Checks.readableAndNonZeroLength(paramName, file);
+        if (disabled) {
+            return file;
+        }
+        if (readable(paramName, file).length() == 0) {
+            throw new IllegalArgumentException(paramName + " exists and is a file but is not readable: " + file);
+        }
+        return file;
     }
 
     /**
@@ -370,6 +639,18 @@ public final class Checks {
      * @param charset A character set
      */
     public static void encodable(CharSequence seq, Charset charset) {
-        com.mastfrog.util.preconditions.Checks.encodable(seq, charset);
+        if (disabled) {
+            return;
+        }
+        notNull("seq", seq);
+        notNull("charset", charset);
+        CharsetEncoder encoder = charset.newEncoder();
+        if (!encoder.canEncode(seq)) {
+            if (seq.length() > 30) {
+                seq = seq.subSequence(0, 30) + "...";
+            }
+            throw new IllegalArgumentException("Cannot be encoded in " + charset.name() + " '" + seq + "'");
+        }
     }
+
 }

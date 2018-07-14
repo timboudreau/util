@@ -23,7 +23,7 @@
  */
 package com.mastfrog.util.function;
 
-import com.mastfrog.util.Exceptions;
+import com.mastfrog.util.preconditions.Exceptions;
 import java.util.function.Function;
 import java.util.function.Supplier;
 

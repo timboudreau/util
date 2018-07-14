@@ -23,7 +23,7 @@
  */
 package com.mastfrog.util.collections;
 
-import static com.mastfrog.util.Checks.notNull;
+import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;

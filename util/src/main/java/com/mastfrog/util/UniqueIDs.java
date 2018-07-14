@@ -24,6 +24,7 @@
 package com.mastfrog.util;
 
 import com.mastfrog.util.collections.CollectionUtils;
+import com.mastfrog.util.preconditions.Checks;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;

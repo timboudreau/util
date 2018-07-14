@@ -1,10 +1,10 @@
 package com.mastfrog.util.streams;
 
-import static com.mastfrog.util.Checks.nonNegative;
-import static com.mastfrog.util.Checks.nonZero;
-import static com.mastfrog.util.Checks.notNull;
-import static com.mastfrog.util.Checks.readableAndNonZeroLength;
-import com.mastfrog.util.Exceptions;
+import static com.mastfrog.util.preconditions.Checks.nonNegative;
+import static com.mastfrog.util.preconditions.Checks.nonZero;
+import static com.mastfrog.util.preconditions.Checks.notNull;
+import static com.mastfrog.util.preconditions.Checks.readableAndNonZeroLength;
+import com.mastfrog.util.preconditions.Exceptions;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;

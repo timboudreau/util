@@ -15,7 +15,7 @@
  */
 package com.mastfrog.util.net;
 
-import static com.mastfrog.util.Checks.notNull;
+import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;

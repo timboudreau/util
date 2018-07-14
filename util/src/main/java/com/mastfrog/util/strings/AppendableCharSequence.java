@@ -23,7 +23,7 @@
  */
 package com.mastfrog.util.strings;
 
-import com.mastfrog.util.Checks;
+import com.mastfrog.util.preconditions.Checks;
 import com.mastfrog.util.Strings;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,12 +39,11 @@ import java.util.Objects;
  *
  * @author Tim Boudreau
  */
-public final class AppendableCharSequence implements Appendable, Comparable<CharSequence>, CharSequence {
+public final class AppendableCharSequence implements Appendable, Comparable<CharSequence>, CharSequence, ComparableCharSequence, AppendingCharSequence {
 
     private static final int INCREMENT = 10;
     private final List<CharSequence> seqs;
     private int length;
-    private int[] offsets = new int[INCREMENT];
 
     /**
      * Create an appendable character sequence with an anticipated

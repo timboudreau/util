@@ -23,9 +23,9 @@
  */
 package com.mastfrog.util.collections;
 
-import com.mastfrog.util.Checks;
-import static com.mastfrog.util.Checks.nonNegative;
-import static com.mastfrog.util.Checks.notNull;
+import static com.mastfrog.util.preconditions.Checks.greaterThanZero;
+import static com.mastfrog.util.preconditions.Checks.nonNegative;
+import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -78,7 +78,7 @@ public class ArrayUtils {
     }
 
     public static byte[][] split(byte[] arr, int splitPoint) {
-        Checks.greaterThanZero("splitPoint", splitPoint);
+        greaterThanZero("splitPoint", splitPoint);
         notNull("arr", arr);
         if (splitPoint >= arr.length) {
             throw new IllegalArgumentException("splitPoint - " + splitPoint
@@ -92,8 +92,8 @@ public class ArrayUtils {
     }
 
     public static byte[][] split(byte[] arr, int splitPoint1, int splitPoint2) {
-        Checks.greaterThanZero("splitPoint1", splitPoint1);
-        Checks.greaterThanZero("splitPoint2", splitPoint2);
+        greaterThanZero("splitPoint1", splitPoint1);
+        greaterThanZero("splitPoint2", splitPoint2);
         if (splitPoint2 <= splitPoint1) {
             throw new IllegalArgumentException("splitPoint2 must be "
                     + "> splitPoint1: " + splitPoint1 + "," + splitPoint2);
@@ -116,8 +116,8 @@ public class ArrayUtils {
     }
 
     public static byte[][] split(byte[] arr, int splitPoint1, int splitPoint2, int splitPoint3, int... more) {
-        Checks.greaterThanZero("splitPoint1", splitPoint1);
-        Checks.greaterThanZero("splitPoint2", splitPoint2);
+        greaterThanZero("splitPoint1", splitPoint1);
+        greaterThanZero("splitPoint2", splitPoint2);
         if (splitPoint2 <= splitPoint1) {
             throw new IllegalArgumentException("splitPoint2 must be "
                     + "> splitPoint1: " + splitPoint1 + "," + splitPoint2);
@@ -423,6 +423,11 @@ public class ArrayUtils {
      * @return an array
      */
     public static char[] extract(char[] array, int start, int length) {
+        notNull("array", array);
+        nonNegative("length", length);
+        if (start == 0) {
+            return Arrays.copyOf(array, length);
+        }
         char[] result = new char[length];
         System.arraycopy(array, start, result, 0, length);
         return result;
@@ -437,6 +442,11 @@ public class ArrayUtils {
      * @return an array
      */
     public static int[] extract(int[] array, int start, int length) {
+        notNull("array", array);
+        nonNegative("length", length);
+        if (start == 0) {
+            return Arrays.copyOf(array, length);
+        }
         int[] result = new int[length];
         System.arraycopy(array, start, result, 0, length);
         return result;
@@ -451,6 +461,9 @@ public class ArrayUtils {
      * @return an array
      */
     public static long[] extract(long[] array, int start, int length) {
+        if (start == 0) {
+            return Arrays.copyOf(array, length);
+        }
         long[] result = new long[length];
         System.arraycopy(array, start, result, 0, length);
         return result;
@@ -465,6 +478,11 @@ public class ArrayUtils {
      * @return an array
      */
     public static byte[] extract(byte[] array, int start, int length) {
+        notNull("array", array);
+        nonNegative("length", length);
+        if (start == 0) {
+            return Arrays.copyOf(array, length);
+        }
         byte[] result = new byte[length];
         System.arraycopy(array, start, result, 0, length);
         return result;
@@ -479,6 +497,11 @@ public class ArrayUtils {
      * @return an array
      */
     public static String[] extract(String[] array, int start, int length) {
+        notNull("array", array);
+        nonNegative("length", length);
+        if (start == 0) {
+            return Arrays.copyOf(array, length);
+        }
         String[] result = new String[length];
         System.arraycopy(array, start, result, 0, length);
         return result;
@@ -496,6 +519,9 @@ public class ArrayUtils {
     public static <T> T[] extract(T[] array, int start, int length) {
         notNull("array", array);
         nonNegative("length", length);
+        if (start == 0) {
+            return Arrays.copyOf(array, length);
+        }
         if (start + length > array.length) {
             throw new IllegalArgumentException("Extract past end of array - start="
                     + start + " + len=" + length + " = " + (start + length)

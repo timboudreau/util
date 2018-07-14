@@ -23,16 +23,14 @@
  */
 package com.mastfrog.util;
 
-import static com.mastfrog.util.Checks.notNull;
-import com.mastfrog.util.collections.ArrayUtils;
-import com.mastfrog.util.collections.CollectionUtils;
-import com.mastfrog.util.streams.HashingInputStream;
-import com.mastfrog.util.streams.HashingOutputStream;
+import static com.mastfrog.util.preconditions.Checks.notNull;
 import com.mastfrog.util.strings.AppendableCharSequence;
+import com.mastfrog.util.strings.AppendingCharSequence;
 import com.mastfrog.util.time.TimeUtil;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Array;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
@@ -56,6 +54,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
@@ -192,7 +191,9 @@ public final class Strings {
         if (notNull("in", in).length == 0) {
             return in;
         }
-        String[] result = ArrayUtils.copyOf(in);
+        String[] result = new String[in.length];
+        System.arraycopy(in, 0, result, 0, result.length);
+//        String[] result = ArrayUtils.copyOf(in);
         int last = 0;
         for (int i = 0; i < result.length; i++) {
             String trimmed = result[i].trim();
@@ -204,7 +205,7 @@ public final class Strings {
             return new String[0];
         }
         if (last != in.length) {
-            result = ArrayUtils.extract(result, 0, last);
+            result = Arrays.copyOf(result, last);
         }
         return result;
     }
@@ -216,9 +217,17 @@ public final class Strings {
      * @return The sha-1 hash
      */
     public static String sha1(String s) {
-        MessageDigest digest = HashingInputStream.createDigest("SHA-1");
+        MessageDigest digest = createDigest("SHA-1");
         byte[] result = digest.digest(s.getBytes(Charset.forName("UTF-8")));
-        return HashingOutputStream.hashString(result);
+        return toBase64(result);
+    }
+
+    private static MessageDigest createDigest(String algorithm) {
+        try {
+            return MessageDigest.getInstance(algorithm);
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalArgumentException("No such algorithm: " + algorithm, ex);
+        }
     }
 
     /**
@@ -444,7 +453,8 @@ public final class Strings {
         if (notNull("seqs", seqs).length == 0) {
             return seqs;
         }
-        CharSequence[] result = ArrayUtils.copyOf(seqs);
+        CharSequence[] result = new CharSequence[seqs.length];
+        System.arraycopy(seqs, 0, result, 0, seqs.length);
         int last = 0;
         for (int i = 0; i < result.length; i++) {
             CharSequence trimmed = trim(result[i]);
@@ -456,7 +466,7 @@ public final class Strings {
             return new CharSequence[0];
         }
         if (last != seqs.length) {
-            result = ArrayUtils.extract(result, 0, last);
+            result = Arrays.copyOf(result, last);
         }
         return result;
     }
@@ -876,7 +886,7 @@ public final class Strings {
             if (delim == c || i == max - 1) {
                 if (lastStart != i) {
                     int offset = i == max - 1 ? i + 1 : i;
-                    if (i == max-1 && delim == c) {
+                    if (i == max - 1 && delim == c) {
                         offset--;
                     }
                     CharSequence sub = seq.subSequence(lastStart, offset);
@@ -1196,7 +1206,16 @@ public final class Strings {
         if (o instanceof Iterable<?>) {
             return join(',', (Iterable<?>) o);
         } else if (o.getClass().isArray()) {
-            return join(',', CollectionUtils.toList(o));
+            int max = Array.getLength(o);
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < max; i++) {
+                Object item = Array.get(o, i);
+                if (i > 0) {
+                    sb.append(',');
+                }
+                sb.append(Objects.toString(item));
+            }
+            return sb.toString();
         }
         return o.toString();
     }
@@ -1356,9 +1375,27 @@ public final class Strings {
     public static String shuffleAndExtract(Random rnd, String s, int targetLength) {
         targetLength = Math.min(targetLength, s.length());
         char[] c = s.toCharArray();
-        ArrayUtils.shuffle(rnd, c);
-        return new String(ArrayUtils.extract(c, 0, targetLength));
+        shuffle(rnd, c);
+        return new String(Arrays.copyOf(c, targetLength));
     }
+
+    /**
+     * Fisher-Yates shuffle.
+     *
+     * @param rnd A random
+     * @param array An array
+     */
+    static void shuffle(Random rnd, char[] array) {
+        for (int i = 0; i < array.length - 2; i++) {
+            int r = rnd.nextInt(array.length);
+            if (i != r) {
+                char hold = array[i];
+                array[i] = array[r];
+                array[r] = hold;
+            }
+        }
+    }
+
 
     public static StringBuilder appendPaddedHex(byte val, StringBuilder sb) {
         String sval = Integer.toHexString(val & 0xFF);
@@ -1570,7 +1607,12 @@ public final class Strings {
     private static CharSequence jsonArgument(Object o) {
         if (o instanceof Collection<?> || (o != null && o.getClass().isArray())) {
             if (o.getClass().isArray()) {
-                o = CollectionUtils.toList(o);
+                int max = Array.getLength(o);
+                List<Object> l = new ArrayList<>();
+                for (int i = 0; i < max; i++) {
+                    l.add(Array.get(o, i));
+                }
+                o = l;
             }
             Collection<?> c = (Collection<?>) o;
             ConcatCharSequence sq = new ConcatCharSequence(c.size() + 4);
@@ -1637,5 +1679,17 @@ public final class Strings {
 
     private static String quote(String s) {
         return '"' + s + '"';
+    }
+
+    public static AppendingCharSequence newAppendingCharSequence() {
+        return new AppendableCharSequence(5);
+    }
+
+    public static AppendingCharSequence newAppendingCharSequence(int components) {
+        return new AppendableCharSequence(components);
+    }
+
+    public static AppendingCharSequence newAppendingCharSequence(CharSequence seqs) {
+        return new AppendableCharSequence(seqs);
     }
 }

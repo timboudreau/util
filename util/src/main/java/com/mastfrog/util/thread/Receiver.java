@@ -23,7 +23,7 @@
  */
 package com.mastfrog.util.thread;
 
-import static com.mastfrog.util.Checks.notNull;
+import static com.mastfrog.util.preconditions.Checks.notNull;
 
 /**
  * Callback which can be passed some object which cannot be computed on the

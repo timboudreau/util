@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.streams;
 
+import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -41,7 +42,7 @@ public final class HashingOutputStream extends FilterOutputStream {
     private volatile boolean closed;
     public HashingOutputStream(String algorithm, OutputStream out) {
         super (out);
-        digest = HashingInputStream.createDigest(algorithm);
+        digest = HashingInputStream.createDigest(notNull("algorithm", algorithm));
     }
 
     public static HashingOutputStream sha1(OutputStream out) {

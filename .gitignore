@@ -14,3 +14,4 @@ nb-configuration.xml
 
 /annotation-processors/nbproject/
 /annotation-processors/target/
+/util/target/

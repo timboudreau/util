@@ -31,6 +31,8 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -47,9 +49,6 @@ import java.util.Locale;
  * @author Tim Boudreau
  */
 public final class EightBitStrings implements Serializable {
-
-    private static final Charset UTF = Charset.forName("UTF-8");
-    private static final Charset ASCII = Charset.forName("US-ASCII");
 
     private final InternTable INTERN_TABLE = new InternTable();
     public final CharSequence DOT = create(".");
@@ -73,7 +72,7 @@ public final class EightBitStrings implements Serializable {
     }
 
     public Charset charset() {
-        return ascii ? ASCII : UTF;
+        return ascii ? US_ASCII : UTF_8;
     }
 
     public void clear() {
@@ -298,9 +297,8 @@ public final class EightBitStrings implements Serializable {
         }
 
         public Charset charset() {
-            return ascii ? ASCII : UTF;
+            return ascii ? US_ASCII : UTF_8;
         }
-
 
         @Override
         public int hashCode() {

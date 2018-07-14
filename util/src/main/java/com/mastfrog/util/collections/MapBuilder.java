@@ -1,6 +1,6 @@
 package com.mastfrog.util.collections;
 
-import com.mastfrog.util.Exceptions;
+import com.mastfrog.util.preconditions.Exceptions;
 import com.mastfrog.util.streams.HashingOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;

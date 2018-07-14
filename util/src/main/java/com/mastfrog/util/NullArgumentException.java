@@ -31,8 +31,8 @@ package com.mastfrog.util;
  *
  * @author Tim Boudreau
  */
-public class NullArgumentException extends IllegalArgumentException {
-    NullArgumentException (String msg) {
+public class NullArgumentException extends com.mastfrog.util.preconditions.NullArgumentException {
+    public NullArgumentException (String msg) {
         super (msg);
     }
 }

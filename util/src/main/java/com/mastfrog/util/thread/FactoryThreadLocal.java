@@ -24,7 +24,7 @@
 
 package com.mastfrog.util.thread;
 
-import static com.mastfrog.util.Checks.notNull;
+import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.util.function.Supplier;
 
 /**

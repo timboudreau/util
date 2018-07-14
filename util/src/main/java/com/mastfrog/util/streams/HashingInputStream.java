@@ -23,8 +23,8 @@
  */
 package com.mastfrog.util.streams;
 
-import com.mastfrog.util.Checks;
-import com.mastfrog.util.Exceptions;
+import com.mastfrog.util.preconditions.Checks;
+import com.mastfrog.util.preconditions.Exceptions;
 import static com.mastfrog.util.streams.HashingOutputStream.hashString;
 import java.io.FilterInputStream;
 import java.io.IOException;

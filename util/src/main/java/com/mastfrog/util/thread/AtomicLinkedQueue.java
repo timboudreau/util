@@ -23,7 +23,7 @@
  */
 package com.mastfrog.util.thread;
 
-import static com.mastfrog.util.Checks.notNull;
+import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;

@@ -23,7 +23,7 @@
  */
 package com.mastfrog.util.multivariate;
 
-import static com.mastfrog.util.Checks.notNull;
+import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.util.function.Function;
 
 /**

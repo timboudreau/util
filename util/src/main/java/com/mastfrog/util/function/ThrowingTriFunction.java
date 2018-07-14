@@ -23,7 +23,7 @@
  */
 package com.mastfrog.util.function;
 
-import com.mastfrog.util.Checks;
+import com.mastfrog.util.preconditions.Checks;
 
 /**
  *

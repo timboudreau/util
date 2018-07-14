@@ -23,12 +23,12 @@
  */
 package com.mastfrog.util.collections;
 
-import com.mastfrog.util.Exceptions;
-import com.mastfrog.util.Strings;
+import com.mastfrog.util.preconditions.Exceptions;
 import com.mastfrog.util.multivariate.Pair;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -80,7 +80,8 @@ public interface MapBuilder2<T, R> {
 
                 @Override
                 public String hashString() {
-                    return Strings.toBase64(hash());
+                    Base64.Encoder enc = Base64.getEncoder();
+                    return enc.encodeToString(hash());
                 }
 
                 @Override
@@ -154,7 +155,8 @@ public interface MapBuilder2<T, R> {
             Pair<Map<T, R>, byte[]> toAndBuild(R val);
 
             default Pair<Map<T, R>, String> toAndBuildWithStringHash(R val) {
-                return toAndBuild(val).transformB(Strings::toBase64);
+                Base64.Encoder enc = Base64.getEncoder();
+                return toAndBuild(val).transformB(enc::encodeToString);
             }
         }
     }

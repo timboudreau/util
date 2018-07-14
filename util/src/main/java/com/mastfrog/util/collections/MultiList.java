@@ -23,7 +23,7 @@
  */
 package com.mastfrog.util.collections;
 
-import static com.mastfrog.util.Checks.notNull;
+import static com.mastfrog.util.preconditions.Checks.notNull;
 import static com.mastfrog.util.collections.CollectionUtils.transform;
 import java.lang.reflect.Array;
 import java.util.AbstractList;

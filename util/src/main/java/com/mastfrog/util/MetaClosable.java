@@ -1,5 +1,6 @@
 package com.mastfrog.util;
 
+import com.mastfrog.util.preconditions.Checks;
 import com.mastfrog.util.thread.NonThrowingAutoCloseable;
 import com.mastfrog.util.thread.QuietAutoCloseable;
 

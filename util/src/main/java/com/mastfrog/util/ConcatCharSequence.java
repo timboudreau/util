@@ -23,6 +23,8 @@
  */
 package com.mastfrog.util;
 
+import com.mastfrog.util.strings.AppendingCharSequence;
+import com.mastfrog.util.strings.ComparableCharSequence;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,7 +35,7 @@ import java.util.List;
  *
  * @author Tim Boudreau
  */
-public final class ConcatCharSequence implements CharSequence, Appendable {
+public final class ConcatCharSequence implements CharSequence, Appendable, AppendingCharSequence, ComparableCharSequence {
 
     private final List<CharSequence> chars;
 
@@ -85,9 +87,16 @@ public final class ConcatCharSequence implements CharSequence, Appendable {
     }
 
     private boolean doesNotContainSelf(ConcatCharSequence seq) {
+        return seq.doesNotContain(this);
+    }
+
+    private boolean doesNotContain(ConcatCharSequence seq) {
         for (CharSequence cs : chars) {
-            if (cs == this) {
+            if (cs == seq) {
                 return false;
+            }
+            if (cs instanceof ConcatCharSequence) {
+                return ((ConcatCharSequence) cs).doesNotContain(seq);
             }
         }
         return true;

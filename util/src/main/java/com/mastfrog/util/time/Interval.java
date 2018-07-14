@@ -23,7 +23,7 @@
  */
 package com.mastfrog.util.time;
 
-import com.mastfrog.util.Checks;
+import com.mastfrog.util.preconditions.Checks;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;

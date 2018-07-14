@@ -1,7 +1,7 @@
-/*
+/* 
  * The MIT License
  *
- * Copyright 2017 Tim Boudreau.
+ * Copyright 2013 Tim Boudreau.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,37 +21,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util.function;
+package com.mastfrog.util.preconditions;
 
-import com.mastfrog.util.preconditions.Exceptions;
+import com.mastfrog.util.*;
 
 /**
- * A runnable-alike that can throw Exceptions.
+ * Special IllegalArgumentException for null parameters.  Checks.* use this
+ * rather than NullPointerException to distinguish cases of code passing an illegal
+ * null (clearly a bug on our part) from situations at runtime where something
+ * is null which may not be in our code.
  *
  * @author Tim Boudreau
  */
-@FunctionalInterface
-public interface ThrowingRunnable {
-
-    /**
-     * Do whatever work this object does.
-     *
-     * @throws Exception If something goes wrong
-     */
-    void run() throws Exception;
-
-    /**
-     * Creates a Java Runnable which may throw undeclared exceptions.
-     *
-     * @return A runnable
-     */
-    default Runnable toRunnable() {
-        return () -> {
-            try {
-                ThrowingRunnable.this.run();
-            } catch (Exception e) {
-                Exceptions.chuck(e);
-            }
-        };
+public class NullArgumentException extends IllegalArgumentException {
+    public NullArgumentException (String msg) {
+        super (msg);
     }
 }

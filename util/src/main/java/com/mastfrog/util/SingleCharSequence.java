@@ -24,11 +24,13 @@
 
 package com.mastfrog.util;
 
+import com.mastfrog.util.strings.ComparableCharSequence;
+
 /**
  *
  * @author Tim Boudreau
  */
-final class SingleCharSequence implements CharSequence {
+final class SingleCharSequence implements CharSequence, ComparableCharSequence {
 
     private final char c;
 
@@ -60,4 +62,39 @@ final class SingleCharSequence implements CharSequence {
         throw new StringIndexOutOfBoundsException("Length is 1 but requested subsequence " + start + " to " + end);
     }
 
+    public int hashCode() {
+        // this actually follows the contract of java.lang.String.hashCode()
+        return c;
+    }
+
+    public boolean equals(Object o) {
+        return o == null ? false : o == this ? true
+                : o instanceof CharSequence && ((CharSequence) o).length()==1
+                ? ((CharSequence) o).charAt(0) == c : false;
+    }
+
+    public String toString() {
+        return new String(new char[] { c });
+    }
+
+    @Override
+    public int compareTo(CharSequence o) {
+        if (o.length() == 0) {
+            return 1;
+        }
+        char first = o.charAt(0);
+        return first > c ? -1 : first == c ? 0 : -1;
+    }
+
+    public boolean startsWith(CharSequence seq) {
+        return seq.length() == 1 && seq.charAt(0) == c;
+    }
+
+    public int indexOf(char c) {
+        return c == this.c ? 0 : -1;
+    }
+
+    public int lastIndexOf(char c) {
+        return indexOf(c);
+    }
 }

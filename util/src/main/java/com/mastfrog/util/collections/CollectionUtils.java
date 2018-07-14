@@ -23,7 +23,7 @@
  */
 package com.mastfrog.util.collections;
 
-import com.mastfrog.util.Checks;
+import com.mastfrog.util.preconditions.Checks;
 import static com.mastfrog.util.Checks.notNull;
 import com.mastfrog.util.Strings;
 import com.mastfrog.util.collections.MapBuilder2.HashingMapBuilder;
