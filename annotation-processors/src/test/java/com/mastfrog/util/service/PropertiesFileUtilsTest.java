@@ -23,7 +23,7 @@
  */
 package com.mastfrog.util.service;
 
-import com.mastfrog.util.Strings;
+import com.mastfrog.util.strings.Strings;
 import com.mastfrog.util.collections.CollectionUtils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

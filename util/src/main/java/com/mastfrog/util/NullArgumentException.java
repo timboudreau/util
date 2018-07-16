@@ -30,6 +30,7 @@ package com.mastfrog.util;
  * is null which may not be in our code.
  *
  * @author Tim Boudreau
+ * @deprecated use com.mastfrog.util.preconditions.NullArgumentException
  */
 public class NullArgumentException extends com.mastfrog.util.preconditions.NullArgumentException {
     public NullArgumentException (String msg) {

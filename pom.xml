@@ -14,6 +14,14 @@
     <modules>
         <module>util</module>
         <module>annotation-processors</module>
+        <module>util-time</module>
+        <module>util-strings</module>
+        <module>util-streams</module>
+        <module>util-collections</module>
+        <module>util-preconditions</module>
+        <module>util-function</module>
+        <module>util-net</module>
+        <module>util-misc</module>
     </modules>
     <url>https://github.com/timboudreau/numble</url>
     <scm>

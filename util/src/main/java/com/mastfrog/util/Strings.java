@@ -23,42 +23,13 @@
  */
 package com.mastfrog.util;
 
-import static com.mastfrog.util.preconditions.Checks.notNull;
-import com.mastfrog.util.strings.AppendableCharSequence;
 import com.mastfrog.util.strings.AppendingCharSequence;
-import com.mastfrog.util.time.TimeUtil;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Array;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.nio.ByteBuffer;
-import java.nio.LongBuffer;
-import java.nio.charset.Charset;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.function.Function;
 
 /**
@@ -67,16 +38,13 @@ import java.util.function.Function;
  * useful for libraries such as Netty which implement 8-bit CharSequences, where
  * otherwise we would need to copy the bytes into a String to perform
  * operations.
+ * @deprecated All methods delegate to com.mastfrog.util.strings.Strings
  */
+@Deprecated
 public final class Strings {
 
     public static String reverse(String s) {
-        int max = s.length() - 1;
-        char[] c = new char[max + 1];
-        for (int i = 0; i <= max; i++) {
-            c[i] = s.charAt(max - i);
-        }
-        return new String(c);
+        return com.mastfrog.util.strings.Strings.reverse(s);
     }
 
     /**
@@ -86,42 +54,7 @@ public final class Strings {
      * @return
      */
     public static CharSequence trim(CharSequence seq) {
-        if (seq instanceof String) {
-            return ((String) seq).trim();
-        }
-        int len = seq.length();
-        if (len == 0) {
-            return seq;
-        }
-        if (seq instanceof String) {
-            return ((String) seq).trim();
-        }
-        int start = 0;
-        int end = len;
-        for (int i = 0; i < len; i++) {
-            if (Character.isWhitespace(seq.charAt(i))) {
-                start++;
-            } else {
-                break;
-            }
-        }
-        if (start == len - 1) {
-            return "";
-        }
-        for (int i = len - 1; i >= 0; i--) {
-            if (Character.isWhitespace(seq.charAt(i))) {
-                end--;
-            } else {
-                break;
-            }
-        }
-        if (end == 0) {
-            return "";
-        }
-        if (end == len && start == 0) {
-            return seq;
-        }
-        return seq.subSequence(start, end);
+        return com.mastfrog.util.strings.Strings.trim(seq);
     }
 
     /**
@@ -133,22 +66,7 @@ public final class Strings {
      * @return A new list of those strings, trimmed and empty strings pruned
      */
     public static List<String> trim(List<String> strings) {
-        if (notNull("strings", strings).isEmpty()) {
-            return strings;
-        }
-        List<String> result;
-        if (strings instanceof LinkedList<?>) {
-            result = new LinkedList<>();
-        } else {
-            result = new ArrayList<>();
-        }
-        for (String s : strings) {
-            String trimmed = s.trim();
-            if (!trimmed.isEmpty()) {
-                result.add(s.trim());
-            }
-        }
-        return result;
+        return com.mastfrog.util.strings.Strings.trim(strings);
     }
 
     /**
@@ -162,22 +80,7 @@ public final class Strings {
      * @return A new set of those strings, trimmed and empty strings pruned
      */
     public static Set<String> trim(Set<String> strings) {
-        if (notNull("strings", strings).isEmpty()) {
-            return strings;
-        }
-        Set<String> result;
-        if (strings instanceof SortedSet<?>) {
-            result = new TreeSet<>();
-        } else {
-            result = new LinkedHashSet<>();
-        }
-        for (String s : strings) {
-            String trimmed = s.trim();
-            if (!trimmed.isEmpty()) {
-                result.add(trimmed);
-            }
-        }
-        return result;
+        return com.mastfrog.util.strings.Strings.trim(strings);
     }
 
     /**
@@ -188,26 +91,7 @@ public final class Strings {
      * @return A new array of trimmed strings;
      */
     public static String[] trim(String[] in) {
-        if (notNull("in", in).length == 0) {
-            return in;
-        }
-        String[] result = new String[in.length];
-        System.arraycopy(in, 0, result, 0, result.length);
-//        String[] result = ArrayUtils.copyOf(in);
-        int last = 0;
-        for (int i = 0; i < result.length; i++) {
-            String trimmed = result[i].trim();
-            if (!trimmed.isEmpty()) {
-                result[last++] = trimmed;
-            }
-        }
-        if (last == 0) {
-            return new String[0];
-        }
-        if (last != in.length) {
-            result = Arrays.copyOf(result, last);
-        }
-        return result;
+        return com.mastfrog.util.strings.Strings.trim(in);
     }
 
     /**
@@ -217,17 +101,7 @@ public final class Strings {
      * @return The sha-1 hash
      */
     public static String sha1(String s) {
-        MessageDigest digest = createDigest("SHA-1");
-        byte[] result = digest.digest(s.getBytes(Charset.forName("UTF-8")));
-        return toBase64(result);
-    }
-
-    private static MessageDigest createDigest(String algorithm) {
-        try {
-            return MessageDigest.getInstance(algorithm);
-        } catch (NoSuchAlgorithmException ex) {
-            throw new IllegalArgumentException("No such algorithm: " + algorithm, ex);
-        }
+        return com.mastfrog.util.strings.Strings.sha1(s);
     }
 
     /**
@@ -239,7 +113,7 @@ public final class Strings {
      * @return resulting string
      */
     public static <T> String toString(T[] collection) {
-        return toString(Arrays.asList(collection));
+        return com.mastfrog.util.strings.Strings.toString(collection);
     }
 
     /**
@@ -249,11 +123,7 @@ public final class Strings {
      * @return An array of resulting strings
      */
     public static String[] split(String string) {
-        String[] result = string.split(",");
-        for (int i = 0; i < result.length; i++) {
-            result[i] = result[i].trim();
-        }
-        return result;
+        return com.mastfrog.util.strings.Strings.split(string);
     }
 
     /**
@@ -265,18 +135,11 @@ public final class Strings {
      * @return resulting string
      */
     public static <T> String toString(Iterable<T> collection) {
-        return toString(collection.iterator());
+        return com.mastfrog.util.strings.Strings.toString(collection);
     }
 
     public static String toString(final Iterator<?> iter) {
-        StringBuilder sb = new StringBuilder();
-        while (iter.hasNext()) {
-            sb.append(iter.next());
-            if (iter.hasNext()) {
-                sb.append(", ");
-            }
-        }
-        return sb.toString();
+        return com.mastfrog.util.strings.Strings.toString(iter);
     }
 
     /**
@@ -286,11 +149,7 @@ public final class Strings {
      * @return The string
      */
     public static String toString(final Throwable throwable) {
-        StringWriter w = new StringWriter();
-        try (PrintWriter p = new PrintWriter(w)) {
-            throwable.printStackTrace(p);
-        }
-        return w.toString();
+        return com.mastfrog.util.strings.Strings.toString(throwable);
     }
 
     /**
@@ -308,7 +167,7 @@ public final class Strings {
      * @deprecated Use joinPath
      */
     public static String join(String... parts) {
-        return joinPath(parts);
+        return com.mastfrog.util.strings.Strings.join(parts);
     }
 
     /**
@@ -319,28 +178,7 @@ public final class Strings {
      * have one
      */
     public static String joinPath(String... parts) {
-        StringBuilder sb = new StringBuilder();
-        if (parts.length > 0) {
-            sb.append(parts[0]);
-        }
-        for (int i = 1; i < parts.length; i++) {
-            String part = parts[i];
-            if (part.isEmpty() || (part.length() == 1 && part.charAt(0) == '/')) {
-                continue;
-            }
-            boolean gotTrailingSlash = sb.length() == 0 ? false : sb.charAt(sb.length() - 1) == '/';
-            boolean gotLeadingSlash = part.charAt(0) == '/';
-            if (gotTrailingSlash != !gotLeadingSlash) {
-                sb.append(part);
-            } else {
-                if (!gotTrailingSlash) {
-                    sb.append('/');
-                } else {
-                    sb.append(part.substring(1));
-                }
-            }
-        }
-        return sb.toString();
+        return com.mastfrog.util.strings.Strings.joinPath(parts);
     }
 
     /**
@@ -352,7 +190,7 @@ public final class Strings {
      * @since 1.7.0
      */
     public static int charSequenceHashCode(CharSequence seq) {
-        return charSequenceHashCode(seq, false);
+        return com.mastfrog.util.strings.Strings.charSequenceHashCode(seq);
     }
 
     /**
@@ -366,21 +204,7 @@ public final class Strings {
      * @since 1.7.0
      */
     public static int charSequenceHashCode(CharSequence seq, boolean ignoreCase) {
-        Checks.notNull("seq", seq);
-        // Same computation as java.lang.String for case sensitive
-        int length = seq.length();
-        if (length == 0) {
-            return 0;
-        }
-        int result = 0;
-        for (int i = 0; i < length; i++) {
-            if (ignoreCase) {
-                result = 31 * result + Character.toLowerCase(seq.charAt(i));
-            } else {
-                result = 31 * result + seq.charAt(i);
-            }
-        }
-        return result;
+        return com.mastfrog.util.strings.Strings.charSequenceHashCode(seq, ignoreCase);
     }
 
     /**
@@ -394,7 +218,7 @@ public final class Strings {
      */
     @SuppressWarnings("null")
     public static boolean charSequencesEqual(CharSequence a, CharSequence b) {
-        return charSequencesEqual(a, b, false);
+        return com.mastfrog.util.strings.Strings.charSequencesEqual(a, b);
     }
 
     /**
@@ -409,38 +233,7 @@ public final class Strings {
      */
     @SuppressWarnings("null")
     public static boolean charSequencesEqual(CharSequence a, CharSequence b, boolean ignoreCase) {
-        Checks.notNull("a", a);
-        Checks.notNull("b", b);
-        if ((a == null) != (b == null)) {
-            return false;
-        } else if (a == b) {
-            return true;
-        }
-        if (a instanceof String && b instanceof String) {
-            return ignoreCase ? ((String) a).equalsIgnoreCase((String) b) : a.equals(b);
-        }
-        @SuppressWarnings("null")
-        int length = a.length();
-        if (length != b.length()) {
-            return false;
-        }
-        if (ignoreCase && a.getClass() == b.getClass()) {
-            return a.equals(b);
-        }
-        if (!ignoreCase && a instanceof String) {
-            return ((String) a).contentEquals(b);
-        } else if (!ignoreCase && b instanceof String) {
-            return ((String) b).contentEquals(a);
-        } else {
-            for (int i = 0; i < length; i++) {
-                char ca = ignoreCase ? Character.toLowerCase(a.charAt(i)) : a.charAt(i);
-                char cb = ignoreCase ? Character.toLowerCase(b.charAt(i)) : b.charAt(i);
-                if (cb != ca) {
-                    return false;
-                }
-            }
-        }
-        return true;
+        return com.mastfrog.util.strings.Strings.charSequencesEqual(a, b, ignoreCase);
     }
 
     /**
@@ -450,25 +243,7 @@ public final class Strings {
      * @return a new array of CharSequences
      */
     public static CharSequence[] trim(CharSequence[] seqs) {
-        if (notNull("seqs", seqs).length == 0) {
-            return seqs;
-        }
-        CharSequence[] result = new CharSequence[seqs.length];
-        System.arraycopy(seqs, 0, result, 0, seqs.length);
-        int last = 0;
-        for (int i = 0; i < result.length; i++) {
-            CharSequence trimmed = trim(result[i]);
-            if (trimmed.length() != 0) {
-                result[last++] = trimmed;
-            }
-        }
-        if (last == 0) {
-            return new CharSequence[0];
-        }
-        if (last != seqs.length) {
-            result = Arrays.copyOf(result, last);
-        }
-        return result;
+        return com.mastfrog.util.strings.Strings.trim(seqs);
     }
 
     /**
@@ -480,34 +255,7 @@ public final class Strings {
      * @return the difference
      */
     public static int compareCharSequences(CharSequence a, CharSequence b, boolean ignoreCase) {
-        if (a == b) {
-            return 0;
-        }
-        if (a instanceof String && b instanceof String) {
-            return ((String) a).compareTo((String) b);
-        }
-        int aLength = a.length();
-        int bLength = b.length();
-        if (aLength == 0 && bLength == 0) {
-            return 0;
-        }
-        int max = Math.min(aLength, bLength);
-        for (int i = 0; i < max; i++) {
-            char ac = ignoreCase ? Character.toLowerCase(a.charAt(i)) : a.charAt(i);
-            char bc = ignoreCase ? Character.toLowerCase(b.charAt(i)) : b.charAt(i);
-            if (ac > bc) {
-                return 1;
-            } else if (ac < bc) {
-                return -1;
-            }
-        }
-        if (aLength == bLength) {
-            return 0;
-        } else if (aLength > bLength) {
-            return 1;
-        } else {
-            return -1;
-        }
+        return com.mastfrog.util.strings.Strings.compareCharSequences(a, b, ignoreCase);
     }
 
     /**
@@ -517,7 +265,7 @@ public final class Strings {
      * @return A comparator
      */
     public static Comparator<CharSequence> charSequenceComparator(boolean caseInsensitive) {
-        return new CharSequenceComparator(caseInsensitive);
+        return com.mastfrog.util.strings.Strings.charSequenceComparator(caseInsensitive);
     }
 
     /**
@@ -526,21 +274,7 @@ public final class Strings {
      * @return A comparator
      */
     public static Comparator<CharSequence> charSequenceComparator() {
-        return charSequenceComparator(false);
-    }
-
-    private static final class CharSequenceComparator implements Comparator<CharSequence> {
-
-        private final boolean caseInsensitive;
-
-        CharSequenceComparator(boolean caseInsensitive) {
-            this.caseInsensitive = caseInsensitive;
-        }
-
-        @Override
-        public int compare(CharSequence o1, CharSequence o2) {
-            return compareCharSequences(o1, o2, caseInsensitive);
-        }
+        return com.mastfrog.util.strings.Strings.charSequenceComparator();
     }
 
     /**
@@ -549,46 +283,7 @@ public final class Strings {
      * @return An empty char sequence.
      */
     public static CharSequence emptyCharSequence() {
-        return EMPTY;
-    }
-
-    private static final EmptyCharSequence EMPTY = new EmptyCharSequence();
-
-    private static final class EmptyCharSequence implements CharSequence {
-
-        @Override
-        public int length() {
-            return 0;
-        }
-
-        @Override
-        public char charAt(int index) {
-            throw new StringIndexOutOfBoundsException(index);
-        }
-
-        @Override
-        public CharSequence subSequence(int start, int end) {
-            if (start == 0 && end == 0) {
-                return this;
-            }
-            throw new StringIndexOutOfBoundsException("Empty but requested subsequence from "
-                    + start + " to " + end);
-        }
-
-        @Override
-        public String toString() {
-            return "";
-        }
-
-        @Override
-        public int hashCode() {
-            return 0;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            return o instanceof CharSequence && ((CharSequence) o).length() == 0;
-        }
+        return com.mastfrog.util.strings.Strings.emptyCharSequence();
     }
 
     /**
@@ -599,7 +294,7 @@ public final class Strings {
      * @return A string that joins the strings using the delimiter
      */
     public static String join(char delim, String... parts) {
-        return join(delim, Arrays.asList(parts));
+        return com.mastfrog.util.strings.Strings.join(delim, parts);
     }
 
     /**
@@ -610,29 +305,11 @@ public final class Strings {
      * @return A string that joins the strings using the delimiter
      */
     public static CharSequence join(char delim, CharSequence... parts) {
-        AppendableCharSequence seq = new AppendableCharSequence();
-        for (int i = 0; i < parts.length; i++) {
-            seq.append(parts[i]);
-            if (i != parts.length - 1) {
-                seq.append(delim);
-            }
-        }
-        return seq;
+        return com.mastfrog.util.strings.Strings.join(delim, parts);
     }
 
     public static CharSequence join(char delim, Object... parts) {
-        if (parts.length == 1 && parts[0] instanceof Iterable<?>) {
-            return join(delim, (Iterable<?>) parts[0]);
-        }
-        AppendableCharSequence seq = new AppendableCharSequence();
-        for (int i = 0; i < parts.length; i++) {
-            String ts = parts[i] == null ? "null" : parts[i].toString();
-            seq.append(ts);
-            if (i != parts.length - 1) {
-                seq.append(delim);
-            }
-        }
-        return seq;
+        return com.mastfrog.util.strings.Strings.join(delim, parts);
     }
 
     /**
@@ -643,14 +320,7 @@ public final class Strings {
      * @return A string that joins the strings using the delimiter
      */
     public static String join(char delim, Iterable<?> parts) {
-        StringBuilder sb = new StringBuilder();
-        for (Iterator<?> iter = parts.iterator(); iter.hasNext();) {
-            sb.append(iter.next());
-            if (iter.hasNext()) {
-                sb.append(delim);
-            }
-        }
-        return sb.toString();
+        return com.mastfrog.util.strings.Strings.join(delim, parts);
     }
 
     /**
@@ -661,123 +331,31 @@ public final class Strings {
      * @return A string that joins the strings using the delimiter
      */
     public static String join(String delim, Iterable<?> parts) {
-        StringBuilder sb = new StringBuilder();
-        for (Iterator<?> iter = parts.iterator(); iter.hasNext();) {
-            sb.append(iter.next());
-            if (iter.hasNext()) {
-                sb.append(delim);
-            }
-        }
-        return sb.toString();
+        return com.mastfrog.util.strings.Strings.join(delim, parts);
     }
 
     public static <T> String join(char delim, Iterable<T> parts, Function<T, String> stringConvert) {
-        StringBuilder sb = new StringBuilder(256);
-        for (Iterator<T> it = parts.iterator(); it.hasNext();) {
-            String sv = stringConvert.apply(it.next());
-            if (sv != null && !sv.isEmpty()) {
-                if (sb.length() > 0) {
-                    sb.append(delim);
-                }
-                sb.append(sv);
-            }
-        }
-        return sb.toString();
+        return com.mastfrog.util.strings.Strings.join(delim, parts, stringConvert);
     }
 
-    private static final SingleCharSequence CR = new SingleCharSequence('\n');
-    private static final SingleCharSequence COMMA = new SingleCharSequence(',');
-    private static final SingleCharSequence DOT = new SingleCharSequence('.');
-    private static final SingleCharSequence COLON = new SingleCharSequence(':');
-    private static final SingleCharSequence OPEN_CURLY = new SingleCharSequence('{');
-    private static final SingleCharSequence CLOSE_CURLY = new SingleCharSequence('}');
-    private static final SingleCharSequence OPEN_PAREN = new SingleCharSequence('(');
-    private static final SingleCharSequence CLOSE_PAREN = new SingleCharSequence(')');
-    private static final SingleCharSequence OPEN_SQUARE = new SingleCharSequence('[');
-    private static final SingleCharSequence CLOSE_SQUARE = new SingleCharSequence(']');
-
     public static CharSequence singleChar(char c) {
-        switch (c) {
-            case '\n':
-                return CR;
-            case ',':
-                return COMMA;
-            case '.':
-                return DOT;
-            case ':':
-                return COLON;
-            case '{':
-                return OPEN_CURLY;
-            case '}':
-                return CLOSE_CURLY;
-            case '(':
-                return OPEN_PAREN;
-            case ')':
-                return CLOSE_PAREN;
-            case '[':
-                return OPEN_SQUARE;
-            case ']':
-                return CLOSE_SQUARE;
-            default:
-                return new SingleCharSequence(c);
-        }
+        return com.mastfrog.util.strings.Strings.singleChar(c);
     }
 
     public static CharSequence[] split(char delim, CharSequence seq) {
-        List<CharSequence> l = splitToList(delim, seq);
-        return l.toArray(new CharSequence[l.size()]);
+        return com.mastfrog.util.strings.Strings.split(delim, seq);
     }
 
-    private static CharSequence[] splitOnce(char c, CharSequence cs) {
-        int max = cs.length();
-        int splitAt = -1;
-        for (int i = 0; i < cs.length(); i++) {
-            if (c == cs.charAt(i)) {
-                splitAt = i;
-                break;
-            }
-        }
-        if (splitAt == -1) {
-            return new CharSequence[]{cs};
-        }
-        CharSequence left = cs.subSequence(0, splitAt);
-        if (splitAt < max - 1) {
-            CharSequence right = cs.subSequence(splitAt + 1, max);
-            return new CharSequence[]{left, right};
-        }
-        return new CharSequence[]{left};
+    public static CharSequence[] splitOnce(char c, CharSequence cs) {
+        return com.mastfrog.util.strings.Strings.splitOnce(c, cs);
     }
 
     public static String[] splitOnce(char c, String cs) {
-        int max = cs.length();
-        int splitAt = -1;
-        for (int i = 0; i < cs.length(); i++) {
-            if (c == cs.charAt(i)) {
-                splitAt = i;
-                break;
-            }
-        }
-        if (splitAt == -1) {
-            return new String[]{cs};
-        }
-        String left = cs.subSequence(0, splitAt).toString();
-        if (splitAt < max - 1) {
-            String right = cs.subSequence(splitAt + 1, max).toString();
-            return new String[]{left, right};
-        }
-        return new String[]{left};
+        return com.mastfrog.util.strings.Strings.splitOnce(c, cs);
     }
 
     public static final CharSequence stripDoubleQuotes(CharSequence cs) {
-        if (cs.length() >= 2) {
-            if (cs.charAt(0) == '"') {
-                cs = cs.subSequence(1, cs.length());
-            }
-            if (cs.charAt(cs.length() - 1) == '"') {
-                cs = cs.subSequence(0, cs.length() - 1);
-            }
-        }
-        return cs;
+        return com.mastfrog.util.strings.Strings.stripDoubleQuotes(cs);
     }
 
     /**
@@ -789,11 +367,7 @@ public final class Strings {
      * @return An encoded string
      */
     public static String urlEncode(String str) {
-        try {
-            return URLEncoder.encode(notNull("str", str), "UTF-8");
-        } catch (UnsupportedEncodingException ex) {
-            return Exceptions.chuck(ex);
-        }
+        return com.mastfrog.util.strings.Strings.urlEncode(str);
     }
 
     /**
@@ -805,11 +379,7 @@ public final class Strings {
      * @return An decoded string
      */
     public static String urlDecode(String str) {
-        try {
-            return URLDecoder.decode(notNull("str", str), "UTF-8");
-        } catch (UnsupportedEncodingException ex) {
-            return Exceptions.chuck(ex);
-        }
+        return com.mastfrog.util.strings.Strings.urlDecode(str);
     }
 
     /**
@@ -821,33 +391,11 @@ public final class Strings {
      * @return An array of strings
      */
     public static String[] split(char delim, String seq) {
-        List<String> result = new ArrayList<>(20);
-        int max = seq.length();
-        int start = 0;
-        for (int i = 0; i < max; i++) {
-            char c = seq.charAt(i);
-            boolean last = i == max - 1;
-            if (c == delim || last) {
-                result.add(seq.substring(start, last ? c == delim ? i : i + 1 : i));
-                start = i + 1;
-            }
-        }
-        return result.toArray(new String[result.size()]);
+        return com.mastfrog.util.strings.Strings.split(delim, seq);
     }
 
     public static List<CharSequence> splitToList(char delimiter, CharSequence seq) {
-        List<CharSequence> result = new ArrayList<>(5);
-        int max = seq.length();
-        int start = 0;
-        for (int i = 0; i < max; i++) {
-            char c = seq.charAt(i);
-            boolean last = i == max - 1;
-            if (c == delimiter || last) {
-                result.add(seq.subSequence(start, last ? c == delimiter ? i : i + 1 : i));
-                start = i + 1;
-            }
-        }
-        return result;
+        return com.mastfrog.util.strings.Strings.splitToList(delimiter, seq);
     }
 
     /**
@@ -861,46 +409,11 @@ public final class Strings {
      * @return A set of strings
      */
     public static Set<CharSequence> splitUniqueNoEmpty(char delim, CharSequence seq) {
-        Set<CharSequence> result = new LinkedHashSet<>();
-        split(delim, seq, (s) -> {
-            s = trim(s);
-            if (s.length() > 0) {
-                result.add(s);
-            }
-            return true;
-        });
-        return result;
+        return com.mastfrog.util.strings.Strings.splitUniqueNoEmpty(delim, seq);
     }
 
     public static void split(char delim, CharSequence seq, Function<CharSequence, Boolean> proc) {
-        Checks.notNull("seq", seq);
-        Checks.notNull("proc", proc);
-        int lastStart = 0;
-        int max = seq.length();
-        if (max == 0) {
-            return;
-        }
-        for (int i = 0; i < max; i++) {
-            char c = seq.charAt(i);
-//            System.out.println("At " + i + " " + c + " look for " + delim);
-            if (delim == c || i == max - 1) {
-                if (lastStart != i) {
-                    int offset = i == max - 1 ? i + 1 : i;
-                    if (i == max - 1 && delim == c) {
-                        offset--;
-                    }
-                    CharSequence sub = seq.subSequence(lastStart, offset);
-                    if (!proc.apply(sub)) {
-                        return;
-                    }
-                } else {
-                    if (!proc.apply("")) {
-                        return;
-                    }
-                }
-                lastStart = i + 1;
-            }
-        }
+        com.mastfrog.util.strings.Strings.split(delim, seq, proc);
     }
 
     /**
@@ -913,17 +426,7 @@ public final class Strings {
      * that many initial characters of the first argument
      */
     public static boolean startsWith(CharSequence target, CharSequence start) {
-        int targetLength = target.length();
-        int startLength = start.length();
-        if (startLength > targetLength) {
-            return false;
-        }
-        for (int i = 0; i < startLength; i++) {
-            if (start.charAt(i) != target.charAt(i)) {
-                return false;
-            }
-        }
-        return true;
+        return com.mastfrog.util.strings.Strings.startsWith(target, start);
     }
 
     /**
@@ -936,17 +439,7 @@ public final class Strings {
      * that many initial characters of the first argument, ignoring case
      */
     public static boolean startsWithIgnoreCase(CharSequence target, CharSequence start) {
-        int targetLength = target.length();
-        int startLength = start.length();
-        if (startLength > targetLength) {
-            return false;
-        }
-        for (int i = 0; i < startLength; i++) {
-            if (start.charAt(i) != target.charAt(i) && Character.toLowerCase(start.charAt(i)) != target.charAt(i) && Character.toUpperCase(start.charAt(i)) != target.charAt(i)) {
-                return false;
-            }
-        }
-        return true;
+        return com.mastfrog.util.strings.Strings.startsWithIgnoreCase(target, start);
     }
 
     /**
@@ -957,16 +450,7 @@ public final class Strings {
      * @return Whether or not they are equal, ignoring case
      */
     public static boolean contentEqualsIgnoreCase(CharSequence a, CharSequence b) {
-        int len = a.length();
-        if (b.length() != len) {
-            return false;
-        }
-        for (int i = 0; i < len; i++) {
-            if (a.charAt(i) != b.charAt(i) && Character.toLowerCase(a.charAt(i)) != b.charAt(i) && Character.toUpperCase(a.charAt(i)) != b.charAt(i)) {
-                return false;
-            }
-        }
-        return true;
+        return com.mastfrog.util.strings.Strings.contentEqualsIgnoreCase(a, b);
     }
 
     /**
@@ -980,29 +464,7 @@ public final class Strings {
      * ignoring case
      */
     public static boolean charSequenceContains(CharSequence container, CharSequence contained, boolean ignoreCase) {
-        if (!ignoreCase && container instanceof String && contained instanceof String) {
-            return ((String) container).contains(contained);
-        }
-        int containedLength = contained.length();
-        int containerLength = container.length();
-        if (containedLength > containerLength) {
-            return false;
-        }
-        int offset = 0;
-        int max = container.length(); //(containerLength - containedLength) + 1;
-        for (int i = 0; i < max; i++) {
-            char c = ignoreCase ? Character.toLowerCase(container.charAt(i)) : container.charAt(i);
-            char d = ignoreCase ? Character.toLowerCase(contained.charAt(offset)) : contained.charAt(offset);
-            if (c != d) {
-                offset = 0;
-            } else {
-                offset++;
-            }
-            if (offset >= containedLength) {
-                return true;
-            }
-        }
-        return false;
+        return com.mastfrog.util.strings.Strings.charSequenceContains(container, contained, ignoreCase);
     }
 
     /**
@@ -1013,42 +475,7 @@ public final class Strings {
      * @throws NumberFormatException for all the usual reasons
      */
     public static int parseInt(CharSequence seq) {
-        int result = 0;
-        int max = seq.length() - 1;
-        int position = 1;
-        boolean negative = false;
-        for (int i = max; i >= 0; i--) {
-            char c = seq.charAt(i);
-            switch (c) {
-                case '-':
-                    if (i == 0) {
-                        negative = true;
-                        continue;
-                    }
-                    throw new NumberFormatException("- encountered not at start of '" + seq + "'");
-                case '0':
-                case '1':
-                case '2':
-                case '3':
-                case '4':
-                case '5':
-                case '6':
-                case '7':
-                case '8':
-                case '9':
-                    int prev = result;
-                    result += position * (c - '0');
-                    if (prev > result) {
-                        throw new NumberFormatException("Number too large for integer: '" + seq + "' - "
-                                + " " + prev + " + " + (position * (c - '0')) + " = " + result);
-                    }
-                    position *= 10;
-                    continue;
-                default:
-                    throw new NumberFormatException("Illegal character '" + c + "' in number '" + seq + "'");
-            }
-        }
-        return negative ? -result : result;
+        return com.mastfrog.util.strings.Strings.parseInt(seq);
     }
 
     /**
@@ -1059,42 +486,7 @@ public final class Strings {
      * @throws NumberFormatException for all the usual reasons
      */
     public static long parseLong(CharSequence seq) {
-        long result = 0;
-        int max = seq.length() - 1;
-        long position = 1;
-        boolean negative = false;
-        for (int i = max; i >= 0; i--) {
-            char c = seq.charAt(i);
-            switch (c) {
-                case '-':
-                    if (i == 0) {
-                        negative = true;
-                        continue;
-                    }
-                    throw new NumberFormatException("- encountered not at start of '" + seq + "'");
-                case '0':
-                case '1':
-                case '2':
-                case '3':
-                case '4':
-                case '5':
-                case '6':
-                case '7':
-                case '8':
-                case '9':
-                    long prev = result;
-                    result += position * (c - '0');
-                    if (prev > result) {
-                        throw new NumberFormatException("Number too large for long: '" + seq + "' - "
-                                + " " + prev + " + " + (position * (c - '0')) + " = " + result);
-                    }
-                    position *= 10;
-                    continue;
-                default:
-                    throw new NumberFormatException("Illegal character '" + c + "' in number '" + seq + "'");
-            }
-        }
-        return negative ? -result : result;
+        return com.mastfrog.util.strings.Strings.parseLong(seq);
     }
 
     /**
@@ -1106,13 +498,7 @@ public final class Strings {
      * @return The first index or -1
      */
     public static int indexOf(char c, CharSequence seq) {
-        int max = seq.length();
-        for (int i = 0; i < max; i++) {
-            if (c == seq.charAt(i)) {
-                return i;
-            }
-        }
-        return -1;
+        return com.mastfrog.util.strings.Strings.indexOf(c, seq);
     }
 
     /**
@@ -1124,13 +510,7 @@ public final class Strings {
      * @return The first index or -1
      */
     public static int lastIndexOf(char c, CharSequence seq) {
-        int max = seq.length() - 1;
-        for (int i = max; i >= 0; i--) {
-            if (c == seq.charAt(i)) {
-                return i;
-            }
-        }
-        return -1;
+        return com.mastfrog.util.strings.Strings.lastIndexOf(c, seq);
     }
 
     /**
@@ -1141,19 +521,7 @@ public final class Strings {
      * @return A string combining both
      */
     public static String interleave(CharSequence a, CharSequence b) {
-        StringBuilder sb = new StringBuilder();
-        int maxA = a.length();
-        int maxB = b.length();
-        int max = Math.max(maxA, maxB);
-        for (int i = 0; i < max; i++) {
-            if (i < maxA) {
-                sb.append(a.charAt(i));
-            }
-            if (i < maxB) {
-                sb.append(b.charAt(i));
-            }
-        }
-        return sb.toString();
+        return com.mastfrog.util.strings.Strings.interleave(a, b);
     }
 
     /**
@@ -1166,58 +534,11 @@ public final class Strings {
      * @return A new string
      */
     public static String literalReplaceAll(String pattern, String replacement, String in) {
-        // XXX this could be made considerably more efficient by iterating
-        // the char array
-        if (in.length() < pattern.length()) {
-            return in;
-        }
-        if (pattern.equals(replacement)) {
-            throw new IllegalArgumentException("Replacing pattern with itself: " + pattern);
-        }
-        if (replacement.contains(pattern)) {
-            throw new IllegalArgumentException("Pattern contains its replacement - would "
-                    + "loop forever.  Pattern: '" + pattern + "' Replacement: '" + replacement + "'");
-        }
-        boolean replaced;
-        do {
-            int ix = in.indexOf(pattern);
-            if (ix >= 0) {
-                replaced = true;
-                if (ix == 0) {
-                    in = replacement + in.substring(ix + pattern.length());
-                } else {
-                    String begin = in.substring(0, ix);
-                    String end = in.substring(ix + pattern.length(), in.length());
-                    in = begin + replacement + end;
-                }
-            } else {
-                replaced = false;
-            }
-        } while (replaced);
-        return in;
+        return com.mastfrog.util.strings.Strings.literalReplaceAll(pattern, replacement, in);
     }
 
     public static String toString(Object o) {
-        if (o == null) {
-            return "null";
-        } else if (o instanceof String) {
-            return (String) o;
-        }
-        if (o instanceof Iterable<?>) {
-            return join(',', (Iterable<?>) o);
-        } else if (o.getClass().isArray()) {
-            int max = Array.getLength(o);
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < max; i++) {
-                Object item = Array.get(o, i);
-                if (i > 0) {
-                    sb.append(',');
-                }
-                sb.append(Objects.toString(item));
-            }
-            return sb.toString();
-        }
-        return o.toString();
+        return com.mastfrog.util.strings.Strings.toString(o);
     }
 
     /**
@@ -1228,15 +549,7 @@ public final class Strings {
      * @return True if the character is present
      */
     public static boolean containsCaseInsensitive(char lookFor, CharSequence in) {
-        char lookFor1 = Character.toLowerCase(lookFor);
-        char lookFor2 = Character.toLowerCase(lookFor);
-        int max = in.length();
-        for (int i = 0; i < max; i++) {
-            if (in.charAt(i) == lookFor1 || in.charAt(i) == lookFor2) {
-                return true;
-            }
-        }
-        return false;
+        return com.mastfrog.util.strings.Strings.containsCaseInsensitive(lookFor, in);
     }
 
     /**
@@ -1247,13 +560,7 @@ public final class Strings {
      * @return True if the character is present
      */
     public static boolean contains(char lookFor, CharSequence in) {
-        int max = in.length();
-        for (int i = 0; i < max; i++) {
-            if (in.charAt(i) == lookFor) {
-                return true;
-            }
-        }
-        return false;
+        return com.mastfrog.util.strings.Strings.contains(lookFor, in);
     }
 
     /**
@@ -1264,18 +571,7 @@ public final class Strings {
      * @return A hyphenated sequence
      */
     public static String camelCaseToDashes(CharSequence s) {
-        StringBuilder sb = new StringBuilder();
-        int max = s.length();
-        for (int i = 0; i < max; i++) {
-            char c = s.charAt(i);
-            if (Character.isUpperCase(c)) {
-                if (sb.length() > 0) {
-                    sb.append("-");
-                }
-            }
-            sb.append(Character.toLowerCase(c));
-        }
-        return sb.toString();
+        return com.mastfrog.util.strings.Strings.camelCaseToDashes(s);
     }
 
     /**
@@ -1286,22 +582,7 @@ public final class Strings {
      * @return A camel case string
      */
     public static String dashesToCamelCase(CharSequence s) {
-        StringBuilder sb = new StringBuilder();
-        boolean upcase = true;
-        int max = s.length();
-        for (int i = 0; i < max; i++) {
-            char c = s.charAt(i);
-            if (c == '-') {
-                upcase = true;
-                continue;
-            }
-            if (upcase) {
-                c = Character.toUpperCase(c);
-                upcase = false;
-            }
-            sb.append(c);
-        }
-        return sb.toString();
+        return com.mastfrog.util.strings.Strings.dashesToCamelCase(s);
     }
 
     /**
@@ -1311,11 +592,7 @@ public final class Strings {
      * @return The base 64 SHA-1 hash of the string
      */
     public static String hash(String s) {
-        try {
-            return hash(s, "SHA-1");
-        } catch (NoSuchAlgorithmException ex) {
-            return Exceptions.chuck(ex);
-        }
+        return com.mastfrog.util.strings.Strings.hash(s);
     }
 
     /**
@@ -1325,40 +602,19 @@ public final class Strings {
      * @return The url-safe base 64 SHA-1 hash of the string
      */
     public static String urlHash(String s) {
-        try {
-            return urlHash(s, "SHA-1");
-        } catch (NoSuchAlgorithmException ex) {
-            return Exceptions.chuck(ex);
-        }
+        return com.mastfrog.util.strings.Strings.urlHash(s);
     }
 
     public static String hash(String s, String algorithm) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance(algorithm);
-        return Base64.getEncoder().encodeToString(digest.digest(s.getBytes(Charset.forName("UTF-8"))));
+        return com.mastfrog.util.strings.Strings.hash(s, algorithm);
     }
 
     public static String urlHash(String s, String algorithm) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance(algorithm);
-        return Base64.getUrlEncoder().encodeToString(digest.digest(s.getBytes(Charset.forName("UTF-8"))));
+        return com.mastfrog.util.strings.Strings.urlHash(s, algorithm);
     }
 
     public static List<String> commaDelimitedToList(String commas, int lengthLimit) {
-        if (commas == null || commas.isEmpty()) {
-            return Collections.emptyList();
-        }
-        Set<String> tgs = new LinkedHashSet<>();
-        for (String t : commas.split(",")) {
-            t = t.trim();
-            if (t.length() > lengthLimit) {
-                throw new IllegalArgumentException("Length limit is " + lengthLimit);
-            }
-            if (!t.isEmpty()) {
-                tgs.add(t);
-            }
-        }
-        List<String> result = new ArrayList<>(tgs);
-        Collections.sort(result);
-        return result;
+        return com.mastfrog.util.strings.Strings.commaDelimitedToList(commas, lengthLimit);
     }
 
     /**
@@ -1373,148 +629,55 @@ public final class Strings {
      * original.
      */
     public static String shuffleAndExtract(Random rnd, String s, int targetLength) {
-        targetLength = Math.min(targetLength, s.length());
-        char[] c = s.toCharArray();
-        shuffle(rnd, c);
-        return new String(Arrays.copyOf(c, targetLength));
+        return com.mastfrog.util.strings.Strings.shuffleAndExtract(rnd, s, targetLength);
     }
-
-    /**
-     * Fisher-Yates shuffle.
-     *
-     * @param rnd A random
-     * @param array An array
-     */
-    static void shuffle(Random rnd, char[] array) {
-        for (int i = 0; i < array.length - 2; i++) {
-            int r = rnd.nextInt(array.length);
-            if (i != r) {
-                char hold = array[i];
-                array[i] = array[r];
-                array[r] = hold;
-            }
-        }
-    }
-
 
     public static StringBuilder appendPaddedHex(byte val, StringBuilder sb) {
-        String sval = Integer.toHexString(val & 0xFF);
-        if (sval.length() == 1) {
-            sb.append('0');
-        }
-        return sb.append(sval);
+        return com.mastfrog.util.strings.Strings.appendPaddedHex(val, sb);
     }
 
     public static StringBuilder appendPaddedHex(short val, StringBuilder sb) {
-        String sval = Integer.toHexString(val & 0xFFFF);
-        for (int i = 0; i < 4 - sval.length(); i++) {
-            sb.append('0');
-        }
-        return sb.append(sval);
+        return com.mastfrog.util.strings.Strings.appendPaddedHex(val, sb);
     }
 
     public static StringBuilder appendPaddedHex(int val, StringBuilder sb) {
-        String sval = Integer.toHexString(val & 0xFFFFFFFF);
-        for (int i = 0; i < 8 - sval.length(); i++) {
-            sb.append('0');
-        }
-        return sb.append(sval);
+        return com.mastfrog.util.strings.Strings.appendPaddedHex(val, sb);
     }
 
     public static String toPaddedHex(byte[] bytes) {
-        StringBuilder sb = new StringBuilder();
-        for (byte b : bytes) {
-            appendPaddedHex(b, sb);
-        }
-        return sb.toString();
+        return com.mastfrog.util.strings.Strings.toPaddedHex(bytes);
     }
 
     public static String toPaddedHex(byte[] bytes, String delimiter) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < bytes.length; i++) {
-            byte b = bytes[i];
-            appendPaddedHex(b, sb);
-            if (i != bytes.length) {
-                sb.append(delimiter);
-            }
-        }
-        return sb.toString();
+        return com.mastfrog.util.strings.Strings.toPaddedHex(bytes, delimiter);
     }
 
     public static String toPaddedHex(short[] bytes) {
-        StringBuilder sb = new StringBuilder();
-        for (short b : bytes) {
-            appendPaddedHex(b, sb);
-        }
-        return sb.toString();
+        return com.mastfrog.util.strings.Strings.toPaddedHex(bytes);
     }
 
     public static String toPaddedHex(short[] bytes, String delimiter) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < bytes.length; i++) {
-            short b = bytes[i];
-            appendPaddedHex(b, sb);
-            if (i != bytes.length) {
-                sb.append(delimiter);
-            }
-        }
-        return sb.toString();
+        return com.mastfrog.util.strings.Strings.toPaddedHex(bytes, delimiter);
     }
 
     public static String toPaddedHex(int[] bytes) {
-        StringBuilder sb = new StringBuilder();
-        for (int b : bytes) {
-            appendPaddedHex(b, sb);
-        }
-        return sb.toString();
+        return com.mastfrog.util.strings.Strings.toPaddedHex(bytes);
     }
 
     public static String toPaddedHex(int[] bytes, String delimiter) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < bytes.length; i++) {
-            int b = bytes[i];
-            appendPaddedHex(b, sb);
-            if (i != bytes.length) {
-                sb.append(delimiter);
-            }
-        }
-        return sb.toString();
+        return com.mastfrog.util.strings.Strings.toPaddedHex(bytes, delimiter);
     }
 
     public static String toBase64(byte[] bytes) {
-        return Base64.getEncoder().encodeToString(bytes);
+        return com.mastfrog.util.strings.Strings.toBase64(bytes);
     }
 
     public static String toNonPaddedBase36(byte[] bytes) {
-        if (bytes.length % 8 != 0) {
-            throw new IllegalArgumentException("Byte count must be divisible by 8");
-        }
-        LongBuffer buf = ByteBuffer.wrap(bytes).asLongBuffer();
-        StringBuilder sb = new StringBuilder();
-        while (buf.remaining() > 0) {
-            sb.append(Long.toString(buf.get(), 36));
-        }
-        return sb.toString();
+        return com.mastfrog.util.strings.Strings.toNonPaddedBase36(bytes);
     }
 
     public static String toDelimitedPaddedBase36(byte[] bytes) {
-        if (bytes.length % 8 != 0) {
-            throw new IllegalArgumentException("Byte count must be divisible by 8");
-        }
-        LongBuffer buf = ByteBuffer.wrap(bytes).asLongBuffer();
-        StringBuilder sb = new StringBuilder();
-        while (buf.remaining() > 0) {
-            long val = buf.get();
-            if (val >= 0) {
-                if (sb.length() > 0) {
-                    sb.append('~');
-                }
-                sb.append(Long.toString(val, 36));
-            } else {
-                sb.append(Long.toString(val, 36));
-            }
-        }
-        return sb.toString();
+        return com.mastfrog.util.strings.Strings.toDelimitedPaddedBase36(bytes);
     }
 
     /**
@@ -1524,22 +687,7 @@ public final class Strings {
      * attack</a>.
      */
     public static boolean timingSafeEquals(String first, String second) {
-        if (first == null) {
-            return second == null;
-        } else if (second == null) {
-            return false;
-        } else if (second.length() <= 0) {
-            return first.length() <= 0;
-        }
-        char[] firstChars = first.toCharArray();
-        char[] secondChars = second.toCharArray();
-        char result = (char) ((firstChars.length == secondChars.length) ? 0 : 1);
-        int j = 0;
-        for (int i = 0; i < firstChars.length; ++i) {
-            result |= firstChars[i] ^ secondChars[j];
-            j = (j + 1) % secondChars.length;
-        }
-        return result == 0;
+        return com.mastfrog.util.strings.Strings.timingSafeEquals(first, second);
     }
 
     /**
@@ -1553,143 +701,26 @@ public final class Strings {
      * @return Whether or not the two sequences are equal
      */
     public static boolean timingSafeEquals(CharSequence first, CharSequence second) {
-        if (first == null) {
-            return second == null;
-        } else if (second == null) {
-            return false;
-        } else if (second.length() <= 0) {
-            return first.length() <= 0;
-        }
-        int firstLength = first.length();
-        int secondLength = second.length();
-        char result = (char) ((firstLength == secondLength) ? 0 : 1);
-        int j = 0;
-        for (int i = 0; i < firstLength; ++i) {
-            result |= first.charAt(i) ^ second.charAt(j);
-            j = (j + 1) % secondLength;
-        }
-        return result == 0;
+        return com.mastfrog.util.strings.Strings.timingSafeEquals(first, second);
     }
 
     public static CharSequence replaceAll(final char c, String replacement, CharSequence in) {
-        if (indexOf(c, in) < 0) {
-            return in;
-        }
-        StringBuilder sb = new StringBuilder(in.length() + 4);
-        int max = in.length();
-        for (int i = 0; i < max; i++) {
-            char cc = in.charAt(i);
-            if (cc == c) {
-                sb.append(replacement);
-            } else {
-                sb.append(cc);
-            }
-        }
-        return sb;
+        return com.mastfrog.util.strings.Strings.replaceAll(c, replacement, in);
     }
 
     public static CharSequence quickJson(Object... args) {
-        if ((args.length % 2) != 0) {
-            throw new IllegalArgumentException("Odd number of arguments: " + join(',', args));
-        }
-        ConcatCharSequence sb = new ConcatCharSequence('{');
-        for (int i = 0; i < args.length; i += 2) {
-            CharSequence key = jsonArgument(args[i]);
-            CharSequence val = jsonArgument(args[i + 1]);
-            sb.append(key).append(':').append(val);
-            if (i != args.length - 2) {
-                sb.append(',');
-            }
-        }
-        return sb.append('}');
-    }
-
-    private static CharSequence jsonArgument(Object o) {
-        if (o instanceof Collection<?> || (o != null && o.getClass().isArray())) {
-            if (o.getClass().isArray()) {
-                int max = Array.getLength(o);
-                List<Object> l = new ArrayList<>();
-                for (int i = 0; i < max; i++) {
-                    l.add(Array.get(o, i));
-                }
-                o = l;
-            }
-            Collection<?> c = (Collection<?>) o;
-            ConcatCharSequence sq = new ConcatCharSequence(c.size() + 4);
-            sq.append(singleChar('['));
-            for (Iterator<?> it = c.iterator(); it.hasNext();) {
-                Object o1 = it.next();
-                sq.append(jsonArgument(o1));
-                if (it.hasNext()) {
-                    sq.append(singleChar(','));
-                }
-            }
-            sq.append(singleChar(']'));
-            return sq;
-        }
-        if (o != null
-                && !(o instanceof Number)
-                && !(o instanceof CharSequence)
-                && !(o instanceof Boolean)
-                && !(o instanceof Date)
-                && !(o instanceof ZonedDateTime)
-                && !(o instanceof OffsetDateTime)
-                && !(o instanceof LocalDateTime)
-                && !(o instanceof Duration)
-                && !(o instanceof Instant)
-                && !(o instanceof Enum<?>)) {
-            throw new IllegalArgumentException("quickJson does not support " + o.getClass().getName());
-        }
-        return escapeJson(o);
-    }
-
-    private static CharSequence escapeJson(Object o) {
-        if (o instanceof Date) {
-            Date d = (Date) o;
-            return quote(TimeUtil.toIsoFormat(d));
-        } else if (o instanceof ZonedDateTime) {
-            ZonedDateTime zdt = (ZonedDateTime) o;
-            return quote(TimeUtil.toIsoFormat(zdt));
-        } else if (o instanceof OffsetDateTime) {
-            OffsetDateTime odt = (OffsetDateTime) o;
-            return quote(TimeUtil.toIsoFormat(odt));
-        } else if (o instanceof LocalDateTime) {
-            LocalDateTime ldt = (LocalDateTime) o;
-            return quote(TimeUtil.toIsoFormat(ldt));
-        } else if (o instanceof Instant) {
-            Instant ins = (Instant) o;
-            return quote(TimeUtil.toIsoFormat(ins));
-        } else if (o instanceof Duration) {
-            Duration dur = (Duration) o;
-            return quote(TimeUtil.format(dur));
-        } else if (o instanceof Enum<?>) {
-            return quote(((Enum<?>) o).name());
-        } else if (o instanceof Number || o instanceof Boolean) {
-            return o.toString();
-        } else if (o == null) {
-            return "null";
-        }
-
-        String stringRep = o.toString();
-        CharSequence result = replaceAll('"', "\\\"", stringRep);
-        result = replaceAll('\n', "\\n", result);
-        result = replaceAll('\t', "\\t", result);
-        return '"' + result.toString() + '"';
-    }
-
-    private static String quote(String s) {
-        return '"' + s + '"';
+        return com.mastfrog.util.strings.Strings.quickJson(args);
     }
 
     public static AppendingCharSequence newAppendingCharSequence() {
-        return new AppendableCharSequence(5);
+        return com.mastfrog.util.strings.Strings.newAppendingCharSequence();
     }
 
     public static AppendingCharSequence newAppendingCharSequence(int components) {
-        return new AppendableCharSequence(components);
+        return com.mastfrog.util.strings.Strings.newAppendingCharSequence(components);
     }
 
     public static AppendingCharSequence newAppendingCharSequence(CharSequence seqs) {
-        return new AppendableCharSequence(seqs);
+        return com.mastfrog.util.strings.Strings.newAppendingCharSequence(seqs);
     }
 }

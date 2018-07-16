@@ -15,3 +15,12 @@ nb-configuration.xml
 /annotation-processors/nbproject/
 /annotation-processors/target/
 /util/target/
+/util-time/target/
+/util-streams/target/
+/util-strings/target/
+/util-preconditions/target/
+/util-collections/target/
+/util-thread/target/
+/util-function/target/
+/util-net/target/
+/util-misc/target/

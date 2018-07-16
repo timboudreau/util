@@ -27,7 +27,9 @@ package com.mastfrog.util;
  * Stub version of org.openide.util.Exceptions
  *
  * @author Tim Boudreau
+ * @deprecated All methods delegate to com.mastfrog.util.preconditions.Exceptions
  */
+@Deprecated
 public final class Exceptions {
     private Exceptions() {}
 

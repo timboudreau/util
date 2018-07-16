@@ -32,7 +32,7 @@ package com.mastfrog.util;
  * @author Tim Boudreau
  * @since 1.2.1
  */
-public class ConfigurationError extends Error {
+public class ConfigurationError extends com.mastfrog.util.preconditions.ConfigurationError {
 
     public ConfigurationError() {
     }
