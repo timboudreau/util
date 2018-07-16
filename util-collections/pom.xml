@@ -18,4 +18,39 @@
             <artifactId>util-strings</artifactId>
         </dependency>
     </dependencies>
+    <url>https://github.com/timboudreau/util</url>
+    <scm>
+        <url>https://github.com/timboudreau/util</url>
+        <connection>scm:git:https://github.com/timboudreau/util.git</connection>
+        <developerConnection>git@github.com/timboudreau/util.git</developerConnection>
+    </scm>
+    <licenses>
+        <license>
+            <name>MIT</name>
+            <url>http://opensource.org/licenses/MIT</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <id>tim</id>
+            <name>Tim Boudreau</name>
+            <url>http://timboudreau.com</url>
+            <email>tim@timboudreau.com</email>
+        </developer>
+    </developers>
+    <repositories>
+        <repository>
+            <id>timboudreau-builds</id>
+            <name>timboudreau.com builds</name>
+            <url>https://timboudreau.com/maven/</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+                <updatePolicy>never</updatePolicy>
+            </snapshots>
+        </repository>
+    </repositories>
 </project>

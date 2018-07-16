@@ -3,14 +3,24 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.mastfrog</groupId>
-        <artifactId>util-parent</artifactId>
+        <artifactId>mastfrog-parent</artifactId>
         <version>2.5.0-dev</version>
+        <relativePath/>
     </parent>
-    <artifactId>util-function</artifactId>
+    <artifactId>util-fileformat</artifactId>
+    <description>Library with no dependencies which supports writing JSON and
+        (repeatably, with no generated comments) Properties file formats
+    </description>
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>util-preconditions</artifactId>
+            <artifactId>util-strings</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>util-collections</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <url>https://github.com/timboudreau/util</url>

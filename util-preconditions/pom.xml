@@ -3,8 +3,44 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.mastfrog</groupId>
-        <artifactId>util-parent</artifactId>
+        <artifactId>mastfrog-parent</artifactId>
         <version>2.5.0-dev</version>
+        <relativePath/>
     </parent>
     <artifactId>util-preconditions</artifactId>
+    <url>https://github.com/timboudreau/util</url>
+    <licenses>
+        <license>
+            <name>MIT</name>
+            <url>http://opensource.org/licenses/MIT</url>
+        </license>
+    </licenses>
+    <scm>
+        <connection>scm:git:https://github.com/timboudreau/util.git</connection>
+        <url>https://github.com/timboudreau/util</url>
+        <developerConnection>scm:git:git@github.com:timboudreau/util.git</developerConnection>
+    </scm>
+    <developers>
+        <developer>
+            <id>tim</id>
+            <name>Tim Boudreau</name>
+            <url>http://timboudreau.com</url>
+            <email>tim@timboudreau.com</email>
+        </developer>
+    </developers>
+    <repositories>
+        <repository>
+            <id>timboudreau-builds</id>
+            <name>timboudreau.com builds</name>
+            <url>https://timboudreau.com/maven/</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+                <updatePolicy>never</updatePolicy>
+            </snapshots>
+        </repository>
+    </repositories>
 </project>

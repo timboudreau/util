@@ -21,8 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util.service;
+package com.mastfrog.util.fileformat;
 
+import com.mastfrog.util.fileformat.PropertiesFileUtils;
 import com.mastfrog.util.strings.Strings;
 import com.mastfrog.util.collections.CollectionUtils;
 import java.io.ByteArrayInputStream;

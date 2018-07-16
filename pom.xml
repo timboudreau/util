@@ -22,6 +22,7 @@
         <module>util-function</module>
         <module>util-net</module>
         <module>util-misc</module>
+        <module>util-fileformat</module>
     </modules>
     <url>https://github.com/timboudreau/numble</url>
     <scm>

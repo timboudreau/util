@@ -40,10 +40,16 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * byte[] backed string to cut memory consumption from Strings in half for cases
+ * byte[] backed string pool to cut memory consumption from Strings in half for cases
  * where ASCII strings are guaranteed. Create an instance of EightBitStrings,
  * which holds an intern pool, and then use it to create individual string
  * instances.
+ * <p>
+ * Used for cases where massive numbers of strings may be generated and compared,
+ * and memory is constrained.  Turning on aggressive optimizations will do a harder
+ * search in the intern table for any string to be created, at the expense of
+ * performance.
+ * </p>
  *
  * @author Tim Boudreau
  */

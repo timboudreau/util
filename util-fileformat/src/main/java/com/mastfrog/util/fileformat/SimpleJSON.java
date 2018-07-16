@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util.service;
+package com.mastfrog.util.fileformat;
 
 import java.lang.ref.Reference;
 import java.lang.reflect.Array;
@@ -56,7 +56,10 @@ import java.util.logging.Logger;
 /**
  * A simple way to write JSON from primitive values, arrays, maps and lists, for
  * use in annotation processors where depending on a library for doing this is
- * fraught. Date-like objects are serialized to ISO format GMT.
+ * fraught. Date-like objects are serialized to ISO format GMT..
+ * <p/>
+ * Useful for libraries which only need to <i>write</i> JSON and cannot afford
+ * a dependency on a large JSON library - such as in annotation processors.
  *
  * @author Tim Boudreau
  */

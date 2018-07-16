@@ -1163,44 +1163,89 @@ public final class Strings {
     }
 
     /**
-     * Replace all occurrances of a pattern in a string without regular
-     * expression parsing.
+     * Replace all occurrances of a pattern in a string without the regular
+     * expression handling done by String.replaceAll(). Does a single pass over
+     * the characters, so the replacement text may contain the pattern.
      *
-     * @param pattern The pattern
+     * @param pattern The literal pattern
      * @param replacement The replacement
      * @param in The input string
      * @return A new string
      */
     public static String literalReplaceAll(String pattern, String replacement, String in) {
-        // XXX this could be made considerably more efficient by iterating
-        // the char array
+        return literalReplaceAll(pattern, replacement, in, false).toString();
+    }
+
+    /**
+     * Replace all occurrances of a pattern in a string without the regular
+     * expression handling done by String.replaceAll(). Does a single pass over
+     * the characters, so the replacement text may contain the pattern.
+     *
+     * @param pattern The literal pattern
+     * @param replacement The replacement
+     * @param in The input string
+     * @return A new string
+     */
+    public static String literalReplaceAllIgnoreCase(String pattern, String replacement, String in) {
+        return literalReplaceAll(pattern, replacement, in, true).toString();
+    }
+
+
+    /**
+     * Replace all occurrances of a pattern in a character sequence without the
+     * regular expression handling done by String.replaceAll(). Does a single
+     * pass over the characters, so the replacement text may contain the
+     * pattern.
+     *
+     * @param pattern The literal pattern
+     * @param replacement The replacement
+     * @param in The input character sequence
+     * @return A new character sequence
+     */
+    public static CharSequence literalReplaceAll(CharSequence pattern, CharSequence replacement, CharSequence in, boolean ignoreCase) {
         if (in.length() < pattern.length()) {
             return in;
+        }
+        if (pattern.length() == 0) {
+            throw new IllegalArgumentException("Pattern is the empty string");
         }
         if (pattern.equals(replacement)) {
             throw new IllegalArgumentException("Replacing pattern with itself: " + pattern);
         }
-        if (replacement.contains(pattern)) {
-            throw new IllegalArgumentException("Pattern contains its replacement - would "
-                    + "loop forever.  Pattern: '" + pattern + "' Replacement: '" + replacement + "'");
-        }
-        boolean replaced;
-        do {
-            int ix = in.indexOf(pattern);
-            if (ix >= 0) {
-                replaced = true;
-                if (ix == 0) {
-                    in = replacement + in.substring(ix + pattern.length());
-                } else {
-                    String begin = in.substring(0, ix);
-                    String end = in.substring(ix + pattern.length(), in.length());
-                    in = begin + replacement + end;
+        int max = in.length();
+        StringBuilder result = new StringBuilder(in.length() + replacement.length());
+        int patternEnd = pattern.length() - 1;
+        int testPos = pattern.length() - 1;
+        int lastMatch = -1;
+        for (int i = max - 1; i >= 0; i--) {
+            char realChar = in.charAt(i);
+            char testChar = pattern.charAt(testPos);
+            if (ignoreCase) {
+                realChar = Character.toLowerCase(realChar);
+                testChar = Character.toLowerCase(testChar);
+            }
+            if (realChar == testChar) {
+                testPos--;
+                if (lastMatch == -1) {
+                    lastMatch = i;
+                }
+                if (testPos < 0) {
+                    result.insert(0, replacement);
+                    testPos = patternEnd;
+                    lastMatch = -1;
                 }
             } else {
-                replaced = false;
+                if (lastMatch != -1) {
+                    CharSequence missed = in.subSequence(i, lastMatch + 1);
+                    result.insert(0, missed);
+                    lastMatch = -1;
+                } else {
+                    result.insert(0, realChar);
+                }
+                testPos = patternEnd;
             }
-        } while (replaced);
-        return in;
+        }
+        return result;
     }
 
     public static String toString(Object o) {
@@ -1600,7 +1645,7 @@ public final class Strings {
         if ((args.length % 2) != 0) {
             throw new IllegalArgumentException("Odd number of arguments: " + join(',', args));
         }
-        ConcatCharSequence sb = new ConcatCharSequence('{');
+        AppendableCharSequence sb = new AppendableCharSequence('{');
         for (int i = 0; i < args.length; i += 2) {
             CharSequence key = jsonArgument(args[i]);
             CharSequence val = jsonArgument(args[i + 1]);
@@ -1623,7 +1668,7 @@ public final class Strings {
                 o = l;
             }
             Collection<?> c = (Collection<?>) o;
-            ConcatCharSequence sq = new ConcatCharSequence(c.size() + 4);
+            AppendableCharSequence sq = new AppendableCharSequence(c.size() + 4);
             sq.append(singleChar('['));
             for (Iterator<?> it = c.iterator(); it.hasNext();) {
                 Object o1 = it.next();

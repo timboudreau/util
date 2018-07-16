@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package com.mastfrog.util.service;
+package com.mastfrog.util.fileformat;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -39,7 +39,7 @@ import java.util.Properties;
  *
  * @author Tim Boudreau
  */
-public class PropertiesFileUtils {
+public final class PropertiesFileUtils {
     private static final char[] ESCAPED_SPACE = "\\ ".toCharArray();
     private static final int[] NIBBLES = new int[]{12, 8, 4, 0};
     private static final char[] HEX = {

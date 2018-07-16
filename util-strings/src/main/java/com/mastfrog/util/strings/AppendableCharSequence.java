@@ -55,6 +55,10 @@ public final class AppendableCharSequence implements Appendable, Comparable<Char
         this.seqs = new ArrayList<>(components);
     }
 
+    public AppendableCharSequence(char first) {
+        this(Strings.singleChar(first));
+    }
+
     public AppendableCharSequence(CharSequence... seqs) {
         Checks.notNull("seqs", seqs);
         Checks.noNullElements("seqs", seqs);

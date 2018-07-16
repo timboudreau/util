@@ -21,8 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util.service;
+package com.mastfrog.util.fileformat;
 
+import com.mastfrog.util.fileformat.SimpleJSON;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import java.time.Duration;
 import java.time.ZonedDateTime;

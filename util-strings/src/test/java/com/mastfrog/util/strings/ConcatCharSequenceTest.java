@@ -23,16 +23,16 @@
  */
 package com.mastfrog.util.strings;
 
-import com.mastfrog.util.strings.ConcatCharSequence;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class ConcatCharSequenceTest {
 
     @Test
+    @SuppressWarnings("deprecation")
     public void test() {
         assertTrue(true);
-        ConcatCharSequence cs = new ConcatCharSequence();
+        AppendableCharSequence cs = new AppendableCharSequence();
         cs.append("abc").append("def").append("ghi");
         assertString("abcdefghi", cs);
         assertString("abcdefghi", cs.subSequence(0, cs.length()));

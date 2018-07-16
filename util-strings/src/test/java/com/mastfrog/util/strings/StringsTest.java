@@ -291,9 +291,24 @@ public class StringsTest {
         Strings.literalReplaceAll("{{foo}}", "{{foo}}", "xyzqkasdfh");
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testIllegalReplace2() {
-        Strings.literalReplaceAll("{{foo}}", "This is {{foo}}", "xyzqkasdfh");
+    @Test
+    public void testOverlap() {
+        String exp = "xyzqkasdfh";
+        String got = Strings.literalReplaceAll("{{foo}}", "This is {{foo}}", "xyzqkasdfh");
+        assertEquals(exp, got);
+
+        exp = "xyzqkasdfh This is {{foo}}";
+        got = Strings.literalReplaceAll("{{foo}}", "This is {{foo}}", "xyzqkasdfh {{foo}}");
+        assertEquals(exp, got);
+
+        exp = "xyzqkasdfh bar";
+        got = Strings.literalReplaceAll("{{foo}}", "bar", "xyzqkasdfh {{foo}}");
+        assertEquals(exp, got);
+
+        exp = "xyzqkasdfh {{foo}}";
+        got = Strings.literalReplaceAll("{{fooo}}", "bar", "xyzqkasdfh {{foo}}");
+        assertEquals(exp, got);
+
     }
 
     @Test
@@ -359,6 +374,7 @@ public class StringsTest {
         assertEquals("some,strings,that,need,trimming", Strings.join(',', got).toString());
     }
 
+    @SafeVarargs
     private static final <T> Set<T> setOf(T... items) {
         return new LinkedHashSet<>(Arrays.asList(items));
     }
