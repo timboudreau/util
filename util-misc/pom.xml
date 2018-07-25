@@ -20,6 +20,13 @@
         <url>https://github.com/timboudreau/util</url>
         <developerConnection>scm:git:git@github.com:timboudreau/util.git</developerConnection>
     </scm>
+    <dependencies>
+        <dependency>
+            <groupId>com.mastfrog</groupId>
+            <artifactId>util-strings</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
     <developers>
         <developer>
             <id>tim</id>
