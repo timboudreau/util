@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.collections;
 
+import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
@@ -53,5 +54,24 @@ public interface Longerator extends LongSupplier {
         while (hasNext()) {
             action.accept(next());
         }
+    }
+
+    public default Iterator<Long> toIterator() {
+        return new Iterator<Long>() {
+            @Override
+            public boolean hasNext() {
+                return Longerator.this.hasNext();
+            }
+
+            @Override
+            public Long next() {
+                return Longerator.this.next();
+            }
+
+            @Override
+            public void forEachRemaining(Consumer<? super Long> action) {
+                Longerator.this.forEachRemaining(action);
+            }
+        };
     }
 }
