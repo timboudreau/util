@@ -23,11 +23,12 @@
  */
 package com.mastfrog.util.function;
 
-import com.mastfrog.util.function.ThrowingFunction;
 import java.util.concurrent.Callable;
 
 /**
  * Callable-like construct which throws a typed exception and takes an argument.
+ * Post Java-8, prefer java.util.function classes unless the ability to generically
+ * type the thrown exception is actually useful.
  *
  * @author Tim Boudreau
  */

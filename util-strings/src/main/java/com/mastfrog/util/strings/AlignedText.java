@@ -24,6 +24,7 @@
 package com.mastfrog.util.strings;
 
 import com.mastfrog.util.strings.AlignedText.Endable;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -105,6 +106,19 @@ public class AlignedText {
         return toString();
     }
 
+    private DecimalFormat decimalFormat = new DecimalFormat("###,###,###,###,###,###,##0.0###");
+    private DecimalFormat integerFormat = new DecimalFormat("###,###,###,###,###,###,##0");
+
+    public AlignedText setNumberFormat(DecimalFormat fmt) {
+        integerFormat = fmt;
+        return this;
+    }
+
+    public AlignedText setDecimalFormat(DecimalFormat fmt) {
+        decimalFormat = fmt;
+        return this;
+    }
+
     public AStringBuilder append(String s) {
         Line l = new Line(this);
         return l.append(s);
@@ -113,6 +127,36 @@ public class AlignedText {
     public AStringBuilder append(char s) {
         Line l = new Line(this);
         return l.append(s);
+    }
+
+    public AStringBuilder append(int val) {
+        Line l = new Line(this);
+        return l.append(integerFormat.format(val));
+    }
+
+    public AStringBuilder append(long val) {
+        Line l = new Line(this);
+        return l.append(integerFormat.format(val));
+    }
+
+    public AStringBuilder append(short val) {
+        Line l = new Line(this);
+        return l.append(integerFormat.format(val));
+    }
+
+    public AStringBuilder append(byte val) {
+        Line l = new Line(this);
+        return l.append(integerFormat.format(val));
+    }
+
+    public AStringBuilder append(double val) {
+        Line l = new Line(this);
+        return l.append(decimalFormat.format(val));
+    }
+
+    public AStringBuilder append(float val) {
+        Line l = new Line(this);
+        return l.append(decimalFormat.format(val));
     }
 
     public static void main(String[] args) {
@@ -128,7 +172,7 @@ public class AlignedText {
         System.out.println(new AlignedText(tabbed));
     }
 
-    public final class Line implements Endable<AlignedText> {
+    public final class Line implements Endable<AlignedText>, Lineable<AStringBuilder> {
 
         private final List<AStringBuilder> columns = new ArrayList<>(10);
         private final AlignedText txt;
@@ -157,6 +201,42 @@ public class AlignedText {
             return b;
         }
 
+        public AStringBuilder append(int val) {
+            AStringBuilder b = new AStringBuilder(this);
+            b.append(integerFormat.format(val));
+            return b;
+        }
+
+        public AStringBuilder append(long val) {
+            AStringBuilder b = new AStringBuilder(this);
+            b.append(integerFormat.format(val));
+            return b;
+        }
+
+        public AStringBuilder append(short val) {
+            AStringBuilder b = new AStringBuilder(this);
+            b.append(integerFormat.format(val));
+            return b;
+        }
+
+        public AStringBuilder append(byte val) {
+            AStringBuilder b = new AStringBuilder(this);
+            b.append(integerFormat.format(val));
+            return b;
+        }
+
+        public AStringBuilder append(double val) {
+            AStringBuilder b = new AStringBuilder(this);
+            b.append(decimalFormat.format(val));
+            return b;
+        }
+
+        public AStringBuilder append(float val) {
+            AStringBuilder b = new AStringBuilder(this);
+            b.append(decimalFormat.format(val));
+            return b;
+        }
+
         Line add(AStringBuilder b) {
             columns.add(b);
             return this;
@@ -177,6 +257,11 @@ public class AlignedText {
                 }
             }
             return sb.toString();
+        }
+
+        public AStringBuilder nextLine(String s) {
+            end();
+            return txt.append(s);
         }
 
         @Override
@@ -200,7 +285,11 @@ public class AlignedText {
         public T end();
     }
 
-    public static final class AStringBuilder implements Appendable, AutoCloseable, CharSequence, Endable<Line> {
+    public interface Lineable<T> {
+        public T nextLine(String s);
+    }
+
+    public static final class AStringBuilder implements Appendable, AutoCloseable, CharSequence, Endable<Line>, Lineable<AStringBuilder> {
 
         private final StringBuilder sb = new StringBuilder();
         private final Line line;
@@ -220,7 +309,7 @@ public class AlignedText {
 
         @Override
         public void close() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            end();
         }
 
         public AStringBuilder append(Object obj) {
@@ -470,6 +559,11 @@ public class AlignedText {
 
         public int hashCode() {
             return Strings.charSequenceHashCode(sb);
+        }
+
+        @Override
+        public AStringBuilder nextLine(String s) {
+            return end().append(s);
         }
     }
 }

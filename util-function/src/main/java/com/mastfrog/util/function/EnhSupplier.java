@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2017 Tim Boudreau.
+ * Copyright 2018 Tim Boudreau.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,48 +23,16 @@
  */
 package com.mastfrog.util.function;
 
-import com.mastfrog.util.preconditions.Exceptions;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
- * A runnable-alike that can throw Exceptions.
  *
  * @author Tim Boudreau
  */
-@FunctionalInterface
-public interface ThrowingRunnable {
+public interface EnhSupplier<T> extends Supplier<T> {
 
-    /**
-     * Do whatever work this object does.
-     *
-     * @throws Exception If something goes wrong
-     */
-    void run() throws Exception;
-
-    /**
-     * Creates a Java Runnable which may throw undeclared exceptions.
-     *
-     * @return A runnable
-     */
-    default Runnable toRunnable() {
-        return () -> {
-            try {
-                ThrowingRunnable.this.run();
-            } catch (Exception e) {
-                Exceptions.chuck(e);
-            }
-        };
-    }
-
-    default ThrowingRunnable then(ThrowingRunnable next) {
-        final ThrowingRunnable base = this;
-        class CombinedRunnable implements ThrowingRunnable {
-
-            @Override
-            public void run() throws Exception {
-                base.run();
-                next.run();
-            }
-        }
-        return new CombinedRunnable();
+    default <R> EnhSupplier<R> transform (Function<T, R> func) {
+        return () -> func.apply(EnhSupplier.this.get());
     }
 }
