@@ -90,8 +90,7 @@ final class MultiList<T> extends AbstractList<T> {
 
     @Override
     public Iterator<T> iterator() {
-        return CollectionUtils.combine(CollectionUtils.transform(lists, l -> l.iterator()));
-//        return new MergeListIterator(transform(lists, l -> l.listIterator()));
+        return CollectionUtils.combine(CollectionUtils.transform(lists, List::iterator));
     }
 
     @Override

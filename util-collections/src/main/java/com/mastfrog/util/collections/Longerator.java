@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.collections;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.function.LongConsumer;
@@ -54,6 +55,42 @@ public interface Longerator extends LongSupplier {
         while (hasNext()) {
             action.accept(next());
         }
+    }
+
+    public default Longerator of(long[] longs) {
+        return new Longerator() {
+            int ix = -1;
+
+            @Override
+            public long next() {
+                return longs[++ix];
+            }
+
+            @Override
+            public boolean hasNext() {
+                return ix + 1 < longs.length;
+            }
+        };
+    }
+
+    public default Longerator of(Collection<? extends Long> coll) {
+        return new Longerator() {
+            private final Iterator<? extends Long> iter = coll.iterator();
+
+            @Override
+            public long next() {
+                Long result = iter.next();
+                if (result == null) {
+                    throw new IllegalArgumentException("Collection contains nulls: " + coll);
+                }
+                return result;
+            }
+
+            @Override
+            public boolean hasNext() {
+                return iter.hasNext();
+            }
+        };
     }
 
     public default Iterator<Long> toIterator() {

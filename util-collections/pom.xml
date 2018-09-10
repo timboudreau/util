@@ -53,4 +53,38 @@
             </snapshots>
         </repository>
     </repositories>
+<!--    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.16</version>
+                <executions>
+                    <execution>
+                        <id>default-test</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <forkMode>never</forkMode>
+                            <parallel>none</parallel>
+                            <parallelMavenExecution>false</parallelMavenExecution>
+                            <perCoreThreadCount>0</perCoreThreadCount>
+                            <threadCount>0</threadCount>
+                            <forkCount>0</forkCount>
+                            <reuseForks>false</reuseForks>
+                            <trimStackTrace>false</trimStackTrace>
+                            <parallel>none</parallel>
+                            <systemPropertyVariables>
+                                <unit.test>true</unit.test>
+                                <acteur.debug>false</acteur.debug>
+                                <forkNumber>${surefire.forkNumber}</forkNumber>
+                                <system.exit.on.bind.failure>false</system.exit.on.bind.failure>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>-->
 </project>

@@ -24,6 +24,7 @@
 package com.mastfrog.util.thread;
 
 import java.util.LinkedList;
+import java.util.function.Consumer;
 
 /**
  * A stack stored in a ThreadLocal, with the ability to use AutoCloseable to
@@ -51,6 +52,32 @@ public class ThreadLocalStack<T> {
 
     public T pop() {
         return stack.get().pop();
+    }
+
+    public int depth() {
+        return stack.get().size();
+    }
+
+    public T with(T obj, Consumer<T> cons) {
+        stack.get().push(obj);
+        try {
+            cons.accept(obj);
+        } finally {
+            stack.get().pop();
+        }
+        return obj;
+    }
+
+    public T peek(int distanceFromTop) {
+        if (stack.hasValue()) {
+            LinkedList<T> obj = stack.get();
+            int offset = (obj.size() - 1) - distanceFromTop;
+            if (offset < 0) {
+                throw new IllegalArgumentException("Offset " + offset + " for dist " + distanceFromTop);
+            }
+            return obj.get(offset);
+        }
+        return null;
     }
 
     private final class Closer implements QuietAutoCloseable {

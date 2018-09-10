@@ -135,7 +135,7 @@ public final class Checks {
     }
 
     /**
-     * Determine that the passed argument is not a negative number
+     * Determine that the passed argument is not a negative number.
      *
      * @param name The name of the argument
      * @param val The value
@@ -152,12 +152,73 @@ public final class Checks {
         return val;
     }
 
+    /**
+     * Determine that the passed argument is greater than one.
+     *
+     * @param name The name of the argument
+     * @param val The value
+     * @throws IllegalArgumentException if the number is negative
+     */
     public static <T extends Number> T greaterThanOne(String name, T val) {
         if (disabled) {
             return val;
         }
         notNull("name", name);
         if (val.longValue() < 1) {
+            throw new IllegalArgumentException(name + " cannot be < 1 but is " + val);
+        }
+        return val;
+    }
+
+    /**
+     * Determine that the passed argument is greater than one.
+     *
+     * @param name The name of the argument
+     * @param val The value
+     * @throws IllegalArgumentException if the number is negative
+     */
+    public static int greaterThanOne(String name, int val) {
+        if (disabled) {
+            return val;
+        }
+        notNull("name", name);
+        if (val < 1) {
+            throw new IllegalArgumentException(name + " cannot be < 1 but is " + val);
+        }
+        return val;
+    }
+
+    /**
+     * Determine that the passed argument is greater than one.
+     *
+     * @param name The name of the argument
+     * @param val The value
+     * @throws IllegalArgumentException if the number is negative
+     */
+    public static long greaterThanOne(String name, long val) {
+        if (disabled) {
+            return val;
+        }
+        notNull("name", name);
+        if (val < 1L) {
+            throw new IllegalArgumentException(name + " cannot be < 1 but is " + val);
+        }
+        return val;
+    }
+
+    /**
+     * Determine that the passed argument &gt;=0.
+     *
+     * @param name The name of the argument
+     * @param val The value
+     * @throws IllegalArgumentException if the number is negative
+     */
+    public static <T extends Number> T greaterThanZero(String name, T val) {
+        if (disabled) {
+            return val;
+        }
+        notNull("name", name);
+        if (val.longValue() < 1 || val.doubleValue() < 1) {
             throw new IllegalArgumentException(name + " cannot be < 1 but is " + val);
         }
         return val;
@@ -532,7 +593,6 @@ public final class Checks {
         }
     }
 
-
     /**
      * Test that file exists and is a file not a folder.
      *
@@ -580,11 +640,10 @@ public final class Checks {
             throw new IllegalArgumentException(paramName + " does not exist: " + file);
         }
         if (!file.isDirectory()) {
-            throw new IllegalArgumentException(paramName+ " is not a directory: " + file);
+            throw new IllegalArgumentException(paramName + " is not a directory: " + file);
         }
         return file;
     }
-
 
     /**
      * Test that a file exists and the current user has read permission.

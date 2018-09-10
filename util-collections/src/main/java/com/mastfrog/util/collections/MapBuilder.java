@@ -13,7 +13,9 @@ import java.util.Properties;
  * to compute a hash using a message digest.
  *
  * @author Tim Boudreau
+ * @deprecated Use CollectionUtils.map()
  */
+@Deprecated
 public final class MapBuilder {
 
     final Map<String, Object> data = new LinkedHashMap<>();

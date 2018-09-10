@@ -65,6 +65,59 @@ import java.util.function.ToLongFunction;
 public final class CollectionUtils {
 
     private CollectionUtils() {
+        throw new AssertionError();
+    }
+
+    /**
+     * Create a multi-array-backed list of longs.
+     *
+     * @param batchSize The size of the backing arrays
+     * @return A longList
+     */
+    public static LongList longList(int batchSize) {
+        return new LongListImpl(batchSize);
+    }
+
+    /**
+     * Create a multi-array-backed list of longs.
+     *
+     * @param longs The initial contents
+     * @return A LongList
+     */
+    public static LongList longList(long... longs) {
+        return new LongListImpl(longs);
+    }
+
+    /**
+     * Create a multi-array-backed list of longs.
+     *
+     * @param batchSize The size of the backing arrays
+     * @param longs The initial contents
+     * @return A LongLIst
+     */
+    public static LongList longList(int batchSize, long[] longs) {
+        return new LongListImpl(longs, batchSize);
+    }
+
+    /**
+     * Create a multi-array-backed list of longs.
+     *
+     * @param batchSize The size of the backing arrays
+     * @param longs The initial contents
+     * @return A LongLIst
+     */
+    public static LongList longList(int batchSize, Collection<? extends Long> c) {
+        return new LongListImpl(ArrayUtils.toLongArray(c), batchSize);
+    }
+
+
+    /**
+     * Create a multi-array-backed list of longs.
+     *
+     * @return A longList
+     */
+    public static LongList longList() {
+        return new LongListImpl();
     }
 
     /**
@@ -121,6 +174,13 @@ public final class CollectionUtils {
         return new ArrayBinarySetMutable<>(true, comp, initialCapacity, type);
     }
 
+    /**
+     * Wraps an iterator in one which does not permit mutation.
+     *
+     * @param <T> The type
+     * @param iter An iterator
+     * @return A wrapper iterator
+     */
     public static <T> Iterator<T> unmodifiableIterator(Iterator<T> iter) {
         return iter instanceof UnmodifiableIterator<?> ? iter : new UnmodifiableIterator<>(iter);
     }
@@ -193,8 +253,18 @@ public final class CollectionUtils {
         return (Map<T, R>) map;
     }
 
+    /**
+     * Convert a set of objects to a list of some other type of object, using
+     * the passed function as a converter.
+     *
+     * @param <T> The original type
+     * @param <R> The output type
+     * @param xform Converts T's into R's
+     * @param list Some objects
+     * @return a set
+     */
     public static <T, R> Set<R> transform(Set<T> list, Function<T, R> xform) {
-        Set<R> result = new LinkedHashSet<>();
+        Set<R> result = new LinkedHashSet<>(list.size());
         list.stream().forEach(t -> {
             R r = xform.apply(t);
             if (r != null) {
@@ -204,8 +274,18 @@ public final class CollectionUtils {
         return result;
     }
 
+    /**
+     * Convert a list of objects to a list of some other type of object, using
+     * the passed function as a converter.
+     *
+     * @param <T> The original type
+     * @param <R> The output type
+     * @param xform Converts T's into R's
+     * @param list Some objects
+     * @return a list
+     */
     public static <T, R> List<R> transform(List<T> list, Function<T, R> xform) {
-        List<R> result = new ArrayList<>();
+        List<R> result = new ArrayList<>(list.size());
         list.stream().forEach(t -> {
             R r = xform.apply(t);
             if (r != null) {
@@ -215,6 +295,16 @@ public final class CollectionUtils {
         return result;
     }
 
+    /**
+     * Convert an array of objects to a list of some other type of object, using
+     * the passed function as a converter.
+     *
+     * @param <T> The original type
+     * @param <R> The output type
+     * @param xform Converts T's into R's
+     * @param args Some objects
+     * @return a list
+     */
     @SafeVarargs
     public static <T, R> List<R> transform(Function<T, R> xform, T... args) {
         List<R> result = new ArrayList<>();
@@ -243,6 +333,16 @@ public final class CollectionUtils {
         return result;
     }
 
+    /**
+     * Create a map from the values in the passed collection, using the passed
+     * function to generate keys.
+     *
+     * @param <T> The key type
+     * @param <R> The value type
+     * @param coll Some values
+     * @param func A key conversion function
+     * @return a map
+     */
     public static <T, R> Map<T, R> toMap(Collection<R> coll, Function<R, T> func) {
         Map<T, R> result = new LinkedHashMap<>();
         coll.stream().forEach(r -> {
@@ -355,6 +455,14 @@ public final class CollectionUtils {
         }
     }
 
+    /**
+     * Create an array-backed set which uses System.identityHashCode() for
+     * membership/equality tests.
+     *
+     * @param <T> The type
+     * @param objs Some objects
+     * @return A set
+     */
     @SafeVarargs
     public static <T> Set<T> identitySet(T... objs) {
         return new ArrayBinarySet<>(false, true, new IdentityComparator(), objs);
@@ -382,11 +490,27 @@ public final class CollectionUtils {
         return new ArrayBinarySet<>(true, useComparatorForMembershipTest, comp, objs);
     }
 
+    /**
+     * Create an array-backed set of objects which uses the passed comparator
+     * for equality/membership tests.
+     *
+     * @param <T> The type
+     * @param comp A comparator
+     * @param objs Some objects
+     * @return A set
+     */
     @SafeVarargs
     public static <T> Set<T> arraySetOf(Comparator<T> comp, T... objs) {
         return arraySetOf(comp, false, objs);
     }
 
+    /**
+     * Create an array-backed, sorted set of some objects.
+     *
+     * @param <T> The type
+     * @param objs The objects
+     * @return A set
+     */
     @SafeVarargs
     public static <T extends Comparable<T>> Set<T> arraySetOf(T... objs) {
         if (objs.length == 0) {
@@ -395,6 +519,12 @@ public final class CollectionUtils {
         return new ArrayBinarySet<>(true, false, new ComparableComparator<>(), objs);
     }
 
+    /**
+     * Create an immutable set of CharSequences which uses minimal memory.
+     *
+     * @param str An array of CharSequences
+     * @return A set
+     */
     public static Set<CharSequence> charSequenceSetOf(CharSequence... objs) {
         if (objs.length == 0) {
             return emptySet();
@@ -402,6 +532,13 @@ public final class CollectionUtils {
         return new ArrayBinarySet<>(true, false, Strings.charSequenceComparator(false), objs);
     }
 
+    /**
+     * Create an immutable set of Strings which is case-insensitive for
+     * membership tests.
+     *
+     * @param str An array of Strings
+     * @return A set
+     */
     public static Set<String> caseInsensitiveStringSet(String... str) {
         if (str.length == 0) {
             return emptySet();
@@ -409,6 +546,13 @@ public final class CollectionUtils {
         return new ArrayBinarySet<>(true, true, new StringComparator(), str);
     }
 
+    /**
+     * Create an immutable set of CharSequences which is case-insensitive for
+     * membership tests.
+     *
+     * @param str An array of CharSequences
+     * @return A set
+     */
     public static Set<CharSequence> caseInsensitiveCharSequenceSet(CharSequence... str) {
         if (str.length == 0) {
             return emptySet();
@@ -619,6 +763,19 @@ public final class CollectionUtils {
         return result;
     }
 
+    /**
+     * Create a sorted, immutable map backed by a pair of arrays (can perform
+     * better for small, frequently read maps).
+     *
+     * @param <T> The key type
+     * @param <R> The value map
+     * @param map The map to copy
+     * @param keyType The key type
+     * @param valType The value type
+     * @param func A function which converts keys to a Long for purposes of
+     * sorting and binary search
+     * @return A map
+     */
     public static <T, R> Map<T, R> immutableArrayMap(Map<T, R> map, Class<T> keyType, Class<R> valType, ToLongFunction<T> func) {
         return new ImmutableArrayMap<>(map, keyType, valType, func);
     }
@@ -737,18 +894,60 @@ public final class CollectionUtils {
         return coll.<T>toArray(genericArray(type, coll.size()));
     }
 
+    /**
+     * Create a map builder which can compute a hash.
+     *
+     * @param <T> The key type
+     * @param <R> The value type
+     * @param byteConverter A function which converts any possible array
+     * contents to an array of bytes suitable for hashing (e.g.
+     * toString().getBytes(UTF_8)).
+     *
+     * @return A builder
+     */
     public static <T, R> HashingMapBuilder<T, R> hashingMap(Function<Object, byte[]> byteConverter) {
         return CollectionUtils.<T, R>map().toHashingMapBuilder("SHA-1", byteConverter);
     }
 
+    /**
+     * Create a map builder which can compute a hash.
+     *
+     * @param <T> The key type
+     * @param <R> The value type
+     * @param byteConverter A function which converts any possible array
+     * contents to an array of bytes suitable for hashing (e.g.
+     * toString().getBytes(UTF_8)).
+     * @param alg The hashing algorithm for the internal MessageDigest
+     *
+     * @return A builder
+     */
     public static <T, R> HashingMapBuilder<T, R> hashingMapWithAlgorithm(String alg, Function<Object, byte[]> byteConverter) {
         return CollectionUtils.<T, R>map().toHashingMapBuilder("SHA-1");
     }
 
+    /**
+     * Create a map builder which can compute a hash and uses toString() as the
+     * hash source.
+     *
+     * @param <T> The key type
+     * @param <R> The value type
+     * @param alg The algorithm to use for the internal MessageDigest
+     *
+     * @return A builder
+     */
     public static <T, R> HashingMapBuilder<T, R> hashingMapWithAlgorithm(String alg) {
         return CollectionUtils.<T, R>map().toHashingMapBuilder("SHA-1");
     }
 
+    /**
+     * Create a map builder which can compute a hash and uses toString() as the
+     * hash source for a SHA-1 hash.
+     *
+     * @param <T> The key type
+     * @param <R> The value type
+     *
+     * @return A builder
+     */
     public static <T, R> HashingMapBuilder<T, R> hashingMap() {
         return CollectionUtils.<T, R>map().toHashingMapBuilder("SHA-1");
     }
@@ -1124,7 +1323,7 @@ public final class CollectionUtils {
      */
     public static <T> Iterator<T> toIterator(T[] array) {
         Checks.notNull("array", array);
-        return new ArrayIterator<T>(array);
+        return new ArrayIterator<>(array);
     }
 
     /**
