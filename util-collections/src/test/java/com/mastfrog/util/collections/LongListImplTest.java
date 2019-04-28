@@ -737,6 +737,7 @@ public class LongListImplTest {
         System.out.println("benchmark long lists:  " + secondLongLists + "ms");
     }
 
+    @SuppressWarnings("unchecked")
     private long benchmarkLists() {
         for (int i = 0; i < 5; i++) {
             System.gc();

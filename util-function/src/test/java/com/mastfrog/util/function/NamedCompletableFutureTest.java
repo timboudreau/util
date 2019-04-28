@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.function;
 
+import com.mastfrog.function.throwing.ThrowingRunnable;
 import com.mastfrog.util.preconditions.Exceptions;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;

@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.function;
 
+import com.mastfrog.function.throwing.ThrowingFunction;
 import java.util.concurrent.Callable;
 
 /**

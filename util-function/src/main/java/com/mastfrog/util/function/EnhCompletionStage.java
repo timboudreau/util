@@ -23,6 +23,9 @@
  */
 package com.mastfrog.util.function;
 
+import com.mastfrog.function.throwing.ThrowingConsumer;
+import com.mastfrog.function.throwing.ThrowingFunction;
+import com.mastfrog.function.throwing.ThrowingBiConsumer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Predicate;
@@ -65,7 +68,7 @@ public interface EnhCompletionStage<T> extends CompletionStage<T> {
                 return;
             }
             try {
-                consumer.apply(t);
+                consumer.accept(t);
                 result.complete(t);
             } catch (Throwable ex) {
                 result.completeExceptionally(ex);
@@ -93,7 +96,7 @@ public interface EnhCompletionStage<T> extends CompletionStage<T> {
                 fut.completeExceptionally(thrown);
             } else {
                 try {
-                    next.apply(fut, t);
+                    next.accept(fut, t);
                 } catch (Throwable ex) {
                     fut.completeExceptionally(ex);
                 }
@@ -111,7 +114,7 @@ public interface EnhCompletionStage<T> extends CompletionStage<T> {
             } else {
                 try {
                     if (test.test(t)) {
-                        next.apply(fut, t);
+                        next.accept(fut, t);
                     }
                 } catch (Throwable ex) {
                     fut.completeExceptionally(ex);
@@ -131,9 +134,9 @@ public interface EnhCompletionStage<T> extends CompletionStage<T> {
                 if (test.test(t)) {
                     try {
                         if (test.test(t)) {
-                            ifTrue.apply(fut, t);
+                            ifTrue.accept(fut, t);
                         } else {
-                            ifFalse.apply(fut, t);
+                            ifFalse.accept(fut, t);
                         }
                     } catch (Throwable ex) {
                         fut.completeExceptionally(ex);
@@ -154,9 +157,9 @@ public interface EnhCompletionStage<T> extends CompletionStage<T> {
                 if (test.test(t)) {
                     try {
                         if (test.test(t)) {
-                            ifTrue.apply(fut, t);
+                            ifTrue.accept(fut, t);
                         } else {
-                            ifFalse.apply(fut, t);
+                            ifFalse.accept(fut, t);
                         }
                     } catch (Throwable ex) {
                         fut.completeExceptionally(ex);

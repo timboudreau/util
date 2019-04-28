@@ -27,9 +27,12 @@ import com.mastfrog.util.preconditions.Checks;
 import static com.mastfrog.util.preconditions.Checks.notNull;
 import com.mastfrog.util.strings.Strings;
 import com.mastfrog.util.collections.MapBuilder2.HashingMapBuilder;
+import com.mastfrog.util.tree.BitSetSet;
+import com.mastfrog.util.tree.Indexed;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import static java.util.Collections.emptySet;
@@ -66,6 +69,133 @@ public final class CollectionUtils {
 
     private CollectionUtils() {
         throw new AssertionError();
+    }
+
+    /**
+     * Create a BitSet-backed set for sets where all possible members are known
+     * a-priori.
+     *
+     * @param <T>
+     * @param allPossibleValues
+     * @return
+     */
+    public static <T extends Comparable<T>> Set<T> bitSetSet(T... allPossibleValues) {
+        BitSet set = new BitSet(allPossibleValues.length);
+        Indexed<T> indexed = new ArrayIndexedImpl<>(allPossibleValues);
+        return new BitSetSet<T>(indexed, set);
+    }
+
+    /**
+     * Create a BitSet-backed set for sets where all possible members are known
+     * a-priori.  The result is both fast and has a very small memory footprint.
+     * <p>
+     * Note: If you have a type that implements Comparable, or a Comparator,
+     * the versions that take arrays or a comparator are faster, as they can
+     * use binary search rather than iterating the entire set of items.
+     * </p>
+     *
+     * @param <T>
+     * @param allPossibleValues All possible values the set can contain.  Must
+     * not contain duplicates or nulls.
+     * @return A set
+     */
+    public static <T> Set<T> bitSetSet(List<T> allPossibleValues) {
+        checkDuplicates(allPossibleValues);
+        BitSet set = new BitSet(allPossibleValues.size());
+        return new BitSetSet<T>(Indexed.forList(allPossibleValues), set);
+    }
+
+    /**
+     * Create a BitSet-backed set for sets where all possible members are known
+     * a-priori.  The result is both fast and has a very small memory footprint.
+     *
+     * @param <T> The type
+     * @param comparator A comparator allowing binary search to be used for
+     * looking up items
+     * @param allPossibleValues All possible values the set can contain.  Must
+     * not contain duplicates or nulls.
+     * @return A set
+     */
+    public static <T> Set<T> bitSetSet(Comparator<T> comparator, T... allPossibleValues) {
+        BitSet set = new BitSet(allPossibleValues.length);
+        return new BitSetSet<>(new ComparatorArrayIndexedImpl<>(comparator, allPossibleValues), set);
+    }
+
+    /**
+     * Create a BitSet-backed set for sets where all possible members are known
+     * a-priori.  The result is both fast and has a very small memory footprint.
+     *
+     * @param set A bitset.  This bitset MUST NOT contain any set bits higher
+     * than the length of the values array.
+     * @param <T> The type
+     * @param comparator A comparator allowing binary search to be used for
+     * looking up items
+     * @param allPossibleValues All possible values the set can contain.  Must
+     * not contain duplicates or nulls.
+     * @return A set
+     */
+    public static <T> Set<T> bitSetSet(BitSet set, Comparator<T> comparator, T... allPossibleValues) {
+        Checks.notNull("set", set);
+        return new BitSetSet<>(new ComparatorArrayIndexedImpl<>(comparator, allPossibleValues), set);
+    }
+    /**
+     * Create a BitSet-backed set for sets where all possible members are known
+     * a-priori.  The result is both fast and has a very small memory footprint.
+     *
+     * @param set A bitset.  This bitset MUST NOT contain any set bits higher
+     * than the length of the values array.
+     * @param <T> The type
+     * @param comparator A comparator allowing binary search to be used for
+     * looking up items
+     * @param allPossibleValues All possible values the set can contain.  Must
+     * not contain duplicates or nulls.
+     * @return A set
+     */
+    public static <T> Set<T> bitSetSet(BitSet set, Comparator<T> comparator, List<T> allPossibleValues) {
+        return new BitSetSet<>(new ComparatorListIndexedImpl<>(comparator, allPossibleValues), set);
+    }
+    /**
+     * Create a BitSet-backed set for sets where all possible members are known
+     * a-priori.  The result is both fast and has a very small memory footprint.
+     *
+     * @param <T> The type
+     * @param comparator A comparator allowing binary search to be used for
+     * looking up items
+     * @param allPossibleValues All possible values the set can contain.  Must
+     * not contain duplicates or nulls.
+     * @return A set
+     */
+    public static <T> Set<T> bitSetSet(Comparator<T> comparator, List<T> allPossibleValues) {
+        BitSet set = new BitSet(allPossibleValues.size());
+        return new BitSetSet<>(new ComparatorListIndexedImpl<>(comparator, allPossibleValues), set);
+    }
+
+    /**
+     * Create a BitSet-backed set for sets where all possible members are known
+     * a-priori.  The result is both fast and has a very small memory footprint.
+     * Prefer this variant if the collection type implements Comparable, for
+     * performance.
+     *
+     * @param <T> The type
+     * @param allPossibleValues All possible values the set can contain.  Must
+     * not contain duplicates or nulls.
+     * @return A set
+     */
+    public static <T extends Comparable<T>> Set<T> bitSetSetForComparable(List<T> allPossibleValues) {
+        checkDuplicates(allPossibleValues);
+        BitSet set = new BitSet(allPossibleValues.size());
+        return new BitSetSet<>(ComparatorListIndexedImpl.create(allPossibleValues), set);
+    }
+
+    @SuppressWarnings("AssertWithSideEffects")
+    static void checkDuplicates(Collection<?> collection) {
+        boolean asserts = false;
+        assert asserts = true;
+        if (asserts) {
+            Set<Object> objs = new HashSet<>(collection);
+            assert objs.size() == collection.size() :
+                    "Collection may not contain duplicates: " + collection;
+        }
     }
 
     /**
@@ -109,7 +239,6 @@ public final class CollectionUtils {
     public static LongList longList(int batchSize, Collection<? extends Long> c) {
         return new LongListImpl(ArrayUtils.toLongArray(c), batchSize);
     }
-
 
     /**
      * Create a multi-array-backed list of longs.
@@ -1085,7 +1214,7 @@ public final class CollectionUtils {
      * @return A list that can contain 0 or 1 item
      */
     public static <T> List<T> oneItemList() {
-        return new SingleItemList<T>();
+        return new SingleItemList<>();
     }
 
     /**

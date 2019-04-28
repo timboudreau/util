@@ -27,3 +27,5 @@ nb-configuration.xml
 /util-fileformat/target/
 /util-misc/nbproject/
 /util-collections/nbproject/
+/util-function/nbproject/
+/function/target/

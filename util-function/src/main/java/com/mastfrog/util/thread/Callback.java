@@ -23,7 +23,7 @@
  */
 package com.mastfrog.util.thread;
 
-import com.mastfrog.util.function.ThrowingConsumer;
+import com.mastfrog.function.throwing.ThrowingConsumer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiConsumer;
@@ -59,7 +59,7 @@ public interface Callback<T> extends BiConsumer<Throwable, T> {
                 receive(u, null);
             } else {
                 try {
-                    cons.apply(t);
+                    cons.accept(t);
                 } catch (Exception ex) {
                     receive(ex, null);
                 }

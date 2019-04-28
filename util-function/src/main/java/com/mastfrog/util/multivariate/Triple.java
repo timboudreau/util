@@ -23,8 +23,8 @@
  */
 package com.mastfrog.util.multivariate;
 
-import com.mastfrog.util.function.ThrowingTriFunction;
-import com.mastfrog.util.function.TriFunction;
+import com.mastfrog.function.throwing.ThrowingTriFunction;
+import com.mastfrog.function.TriFunction;
 import java.util.Objects;
 
 /**

@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A completable future with a name for logging purposes, which includes a
- * context * name and optional creation stack trace.
+ * context name and optional creation stack trace.
  *
  * @author Tim Boudreau
  */

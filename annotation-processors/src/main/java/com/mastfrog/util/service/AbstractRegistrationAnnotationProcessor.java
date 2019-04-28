@@ -118,18 +118,18 @@ public abstract class AbstractRegistrationAnnotationProcessor<E extends IndexEnt
             all.add(retry);
         }
         deferred.clear();
-//        utils.warnLog("$$ FOUND " + all.size() + " ANNOTATED ELEMENTS");
+//        utils.log("$$ FOUND " + all.size() + " ANNOTATED ELEMENTS");
         try {
             for (Element e : all) {
                 try {
 
                     Set<AnnotationMirror> annos = utils.findAnnotationMirrors(e);
-//                    utils.warnLog("$$$$$$ Found " + annos.size() + " annotationMirrors on " + e.getSimpleName());
+//                    utils.log("$$$$$$ Found " + annos.size() + " annotationMirrors on " + e.getSimpleName());
                     for (AnnotationMirror am : annos) {
-                        utils.warnLog("$$$$$$$ DO " + am.getAnnotationType().asElement().getSimpleName() + " on " + e.getSimpleName());
+                        utils.log("$$$$$$$ DO " + am.getAnnotationType().asElement().getSimpleName() + " on " + e.getSimpleName());
                         if (isAcceptable(am)) {
                             int order = getOrder(am);
-//                            utils.warnLog("$$$$$$$$ order " + order + " for " + e.getSimpleName());
+//                            utils.log("$$$$$$$$ order " + order + " for " + e.getSimpleName());
                             if (!isLegalForAnnotation(e, am)) {
                                 String[] strings = legalOn.toArray(new String[legalOn.size()]);
                                 fail("Not a subclass of " + AnnotationUtils.join('/', strings) + ": " + e.asType(), e, am);
@@ -137,15 +137,15 @@ public abstract class AbstractRegistrationAnnotationProcessor<E extends IndexEnt
                             }
                             elements.add(e);
                             try {
-//                                utils.warnLog("$$ HANDLE ONE WITH " + e.getSimpleName() + " " + e.asType());
+//                                utils.log("$$ HANDLE ONE WITH " + e.getSimpleName() + " " + e.asType());
                                 handleOne(e, am, order);
                             } catch (AnnotationTypeMismatchException ex) {
                                 fail(ex.getMessage(), e, am);
                                 return true;
                             }
-//                            utils.warnLog("$ DONE " + e.getSimpleName());
+//                            utils.log("$ DONE " + e.getSimpleName());
                         } else {
-//                            utils.warnLog("$$$$!!!! isAcceptable() returns false for " + e.getSimpleName());
+//                            utils.log("$$$$!!!! isAcceptable() returns false for " + e.getSimpleName());
                             fail("isAcceptable() fails for " + am, e, am);
                             continue;
                         }

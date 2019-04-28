@@ -23,7 +23,7 @@
  */
 package com.mastfrog.util.multivariate;
 
-import com.mastfrog.util.function.ThrowingConsumer;
+import com.mastfrog.function.throwing.ThrowingConsumer;
 import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.util.function.Function;
 
@@ -92,9 +92,9 @@ public final class OneOf<A, B> {
     public OneOf<A, B> withValue(ThrowingConsumer<A> aCons, ThrowingConsumer<B> bCons) throws Exception {
         if (isSet()) {
             if (a != null) {
-                aCons.apply(a);
+                aCons.accept(a);
             } else {
-                bCons.apply(b);
+                bCons.accept(b);
             }
         } else {
             throw new IllegalStateException("No value present");

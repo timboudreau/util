@@ -26,6 +26,7 @@ package com.mastfrog.util.collections;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.function.IntConsumer;
 
 /**
  * Primitive int to object map.
@@ -46,7 +47,6 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
 
     Iterable<Map.Entry<Integer, T>> entries();
 
-    @SuppressWarnings(value = "unchecked")
     T get(int key);
 
     int[] getKeys();
@@ -59,9 +59,28 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
 
     int nearest(int key, boolean backward);
 
-    @SuppressWarnings(value = "unchecked")
     T put(int key, T val);
 
     void set(int key, T val);
-    
+
+    @FunctionalInterface
+    public interface IntMapConsumer<T> {
+
+        void accept(int key, T value);
+    }
+
+    default void forEachKey(IntConsumer cons) {
+        int[] k = getKeys();
+        for (int i = 0; i < k.length; i++) {
+            cons.accept(k[i]);
+        }
+    }
+
+    default void forEach(IntMapConsumer<? super T> cons) {
+        int[] k = getKeys();
+        for (int i = 0; i < k.length; i++) {
+            T t = get(k[i]);
+            cons.accept(k[i], t);
+        }
+    }
 }

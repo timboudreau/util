@@ -39,7 +39,7 @@ abstract class ArraysPool<T> implements Supplier<T> {
     public abstract void dispose(T arr);
 
     public static ArraysPool<long[]> cachingPool(int arrayLength, int initialArrays, int maxArrays) {
-        return new CachingPool(initialArrays, maxArrays, new LongArraySupplier(arrayLength));
+        return new CachingPool<>(initialArrays, maxArrays, new LongArraySupplier(arrayLength));
     }
 
     public static ArraysPool<long[]> uncachedPool(int arrayLength) {

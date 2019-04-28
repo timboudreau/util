@@ -23,7 +23,7 @@
  */
 package com.mastfrog.util.multivariate;
 
-import com.mastfrog.util.function.ThrowingBiFunction;
+import com.mastfrog.function.throwing.ThrowingBiFunction;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;

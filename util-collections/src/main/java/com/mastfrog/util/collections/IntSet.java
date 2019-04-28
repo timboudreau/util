@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.IntConsumer;
 
 /**
  * A Java set of integers backed by a BitSet, which can look up random elements.
@@ -53,7 +54,7 @@ public final class IntSet implements Set<Integer> {
         bits = new BitSet(capacity);
     }
 
-    public IntSet(Set<Integer> other) {
+    public IntSet(Collection<? extends Integer> other) {
         this(other.size());
         addAll(other);
     }
@@ -61,7 +62,7 @@ public final class IntSet implements Set<Integer> {
     IntSet(BitSet bits) {
         this.bits = bits;
     }
-    
+
     public static IntSet intersection(Iterable<IntSet> all) {
         BitSet bits = null;
         for (IntSet i : all) {
@@ -73,7 +74,7 @@ public final class IntSet implements Set<Integer> {
         }
         return bits == null ? new IntSet(1) : new IntSet(bits);
     }
-    
+
     public static IntSet merge(Iterable<IntSet> all) {
         BitSet bits = null;
         for (IntSet i : all) {
@@ -84,7 +85,7 @@ public final class IntSet implements Set<Integer> {
             }
         }
         return bits == null ? new IntSet(1) : new IntSet(bits);
-    }    
+    }
 
     public IntSet intersection(IntSet other) {
         BitSet b1 = this.bits;
@@ -149,10 +150,17 @@ public final class IntSet implements Set<Integer> {
     }
 
     public boolean sameContents(Set<Integer> other) {
-        return toIntSet(other).equals(this);
+        if (size() != other.size()) {
+            return false;
+        }
+        BitSet matched = (BitSet) bits.clone();
+        for (Integer o : other) {
+            matched.clear(o);
+        }
+        return matched.cardinality() == 0;
     }
 
-    private IntSet toIntSet(Set<Integer> set) {
+    public static IntSet create(Collection<? extends Integer> set) {
         if (set instanceof IntSet) {
             return (IntSet) set;
         } else {
@@ -164,16 +172,24 @@ public final class IntSet implements Set<Integer> {
         return bits.nextSetBit(0);
     }
 
-    public int last() {
-        return bits.previousSetBit(Integer.MAX_VALUE);
-    }
-
     public int removeFirst() {
         int pos = bits.nextSetBit(0);
         if (pos != -1) {
             bits.clear(pos);
         }
         return pos;
+    }
+
+    public void forEach(IntConsumer cons) {
+        for (int curr = bits.nextSetBit(0); curr != -1; curr = bits.nextSetBit(curr + 1)) {
+            cons.accept(curr);
+        }
+    }
+
+    public void forEachReversed(IntConsumer cons) {
+        for (int curr = bits.previousSetBit(Integer.MAX_VALUE); curr != -1; curr = bits.previousSetBit(curr - 1)) {
+            cons.accept(curr);
+        }
     }
 
     public Integer pick(Random r, Set<Integer> notIn) {
@@ -272,13 +288,13 @@ public final class IntSet implements Set<Integer> {
             return result;
         }
     }
-    
+
     public Interator interator() {
         return new InteratorImpl(bits);
     }
-    
-    
+
     private static class InteratorImpl implements Interator {
+
         int pos = 0;
         final BitSet bits;
 

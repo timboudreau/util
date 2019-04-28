@@ -23,6 +23,8 @@
  */
 package com.mastfrog.util.function;
 
+import com.mastfrog.function.throwing.ThrowingRunnable;
+import com.mastfrog.function.throwing.ThrowingSupplier;
 import com.mastfrog.util.thread.ThreadLocalBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantReadWriteLock;

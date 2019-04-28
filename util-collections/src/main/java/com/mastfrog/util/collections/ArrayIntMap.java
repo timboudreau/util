@@ -21,7 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package com.mastfrog.util.collections;
 
 import com.mastfrog.util.collections.CollectionUtils.ComparableComparator;
@@ -37,6 +36,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Sparse array integer keyed map. Similar to a standard Collections map, but
@@ -44,6 +44,11 @@ import java.util.Set;
  * indices that have values and an array of objects mapped to those indices.
  * Entries may be added only in ascending order, enabling use of
  * Arrays.binarySearch() to quickly locate the relevant entry.
+ * <p>
+ * This class was originally written for NetBeans core.output2 in 2004, then
+ * borrowed by com.mastfrog.util.collections, then borrowed back into a NetBeans
+ * module here.
+ * </p>
  *
  * @author Tim Boudreau
  */
@@ -53,6 +58,14 @@ final class ArrayIntMap<T> implements IntMap<T> {
 
     private Object[] vals;
     private int last = -1;
+    private final Supplier<T> emptyValue;
+
+    private ArrayIntMap(ArrayIntMap<T> other) {
+        keys = Arrays.copyOf(other.keys, other.keys.length);
+        vals = Arrays.copyOf(other.vals, other.vals.length);
+        last = other.last;
+        emptyValue = other.emptyValue;
+    }
 
     /**
      * Creates a new instance of ArrayIntMap
@@ -61,18 +74,25 @@ final class ArrayIntMap<T> implements IntMap<T> {
         keys = new int[]{Integer.MAX_VALUE, Integer.MAX_VALUE,
             Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE};
         vals = new Object[5];
+        emptyValue = null;
     }
 
     public ArrayIntMap(int minCapacity) {
+        this(minCapacity, null);
+    }
+
+    public ArrayIntMap(int minCapacity, Supplier<T> emptyValue) {
         if (minCapacity <= 0) {
             throw new IllegalArgumentException("Must be > 0");
         }
+        this.emptyValue = emptyValue;
         keys = new int[minCapacity];
         vals = new Object[minCapacity];
         Arrays.fill(keys, Integer.MAX_VALUE);
     }
 
     public ArrayIntMap(Map<Integer, T> from) {
+        this.emptyValue = null;
         int max = from.size();
         keys = new int[max];
         vals = new Object[max];
@@ -91,6 +111,10 @@ final class ArrayIntMap<T> implements IntMap<T> {
         if (resort) {
             checkSort();
         }
+    }
+
+    public ArrayIntMap<T> copy() {
+        return new ArrayIntMap<>(this);
     }
 
     public int[] keys() {
@@ -216,10 +240,12 @@ final class ArrayIntMap<T> implements IntMap<T> {
     public T get(int key) {
         checkSort();
         int idx = Arrays.binarySearch(keys, key);
+        T result = null;
         if (idx > -1 && idx <= last) {
-            return (T) vals[idx];
+            result = (T) vals[idx];
         }
-        return null;
+        return result == null ? emptyValue == null
+                ? null : emptyValue.get() : result;
     }
 
     int nextKey = 0;

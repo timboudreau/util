@@ -24,9 +24,11 @@
 
 package com.mastfrog.util.function;
 
+import com.mastfrog.function.EnhIntSupplier;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
+import com.mastfrog.function.ToIntBiFunction;
 
 /**
  *
@@ -78,29 +80,29 @@ public class Flow {
         }
     }
 
-    public static <T, R> IntBiFunction<T> comparison(IntBiFunction<T> bif1, Supplier<R> a2, Supplier<R> b2, IntBiFunction<R> bif2) {
+    public static <T, R> ToIntBiFunction<T> comparison(ToIntBiFunction<T> bif1, Supplier<R> a2, Supplier<R> b2, ToIntBiFunction<R> bif2) {
         return bif1.<R>ifZero(a2, b2, bif2);
     }
 
     public static <T extends Comparable<T>, R extends Comparable<R>> EnhIntSupplier comparison(Supplier<T> a1, Supplier<T> b1, Supplier<R> a2, Supplier<R> b2) {
-        return IntBiFunction.comparer(a1, b1).ifZero(IntBiFunction.comparer(a2, b2));
+        return ToIntBiFunction.comparer(a1, b1).ifZero(ToIntBiFunction.comparer(a2, b2));
     }
 
     public static <T extends Comparable<T>, R extends Comparable<R>> EnhIntSupplier comparison(T a1, T b1, R a2, R b2) {
-        return IntBiFunction.comparer(a1, b1).ifZero(IntBiFunction.comparer(a2, b2));
+        return ToIntBiFunction.comparer(a1, b1).ifZero(ToIntBiFunction.comparer(a2, b2));
     }
 
     public static <T extends Comparable<T>, R extends Comparable<R>, S extends Comparable<S>> EnhIntSupplier comparison(Supplier<T> a1, Supplier<T> b1, Supplier<R> a2, Supplier<R> b2, Supplier<S> a3, Supplier<S> b3) {
-        return IntBiFunction.comparer(a1, b1).ifZero(IntBiFunction.comparer(a2, b2)).ifZero(IntBiFunction.comparer(a3, b3));
+        return ToIntBiFunction.comparer(a1, b1).ifZero(ToIntBiFunction.comparer(a2, b2)).ifZero(ToIntBiFunction.comparer(a3, b3));
     }
 
     public static <T extends Comparable<T>, R extends Comparable<R>, S extends Comparable<S>, Q extends Comparable<Q>> EnhIntSupplier comparison(Supplier<T> a1, Supplier<T> b1, Supplier<R> a2, Supplier<R> b2, Supplier<S> a3, Supplier<S> b3, Supplier<Q> a4, Supplier<Q> b4) {
-        return IntBiFunction.comparer(a1, b1).ifZero(IntBiFunction.comparer(a2, b2)).ifZero(IntBiFunction.comparer(a3, b3)).ifZero(IntBiFunction.comparer(a4, b4));
+        return ToIntBiFunction.comparer(a1, b1).ifZero(ToIntBiFunction.comparer(a2, b2)).ifZero(ToIntBiFunction.comparer(a3, b3)).ifZero(ToIntBiFunction.comparer(a4, b4));
     }
 
     public static <T extends Comparable<T>, R extends Comparable<R>, S extends Comparable<S>, Q extends Comparable<Q>, P extends Comparable<P>> EnhIntSupplier comparison(Supplier<T> a1, Supplier<T> b1, Supplier<R> a2, Supplier<R> b2, Supplier<S> a3, Supplier<S> b3, Supplier<Q> a4, Supplier<Q> b4, Supplier<P> a5, Supplier<P> b5) {
-        return IntBiFunction.comparer(a1, b1).ifZero(IntBiFunction.comparer(a2, b2)).ifZero(IntBiFunction.comparer(a3, b3)).ifZero(IntBiFunction.comparer(a4, b4))
-                .ifZero(IntBiFunction.comparer(a5, b5));
+        return ToIntBiFunction.comparer(a1, b1).ifZero(ToIntBiFunction.comparer(a2, b2)).ifZero(ToIntBiFunction.comparer(a3, b3)).ifZero(ToIntBiFunction.comparer(a4, b4))
+                .ifZero(ToIntBiFunction.comparer(a5, b5));
     }
 
     private Flow() {

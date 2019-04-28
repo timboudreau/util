@@ -25,6 +25,7 @@ package com.mastfrog.util.service;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.AnnotationTypeMismatchException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -52,7 +53,8 @@ import javax.tools.Diagnostic;
 
 /**
  * Useful methods for extracting information from Java sources in an annotation
- * processor.
+ * processor, which in particular avoid the annotation processor having to
+ * directly reference the Java type of the annotation.
  *
  * @author Tim Boudreau
  */
@@ -60,11 +62,14 @@ public final class AnnotationUtils {
 
     private final ProcessingEnvironment processingEnv;
     private final Set<String> supportedAnnotationTypes;
+    public static final String AU_LOG = "aulog";
+    private boolean log;
 
     public AnnotationUtils(ProcessingEnvironment processingEnv, Set<String> supportedAnnotationTypes) {
         this.processingEnv = processingEnv;
         this.supportedAnnotationTypes = supportedAnnotationTypes == null
                 ? Collections.emptySet() : new HashSet<>(supportedAnnotationTypes);
+        log = "true".equals(processingEnv.getOptions().get(AU_LOG));
     }
 
     public enum SubtypeResult {
@@ -606,19 +611,19 @@ public final class AnnotationUtils {
         Set<Element> result = new HashSet<>(20);
         Elements elementUtils = processingEnv.getElementUtils();
 
-        warnLog("$$$$$$ FIND ANNOTATED ELEMENTS");
+        log("$$$$$$ FIND ANNOTATED ELEMENTS");
         for (String typeName : annotationTypes) {
-            warnLog("$$$$$$   CHECK " + typeName);
+            log("$$$$$$   CHECK " + typeName);
             TypeElement currType = elementUtils.getTypeElement(typeName);
             if (currType != null) {
                 Set<? extends Element> allWith = roundEnv.getElementsAnnotatedWith(currType);
-                warnLog("$$$$$$   FOUND " + allWith.size() + " elements annotated with " + typeName);;
+                log("$$$$$$   FOUND " + allWith.size() + " elements annotated with " + typeName);;
                 result.addAll(allWith);
             } else {
-                warnLog("$$$$$$    NOT ON CLASSPATH: " + currType);
+                log("$$$$$$    NOT ON CLASSPATH: " + currType);
             }
         }
-        warnLog("$$$ TOTAL ANNOTATED ELEMENTS: " + result.size());
+        log("$$$ TOTAL ANNOTATED ELEMENTS: " + result.size());
         return result;
     }
 
@@ -651,16 +656,16 @@ public final class AnnotationUtils {
     public Set<AnnotationMirror> findAnnotationMirrors(Element e, Iterable<String> annotationTypeFqns) {
         Set<AnnotationMirror> annos = new LinkedHashSet<>();
         Elements elementUtils = processingEnv.getElementUtils();
-        warnLog("$$$$$$ FIND ANNOTATION MIRRORS ON " + e.getSimpleName());
+        log("$$$$$$ FIND ANNOTATION MIRRORS ON " + e.getSimpleName());
         for (String typeName : annotationTypeFqns) {
             TypeElement currType = elementUtils.getTypeElement(typeName);
-            warnLog("$$$$$$   CHECK FOR " + typeName + " found? " + (currType != null));
+            log("$$$$$$   CHECK FOR " + typeName + " found? " + (currType != null));
             if (currType != null) {
                 for (AnnotationMirror mirror : e.getAnnotationMirrors()) {
-                    warnLog("$$$$$$     FOUND MIRROR " + mirror.getAnnotationType().asElement().getSimpleName());
+                    log("$$$$$$     FOUND MIRROR " + mirror.getAnnotationType().asElement().getSimpleName());
 
                     TypeElement test = (TypeElement) mirror.getAnnotationType().asElement();
-                    warnLog("$$$$$$      MIRROR ANNOTATION TYPE IS " + (test == null ? "<none>" : test.getQualifiedName()));
+                    log("$$$$$$      MIRROR ANNOTATION TYPE IS " + (test == null ? "<none>" : test.getQualifiedName()));
                     if (test != null) {
                         if (test.getQualifiedName().equals(currType.getQualifiedName())) {
                             annos.add(mirror);
@@ -672,12 +677,15 @@ public final class AnnotationUtils {
         return annos;
     }
 
-    private static boolean warnLog = false;
-
-    void warnLog(String val) {
-        if (warnLog) {
-            warn(val);
+    public void log(String val) {
+        if (log) {
+            System.out.println(val);
         }
     }
 
+    public void log(String val, Object... args) {
+        if (log) {
+            System.out.println(MessageFormat.format(val, args));
+        }
+    }
 }

@@ -23,8 +23,8 @@
  */
 package com.mastfrog.util.thread;
 
-import com.mastfrog.util.function.ThrowingRunnable;
-import com.mastfrog.util.function.ThrowingSupplier;
+import com.mastfrog.function.throwing.ThrowingRunnable;
+import com.mastfrog.function.throwing.ThrowingSupplier;
 import java.util.function.Supplier;
 
 /**
