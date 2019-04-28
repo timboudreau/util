@@ -21,7 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package com.mastfrog.util.function;
 
 import com.mastfrog.function.EnhIntSupplier;
@@ -34,7 +33,7 @@ import com.mastfrog.function.ToIntBiFunction;
  *
  * @author Tim Boudreau
  */
-public class Flow {
+public final class Flow {
 
     public static void ifTrue(boolean val, Runnable run) {
         if (val) {
