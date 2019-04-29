@@ -26,10 +26,13 @@ package com.mastfrog.util.libversion;
 import java.io.InputStream;
 import java.net.URL;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoField;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Properties;
@@ -46,7 +49,23 @@ public class VersionInfo implements Comparable<VersionInfo> {
     static final DateTimeFormatter ISO_INSTANT = new DateTimeFormatterBuilder()
             .parseCaseInsensitive()
             .appendInstant()
+//            .parseLenient()
             .toFormatter(Locale.US);
+
+    private static final DateTimeFormatter GIT_LOG_FORMAT = new DateTimeFormatterBuilder()
+            .appendValue(ChronoField.YEAR, 4).appendLiteral("-")
+            .appendValue(ChronoField.MONTH_OF_YEAR, 2).appendLiteral("-")
+            .appendValue(ChronoField.DAY_OF_MONTH, 2)
+            .appendLiteral(' ')
+            .appendValue(ChronoField.HOUR_OF_DAY, 2)
+            .appendLiteral(':')
+            .appendValue(ChronoField.MINUTE_OF_HOUR, 2)
+            .appendLiteral(':')
+            .appendValue(ChronoField.SECOND_OF_MINUTE, 2)
+            .appendLiteral(' ')
+            .appendOffset("+HHMM", "+0000")
+            .parseLenient()
+            .toFormatter();
 
     static final ZoneId GMT = ZoneId.of("GMT");
 
@@ -111,11 +130,22 @@ public class VersionInfo implements Comparable<VersionInfo> {
                         longCommitHash = props.getProperty(artifactId + ".longCommitHash");
                         dirty = "dirty".equals(props.getProperty("repoStatus"));
                         String date = props.getProperty(artifactId + ".commitDate");
+                        Exception first = null;
                         try {
                             if (date != null) {
-                                commitDate = ZonedDateTime.parse(date);
+                                try {
+                                    System.out.println("PARSE " + date);
+                                    OffsetDateTime odt = OffsetDateTime.parse(date, ISO_INSTANT);
+                                    commitDate = ZonedDateTime.from(odt).withZoneSameInstant(GMT);
+                                } catch (DateTimeParseException ex) {
+                                    commitDate = ZonedDateTime.parse(date, GIT_LOG_FORMAT);
+                                    first = ex;
+                                }
                             }
                         } catch (Exception e) {
+                            if (first != null) {
+                                e.addSuppressed(first);
+                            }
                             Logger.getLogger(VersionInfo.class.getName()).log(Level.INFO,
                                     "Could not parse " + date + " from classpath", e);
                         }

@@ -23,13 +23,14 @@
  */
 package com.mastfrog.util.time;
 
-import com.mastfrog.util.time.TimeUtil;
+import static com.mastfrog.util.time.TimeUtil.GMT;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoField;
 import java.util.Date;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -39,8 +40,30 @@ import static org.junit.Assert.*;
  * @author Tim Boudreau
  */
 public class TimeUtilTest {
+
     private final String s = "Mon, 29 May 2017 03:33:57 -04:00";
     private final long millis = 1496043237000L;
+
+    private static final String GIT_LOG_ISO_FORMAT = "2019-04-28 16:59:53 -0400";
+
+    @Test
+    public void testGitFormat() {
+        ZonedDateTime dt = ZonedDateTime.now().with(ChronoField.MILLI_OF_SECOND, 0).withZoneSameInstant(GMT);
+        assertEquals(dt.toInstant(), TimeUtil.fromGitLogFormat(TimeUtil.toGitLogFormat(dt)).toInstant());
+
+        ZonedDateTime zdt = TimeUtil.fromGitLogFormat(GIT_LOG_ISO_FORMAT).withZoneSameInstant(GMT);
+        System.out.println("ZDT " + zdt);
+        assertEquals(4, zdt.getMonthValue());
+        assertEquals(28, zdt.getDayOfMonth());
+        assertEquals(2019, zdt.getYear());
+        assertEquals(20, zdt.getHour());
+        assertEquals(59, zdt.getMinute());
+        assertEquals(53, zdt.getSecond());
+
+        String gitFmt = TimeUtil.toGitLogFormat(dt);
+        ZonedDateTime got = TimeUtil.fromGitLogFormat(gitFmt);
+        assertEquals(dt.toInstant(), got.toInstant());
+    }
 
     @Test
     public void testOtherConversions() {

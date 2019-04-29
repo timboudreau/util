@@ -35,6 +35,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
@@ -85,6 +86,21 @@ public class TimeUtil {
             .appendValue(ChronoField.NANO_OF_SECOND, 9)
             .toFormatter();
 
+    private static final DateTimeFormatter GIT_LOG_FORMAT = new DateTimeFormatterBuilder()
+            .appendValue(ChronoField.YEAR, 4).appendLiteral("-")
+            .appendValue(ChronoField.MONTH_OF_YEAR, 2).appendLiteral("-")
+            .appendValue(ChronoField.DAY_OF_MONTH, 2)
+            .appendLiteral(' ')
+            .appendValue(ChronoField.HOUR_OF_DAY, 2)
+            .appendLiteral(':')
+            .appendValue(ChronoField.MINUTE_OF_HOUR, 2)
+            .appendLiteral(':')
+            .appendValue(ChronoField.SECOND_OF_MINUTE, 2)
+            .appendLiteral(' ')
+            .appendOffset("+HHMM", "+0000")
+            .parseLenient()
+            .toFormatter();
+
     private static final Pattern SORTABLE = Pattern.compile("^([\\d]{4}-[\\-\\d\\.]*\\.)(\\d+).*?");
 
     /**
@@ -96,6 +112,40 @@ public class TimeUtil {
      */
     public static String toSortableStringFormat(ZonedDateTime zdt) {
         return zdt.format(SORTABLE_STRING_FORMAT);
+    }
+
+    /**
+     * <code>git log</code>'s "iso" format is not the same as we expect, so
+     * special handling for it. E.g. <code>2019-04-28 16:59:53 -0400</code>
+     *
+     * @param zdt A zoned date time
+     * @return A string
+     */
+    public static String toGitLogFormat(ZonedDateTime zdt) {
+        return zdt.format(GIT_LOG_FORMAT);
+    }
+
+    /**
+     * <code>git log</code>'s "iso" format is not the same as we expect, so
+     * special handling for it. E.g. <code>2019-04-28 16:59:53 -0400</code>
+     *
+     * @param zdt A zoned date time
+     * @return A string
+     */
+    public static String toGitLogFormat(OffsetDateTime zdt) {
+        return zdt.format(GIT_LOG_FORMAT);
+    }
+
+    /**
+     * <code>git log</code>'s "iso" format is not the same as we expect, so
+     * special handling for it. E.g. <code>2019-04-28 16:59:53 -0400</code>
+     *
+     * @param zdt A timestamp string as provided by
+     * <code>git log -1 --date=iso</code>
+     * @return A zoned date time
+     */
+    public static ZonedDateTime fromGitLogFormat(String txt) {
+        return ZonedDateTime.parse(txt, GIT_LOG_FORMAT);
     }
 
     /**
@@ -128,11 +178,11 @@ public class TimeUtil {
     }
 
     public static String toIsoFormat(OffsetDateTime odt) {
-        return toIsoFormat(fromUnixTimestamp(toUnixTimestamp(odt)));
+        return odt.format(ISO_INSTANT);
     }
 
     public static String toIsoFormat(Instant inst) {
-        return toIsoFormat(fromUnixTimestamp(inst.toEpochMilli()));
+        return toIsoFormat(inst.atZone(GMT));
     }
 
     public static String toIsoFormat(Date date) {
@@ -140,7 +190,12 @@ public class TimeUtil {
     }
 
     public static ZonedDateTime fromIsoFormat(String fmt) {
-        return ZonedDateTime.parse(fmt);
+        try {
+            return ZonedDateTime.parse(fmt);
+        } catch (DateTimeParseException ex) {
+            return ZonedDateTime.ofInstant(
+                    OffsetDateTime.parse(fmt).toInstant(), GMT);
+        }
     }
 
     public static long timestampFromIsoFormat(String fmt) {
