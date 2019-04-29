@@ -277,7 +277,7 @@ public class VersionInfo implements Comparable<VersionInfo> {
         });
     }
 
-    private static <T extends Comparable> int compare(T a, T b, IntSupplier next) {
+    private static <T extends Comparable<T>> int compare(T a, T b, IntSupplier next) {
         int result = a.compareTo(b);
         if (result == 0 && next != null) {
             result = next.getAsInt();
