@@ -250,7 +250,16 @@ public final class AppendableCharSequence implements Appendable, Comparable<Char
         } else if (o == this) {
             return true;
         } else if (o instanceof CharSequence) {
-            return Strings.charSequencesEqual(this, (CharSequence) o, false);
+            CharSequence seq = (CharSequence) o;
+            int len = seq.length();
+            if (len == length()) {
+                for (int i = 0; i < len; i++) {
+                    if (charAt(i) != seq.charAt(i)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
         }
         return false;
     }
