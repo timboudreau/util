@@ -23,14 +23,6 @@
  */
 package com.mastfrog.util.collections;
 
-import java.lang.reflect.Array;
-import java.util.BitSet;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Random;
-import java.util.Set;
-import java.util.function.IntConsumer;
-
 /**
  * A Java set of integers backed by a BitSet, which can look up random elements.
  * For performance, this is considerably faster than using a standard Java set
@@ -42,70 +34,107 @@ import java.util.function.IntConsumer;
  *
  * @author Tim Boudreau
  */
-public final class IntSet implements Set<Integer> {
+import java.util.BitSet;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Random;
+import java.util.Set;
+import java.util.function.IntConsumer;
+//import jdk.internal.HotSpotIntrinsicCandidate;
 
-    private final BitSet bits;
+/**
+ * A set of primitive integers based on a BitSet, which implements
+ * <code>Set&lt;Integer&gt;</code> for convenience. For performance, this is
+ * considerably faster than using a standard Java set with a list maintained
+ * along side it for random access <i>IF the range from lowest to highest
+ * integer in the set is small</i>.
+ * <p>
+ * <b>Does not support negative integer values.</b>
+ * </p>
+ *
+ *
+ * @author Tim Boudreau
+ */
+public abstract class IntSet implements Set<Integer>, Cloneable {
 
-    public IntSet() {
-        this(96);
+//    @HotSpotIntrinsicCandidate
+    IntSet() {
     }
 
-    public IntSet(int capacity) {
-        bits = new BitSet(capacity);
+    public static IntSet create(int capacity) {
+        return new IntSetImpl(capacity);
     }
 
-    public IntSet(Collection<? extends Integer> other) {
-        this(other.size());
-        addAll(other);
+    public static IntSet create() {
+        return create(96);
     }
 
-    IntSet(BitSet bits) {
-        this.bits = bits;
-    }
-
-    public static IntSet intersection(Iterable<IntSet> all) {
-        BitSet bits = null;
-        for (IntSet i : all) {
-            if (bits == null) {
-                bits = (BitSet) i.bits.clone();
-            } else {
-                bits.and(bits);
-            }
+    public static IntSet create(int[] arr) {
+        BitSet set = new BitSet(arr.length);
+        for (int i = 0; i < arr.length; i++) {
+            set.set(arr[i]);
         }
-        return bits == null ? new IntSet(1) : new IntSet(bits);
+        return new IntSetImpl(set);
+    }
+
+    public static IntSet create(BitSet bits) {
+        return new IntSetImpl((BitSet) bits.clone());
+    }
+
+    public static IntSet create(Collection<? extends Integer> set) {
+        if (set instanceof IntSet) {
+            return (IntSet) set;
+        } else {
+            return new IntSetImpl(set);
+        }
     }
 
     public static IntSet merge(Iterable<IntSet> all) {
         BitSet bits = null;
         for (IntSet i : all) {
             if (bits == null) {
-                bits = (BitSet) i.bits.clone();
+                bits = (BitSet) i.toBits();
             } else {
                 bits.or(bits);
             }
         }
-        return bits == null ? new IntSet(1) : new IntSet(bits);
+        return bits == null ? new IntSetImpl(1) : new IntSetImpl(bits);
     }
 
+    public static IntSet intersection(Iterable<IntSet> all) {
+        BitSet bits = null;
+        for (IntSet i : all) {
+            if (bits == null) {
+                bits = (BitSet) i.toBits();
+            } else {
+                bits.and(bits);
+            }
+        }
+        return bits == null ? new IntSetImpl(1) : new IntSetImpl(bits);
+    }
+
+    abstract BitSet bitsUnsafe();
+
     public IntSet intersection(IntSet other) {
-        BitSet b1 = this.bits;
-        BitSet nue = (BitSet) other.bits.clone();
+        BitSet b1 = this.bitsUnsafe();
+        BitSet nue = (BitSet) other.bitsUnsafe().clone();
         nue.and(b1);
-        return new IntSet(nue);
+        return new IntSetImpl(nue);
     }
 
     public IntSet or(IntSet other) {
-        BitSet b1 = this.bits;
-        BitSet nue = (BitSet) other.bits.clone();
+        BitSet b1 = this.bitsUnsafe();
+        BitSet nue = (BitSet) other.toBits();
         nue.or(b1);
-        return new IntSet(nue);
+        return new IntSetImpl(nue);
     }
 
     public IntSet xor(IntSet other) {
-        BitSet b1 = this.bits;
-        BitSet nue = (BitSet) other.bits.clone();
+        BitSet b1 = this.bitsUnsafe();
+        BitSet nue = (BitSet) other.toBits();
         nue.xor(b1);
-        return new IntSet(nue);
+        return new IntSetImpl(nue);
     }
 
     public IntSet addAll(int... ints) {
@@ -115,36 +144,29 @@ public final class IntSet implements Set<Integer> {
         return this;
     }
 
-    public BitSet toBits() {
-        BitSet result = new BitSet(bits.size());
-        result.or(bits);
-        return result;
-    }
+    /**
+     * Returns a <i>copy</i> of this IntSet's internal state, modifications to
+     * which shall not affect this set.
+     *
+     * @return A bit set
+     */
+    public abstract BitSet toBits();
 
-    public boolean add(int val) {
+    public final boolean add(int val) {
         if (val < 0) {
-            throw new IllegalArgumentException("Bit set cannot support negative"
-                    + " indices");
+            throw new IllegalArgumentException("Negative values not allowed");
         }
-        boolean result = !bits.get(val);
-        if (result) {
-            bits.set(val);
-        }
-        return result;
+        return _add(val);
     }
 
-    public boolean remove(int val) {
-        boolean result = bits.get(val);
-        bits.clear(val);
-        return result;
-    }
+    abstract boolean _add(int val);
 
     public int pick(Random r) {
-        int max = bits.length();
+        int max = bitsUnsafe().length();
         int pos = r.nextInt(max);
-        int result = bits.previousSetBit(pos);
+        int result = bitsUnsafe().previousSetBit(pos);
         if (result == -1) {
-            result = bits.nextSetBit(pos);
+            result = bitsUnsafe().nextSetBit(pos);
         }
         return result;
     }
@@ -153,50 +175,33 @@ public final class IntSet implements Set<Integer> {
         if (size() != other.size()) {
             return false;
         }
-        BitSet matched = (BitSet) bits.clone();
+        if (other == this) {
+            return true;
+        }
+        if (other instanceof IntSet) {
+            return bitsUnsafe().equals(((IntSet) other).bitsUnsafe());
+        }
+        BitSet matched = (BitSet) bitsUnsafe().clone();
         for (Integer o : other) {
             matched.clear(o);
         }
         return matched.cardinality() == 0;
     }
 
-    public static IntSet create(Collection<? extends Integer> set) {
-        if (set instanceof IntSet) {
-            return (IntSet) set;
-        } else {
-            return new IntSet(set);
-        }
-    }
+    public abstract int removeLast();
 
-    public int first() {
-        return bits.nextSetBit(0);
-    }
+    public abstract void forEach(IntConsumer cons);
 
-    public int removeFirst() {
-        int pos = bits.nextSetBit(0);
-        if (pos != -1) {
-            bits.clear(pos);
-        }
-        return pos;
-    }
+    public abstract void forEachReversed(IntConsumer cons);
 
-    public void forEach(IntConsumer cons) {
-        for (int curr = bits.nextSetBit(0); curr != -1; curr = bits.nextSetBit(curr + 1)) {
-            cons.accept(curr);
-        }
-    }
-
-    public void forEachReversed(IntConsumer cons) {
-        for (int curr = bits.previousSetBit(Integer.MAX_VALUE); curr != -1; curr = bits.previousSetBit(curr - 1)) {
-            cons.accept(curr);
-        }
-    }
+    public abstract int[] toIntArray();
 
     public Integer pick(Random r, Set<Integer> notIn) {
         if (notIn.size() >= size()) {
             return null;
         }
         int result = pick(r);
+        BitSet bits = bitsUnsafe();
         if (result == -1 || notIn.contains(result)) {
             int len = bits.length();
             int pos = r.nextInt(bits.length());
@@ -235,263 +240,170 @@ public final class IntSet implements Set<Integer> {
         }
     }
 
-    @Override
-    public int size() {
-        return bits.cardinality();
+    public int first() {
+        return bitsUnsafe().nextSetBit(0);
+    }
+
+    public int last() {
+        return bitsUnsafe().previousSetBit(Integer.MAX_VALUE);
     }
 
     public int max() {
-        int sz = bits.size();
-        return bits.previousSetBit(sz);
+        int sz = bitsUnsafe().size();
+        return bitsUnsafe().previousSetBit(sz);
     }
+
+    public abstract boolean remove(int bit);
+
+    public abstract int removeFirst();
+
+    public abstract boolean contains(int val);
 
     @Override
-    public boolean isEmpty() {
-        return size() == 0;
-    }
+    public abstract void clear();
 
-    public boolean contains(int val) {
-        return bits.get(val);
-    }
+    public static final IntSet EMPTY = new Empty();
 
-    @Override
-    public boolean contains(Object o) {
-        return o instanceof Integer && ((Integer) o) >= 0 && bits.get((Integer) o);
-    }
+    private static final class Empty extends IntSet {
 
-    @Override
-    public Iterator<Integer> iterator() {
-        return new BitSetIterator(bits);
-    }
-
-    private static final class BitSetIterator implements Iterator<Integer> {
-
-        int pos = 0;
-        private final BitSet bits;
-
-        public BitSetIterator(BitSet bits) {
-            this.bits = bits;
+        @Override
+        BitSet bitsUnsafe() {
+            return new BitSet(0);
         }
 
         @Override
-        public boolean hasNext() {
-            return pos < bits.length();
+        public IntSet or(IntSet other) {
+            return other;
         }
 
         @Override
-        public Integer next() {
-            int result = bits.nextSetBit(pos);
-            if (result == -1) {
-                throw new IndexOutOfBoundsException("No more values");
-            }
-            pos = result + 1;
-            return result;
-        }
-    }
-
-    public Interator interator() {
-        return new InteratorImpl(bits);
-    }
-
-    private static class InteratorImpl implements Interator {
-
-        int pos = 0;
-        final BitSet bits;
-
-        public InteratorImpl(BitSet bits) {
-            this.bits = bits;
+        public IntSet xor(IntSet other) {
+            return new IntSetImpl().xor(other);
         }
 
         @Override
-        public boolean hasNext() {
-            return pos < bits.length();
+        public IntSet addAll(int... ints) {
+            throw new UnsupportedOperationException("Immutable.");
         }
 
         @Override
-        public int next() {
-            int result = bits.nextSetBit(pos);
-            if (result == -1) {
-                throw new IndexOutOfBoundsException("No more values");
-            }
-            pos = result + 1;
-            return result;
+        public BitSet toBits() {
+            return new BitSet(1);
         }
-    }
 
-    @Override
-    public Object[] toArray() {
-        Object[] result = new Object[size()];
-        for (int curr = bits.nextSetBit(0), i = 0; curr != -1; i++, curr = bits.nextSetBit(curr + 1)) {
-            result[i] = curr;
+        @Override
+        boolean _add(int val) {
+            throw new UnsupportedOperationException("Immutable.");
         }
-        return result;
-    }
 
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T> T[] toArray(T[] result) {
-        if (result.length < size()) {
-            result = (T[]) Array.newInstance(result.getClass().getComponentType(), size());
+        @Override
+        public boolean remove(int val) {
+            throw new UnsupportedOperationException("Immutable.");
         }
-        for (int curr = bits.nextSetBit(0), i = 0; curr != -1; i++, curr = bits.nextSetBit(curr + 1)) {
-            result[i] = (T) Integer.valueOf(curr);
+
+        @Override
+        public int first() {
+            return -1;
         }
-        return result;
-    }
 
-    public int[] toIntArray() {
-        int[] result = new int[size()];
-        for (int curr = bits.nextSetBit(0), i = 0; curr != -1; i++, curr = bits.nextSetBit(curr + 1)) {
-            result[i] = curr;
+        @Override
+        public int removeFirst() {
+            throw new UnsupportedOperationException("Immutable.");
         }
-        return result;
-    }
 
-    @Override
-    public boolean add(Integer e) {
-        return add(e.intValue());
-    }
-
-    @Override
-    public boolean remove(Object o) {
-        if (o instanceof Integer) {
-            return remove(((Integer) o).intValue());
+        @Override
+        public int removeLast() {
+            throw new UnsupportedOperationException("Immutable.");
         }
-        return false;
-    }
 
-    @Override
-    public boolean containsAll(
-            Collection<?> c) {
-        boolean result = false;
-        for (Object o : c) {
-            if (o instanceof Integer) {
-                int val = ((Integer) o);
-                result = contains(val);
-                if (!result) {
-                    break;
-                }
-            } else {
-                return false;
-            }
+        @Override
+        public void forEach(IntConsumer cons) {
+            // do nothing
         }
-        return result;
-    }
 
-    @Override
-    public boolean addAll(
-            Collection<? extends Integer> c) {
-        boolean result;
-        if (c instanceof IntSet) {
-            int old = size();
-            bits.or(((IntSet) c).bits);
-            result = size() != old;
-        } else {
-            BitSet bs = new BitSet();
-            for (Integer i : c) {
-                int val = i;
-                if (!bs.get(val)) {
-                    bs.set(val);
-                }
-            }
-            result = !bs.isEmpty();
-            if (result) {
-                bits.and(bs);
-            }
+        @Override
+        public void forEachReversed(IntConsumer cons) {
+            // do nothing
         }
-        return result;
-    }
 
-    @Override
-    public boolean retainAll(
-            Collection<?> c) {
-        if (c instanceof IntSet) {
-            int old = bits.cardinality();
-            bits.and(((IntSet) c).bits);
-            return bits.cardinality() != old;
-        } else {
-            BitSet bs = new BitSet();
-            for (Object o : c) {
-                if (o instanceof Integer) {
-                    bs.set(((Integer) o));
-                }
-            }
-            boolean result = !bs.isEmpty();
-            if (result) {
-                bits.and(bs);
-            }
-            return result && !bits.isEmpty();
+        @Override
+        public int[] toIntArray() {
+            return new int[0];
         }
-    }
 
-    @Override
-    public boolean removeAll(
-            Collection<?> c) {
-        if (c instanceof IntSet) {
-            int old = bits.cardinality();
-            bits.andNot(((IntSet) c).bits);
-            return old != bits.cardinality();
-        } else {
-            BitSet bs = new BitSet();
-            for (Object o : c) {
-                if (o instanceof Integer) {
-                    bs.set(((Integer) o));
-                }
-            }
-            int size = size();
-            bits.andNot(bs);
-            return size != size();
+        @Override
+        public int last() {
+            throw new UnsupportedOperationException("Empty.");
         }
-    }
 
-    @Override
-    public void clear() {
-        bits.clear();
-    }
-
-    @Override
-    public int hashCode() {
-        //follows the contract of AbstractSet.hashCode()
-        int h = 0;
-        for (int curr = bits.nextSetBit(0), i = 0; curr != -1; i++, curr = bits.nextSetBit(curr + 1)) {
-            h += curr;
-        }
-        return h;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == null) {
+        @Override
+        public boolean contains(int val) {
             return false;
-        } else if (o == this) {
+        }
+
+        @Override
+        public void clear() {
+            // do nothing
+        }
+
+        @Override
+        public int size() {
+            return 0;
+        }
+
+        @Override
+        public boolean isEmpty() {
             return true;
-        } else if (o instanceof IntSet) {
-            return ((IntSet) o).bits.equals(bits);
-        } else if (o instanceof Iterable) {
-            BitSet bs = new BitSet(size());
-            Iterable<?> it = (Iterable<?>) o;
-            for (Object elem : it) {
-                if (elem instanceof Integer) {
-                    bs.set(((Integer) elem));
-                } else {
-                    return false;
-                }
-            }
-            return bs.equals(bits);
-        } else {
+        }
+
+        @Override
+        public boolean contains(Object o) {
             return false;
         }
-    }
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("[");
-        for (int curr = bits.nextSetBit(0), i = 0; curr != -1; i++, curr = bits.nextSetBit(curr + 1)) {
-            sb.append(curr);
-            if (bits.nextSetBit(curr + 1) != -1) {
-                sb.append(',');
-            }
+        @Override
+        public Iterator<Integer> iterator() {
+            return Collections.emptyIterator();
         }
-        return sb.toString();
+
+        @Override
+        public Object[] toArray() {
+            return new Integer[0];
+        }
+
+        @Override
+        public <T> T[] toArray(T[] a) {
+            return (T[]) new Object[0];
+        }
+
+        @Override
+        public boolean add(Integer e) {
+            throw new UnsupportedOperationException("Immutable.");
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            throw new UnsupportedOperationException("Immutable.");
+        }
+
+        @Override
+        public boolean containsAll(Collection<?> c) {
+            return c.isEmpty();
+        }
+
+        @Override
+        public boolean addAll(Collection<? extends Integer> c) {
+            throw new UnsupportedOperationException("Immutable.");
+        }
+
+        @Override
+        public boolean retainAll(Collection<?> c) {
+            throw new UnsupportedOperationException("Immutable.");
+        }
+
+        @Override
+        public boolean removeAll(Collection<?> c) {
+            throw new UnsupportedOperationException("Immutable.");
+        }
     }
 }

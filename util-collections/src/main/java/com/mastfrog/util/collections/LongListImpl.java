@@ -32,6 +32,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.PrimitiveIterator;
 import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 import java.util.function.UnaryOperator;
@@ -915,7 +916,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
 
     @Override
     public Iterator<Long> iterator() {
-        return new Iterator<Long>() {
+        return new PrimitiveIterator.OfLong() {
             int ix = -1;
 
             @Override
@@ -925,6 +926,11 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
 
             @Override
             public Long next() {
+                return nextLong();
+            }
+
+            @Override
+            public long nextLong() {
                 return getLong(++ix);
             }
         };

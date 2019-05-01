@@ -35,6 +35,7 @@ import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.PrimitiveIterator;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -59,12 +60,15 @@ final class ArrayIntMap<T> implements IntMap<T> {
     private Object[] vals;
     private int last = -1;
     private final Supplier<T> emptyValue;
+    private boolean addSuppliedValues;
 
     private ArrayIntMap(ArrayIntMap<T> other) {
         keys = Arrays.copyOf(other.keys, other.keys.length);
         vals = Arrays.copyOf(other.vals, other.vals.length);
         last = other.last;
         emptyValue = other.emptyValue;
+        resort = other.resort;
+        nextKey = other.nextKey;
     }
 
     /**
@@ -78,13 +82,14 @@ final class ArrayIntMap<T> implements IntMap<T> {
     }
 
     public ArrayIntMap(int minCapacity) {
-        this(minCapacity, null);
+        this(minCapacity, true, null);
     }
 
-    public ArrayIntMap(int minCapacity, Supplier<T> emptyValue) {
+    public ArrayIntMap(int minCapacity, boolean addSuppliedValues, Supplier<T> emptyValue) {
         if (minCapacity <= 0) {
             throw new IllegalArgumentException("Must be > 0");
         }
+        this.addSuppliedValues = addSuppliedValues;
         this.emptyValue = emptyValue;
         keys = new int[minCapacity];
         vals = new Object[minCapacity];
@@ -115,6 +120,26 @@ final class ArrayIntMap<T> implements IntMap<T> {
 
     public ArrayIntMap<T> copy() {
         return new ArrayIntMap<>(this);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public boolean forSomeKeys(IntMapAbortableConsumer<? super T> cons) {
+        for (int i = 0; i < size(); i++) {
+            boolean result = cons.accept(keys[i], (T) this.vals[i]);
+            if (!result) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void forEach(IntMapConsumer<? super T> cons) {
+        for (int i = 0; i < size(); i++) {
+            cons.accept(keys[i], (T) this.vals[i]);
+        }
     }
 
     public int[] keys() {
@@ -223,7 +248,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
      * Some temporary diagnostics re issue 48608
      */
     private static String i2s(int[] arr) {
-        StringBuffer sb = new StringBuffer(arr.length * 3);
+        StringBuilder sb = new StringBuilder((arr.length * 3) + 2);
         sb.append('[');
         for (int i = 0; i < arr.length; i++) {
             if (arr[i] != Integer.MAX_VALUE) {
@@ -243,6 +268,13 @@ final class ArrayIntMap<T> implements IntMap<T> {
         T result = null;
         if (idx > -1 && idx <= last) {
             result = (T) vals[idx];
+        }
+        if (result == null && emptyValue != null && addSuppliedValues) {
+            result = emptyValue.get();
+            if (result != null) {
+                put(key, result);
+            }
+            return result;
         }
         return result == null ? emptyValue == null
                 ? null : emptyValue.get() : result;
@@ -356,10 +388,12 @@ final class ArrayIntMap<T> implements IntMap<T> {
         return result;
     }
 
+    @Override
     public boolean isEmpty() {
         return last == -1;
     }
 
+    @Override
     public int size() {
         return last + 1;
     }
@@ -367,7 +401,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("IntMap@") //NOI18N
-                .append(System.identityHashCode(this));
+                .append(System.identityHashCode(this)).append('{');
 
         for (int i = 0; i < size(); i++) {
             sb.append("["); //NOI18N
@@ -379,7 +413,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
         if (size() == 0) {
             sb.append("empty"); //NOI18N
         }
-        return sb.toString();
+        return sb.append('}').toString();
     }
 
     /**
@@ -591,7 +625,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
         return false;
     }
 
-    private class KeyIter implements Iterator<Integer> {
+    private class KeyIter implements Iterator<Integer>, PrimitiveIterator.OfInt {
 
         private int ix = -1;
 
@@ -609,6 +643,11 @@ final class ArrayIntMap<T> implements IntMap<T> {
 
         @Override
         public Integer next() {
+            return nextInt();
+        }
+
+        @Override
+        public int nextInt() {
             return keys[++ix];
         }
 
@@ -687,6 +726,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
             return old;
         }
 
+        @Override
         public String toString() {
             return "ME-" + ix + " " + getKey() + " = " + getValue() + " of " + size();
         }
@@ -696,6 +736,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
         }
 
         @SuppressWarnings("unchecked")
+        @Override
         public boolean equals(Object o) {
             if (o == null) {
                 return false;
@@ -703,7 +744,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
             if (o == this) {
                 return true;
             }
-            if (o != null && o.getClass() == getClass()) {
+            if (o.getClass() == getClass()) {
                 return ((ME) o).map() == map() && ((ME) o).ix == ix;
             }
             if (o instanceof Map.Entry<?, ?>) {
@@ -714,6 +755,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
             return false;
         }
 
+        @Override
         public int hashCode() {
             return ix;
         }
@@ -829,6 +871,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
         }
 
         @Override
+        @SuppressWarnings("element-type-mismatch")
         public boolean contains(Object o) {
             return containsKey(o);
         }
@@ -842,7 +885,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
             return ArrayIntMap.this;
         }
 
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({"unchecked", "element-type-mismatch"})
         public boolean equals(Object o) {
             if (o != null && o.getClass() == getClass()) {
                 return ((KeySet) o).map() == map();

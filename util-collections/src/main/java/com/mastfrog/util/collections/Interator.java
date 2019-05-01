@@ -31,8 +31,10 @@ import java.util.function.IntSupplier;
  * Like an iterator, but without boxing/unboxing.
  *
  * @author Tim Boudreau
+ * @deprecated Implementations should use PrimitiveIterator.OfInt
  */
-public interface Interator extends IntSupplier {
+@Deprecated
+public interface Interator extends IntSupplier{
 
     public boolean hasNext();
 

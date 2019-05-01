@@ -78,6 +78,7 @@ class Expirer implements Runnable {
     @Override
     public void run() {
         for (;;) {
+            Thread.currentThread().setName("expirer for " + TimedCache.class.getName());
             try {
                 Expirable toExpire = queue.take();
                 expireOne(toExpire);

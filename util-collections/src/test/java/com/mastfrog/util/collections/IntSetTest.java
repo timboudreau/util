@@ -39,7 +39,7 @@ public class IntSetTest {
 
     @Test
     public void test() {
-        IntSet is = new IntSet(10);
+        IntSet is = new IntSetImpl(10);
         for (int i = 0; i < 100; i++) {
             assertFalse(is.contains(i * 5));
             is.add(i * 5);
@@ -76,7 +76,7 @@ public class IntSetTest {
 
     @Test
     public void testToArray() {
-        IntSet is = new IntSet(10);
+        IntSet is = new IntSetImpl(10);
         for (int i = 0; i < 100; i++) {
             is.add(i * 5);
         }
@@ -100,7 +100,7 @@ public class IntSetTest {
 
     @Test
     public void testEmpty() {
-        IntSet is = new IntSet();
+        IntSet is = new IntSetImpl();
         assertEquals(0, is.size());
         assertTrue(is.isEmpty());
         assertFalse(is.iterator().hasNext());
@@ -111,7 +111,7 @@ public class IntSetTest {
 
     @Test
     public void testInterop() {
-        IntSet is = new IntSet(10);
+        IntSet is = new IntSetImpl(10);
         for (int i = 0; i < 100; i++) {
             is.add(i * 5);
         }
@@ -126,7 +126,7 @@ public class IntSetTest {
 
     @Test
     public void testRandom() {
-        IntSet is = new IntSet(10);
+        IntSet is = new IntSetImpl(10);
         Random r = new Random(23239);
         Set<Integer> seen = new HashSet<>();
         for (int i = 0; i < 1000; i++) {
@@ -143,9 +143,9 @@ public class IntSetTest {
 
     @Test
     public void testRandomMore() {
-        IntSet exclude = new IntSet().addAll(1, 2, 3, 4);
-        IntSet test = new IntSet().addAll(1, 2, 3, 4, 11, 12, 13, 14, 21, 22, 23, 24);
-        IntSet found = new IntSet();
+        IntSet exclude = new IntSetImpl().addAll(1, 2, 3, 4);
+        IntSet test = new IntSetImpl().addAll(1, 2, 3, 4, 11, 12, 13, 14, 21, 22, 23, 24);
+        IntSet found = new IntSetImpl();
         Random r = new Random(23239);
         for (int i = 0; i < 8; i++) {
             Integer val = test.pick(r, exclude);
@@ -156,14 +156,14 @@ public class IntSetTest {
 //            assertFalse("" + val, exclude.contains(val));
             exclude.add(val);
         }
-        assertEquals(new IntSet().addAll(11,12,13,14,21,22,23,24), found);
+        assertEquals(new IntSetImpl().addAll(11,12,13,14,21,22,23,24), found);
         assertNull(test.pick(r, exclude));
     }
 
     @Test
     public void testRandomNonRepeating() {
-        IntSet is = new IntSet(10);
-        IntSet used = new IntSet();
+        IntSet is = new IntSetImpl(10);
+        IntSet used = new IntSetImpl();
         Random r = new Random(23239);
         Set<Integer> seen = new HashSet<>();
         for (int i = 0; i < 1000; i++) {

@@ -30,6 +30,7 @@ import com.mastfrog.util.preconditions.Checks;
  *
  * @author Tim Boudreau
  */
+@FunctionalInterface
 public interface ThrowingTriFunction<T, U, V, R> {
 
     R apply(T t, U u, V v) throws Exception;

@@ -501,9 +501,10 @@ public class LongListImplTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testLongerator() {
         LongListImpl ll = list(5, 30);
-        Longerator g = ll.longerator();
+        com.mastfrog.util.collections.Longerator g = ll.longerator();
         for (long i = 0; i < 30; i++) {
             assertEquals(i, g.next());
             assertEquals(i != 29, g.hasNext());

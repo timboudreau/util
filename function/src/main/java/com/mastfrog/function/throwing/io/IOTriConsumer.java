@@ -31,6 +31,7 @@ import java.io.IOException;
  *
  * @author Tim Boudreau
  */
+@FunctionalInterface
 public interface IOTriConsumer<T, R, S> extends ThrowingTriConsumer<T, R, S> {
 
     @Override

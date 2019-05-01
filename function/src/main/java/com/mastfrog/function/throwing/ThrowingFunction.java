@@ -33,6 +33,7 @@ import java.util.function.Function;
  *
  * @author Tim Boudreau
  */
+@FunctionalInterface
 public interface ThrowingFunction<In, Out> {
 
     Out apply(In arg) throws Exception;

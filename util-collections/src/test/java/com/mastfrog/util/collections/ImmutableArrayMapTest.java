@@ -23,8 +23,8 @@
  */
 package com.mastfrog.util.collections;
 
+import com.mastfrog.abstractions.list.LongResolvable;
 import java.util.Map;
-import java.util.function.ToLongFunction;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
@@ -54,10 +54,10 @@ public class ImmutableArrayMapTest {
         }
     }
 
-    static class StringToLong implements ToLongFunction<String> {
+    static class StringToLong implements LongResolvable {
         @Override
-        public long applyAsLong(String value) {
-            return Long.parseLong(value);
+        public long indexOf(Object value) {
+            return Long.parseLong(value + "");
         }
     }
 }

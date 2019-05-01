@@ -29,3 +29,11 @@ nb-configuration.xml
 /util-collections/nbproject/
 /util-function/nbproject/
 /function/target/
+/abstractions/target/
+/range/nbproject/
+/range/target/
+/bits/nbproject/
+/bits/target/
+/function-nb-wrapper/target/
+/abstractions-nb-wrapper/target/
+/graph/target/

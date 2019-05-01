@@ -32,7 +32,7 @@ package com.mastfrog.util.cache;
  * @param <E> An exception to throw on failure
  */
 @FunctionalInterface
-interface Answerer<T, R, E extends Exception> {
+public interface Answerer<T, R, E extends Exception> {
 
     /**
      * Answer a cache query for a value not present, computing the result

@@ -30,6 +30,7 @@ import java.util.function.Supplier;
  *
  * @author Tim Boudreau
  */
+@FunctionalInterface
 public interface EnhSupplier<T> extends Supplier<T> {
 
     default <R> EnhSupplier<R> transform (Function<T, R> func) {

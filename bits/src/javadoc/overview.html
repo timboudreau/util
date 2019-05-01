@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Bits API</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+        <h1>Bits API</h1>
+        <p>
+            This library builds on the API of <code>java.util.BitSet</code> in
+            a variety of ways:
+        </p>
+        <ul>
+            <li>Provides a read-only interface to a BitSet, so it is possible 
+                to expose it via your API without exposing mutators</li>
+            <li>Provides convenience methods taking IntConsumer and similar 
+                for iterating contents</li>
+            <li>Allows for bit sets which contain more than 
+                <code>Integer.MAX_VALUE</code> bits</li>
+            <li>Provides implementations of large bit sets over
+                <ul>
+                    <li>Standard Java-long arrays</li>
+                    <li>Off-heap memory provided by <code>sun.misc.Unsafe</code>
+                        or equivalent</li>
+                    <li>Memory mapped files</li>
+                </ul>
+            </li>
+        </ul>
+        <p>
+            Use the factory methods on <code>Bits</code> and <code>MutableBits</code>
+            to obtain instances.  For most purposes, it should be possible to use
+            an instanceof Bits as a drop-in replacement for BitSet.
+        </p>
+    </body>
+</html>

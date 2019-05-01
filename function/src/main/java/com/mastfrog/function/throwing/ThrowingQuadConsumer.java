@@ -28,6 +28,7 @@ package com.mastfrog.function.throwing;
  *
  * @author Tim Boudreau
  */
+@FunctionalInterface
 public interface ThrowingQuadConsumer<T, R, S, U> {
 
     void apply(T a, R b, S s, U u) throws Exception;

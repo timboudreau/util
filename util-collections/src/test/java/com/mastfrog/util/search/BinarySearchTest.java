@@ -144,7 +144,8 @@ public class BinarySearchTest {
         }
     }
 
-    static final class E implements BinarySearch.Evaluator<W> {
+    @SuppressWarnings("deprecation")
+    static final class E implements com.mastfrog.util.search.BinarySearch.Evaluator<W> {
 
         @Override
         public long getValue(W obj) {

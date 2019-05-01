@@ -23,9 +23,9 @@
  */
 package com.mastfrog.util.collections;
 
+import com.mastfrog.abstractions.list.IndexedResolvable;
 import com.mastfrog.util.collections.CollectionUtils.ComparableComparator;
 import static com.mastfrog.util.collections.CollectionUtils.checkDuplicates;
-import com.mastfrog.util.tree.Indexed;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -35,7 +35,7 @@ import java.util.List;
  *
  * @author Tim Boudreau
  */
-final class ComparatorListIndexedImpl<T> implements Indexed<T> {
+final class ComparatorListIndexedImpl<T> implements IndexedResolvable<T> {
 
     private final Object[] sorted;
     private final int[] indices;
@@ -55,8 +55,8 @@ final class ComparatorListIndexedImpl<T> implements Indexed<T> {
         }
     }
 
-    static <T extends Comparable<T>> Indexed<T> create(List<T> items) {
-        return new ComparatorListIndexedImpl<>(new ComparableComparator<T>(), items);
+    static <T extends Comparable<T>> IndexedResolvable<T> create(List<T> items) {
+        return new ComparatorListIndexedImpl<>(new ComparableComparator<>(), items);
     }
 
     @Override
@@ -71,8 +71,7 @@ final class ComparatorListIndexedImpl<T> implements Indexed<T> {
     }
 
     @Override
-    public T get(int index) {
+    public T forIndex(int index) {
         return origOrder.get(index);
     }
-
 }

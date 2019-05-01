@@ -1,0 +1,53 @@
+<!doctype html>
+<head>
+    <title>listlike</title>
+</head>
+<body>
+    <h1>List-like Abstractions</h1>
+    <p>
+        This package includes interfaces which make up the minimal decomposition
+        of the concept of a list, which are frequently more powerful and less
+        clunky in isolation.
+    </p>
+    <p>
+        <code>java.util.List</code> rolls together a bunch of heterogenous
+        abstractions which are more powerful when separated:
+    </p>
+    <ul>
+        <li><code><a href="IntAddressable.html">IntAddressable</a></code> &mdash; 
+            the ability to provide an
+            object for a given index</li>
+        <li><code><a href="IntResolvable.html">IntResolvable</a></code> &mdash; 
+            the ability to get the index of
+            an object</li>
+        <li><code><a href="IntAddressable.html">IntSized</a></code> &mdash; 
+            thing that has a size that can be
+            represented as an integer</li>
+        <li><code><a href="Indexed.html">Indexed</a></code> &mdash; 
+            thing with an integer size which has
+            the ability to provide an object for a given index</li>
+        <li><code><a href="IndexedResolvable.html">IndexedResolvable</a></code> &mdash; 
+            thing with an integer size which has
+            the ability to provide an object for a given index and can also 
+            map objects to their indices.
+        </li>
+    </ul>
+    <p>
+        Frequently one needs to implement an algorithm which needs some, but
+        not all, of these abstractions, and that algorithm will be more flexible
+        if it does <i>not</i> need anything it is applied to to already be in
+        a <code>List</code> or be copied into one.  For example, binary search
+        requires a size and the ability to fetch items from a list, but does
+        not need any other methods of <code>List</code>, and may be applied
+        to data structures so large that copying them into a list is prohibitive - 
+        yet both implementations of binary search in the JDK require an array
+        or a <code>List</code>.  So unpacking these abstractions and providing
+        simple ways to wrap collections in them allows implementations of things
+        that operate on them to be far more powerful.
+    </p>
+    <p>
+        Similar classes are provided for long-indexed data, which can be used
+        over files or large data stores.
+    </p>
+</body>
+

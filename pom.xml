@@ -24,6 +24,10 @@
         <module>util-misc</module>
         <module>util-fileformat</module>
         <module>function</module>
+        <module>abstractions</module>
+        <module>range</module>
+        <module>bits</module>
+        <module>graph</module>
     </modules>
     <url>https://github.com/timboudreau/numble</url>
     <scm>

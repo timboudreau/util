@@ -33,7 +33,9 @@ import java.util.function.LongSupplier;
  * A primitive long iterator for high performance uses.
  *
  * @author Tim Boudreau
+ * @deprecated Implementations should use PrimitiveIterator.OfLong
  */
+@Deprecated
 public interface Longerator extends LongSupplier {
 
     long next();

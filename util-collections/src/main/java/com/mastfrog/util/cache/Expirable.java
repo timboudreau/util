@@ -30,7 +30,7 @@ import java.util.concurrent.Delayed;
  *
  * @author Tim Boudreau
  */
-interface Expirable extends Delayed {
+public interface Expirable extends Delayed {
 
     /**
      * Expire this item, removing references to it from the cache.

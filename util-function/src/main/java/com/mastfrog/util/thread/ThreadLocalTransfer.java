@@ -24,7 +24,7 @@
 package com.mastfrog.util.thread;
 
 /**
- * One-shot ransfer an object between two decoupled parties, clearing the
+ * One-shot transfer an object between two decoupled parties, clearing the
  * reference after a call to get.  Basically, a ThreadLocal whose value
  * gets cleared after any call to get() so it cannot leak memory.
  *

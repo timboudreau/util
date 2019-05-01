@@ -30,9 +30,13 @@ class TimedCacheImpl<T, R, E extends Exception> implements TimedCache<T, R, E> {
     private BiConsumer<T, R> onExpire;
 
     TimedCacheImpl(long ttl, Answerer<T, R, E> answerer) {
+        this(ttl, answerer, ConcurrentHashMap::new);
+    }
+
+    TimedCacheImpl(long ttl, Answerer<T, R, E> answerer, MapSupplier<T> supp) {
         this.timeToLive = ttl;
         this.answerer = answerer;
-        cache = new ConcurrentHashMap<>();
+        cache = supp.get();
     }
 
     private TimedCacheImpl(TimedCacheImpl<T, R, E> other) {
@@ -42,6 +46,12 @@ class TimedCacheImpl<T, R, E extends Exception> implements TimedCache<T, R, E> {
         this.onExpire = other.onExpire;
     }
 
+    @Override
+    public boolean remove(T key) {
+        return cache.remove(key) != null;
+    }
+
+    @Override
     public String toString() {
         return toString(new StringBuilder(getClass().getSimpleName())
                 .append('{')).append('}').toString();
@@ -191,6 +201,7 @@ class TimedCacheImpl<T, R, E extends Exception> implements TimedCache<T, R, E> {
             this.reverseAnswerer = reverseAnswerer;
         }
 
+        @Override
         StringBuilder toString(StringBuilder sb) {
             sb.append(" reverse-entries=[");
             for (Iterator<Map.Entry<R, TimedCacheImpl<T, R, E>.CacheEntry>> it = reverseEntries.entrySet().iterator(); it.hasNext();) {
@@ -282,7 +293,6 @@ class TimedCacheImpl<T, R, E extends Exception> implements TimedCache<T, R, E> {
         }
     }
 
-
     private final class CacheEntry implements Expirable {
 
         volatile long touched = System.currentTimeMillis();
@@ -306,10 +316,12 @@ class TimedCacheImpl<T, R, E extends Exception> implements TimedCache<T, R, E> {
             touched = 0;
         }
 
+        @Override
         public void expire() {
             expireEntry(this);
         }
 
+        @Override
         public boolean isExpired() {
             return remaining() <= 0;
         }

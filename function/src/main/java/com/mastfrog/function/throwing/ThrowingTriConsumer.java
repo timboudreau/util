@@ -28,6 +28,7 @@ package com.mastfrog.function.throwing;
  *
  * @author Tim Boudreau
  */
+@FunctionalInterface
 public interface ThrowingTriConsumer<T, R, S> {
 
     void apply(T a, R b, S s) throws Exception;

@@ -33,7 +33,7 @@ import java.util.function.Supplier;
  */
 public class ThreadLocalBoolean {
 
-    private final ThreadLocal<Boolean> tl = new ThreadLocal<Boolean>();
+    private final ThreadLocal<Boolean> tl = new ThreadLocal<>();
     private final boolean initialValue;
 
     public ThreadLocalBoolean() {

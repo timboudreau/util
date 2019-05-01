@@ -24,6 +24,7 @@
 package com.mastfrog.util.cache;
 
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 /**
@@ -56,6 +57,16 @@ public interface TimedBidiCache<T, R, E extends Exception> extends TimedCache<T,
      */
     Optional<T> getKeyOptional(R value) throws E;
 
+    /**
+     * Get the key value for a value, converting it using the passed function if
+     * present.
+     *
+     * @param <S> The type
+     * @param value The value
+     * @param func The conversion function
+     * @return An object or null
+     * @throws E If something goes wrong
+     */
     default <S> S ifKeyAvailable(R value, Function<T, S> func) throws E {
         T result = getKey(value);
         if (result != null) {
@@ -64,11 +75,81 @@ public interface TimedBidiCache<T, R, E extends Exception> extends TimedCache<T,
         return null;
     }
 
+    /**
+     * Get the key value for a value, converting it using the passed function if
+     * present, and if not, using the passed default value.
+     *
+     * @param <S> The type
+     * @param value The value
+     * @param defaultValue A fallback value
+     * @param func The conversion function
+     * @return An object or null
+     * @throws E If something goes wrong
+     */
     default <S> S ifKeyAvailable(R value, S defaultValue, Function<T, S> func) throws E {
         T result = getKey(value);
         if (result != null) {
             return func.apply(result);
         }
         return defaultValue;
+    }
+
+    /**
+     * Create a reversed view of this cache, where the key type is the value
+     * type and vice versa. All modifications are applied to the original cache.
+     *
+     * @return A view of this cache
+     */
+    default TimedBidiCache<R, T, E> reverse() {
+        return new TimedBidiCache<R, T, E>() {
+            @Override
+            public R getKey(T value) throws E {
+                return TimedBidiCache.this.get(value);
+            }
+
+            @Override
+            public Optional<R> getKeyOptional(T value) throws E {
+                return TimedBidiCache.this.getOptional(value);
+            }
+
+            @Override
+            public TimedBidiCache<T, R, E> reverse() {
+                return TimedBidiCache.this;
+            }
+
+            @Override
+            public TimedCache<R, T, E> onExpire(BiConsumer<R, T> onExpire) {
+                TimedBidiCache.this.onExpire((t, r) -> {
+                    onExpire.accept(r, t);
+                });
+                return this;
+            }
+
+            @Override
+            public TimedBidiCache<R, T, E> toBidiCache(Answerer<T, R, E> reverseAnswerer) {
+                return this;
+            }
+
+            @Override
+            public Cache<R, T, E> clear() {
+                TimedBidiCache.this.clear();
+                return this;
+            }
+
+            @Override
+            public void close() {
+                TimedBidiCache.this.close();
+            }
+
+            @Override
+            public T get(R key) throws E {
+                return TimedBidiCache.this.getKey(key);
+            }
+
+            @Override
+            public Optional<T> getOptional(R key) throws E {
+                return TimedBidiCache.this.getKeyOptional(key);
+            }
+        };
     }
 }

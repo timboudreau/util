@@ -23,6 +23,9 @@
  */
 package com.mastfrog.util.search;
 
+import com.mastfrog.abstractions.list.LongIndexed;
+import com.mastfrog.abstractions.list.LongIndexedResolvable;
+import com.mastfrog.abstractions.list.LongResolvable;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.LongFunction;
@@ -40,14 +43,14 @@ import java.util.function.ToLongFunction;
  * unsorted data in.
  * <p/>
  * This class is not thread-safe and the size and contents of the
- * <code>Indexed</code> must not change while a search is being performed.
+ * data structuremust not change while a search is being performed.
  *
  * @author Tim Boudreau
  */
 public class BinarySearch<T> {
 
-    private final Evaluator<T> eval;
-    private final Indexed<T> indexed;
+    private final LongResolvable eval;
+    private final LongIndexed<T> indexed;
 
     /**
      * Create a new binary search.
@@ -55,21 +58,27 @@ public class BinarySearch<T> {
      * @param eval The thing which converts elements into numbers
      * @param indexed A collection, list or array
      */
-    public BinarySearch(Evaluator<T> eval, Indexed<T> indexed) {
+    public BinarySearch(LongResolvable eval, LongIndexed<T> indexed) {
         this.eval = eval;
         this.indexed = indexed;
         assert checkSorted();
     }
 
-    public BinarySearch(Evaluator<T> eval, List<T> l) {
+    public BinarySearch(LongResolvable eval, List<T> l) {
         this(eval, new ListWrap<T>(l));
     }
 
-    public BinarySearch(ToLongFunction<T> eval, final long count, LongFunction<T> getter) {
-        this((value) -> {return eval.applyAsLong(value);}, new LongFunctionWrapper<T>(count, getter));
+    public BinarySearch(ToLongFunction<? super Object> eval, final long count, LongFunction<T> getter) {
+        this((value) -> {
+            return eval.applyAsLong(value);
+        }, new LongFunctionWrapper<T>(count, getter));
     }
 
-    private static final class LongFunctionWrapper<T> implements Indexed<T> {
+    public BinarySearch(LongIndexedResolvable<T> res) {
+        this(res::indexOf, res.size(), res::forIndex);
+    }
+
+    private static final class LongFunctionWrapper<T> implements LongIndexed<T> {
 
         private final long count;
         private final LongFunction<T> getter;
@@ -80,7 +89,7 @@ public class BinarySearch<T> {
         }
 
         @Override
-        public T get(long index) {
+        public T forIndex(long index) {
             return getter.apply(index);
         }
 
@@ -90,11 +99,31 @@ public class BinarySearch<T> {
         }
     }
 
+    public static <R extends Number> BinarySearch<R> binarySearch(LongFunction<R> indexer, long count) {
+        LongIndexedResolvable<R> ix = new LongIndexedResolvable<R>() {
+            @Override
+            public R forIndex(long index) {
+                return indexer.apply(index);
+            }
+
+            @Override
+            public long size() {
+                return count;
+            }
+
+            @Override
+            public long indexOf(Object obj) {
+                return ((Number) obj).longValue();
+            }
+        };
+        return new BinarySearch<>(ix, ix);
+    }
+
     public static <R extends Number> BinarySearch<R> binarySearch(long count, Function<Long, R> indexer) {
         Evaluator<R> eval = Number::longValue;
-        Indexed<R> ix = new Indexed<R>() {
+        LongIndexed<R> ix = new LongIndexed<R>() {
             @Override
-            public R get(long index) {
+            public R forIndex(long index) {
                 return indexer.apply(index);
             }
 
@@ -110,8 +139,8 @@ public class BinarySearch<T> {
         long val = Long.MIN_VALUE;
         long sz = indexed.size();
         for (long i = 0; i < sz; i++) {
-            T t = indexed.get(i);
-            long nue = eval.getValue(t);
+            T t = indexed.forIndex(i);
+            long nue = eval.indexOf(t);
             if (val != Long.MIN_VALUE) {
                 if (nue < val) {
                     throw new IllegalArgumentException("Collection is not sorted at " + i + " - " + indexed);
@@ -127,14 +156,14 @@ public class BinarySearch<T> {
     }
 
     public T match(T prototype, Bias bias) {
-        long value = eval.getValue(prototype);
+        long value = eval.indexOf(prototype);
         long index = search(value, bias);
-        return index == -1 ? null : indexed.get(index);
+        return index == -1 ? null : indexed.forIndex(index);
     }
 
     public T searchFor(long value, Bias bias) {
         long index = search(value, bias);
-        return index == -1 ? null : indexed.get(index);
+        return index == -1 ? null : indexed.forIndex(index);
     }
 
     private long search(long start, long end, long value, Bias bias) {
@@ -143,10 +172,10 @@ public class BinarySearch<T> {
             return start;
         }
         if (range == 1) {
-            T ahead = indexed.get(end);
-            T behind = indexed.get(start);
-            long v1 = eval.getValue(behind);
-            long v2 = eval.getValue(ahead);
+            T ahead = indexed.forIndex(end);
+            T behind = indexed.forIndex(start);
+            long v1 = eval.indexOf(behind);
+            long v2 = eval.indexOf(ahead);
             if (value == v1) {
                 return start;
             } else if (value == v2) {
@@ -195,7 +224,7 @@ public class BinarySearch<T> {
             }
         }
         long mid = start + range / 2;
-        long vm = eval.getValue(indexed.get(mid));
+        long vm = eval.indexOf(indexed.forIndex(mid));
         if (value >= vm) {
             return search(mid, end, value, bias);
         } else {
@@ -208,8 +237,10 @@ public class BinarySearch<T> {
      * search
      *
      * @param <T>
+     * @deprecated Use LongResolvable
      */
-    public interface Evaluator<T> extends ToLongFunction<T> {
+    @Deprecated
+    public interface Evaluator<T> extends ToLongFunction<T>, LongResolvable {
 
         public long getValue(T obj);
 
@@ -217,21 +248,29 @@ public class BinarySearch<T> {
         public default long applyAsLong(T value) {
             return getValue(value);
         }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public default long indexOf(Object obj) {
+            return getValue((T) obj);
+        }
     }
 
     /**
      * Abstraction for list-like things which have a length and indices
      *
      * @param <T>
+     * @deprecated use LongIndexed
      */
-    public interface Indexed<T> {
+    @Deprecated
+    public interface Indexed<T> extends LongIndexed<T> {
 
         public T get(long index);
 
         public long size();
     }
 
-    private static final class ListWrap<T> implements Indexed<T> {
+    private static final class ListWrap<T> implements LongIndexed<T> {
 
         private final List<T> l;
 
@@ -240,7 +279,7 @@ public class BinarySearch<T> {
         }
 
         @Override
-        public T get(long index) {
+        public T forIndex(long index) {
             return l.get((int) index);
         }
 

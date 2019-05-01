@@ -32,6 +32,7 @@ import java.util.function.BiConsumer;
  *
  * @author Tim Boudreau
  */
+@FunctionalInterface
 public interface ThrowingBiConsumer<T, R> {
 
     void accept(T a, R b) throws Exception;

@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.collections;
 
+import com.mastfrog.abstractions.list.LongResolvable;
 import static com.mastfrog.util.collections.CollectionUtils.setOf;
 import com.mastfrog.util.search.Bias;
 import com.mastfrog.util.search.BinarySearch;
@@ -49,15 +50,15 @@ class ImmutableArrayMap<T, R> implements Map<T, R>, LongFunction<T> {
     final T[] keys;
     final R[] values;
     final BinarySearch<T> search;
-    private final ToLongFunction<T> func;
+    private final ToLongFunction<? super Object> func;
     private final Class<T> keyType;
 
-    ImmutableArrayMap(Map<T, R> map, Class<T> keyType, Class<R> valType, ToLongFunction<T> func) {
+    ImmutableArrayMap(Map<T, R> map, Class<T> keyType, Class<R> valType, LongResolvable func) {
         this.keyType = keyType;
         List<Map.Entry<T, R>> l = new ArrayList<>(map.entrySet());
         Collections.sort(l, (Entry<T, ?> o1, Entry<T, ?> o2) -> {
-            long a = func.applyAsLong(o1.getKey());
-            long b = func.applyAsLong(o2.getKey());
+            long a = func.indexOf(o1.getKey());
+            long b = func.indexOf(o2.getKey());
             return a == b ? 0 : a > b ? 1 : -1;
         });
         keys = CollectionUtils.genericArray(keyType, l.size());
@@ -67,7 +68,7 @@ class ImmutableArrayMap<T, R> implements Map<T, R>, LongFunction<T> {
             Map.Entry<T, R> e = l.get(i);
             keys[i] = e.getKey();
             values[i] = e.getValue();
-            long val = func.applyAsLong(keys[i]);
+            long val = func.indexOf(keys[i]);
             if (val < lastValue) {
                 throw new IllegalArgumentException("Function does not match sort order - "
                         + "applyAsLong() on '" + keys[i - 1] + "' returned " + lastValue + " but "
@@ -75,8 +76,9 @@ class ImmutableArrayMap<T, R> implements Map<T, R>, LongFunction<T> {
             }
             lastValue = val;
         }
-        search = new BinarySearch<>(func, keys.length, this);
-        this.func = func;
+        ToLongFunction<? super Object> fn = func::indexOf;
+        search = new BinarySearch<>(fn, keys.length, this);
+        this.func = fn;
     }
 
     @Override

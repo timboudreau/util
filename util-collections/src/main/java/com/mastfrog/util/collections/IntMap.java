@@ -69,6 +69,12 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
         void accept(int key, T value);
     }
 
+    @FunctionalInterface
+    public interface IntMapAbortableConsumer<T> {
+
+        boolean accept(int key, T value);
+    }
+
     default void forEachKey(IntConsumer cons) {
         int[] k = getKeys();
         for (int i = 0; i < k.length; i++) {
@@ -82,5 +88,17 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
             T t = get(k[i]);
             cons.accept(k[i], t);
         }
+    }
+
+    default boolean forSomeKeys(IntMapAbortableConsumer<? super T> cons) {
+        int[] k = getKeys();
+        for (int i = 0; i < k.length; i++) {
+            T t = get(k[i]);
+            boolean result = cons.accept(k[i], t);
+            if (!result) {
+                return false;
+            }
+        }
+        return true;
     }
 }

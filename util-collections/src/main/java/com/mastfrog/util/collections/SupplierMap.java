@@ -84,6 +84,18 @@ final class SupplierMap<T, R> implements Map<T, R> {
         return result;
     }
 
+    /**
+     * Performs the traditional Map.get() without potentially
+     * inserting an item using the supplier.
+     *
+     * @param key The key
+     * @return A result or null
+     */
+    @SuppressWarnings("element-type-mismatch")
+    public R getIfPresent(Object key) {
+        return delegate.get(key);
+    }
+
     @Override
     public R put(T key, R value) {
         return delegate.put(key, value);

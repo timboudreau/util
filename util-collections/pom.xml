@@ -11,6 +11,10 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>abstractions</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>util-preconditions</artifactId>
         </dependency>
         <dependency>

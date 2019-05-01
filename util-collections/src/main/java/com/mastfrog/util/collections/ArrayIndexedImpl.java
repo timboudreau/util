@@ -24,7 +24,7 @@
 
 package com.mastfrog.util.collections;
 
-import com.mastfrog.util.tree.Indexed;
+import com.mastfrog.abstractions.list.IndexedResolvable;
 import java.util.Arrays;
 import java.util.List;
 
@@ -32,12 +32,13 @@ import java.util.List;
  *
  * @author Tim Boudreau
  */
-final class ArrayIndexedImpl<T extends Comparable<T>> implements Indexed<T> {
+final class ArrayIndexedImpl<T extends Comparable<T>> implements IndexedResolvable<T> {
 
     private final T[] sorted;
     private final int[] indices;
     private final T[] origOrder;
 
+    @SafeVarargs
     ArrayIndexedImpl(T... items) {
         origOrder = items;
         sorted = Arrays.copyOf(items, items.length);
@@ -63,7 +64,7 @@ final class ArrayIndexedImpl<T extends Comparable<T>> implements Indexed<T> {
     }
 
     @Override
-    public T get(int index) {
+    public T forIndex(int index) {
         return origOrder[index];
     }
 

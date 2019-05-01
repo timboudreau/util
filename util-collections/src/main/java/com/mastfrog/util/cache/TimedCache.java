@@ -23,9 +23,7 @@
  */
 package com.mastfrog.util.cache;
 
-import java.util.Optional;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 /**
  * A straightforward cache with expiring entries, capable of conversion into a
@@ -36,7 +34,7 @@ import java.util.function.Function;
  *
  * @author Tim Boudreau
  */
-public interface TimedCache<T, R, E extends Exception> {
+public interface TimedCache<T, R, E extends Exception> extends Cache<T, R, E> {
 
     /**
      * Create a cache that throws a specific exception type if lookup fails.
@@ -49,9 +47,27 @@ public interface TimedCache<T, R, E extends Exception> {
      * @param answerer A function which computes the value if it is not cached
      * @return A cache
      */
-    public static <T, R, E extends Exception> TimedCache<T, R, E> createThrowing(long ttl, Answerer<T, R, E> answerer) {
+    public static <T, R, E extends Exception> TimedCache<T, R, E> createThrowing(long ttl,
+            Answerer<T, R, E> answerer) {
         return new TimedCacheImpl<>(ttl, answerer);
     }
+
+    /**
+     * Create a cache that throws a specific exception type if lookup fails.
+     *
+     * @param <T> The key type
+     * @param <R> The value type
+     * @param <E> The exception type
+     * @param ttl The time after creation or last query it satisfied that a
+     * value should live for, in milliseconds
+     * @param answerer A function which computes the value if it is not cached
+     * @return A cache
+     */
+    public static <T, R, E extends Exception> TimedCache<T, R, E> createThrowing(long ttl,
+            Answerer<T, R, E> answerer, MapSupplier<T> backingStoreFactory) {
+        return new TimedCacheImpl<>(ttl, answerer, backingStoreFactory);
+    }
+
 
     /**
      * Create a cache which does not throw a checked exception on lookup.
@@ -64,58 +80,28 @@ public interface TimedCache<T, R, E extends Exception> {
      * @param answerer A function which computes the value if it is not cached
      * @return A cache
      */
-    public static <T, R> TimedCache<T, R, RuntimeException> create(long ttl, Answerer<T, R, RuntimeException> answerer) {
+    public static <T, R> TimedCache<T, R, RuntimeException> create(long ttl,
+            Answerer<T, R, RuntimeException> answerer) {
         return new TimedCacheImpl<>(ttl, answerer);
     }
-
-    default <S> S ifAvailable(T key, Function<R, S> func) throws E {
-        R result = get(key);
-        if (result != null) {
-            return func.apply(result);
-        }
-        return null;
+    /**
+     * Create a cache which does not throw a checked exception on lookup.
+     *
+     * @param <T> The key type
+     * @param <R> The value type
+     * @param <E> The exception type
+     * @param ttl The time after creation or last query it satisfied that a
+     * value should live for, in milliseconds
+     * @param answerer A function which computes the value if it is not cached
+     * @return A cache
+     */
+    public static <T, R> TimedCache<T, R, RuntimeException> create(long ttl, Answerer<T, R, RuntimeException> answerer, MapSupplier<T> backingStoreFactory) {
+        return new TimedCacheImpl<>(ttl, answerer, backingStoreFactory);
     }
 
-    default <S> S ifAvailable(T key, S defaultValue, Function<R, S> func) throws E {
-        R result = get(key);
-        if (result != null) {
-            return func.apply(result);
-        }
-        return defaultValue;
+    default boolean remove(T key) {
+        throw new UnsupportedOperationException("Removal not supported");
     }
-
-    /**
-     * Clear this cache, removing expiring all entries immediately. If an
-     * OnExpire handler has been set, it will not be called for entries that are
-     * being removed (use close() if you need that).
-     *
-     * @return this
-     */
-    TimedCache<T, R, E> clear();
-
-    /**
-     * Shut down this cache, immediately expiring any entries which have not
-     * been evicted.
-     */
-    void close();
-
-    /**
-     * Get a value from the cache, computing it if necessary.
-     *
-     * @param key The key to look up. May not be null.
-     * @return A value or null if the answerer returned null
-     * @throws E If something goes wrong
-     */
-    R get(T key) throws E;
-
-    /**
-     * Get a value which may be null.
-     *
-     * @param key The key
-     * @return The value
-     * @throws E If something goes wrong
-     */
-    Optional<R> getOptional(T key) throws E;
 
     /**
      * Add a consumer which is called after a value has been expired from the

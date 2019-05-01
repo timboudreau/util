@@ -25,6 +25,7 @@ package com.mastfrog.function;
 
 import java.util.function.IntPredicate;
 import java.util.function.IntSupplier;
+import java.util.function.Supplier;
 
 /**
  * IntSupplier with composition methods for mathematical and logical
@@ -105,5 +106,11 @@ public interface EnhIntSupplier extends IntSupplier {
             return (EnhIntSupplier) supp;
         }
         return () -> supp.getAsInt();
+    }
+
+    default Supplier<Integer> toBoxedSupplier() {
+        return () -> {
+            return getAsInt();
+        };
     }
 }

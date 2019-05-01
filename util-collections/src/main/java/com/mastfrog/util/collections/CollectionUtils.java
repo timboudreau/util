@@ -23,16 +23,16 @@
  */
 package com.mastfrog.util.collections;
 
+import com.mastfrog.abstractions.list.LongResolvable;
 import com.mastfrog.util.preconditions.Checks;
 import static com.mastfrog.util.preconditions.Checks.notNull;
 import com.mastfrog.util.strings.Strings;
 import com.mastfrog.util.collections.MapBuilder2.HashingMapBuilder;
-import com.mastfrog.util.tree.BitSetSet;
-import com.mastfrog.util.tree.Indexed;
+//import com.mastfrog.util.tree.BitSetSet;
+//import com.mastfrog.util.tree.Indexed;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import static java.util.Collections.emptySet;
@@ -58,7 +58,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.function.ToLongFunction;
 
 /**
  * Handles a few collections omissions
@@ -79,112 +78,170 @@ public final class CollectionUtils {
      * @param allPossibleValues
      * @return
      */
-    public static <T extends Comparable<T>> Set<T> bitSetSet(T... allPossibleValues) {
-        BitSet set = new BitSet(allPossibleValues.length);
-        Indexed<T> indexed = new ArrayIndexedImpl<>(allPossibleValues);
-        return new BitSetSet<T>(indexed, set);
-    }
-
+//    public static <T extends Comparable<T>> Set<T> bitSetSet(T... allPossibleValues) {
+//        BitSet set = new BitSet(allPossibleValues.length);
+//        Indexed<T> indexed = new ArrayIndexedImpl<>(allPossibleValues);
+//        return new BitSetSet<T>(indexed, set);
+//    }
     /**
      * Create a BitSet-backed set for sets where all possible members are known
-     * a-priori.  The result is both fast and has a very small memory footprint.
+     * a-priori. The result is both fast and has a very small memory footprint.
      * <p>
-     * Note: If you have a type that implements Comparable, or a Comparator,
-     * the versions that take arrays or a comparator are faster, as they can
-     * use binary search rather than iterating the entire set of items.
+     * Note: If you have a type that implements Comparable, or a Comparator, the
+     * versions that take arrays or a comparator are faster, as they can use
+     * binary search rather than iterating the entire set of items.
      * </p>
      *
      * @param <T>
-     * @param allPossibleValues All possible values the set can contain.  Must
+     * @param allPossibleValues All possible values the set can contain. Must
      * not contain duplicates or nulls.
      * @return A set
      */
-    public static <T> Set<T> bitSetSet(List<T> allPossibleValues) {
-        checkDuplicates(allPossibleValues);
-        BitSet set = new BitSet(allPossibleValues.size());
-        return new BitSetSet<T>(Indexed.forList(allPossibleValues), set);
-    }
-
+//    public static <T> Set<T> bitSetSet(List<T> allPossibleValues) {
+//        checkDuplicates(allPossibleValues);
+//        BitSet set = new BitSet(allPossibleValues.size());
+//        return new BitSetSet<T>(Indexed.forList(allPossibleValues), set);
+//    }
     /**
      * Create a BitSet-backed set for sets where all possible members are known
-     * a-priori.  The result is both fast and has a very small memory footprint.
+     * a-priori. The result is both fast and has a very small memory footprint.
      *
      * @param <T> The type
      * @param comparator A comparator allowing binary search to be used for
      * looking up items
-     * @param allPossibleValues All possible values the set can contain.  Must
+     * @param allPossibleValues All possible values the set can contain. Must
      * not contain duplicates or nulls.
      * @return A set
      */
-    public static <T> Set<T> bitSetSet(Comparator<T> comparator, T... allPossibleValues) {
-        BitSet set = new BitSet(allPossibleValues.length);
-        return new BitSetSet<>(new ComparatorArrayIndexedImpl<>(comparator, allPossibleValues), set);
-    }
-
+//    public static <T> Set<T> bitSetSet(Comparator<T> comparator, T... allPossibleValues) {
+//        BitSet set = new BitSet(allPossibleValues.length);
+//        return new BitSetSet<>(new ComparatorArrayIndexedImpl<>(comparator, allPossibleValues), set);
+//    }
     /**
      * Create a BitSet-backed set for sets where all possible members are known
-     * a-priori.  The result is both fast and has a very small memory footprint.
+     * a-priori. The result is both fast and has a very small memory footprint.
      *
-     * @param set A bitset.  This bitset MUST NOT contain any set bits higher
+     * @param set A bitset. This bitset MUST NOT contain any set bits higher
      * than the length of the values array.
      * @param <T> The type
      * @param comparator A comparator allowing binary search to be used for
      * looking up items
-     * @param allPossibleValues All possible values the set can contain.  Must
+     * @param allPossibleValues All possible values the set can contain. Must
      * not contain duplicates or nulls.
      * @return A set
      */
-    public static <T> Set<T> bitSetSet(BitSet set, Comparator<T> comparator, T... allPossibleValues) {
-        Checks.notNull("set", set);
-        return new BitSetSet<>(new ComparatorArrayIndexedImpl<>(comparator, allPossibleValues), set);
-    }
+//    public static <T> Set<T> bitSetSet(BitSet set, Comparator<T> comparator, T... allPossibleValues) {
+//        Checks.notNull("set", set);
+//        return new BitSetSet<>(new ComparatorArrayIndexedImpl<>(comparator, allPossibleValues), set);
+//    }
     /**
      * Create a BitSet-backed set for sets where all possible members are known
-     * a-priori.  The result is both fast and has a very small memory footprint.
+     * a-priori. The result is both fast and has a very small memory footprint.
      *
-     * @param set A bitset.  This bitset MUST NOT contain any set bits higher
+     * @param set A bitset. This bitset MUST NOT contain any set bits higher
      * than the length of the values array.
      * @param <T> The type
      * @param comparator A comparator allowing binary search to be used for
      * looking up items
-     * @param allPossibleValues All possible values the set can contain.  Must
+     * @param allPossibleValues All possible values the set can contain. Must
      * not contain duplicates or nulls.
      * @return A set
      */
-    public static <T> Set<T> bitSetSet(BitSet set, Comparator<T> comparator, List<T> allPossibleValues) {
-        return new BitSetSet<>(new ComparatorListIndexedImpl<>(comparator, allPossibleValues), set);
-    }
+//    public static <T> Set<T> bitSetSet(BitSet set, Comparator<T> comparator, List<T> allPossibleValues) {
+//        return new BitSetSet<>(new ComparatorListIndexedImpl<>(comparator, allPossibleValues), set);
+//    }
     /**
      * Create a BitSet-backed set for sets where all possible members are known
-     * a-priori.  The result is both fast and has a very small memory footprint.
+     * a-priori. The result is both fast and has a very small memory footprint.
      *
      * @param <T> The type
      * @param comparator A comparator allowing binary search to be used for
      * looking up items
-     * @param allPossibleValues All possible values the set can contain.  Must
+     * @param allPossibleValues All possible values the set can contain. Must
      * not contain duplicates or nulls.
      * @return A set
      */
-    public static <T> Set<T> bitSetSet(Comparator<T> comparator, List<T> allPossibleValues) {
-        BitSet set = new BitSet(allPossibleValues.size());
-        return new BitSetSet<>(new ComparatorListIndexedImpl<>(comparator, allPossibleValues), set);
-    }
-
+//    public static <T> Set<T> bitSetSet(Comparator<T> comparator, List<T> allPossibleValues) {
+//        BitSet set = new BitSet(allPossibleValues.size());
+//        return new BitSetSet<>(new ComparatorListIndexedImpl<>(comparator, allPossibleValues), set);
+//    }
     /**
      * Create a BitSet-backed set for sets where all possible members are known
-     * a-priori.  The result is both fast and has a very small memory footprint.
+     * a-priori. The result is both fast and has a very small memory footprint.
      * Prefer this variant if the collection type implements Comparable, for
      * performance.
      *
      * @param <T> The type
-     * @param allPossibleValues All possible values the set can contain.  Must
+     * @param allPossibleValues All possible values the set can contain. Must
      * not contain duplicates or nulls.
      * @return A set
      */
-    public static <T extends Comparable<T>> Set<T> bitSetSetForComparable(List<T> allPossibleValues) {
-        checkDuplicates(allPossibleValues);
-        BitSet set = new BitSet(allPossibleValues.size());
-        return new BitSetSet<>(ComparatorListIndexedImpl.create(allPossibleValues), set);
+//    public static <T extends Comparable<T>> Set<T> bitSetSetForComparable(List<T> allPossibleValues) {
+//        checkDuplicates(allPossibleValues);
+//        BitSet set = new BitSet(allPossibleValues.size());
+//        return new BitSetSet<>(ComparatorListIndexedImpl.create(allPossibleValues), set);
+//    }
+    /**
+     * Create a single Iterable which concatenates multiple iterables without
+     * copying them into another collection, so iteration happens only once.
+     *
+     * @param <T> The iterable type
+     * @param iterables A collection of iterables
+     * @return An iterable
+     */
+    public static <T> ConcatenatedIterables<T> concatenate(Iterable<Iterable<T>> iterables) {
+        return new MergeIterables<>(iterables);
+    }
+
+    /**
+     * Create a single Iterable which concatenates multiple iterables without
+     * copying them into another collection, so iteration happens only once.
+     *
+     * @param <T> The iterable type
+     * @param iterables A collection of iterables
+     * @return An iterable
+     */
+    public static <T> ConcatenatedIterables<T> concatenate(Iterable<T> a, Iterable<T> b) {
+        return new MergeIterables<>(a, b);
+    }
+
+    /**
+     * Create a single Iterable which concatenates multiple iterables without
+     * copying them into another collection, so iteration happens only once.
+     *
+     * @param <T> The iterable type
+     * @param iterables A collection of iterables
+     * @return An iterable
+     */
+    public static <T> ConcatenatedIterables<T> concatenate(Iterable<T> a, Iterable<T> b, Iterable<T> c) {
+        return new MergeIterables<>(a, b, c);
+    }
+
+    /**
+     * Create a single Iterable which concatenates multiple iterables without
+     * copying them into another collection, so iteration happens only once.
+     *
+     * @param <T> The iterable type
+     * @param iterables A collection of iterables
+     * @return An iterable
+     */
+    @SafeVarargs
+    public static <T> ConcatenatedIterables<T> concatenate(Iterable<T>... iterables) {
+        return new MergeIterables<>(iterables);
+    }
+
+    /**
+     * Filter elements out of a list into a new list.
+     *
+     * @param <T> The type
+     * @param list A list
+     * @param filter The filter
+     * @return A new list
+     */
+    public static <T> List<T> filter(List<? extends T> list, Predicate<? super T> filter) {
+        List<T> result = new ArrayList<>(list.size());
+        list.stream().filter((obj) -> (filter.test(obj))).forEachOrdered(result::add);
+        return result;
     }
 
     @SuppressWarnings("AssertWithSideEffects")
@@ -905,7 +962,7 @@ public final class CollectionUtils {
      * sorting and binary search
      * @return A map
      */
-    public static <T, R> Map<T, R> immutableArrayMap(Map<T, R> map, Class<T> keyType, Class<R> valType, ToLongFunction<T> func) {
+    public static <T, R> Map<T, R> immutableArrayMap(Map<T, R> map, Class<T> keyType, Class<R> valType, LongResolvable func) {
         return new ImmutableArrayMap<>(map, keyType, valType, func);
     }
 
@@ -1197,6 +1254,49 @@ public final class CollectionUtils {
      */
     public static <T> IntMap<T> intMap(int initialCapacity) {
         return new ArrayIntMap<>(initialCapacity);
+    }
+
+    /**
+     * The equivalent of SupplierMap for primitive int keyed maps, with a
+     * supplier for empty values, and the default capacity of 96.
+     *
+     * @param <T> The value type
+     * @param emptyValues Supplies empty values
+     * @return A map
+     */
+    public static <T> IntMap<T> intMap(Supplier<T> emptyValues) {
+        return intMap(96, false, emptyValues);
+    }
+
+    /**
+     * The equivalent of SupplierMap for primitive int keyed maps.
+     *
+     * @param <T> The value type
+     * @param initialCapacity The initial array size to allocate for keys and
+     * values
+     * @param emptyValues Supplies empty values
+     * @return A map
+     */
+    public static <T> IntMap<T> intMap(int initialCapacity, Supplier<T> emptyValues) {
+        return intMap(initialCapacity, false, emptyValues);
+    }
+
+    /**
+     * The equivalent of SupplierMap for primitive int keyed maps.
+     *
+     * @param <T> The value type
+     * @param initialCapacity The initial array size to allocate for keys and
+     * values
+     * @param addSuppliedValues If true, when a non-existent key is requested
+     * and the passed supplier is being used to supply a value, store the new
+     * value in the map; if false, just return it, not altering the state of the
+     * map. Unless the value objects are expensive to create or creating them
+     * alters the state of something else, pass false.
+     * @param emptyValues Supplies empty values
+     * @return A map
+     */
+    public static <T> IntMap<T> intMap(int initialCapacity, boolean addSuppliedValues, Supplier<T> emptyValues) {
+        return new ArrayIntMap<>(initialCapacity, addSuppliedValues, emptyValues);
     }
 
     /**
