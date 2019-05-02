@@ -338,7 +338,14 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
             if (size == 0) {
                 return true;
             }
-            return Arrays.equals(values, 0, size, other.values, 0, size);
+            // JDK 9
+//            return Arrays.equals(values, 0, size, other.values, 0, size);
+            for (int i = 0; i < size; i++) {
+                if (values[i] != other.values[i]) {
+                    return false;
+                }
+            }
+            return true;
         } else {
             return super.equals(o);
         }

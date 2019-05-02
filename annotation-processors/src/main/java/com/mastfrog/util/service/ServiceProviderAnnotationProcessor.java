@@ -23,6 +23,9 @@
  */
 package com.mastfrog.util.service;
 
+import com.mastfrog.annotation.AnnotationUtils;
+import com.mastfrog.annotation.registries.AbstractLineOrientedRegistrationAnnotationProcessor;
+import com.mastfrog.annotation.registries.Line;
 import static com.mastfrog.util.service.ServiceProviderAnnotationProcessor.SERVICE_PROVIDER_ANNOTATION_FQN;
 import java.util.List;
 import java.util.Set;

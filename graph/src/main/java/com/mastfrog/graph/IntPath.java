@@ -116,12 +116,28 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
             return path.equals(this);
         } else {
             for (int i = 0; i < size-path.size(); i++) {
-                if (Arrays.equals(items, i, i + path.size(), path.items, 0, path.size())) {
+                if (arraysEquals(items, i, i + path.size(), path.items, 0, path.size())) {
                     return true;
                 }
             }
         }
         return false;
+    }
+
+    public static boolean arraysEquals(int[] a, int aFromIndex, int aToIndex, int[] b, int bFromIndex, int bToIndex) {
+        // JDK 9
+//        return Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex);
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        if (aLength != bLength) {
+            return false;
+        }
+        for (; aFromIndex < aToIndex && bFromIndex < bToIndex; aFromIndex++,bFromIndex++) {
+            if (a[aFromIndex] != b[bFromIndex]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public int indexOf(int val) {

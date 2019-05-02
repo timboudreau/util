@@ -1047,4 +1047,36 @@ public class ArrayUtils {
         }
         return result == 0;
     }
+
+    /**
+     * Placeholder for method in JDK 9 on java.utl.Arrays.
+     *
+     * @param a
+     * @param aFromIndex
+     * @param aToIndex
+     * @param b
+     * @param bFromIndex
+     * @param bToIndex
+     * @return
+     */
+    public static boolean arraysEquals(int[] a, int aFromIndex, int aToIndex, int[] b, int bFromIndex, int bToIndex) {
+        // JDK 9
+//        return Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex);
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        if (aLength != bLength) {
+            System.out.println("Lengths do not match");
+            return false;
+        }
+        for (; aFromIndex < aToIndex && bFromIndex < bToIndex; aFromIndex++,bFromIndex++) {
+            if (a[aFromIndex] != b[bFromIndex]) {
+                System.out.println("a[" + aFromIndex + "] " + a[aFromIndex]  + "!= b[" + bFromIndex + "] " + b[bFromIndex]);
+                return false;
+            } else {
+                System.out.println("ok: a[" + aFromIndex + "] " + a[aFromIndex]  + "!= b[" + bFromIndex + "] " + b[bFromIndex]);
+            }
+        }
+        return true;
+    }
+
 }

@@ -34,8 +34,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.util.Arrays;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 /**
@@ -195,5 +197,20 @@ public class ArrayUtilsTest {
         for (int i = 0; i < foos.length; i++) {
             assertEquals("foo", foos[i]);
         }
+    }
+
+    @Test
+    public void testJDK8ArraysComplexEquals() {
+        int[] a = new int[] {0, 1, 2, 3, 4, 5};
+        int[] b = new int[] {3, 4, 5, 6, 7, 8};
+        assertTrue(ArrayUtils.arraysEquals(a, 3, 6, b, 0, 3));
+        System.out.println("\n next\n");
+        assertFalse(ArrayUtils.arraysEquals(a, 0, 3, b, 0, 3));
+        a[3] = 1;
+        System.out.println("\n next 2\n");
+        assertFalse(ArrayUtils.arraysEquals(a, 3, 6, b, 0, 3));
+        b[0] = 1;
+        System.out.println("\n next 3\n");
+        assertTrue(ArrayUtils.arraysEquals(a, 3, 6, b, 0, 3));
     }
 }

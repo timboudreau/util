@@ -181,6 +181,11 @@ public final class CollectionUtils {
 //        BitSet set = new BitSet(allPossibleValues.size());
 //        return new BitSetSet<>(ComparatorListIndexedImpl.create(allPossibleValues), set);
 //    }
+
+    public static <T> Set<T> weakSet() {
+        return new SimpleWeakSet<>();
+    }
+
     /**
      * Create a single Iterable which concatenates multiple iterables without
      * copying them into another collection, so iteration happens only once.
