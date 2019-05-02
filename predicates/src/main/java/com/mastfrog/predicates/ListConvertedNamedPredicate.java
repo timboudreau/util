@@ -1,7 +1,7 @@
-/* 
+/*
  * The MIT License
  *
- * Copyright 2013 Tim Boudreau.
+ * Copyright 2019 Tim Boudreau.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,44 +21,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util.collections;
 
-import java.util.function.Function;
+package com.mastfrog.predicates;
 
 /**
- * Converts an object from one type to another.
  *
- * @see ConvertList
  * @author Tim Boudreau
  */
-public interface Converter<T, R> extends Function<R,T> {
+final class ListConvertedNamedPredicate<T> extends ListConvertedPredicate<T> implements NamedPredicate<Iterable<T>> {
 
-    public T convert(R r);
-
-    public R unconvert(T t);
+    public ListConvertedNamedPredicate(NamedPredicate<? super T> orig, boolean and) {
+        super(orig, and);
+    }
 
     @Override
-    public default T apply(R r) {
-        return convert(r);
+    public String name() {
+        return ((NamedPredicate<?>) orig).name();
     }
 
-    public default Converter<R,T> reverse() {
-        return new Converter<R,T>() {
-            @Override
-            public R convert(T r) {
-                return Converter.this.unconvert(r);
-            }
-
-            @Override
-            public T unconvert(R t) {
-                return Converter.this.convert(t);
-            }
-
-            @Override
-            public Converter<T, R> reverse() {
-                return Converter.this;
-            }
-        };
+    @Override
+    public String toString() {
+        return name();
     }
-    
+
 }

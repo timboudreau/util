@@ -1,7 +1,7 @@
-/* 
+/*
  * The MIT License
  *
- * Copyright 2013 Tim Boudreau.
+ * Copyright 2019 Tim Boudreau.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,44 +21,42 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util.collections;
+package com.mastfrog.predicates;
 
-import java.util.function.Function;
+import com.mastfrog.abstractions.Named;
+import java.util.Iterator;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
- * Converts an object from one type to another.
+ * A predicate which merges multiple predicates (use the accept() method
+ * to add), and implements NamedPredicate so that it can provide names
+ * if any of its contents implement Named.  The contained predicates can
+ * be iterated.
+ * <p>
+ * While the base Java Predicate type allows for logical chaining, for chaining
+ * large numbers of predicates, this is far more efficient.
+ * </p>
  *
- * @see ConvertList
  * @author Tim Boudreau
  */
-public interface Converter<T, R> extends Function<R,T> {
-
-    public T convert(R r);
-
-    public R unconvert(T t);
+public interface ListPredicate<T> extends Predicate<T>, Consumer<Predicate<? super T>>, NamedPredicate<T>, Iterable<Predicate<? super T>> {
 
     @Override
-    public default T apply(R r) {
-        return convert(r);
+    default String name() {
+        Iterator<?> it = iterator();
+        if (!it.hasNext()) {
+            return "empty";
+        }
+        StringBuilder sb = new StringBuilder();
+        while (it.hasNext()) {
+            String name = Named.findName(it.next());
+            sb.append(name);
+            if (it.hasNext()) {
+                sb.append(" && ");
+            }
+        }
+        return sb.toString();
     }
 
-    public default Converter<R,T> reverse() {
-        return new Converter<R,T>() {
-            @Override
-            public R convert(T r) {
-                return Converter.this.unconvert(r);
-            }
-
-            @Override
-            public T unconvert(R t) {
-                return Converter.this.convert(t);
-            }
-
-            @Override
-            public Converter<T, R> reverse() {
-                return Converter.this;
-            }
-        };
-    }
-    
 }

@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2018 Tim Boudreau.
+ * Copyright 2019 Tim Boudreau.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,44 +21,40 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util.predicate;
 
-import java.util.function.IntPredicate;
+package com.mastfrog.predicates;
+
 import java.util.function.Predicate;
-import java.util.function.ToIntFunction;
+import java.util.function.Supplier;
 
 /**
  *
  * @author Tim Boudreau
  */
-public interface ResettableCopyableIntPredicate<T extends ResettableCopyableIntPredicate<T>> extends IntPredicate, Resettable<T>, Copyable<T> {
+final class Lazy<T> implements Predicate<T> {
 
-    @Override
-    ResettableCopyableIntPredicate<?> or(IntPredicate other);
+    private final Supplier<Predicate<T>> factory;
+    private Predicate<T> value;
 
-    @Override
-    ResettableCopyableIntPredicate<?> and(IntPredicate other);
-
-    @Override
-    ResettableCopyableIntPredicate<?> negate();
-
-    /**
-     * Convert this into an Object-taking predicate which uses the passed
-     * function to resolve an integer.
-     *
-     * @param <R> The type the returned predicate takes
-     * @param func A conversion function
-     * @return A predicate
-     */
-    default <R> Predicate<R> convertedBy(ToIntFunction<R> func) {
-        return new Predicate<R>() {
-            public boolean test(R val) {
-                return ResettableCopyableIntPredicate.this.test(func.applyAsInt(val));
-            }
-
-            public String toString() {
-                return "convert(" + ResettableCopyableIntPredicate.this + " <- " + func + ")";
-            }
-        };
+    public Lazy(Supplier<Predicate<T>> factory) {
+        this.factory = factory;
     }
+
+    @Override
+    public boolean test(T t) {
+        return value().test(t);
+    }
+
+    @Override
+    public String toString() {
+        return value().toString();
+    }
+
+    private Predicate<T> value() {
+        if (this.value == null) {
+            this.value = factory.get();
+        }
+        return value;
+    }
+
 }

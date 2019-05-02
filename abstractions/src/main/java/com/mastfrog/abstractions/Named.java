@@ -34,6 +34,10 @@ public interface Named {
 
     String name();
 
+    default void appendTo(StringBuilder sb) {
+        sb.append(name());
+    }
+
     static Named fromEnumConstant(Enum<?> constant) {
         return constant::name;
     }
@@ -44,5 +48,18 @@ public interface Named {
 
     static <T extends Named> Iterator<String> namesIterator(Iterator<T> iter) {
         return new NamesIterable.NamesIterator<>(iter);
+    }
+
+    static String findName(Object o) {
+        if (o instanceof Named) {
+            return ((Named) o).name();
+        }
+        if (o instanceof Wrapper<?>) {
+            Named n = ((Wrapper<?>) ((Wrapper<?>) o)).find(Named.class);
+            if (n != null) {
+                return n.name();
+            }
+        }
+        return o == null ? "null" : o.toString();
     }
 }

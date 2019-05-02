@@ -1432,7 +1432,9 @@ public final class CollectionUtils {
      *
      * @param c A converter
      * @return A converter
+     * @deprecated Use Converter.reverse()
      */
+    @Deprecated
     public static <T, R> Converter<T, R> reverseConverter(Converter<R, T> c) {
         return new ReverseConverter<>(c);
     }

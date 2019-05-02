@@ -8,6 +8,12 @@
         <relativePath/>
     </parent>
     <artifactId>annotation-processors</artifactId>
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>annotation-tools</artifactId>
+        </dependency>
+    </dependencies>
     <build>
         <plugins>
             <plugin>

@@ -24,6 +24,7 @@
 package com.mastfrog.util.thread;
 
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.function.IntSupplier;
 
 /**
  * Thread-safe, lockless AtomicInteger-like object whose value increments from 0
@@ -31,7 +32,7 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
  *
  * @author Tim Boudreau
  */
-public final class AtomicRoundRobin {
+public final class AtomicRoundRobin implements IntSupplier {
 
     private final int maximum;
     private volatile int currentValue;
@@ -80,11 +81,10 @@ public final class AtomicRoundRobin {
                 return current;
             }
         }
-//        return up.getAndAccumulate(this, currentValue, (i1, i2) -> {
-//            if (i1 == maximum - 1) {
-//                return 0;
-//            }
-//            return i1 + 1;
-//        });
+    }
+
+    @Override
+    public int getAsInt() {
+        return get();
     }
 }

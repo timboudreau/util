@@ -1,7 +1,7 @@
-/* 
+/*
  * The MIT License
  *
- * Copyright 2013 Tim Boudreau.
+ * Copyright 2019 Tim Boudreau.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,44 +21,51 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util.collections;
+package com.mastfrog.predicates;
 
-import java.util.function.Function;
+import com.mastfrog.abstractions.AbstractNamed;
+import com.mastfrog.abstractions.Wrapper;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
- * Converts an object from one type to another.
  *
- * @see ConvertList
  * @author Tim Boudreau
  */
-public interface Converter<T, R> extends Function<R,T> {
+class NamedWrapperPredicate<T> extends AbstractNamed implements NamedPredicate<T>, Wrapper<Predicate<T>> {
 
-    public T convert(R r);
+    private final Supplier<String> name;
+    private final Predicate<T> delegate;
 
-    public R unconvert(T t);
+    NamedWrapperPredicate(Supplier<String> name, Predicate<T> delegate) {
+        this.name = name;
+        this.delegate = delegate;
+        if (name == null) {
+            throw new IllegalArgumentException("Name null");
+        }
+        if (delegate == null) {
+            throw new IllegalArgumentException("delegate null");
+        }
+    }
+
+    NamedWrapperPredicate(String name, Predicate<T> delegate) {
+        this.name = () -> name;
+        this.delegate = delegate;
+    }
 
     @Override
-    public default T apply(R r) {
-        return convert(r);
+    public String name() {
+        return name.get();
     }
 
-    public default Converter<R,T> reverse() {
-        return new Converter<R,T>() {
-            @Override
-            public R convert(T r) {
-                return Converter.this.unconvert(r);
-            }
-
-            @Override
-            public T unconvert(R t) {
-                return Converter.this.convert(t);
-            }
-
-            @Override
-            public Converter<T, R> reverse() {
-                return Converter.this;
-            }
-        };
+    @Override
+    public boolean test(T t) {
+        return delegate.test(t);
     }
-    
+
+    @Override
+    public Predicate<T> wrapped() {
+        return delegate;
+    }
+
 }

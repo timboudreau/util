@@ -21,8 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util.predicate;
+package com.mastfrog.predicates.pattern;
 
+import com.mastfrog.abstractions.Copyable;
+import com.mastfrog.abstractions.Resettable;
+import com.mastfrog.function.BytePredicate;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -52,7 +55,7 @@ import java.util.Set;
  *
  * @author Tim Boudreau
  */
-public final class SequenceBytePredicate implements BytePredicate, Resettable<SequenceBytePredicate>, Copyable<SequenceBytePredicate> {
+public final class SequenceBytePredicate implements BytePredicate, Resettable, Copyable<SequenceBytePredicate> {
 
     private final SequenceBytePredicate parent;
     private final BytePredicate test;
@@ -230,9 +233,8 @@ public final class SequenceBytePredicate implements BytePredicate, Resettable<Se
      * Reset any state in this predicate, before using it against a new sequence
      * matchingAnyOf calls to test().
      */
-    public SequenceBytePredicate reset() {
+    public void reset() {
         clear();
-        return this;
     }
 
     public boolean isPartiallyMatched() {

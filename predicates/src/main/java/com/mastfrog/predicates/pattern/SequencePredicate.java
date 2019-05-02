@@ -21,8 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util.predicate;
+package com.mastfrog.predicates.pattern;
 
+import com.mastfrog.abstractions.Copyable;
+import com.mastfrog.abstractions.Resettable;
 import com.mastfrog.util.preconditions.Checks;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -285,9 +287,8 @@ public final class SequencePredicate<T> implements Predicate<T>,
      * Reset any state in this predicate, before using it against a new sequence
      * matchingAnyOf calls to test().
      */
-    public SequencePredicate<T> reset() {
+    public void reset() {
         clear();
-        return this;
     }
 
     public boolean isPartiallyMatched() {
@@ -379,9 +380,8 @@ public final class SequencePredicate<T> implements Predicate<T>,
         }
 
         @Override
-        public NegatedSequencePredicate<T> reset() {
+        public void reset() {
             owner.reset();
-            return this;
         }
 
         @Override
@@ -451,12 +451,11 @@ public final class SequencePredicate<T> implements Predicate<T>,
         }
 
         @Override
-        public LogicalSequencePredicate<T> reset() {
-            if (other instanceof Resettable<?>) {
-                ((Resettable<?>) other).reset();
+        public void reset() {
+            if (other instanceof Resettable) {
+                ((Resettable) other).reset();
             }
             owner.reset();
-            return this;
         }
 
         @Override

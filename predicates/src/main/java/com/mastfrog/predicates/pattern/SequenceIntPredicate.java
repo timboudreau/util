@@ -21,12 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util.predicate;
+package com.mastfrog.predicates.pattern;
 
-import java.util.Arrays;
-import java.util.HashSet;
+import com.mastfrog.predicates.integer.IntPredicates;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntPredicate;
 
@@ -62,7 +60,7 @@ public final class SequenceIntPredicate implements ResettableCopyableIntPredicat
     private boolean lastResult;
 
     SequenceIntPredicate(int val) {
-        this(predicate(val));
+        this(IntPredicates.matching(val));
     }
 
     SequenceIntPredicate(IntPredicate test) {
@@ -70,7 +68,7 @@ public final class SequenceIntPredicate implements ResettableCopyableIntPredicat
     }
 
     SequenceIntPredicate(SequenceIntPredicate parent, int val) {
-        this(parent, predicate(val));
+        this(parent, IntPredicates.matching(val));
     }
 
     SequenceIntPredicate(SequenceIntPredicate parent, IntPredicate test) {
@@ -139,7 +137,10 @@ public final class SequenceIntPredicate implements ResettableCopyableIntPredicat
      * @return A predicate
      */
     public static SequenceIntPredicate matchingAnyOf(int val, int... moreVals) {
-        return new SequenceIntPredicate(predicate(val, moreVals));
+        if (moreVals.length == 0) {
+            return matching(val);
+        }
+        return new SequenceIntPredicate(IntPredicates.anyOf(val, moreVals));
     }
 
     /**
@@ -177,7 +178,7 @@ public final class SequenceIntPredicate implements ResettableCopyableIntPredicat
      * @return A new predicate
      */
     public SequenceIntPredicate then(int val) {
-        return new SequenceIntPredicate(this, predicate(val));
+        return new SequenceIntPredicate(this, IntPredicates.matching(val));
     }
 
     /**
@@ -190,7 +191,7 @@ public final class SequenceIntPredicate implements ResettableCopyableIntPredicat
      * @return A new predicate
      */
     public SequenceIntPredicate then(int val, int... moreVals) {
-        return new SequenceIntPredicate(this, predicate(val, moreVals));
+        return new SequenceIntPredicate(this, IntPredicates.anyOf(val, moreVals));
     }
 
     @Override
@@ -198,7 +199,7 @@ public final class SequenceIntPredicate implements ResettableCopyableIntPredicat
         if (parent == null) {
             return test.toString();
         }
-        return "Seq{" + test.toString() + " <- " + parent.toString() + "}";
+        return "Seq{" + parent.toString() + " -> " + test.toString() + "}";
     }
 
     private boolean reallyTest(int value) {
@@ -245,9 +246,9 @@ public final class SequenceIntPredicate implements ResettableCopyableIntPredicat
      * Reset any state in this predicate, before using it against a new sequence
      * matchingAnyOf calls to test().
      */
-    public SequenceIntPredicate reset() {
+    @Override
+    public void reset() {
         clear();
-        return this;
     }
 
     public boolean isPartiallyMatched() {
@@ -339,31 +340,6 @@ public final class SequenceIntPredicate implements ResettableCopyableIntPredicat
         return true;
     }
 
-    static IntPredicate predicate(int first, int... types) {
-        int[] vals = combine(first, types);
-        Arrays.sort(vals);
-        return new ArrayPredicate(vals);
-    }
-
-    static int[] combine(int prepend, int... more) {
-        int[] vals = new int[more.length + 1];
-        vals[0] = prepend;
-        System.arraycopy(more, 0, vals, 1, more.length);
-        assert noDuplicates(vals) : "Duplicate values in " + Arrays.toString(vals);
-        return vals;
-    }
-
-    private static boolean noDuplicates(int[] vals) {
-        Set<Integer> all = new HashSet<>();
-        for (int v : vals) {
-            if (all.contains(v)) {
-                return false;
-            }
-            all.add(v);
-        }
-        return true;
-    }
-
     private static final class NegatingImpl implements ResettableCopyableIntPredicate<NegatingImpl> {
 
         private final ResettableCopyableIntPredicate<?> delegate;
@@ -378,9 +354,8 @@ public final class SequenceIntPredicate implements ResettableCopyableIntPredicat
         }
 
         @Override
-        public NegatingImpl reset() {
+        public void reset() {
             delegate.reset();
-            return this;
         }
 
         @Override
@@ -478,12 +453,11 @@ public final class SequenceIntPredicate implements ResettableCopyableIntPredicat
         }
 
         @Override
-        public LogicalPredicateImpl reset() {
+        public void reset() {
             delegate.reset();
             if (other instanceof ResettableCopyableIntPredicate<?>) {
                 ((ResettableCopyableIntPredicate<?>) other).reset();
             }
-            return this;
         }
 
         @Override
@@ -519,57 +493,6 @@ public final class SequenceIntPredicate implements ResettableCopyableIntPredicat
                 return false;
             }
             if (!Objects.equals(this.other, other.other)) {
-                return false;
-            }
-            return true;
-        }
-    }
-
-    private static class ArrayPredicate implements IntPredicate {
-
-        private final int[] uniqueSortedValues;
-
-        public ArrayPredicate(int[] vals) {
-            this.uniqueSortedValues = vals;
-        }
-
-        @Override
-        public boolean test(int val) {
-            if (uniqueSortedValues.length == 1) {
-                return uniqueSortedValues[0] == val;
-            }
-            return Arrays.binarySearch(uniqueSortedValues, val) >= 0;
-        }
-
-        @Override
-        public String toString() {
-            if (uniqueSortedValues.length == 1) {
-                return "match(" + uniqueSortedValues[0] + ")";
-            } else {
-                return "match(" + Arrays.toString(uniqueSortedValues) + ")";
-            }
-        }
-
-        @Override
-        public int hashCode() {
-            int hash = 3;
-            hash = 79 * hash + Arrays.hashCode(this.uniqueSortedValues);
-            return hash;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            final ArrayPredicate other = (ArrayPredicate) obj;
-            if (!Arrays.equals(this.uniqueSortedValues, other.uniqueSortedValues)) {
                 return false;
             }
             return true;

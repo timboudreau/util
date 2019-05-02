@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util.predicate;
+package com.mastfrog.predicates.pattern;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,56 +30,57 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Test;
 
-public class SequenceBytePredicateTest {
+public class SequenceIntPredicateTest {
 
     @Test
     public void testSequences() {
-        SequenceBytePredicate pred = SequenceBytePredicate.matching((byte) 2).then((byte) 4).then((byte) 6);
-        testOne((byte) 6, pred, (byte) 2, (byte) 4, (byte) 6, (byte) 8);
-        testOne((byte) 6, pred, (byte) 2, (byte) 2, (byte) 2, (byte) 4, (byte) 6, (byte) 8);
-        testOne((byte) 6, pred, (byte) 0, (byte) 1, (byte) 2, (byte) 4, (byte) 6, (byte) 8);
-        testOne(-1, pred, (byte) 0, (byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 6, (byte) 8);
-        testOne((byte) 6, pred, (byte) 2, (byte) 4, (byte) 6, (byte) 6, (byte) 6, (byte) 6);
-        testOne((byte) 6, pred, (byte) 0, (byte) 5, (byte) 2, (byte) 4, (byte) 3, (byte) 2, (byte) 4, (byte) 6, (byte) 8, (byte) 2);
-        testOne((byte) 6, pred, (byte) 4, (byte) 2, (byte) 4, (byte) 2, (byte) 2, (byte) 4, (byte) 2, (byte) 4, (byte) 2, (byte) 2, (byte) 4, (byte) 4, (byte) 2, (byte) 4, (byte) 6, (byte) 2, (byte) 4, (byte) 10);
-        testOne(-1, pred, (byte) 0, (byte) 1, (byte) 2, (byte) 4, (byte) 2, (byte) 4, (byte) 2, (byte) 4, (byte) 4, (byte) 2);
-        testOne(-1, pred, (byte) 6, (byte) 2, (byte) 4);
+        SequenceIntPredicate pred = SequenceIntPredicate.matching(2).then(4).then(6);
+        testOne(6, pred, 2, 4, 6, 8);
+        testOne(6, pred, 2, 2, 2, 4, 6, 8);
+        testOne(6, pred, 2, 2, 2, 2, 4, 6, 8);
+        testOne(6, pred, 0, 1, 2, 4, 6, 8);
+        testOne(-1, pred, 0, 1, 2, 3, 4, 6, 8);
+        testOne(6, pred, 2, 4, 6, 6, 6, 6);
+        testOne(6, pred, 0, 5, 2, 4, 3, 2, 4, 6, 8, 2);
+        testOne(6, pred, 4, 2, 4, 2, 2, 4, 2, 4, 2, 2, 4, 4, 2, 4, 6, 2, 4, 10);
+        testOne(-1, pred, 0, 1, 2, 4, 2, 4, 2, 4, 4, 2);
+        testOne(-1, pred, 6, 2, 4);
 
         pred.reset();
         assertFalse(pred.isPartiallyMatched());
-        pred.test((byte) 2);
+        pred.test(2);
         assertTrue(pred.isPartiallyMatched());
-        pred.test((byte) 3);
+        pred.test(3);
         assertFalse(pred.isPartiallyMatched());
-        pred.test((byte) 2);
-        pred.test((byte) 4);
+        pred.test(2);
+        pred.test(4);
         assertTrue(pred.isPartiallyMatched());
-        assertTrue(pred.test((byte) 6));
+        assertTrue(pred.test(6));
         assertFalse(pred.isPartiallyMatched());
 
-        pred = pred.then((byte) 1).then((byte) 1).then((byte) 1);
-        assertFalse(pred.test((byte) 1));
-        pred.test((byte) 2);
+        pred = pred.then(1).then(1).then(1);
+        assertFalse(pred.test(1));
+        pred.test(2);
         assertTrue(pred.isPartiallyMatched());
-        assertFalse(pred.test((byte) 4));
+        assertFalse(pred.test(4));
         assertTrue(pred.isPartiallyMatched());
-        assertFalse(pred.test((byte) 6));
+        assertFalse(pred.test(6));
         assertTrue(pred.isPartiallyMatched());
-        assertFalse(pred.test((byte) 1));
+        assertFalse(pred.test(1));
         assertTrue(pred.isPartiallyMatched());
-        assertFalse(pred.test((byte) 1));
+        assertFalse(pred.test(1));
         assertTrue(pred.isPartiallyMatched());
-        assertTrue(pred.test((byte) 1));
+        assertTrue(pred.test(1));
         assertFalse(pred.isPartiallyMatched());
     }
 
-    private void testOne(int shouldPassAfterFirst, SequenceBytePredicate pred, byte... vals) {
+    private void testOne(int shouldPassAfterFirst, SequenceIntPredicate pred, int... vals) {
         pred = pred.copy();
         pred.reset();
         boolean matched = false;
-        List<Byte> seen = new ArrayList<>();
+        List<Integer> seen = new ArrayList<>();
         for (int i = 0; i < vals.length; i++) {
-            byte v = vals[i];
+            int v = vals[i];
             seen.add(v);
             boolean result = pred.test(v);
             if (v == shouldPassAfterFirst && !matched) {

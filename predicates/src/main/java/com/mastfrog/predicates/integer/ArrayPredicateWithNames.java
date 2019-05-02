@@ -1,7 +1,7 @@
-/* 
+/*
  * The MIT License
  *
- * Copyright 2013 Tim Boudreau.
+ * Copyright 2019 Tim Boudreau.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,44 +21,43 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util.collections;
 
-import java.util.function.Function;
+package com.mastfrog.predicates.integer;
+
+import java.util.function.IntFunction;
 
 /**
- * Converts an object from one type to another.
  *
- * @see ConvertList
  * @author Tim Boudreau
  */
-public interface Converter<T, R> extends Function<R,T> {
+class ArrayPredicateWithNames extends ArrayPredicate {
 
-    public T convert(R r);
+    private final IntFunction<String> stringifier;
 
-    public R unconvert(T t);
+    ArrayPredicateWithNames(IntFunction<String> stringifier, int[] vals, boolean negated) {
+        super(vals, negated);
+        this.stringifier = stringifier;
+    }
 
     @Override
-    public default T apply(R r) {
-        return convert(r);
+    public String toString() {
+        if (vals.length == 1) {
+            return (negated ? "!" : "") + "match(" + stringifier.apply(vals[0]) + ")";
+        } else {
+            StringBuilder sb = new StringBuilder((negated ? "!" : "") + "match(");
+            for (int i = 0; i < vals.length; i++) {
+                sb.append(stringifier.apply(vals[i]));
+                if (i != vals.length-1) {
+                    sb.append(',');
+                }
+            }
+            return sb.append(')').toString();
+        }
     }
 
-    public default Converter<R,T> reverse() {
-        return new Converter<R,T>() {
-            @Override
-            public R convert(T r) {
-                return Converter.this.unconvert(r);
-            }
-
-            @Override
-            public T unconvert(R t) {
-                return Converter.this.convert(t);
-            }
-
-            @Override
-            public Converter<T, R> reverse() {
-                return Converter.this;
-            }
-        };
+    @Override
+    public EnhIntPredicate negate() {
+        return new ArrayPredicateWithNames(stringifier, vals, !negated);
     }
-    
+
 }

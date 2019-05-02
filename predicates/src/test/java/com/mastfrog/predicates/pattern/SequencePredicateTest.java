@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util.predicate;
+package com.mastfrog.predicates.pattern;
 
 import java.util.ArrayList;
 import java.util.List;

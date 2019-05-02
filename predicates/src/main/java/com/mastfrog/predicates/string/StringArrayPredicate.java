@@ -1,7 +1,7 @@
-/* 
+/*
  * The MIT License
  *
- * Copyright 2013 Tim Boudreau.
+ * Copyright 2019 Tim Boudreau.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,44 +21,41 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util.collections;
 
-import java.util.function.Function;
+package com.mastfrog.predicates.string;
+
+import java.util.Arrays;
+import java.util.function.Predicate;
 
 /**
- * Converts an object from one type to another.
  *
- * @see ConvertList
  * @author Tim Boudreau
  */
-public interface Converter<T, R> extends Function<R,T> {
+final class StringArrayPredicate implements Predicate<String> {
 
-    public T convert(R r);
+    private final boolean negated;
+    private final String[] vals;
 
-    public R unconvert(T t);
+    StringArrayPredicate(boolean negated, String[] vals) {
+        this.negated = negated;
+        this.vals = vals;
+    }
 
     @Override
-    public default T apply(R r) {
-        return convert(r);
+    public boolean test(String t) {
+        boolean result = Arrays.binarySearch(vals, t) >= 0;
+        return negated ? !result : result;
     }
 
-    public default Converter<R,T> reverse() {
-        return new Converter<R,T>() {
-            @Override
-            public R convert(T r) {
-                return Converter.this.unconvert(r);
-            }
-
-            @Override
-            public T unconvert(R t) {
-                return Converter.this.convert(t);
-            }
-
-            @Override
-            public Converter<T, R> reverse() {
-                return Converter.this;
-            }
-        };
+    @Override
+    public Predicate<String> negate() {
+        return new StringArrayPredicate(!negated, vals);
     }
-    
+
+    @Override
+    public String toString() {
+        String pfx = negated ? "!match(" : "match(";
+        return pfx + (vals.length == 1 ? vals[0] : Arrays.toString(vals)) + ")";
+    }
+
 }

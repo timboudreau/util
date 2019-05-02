@@ -28,12 +28,14 @@
         <module>range</module>
         <module>bits</module>
         <module>graph</module>
+        <module>predicates</module>
     </modules>
-    <url>https://github.com/timboudreau/numble</url>
+    <url>https://github.com/timboudreau/annotation-tools</url>
+    <inceptionYear>2010</inceptionYear>
     <scm>
         <url>https://github.com/timboudreau/acteur</url>
-        <connection>scm:git:https://github.com/timboudreau/numble.git</connection>
-        <developerConnection>git@github.com/timboudreau/numble.git</developerConnection>
+        <connection>scm:git:https://github.com/timboudreau/annotation-tools.git</connection>
+        <developerConnection>git@github.com/timboudreau/annotation-tools.git</developerConnection>
     </scm>
     <licenses>
         <license>

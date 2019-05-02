@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2018 Tim Boudreau.
+ * Copyright 2019 Tim Boudreau.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,19 +21,53 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util.predicate;
+package com.mastfrog.predicates;
+
+import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 
 /**
- * Convenience interface for things that can be copied.
  *
  * @author Tim Boudreau
  */
-public interface Copyable<T extends Copyable<T>> {
+final class ThreadLocalCounter implements Consumer<IntConsumer> {
 
-    /**
-     * Create a copy of this object that does not share its internal state.
-     *
-     * @return A copy
-     */
-    public T copy();
+    private final ThreadLocal<Integer> value = new ThreadLocal<Integer>() {
+        @Override
+        protected Integer initialValue() {
+            return 0;
+        }
+    };
+
+    int value() {
+        return value.get();
+    }
+
+    int increment() {
+        int val = value.get();
+        value.set(++val);
+        return val;
+    }
+
+    void decrement() {
+        int val = value.get() - 1;
+        if (val == 0) {
+            value.remove();
+        } else {
+            value.set(val);
+        }
+    }
+
+    void run(IntConsumer c) {
+        try {
+            c.accept(increment());
+        } finally {
+            decrement();
+        }
+    }
+
+    @Override
+    public void accept(IntConsumer t) {
+        run(t);
+    }
 }

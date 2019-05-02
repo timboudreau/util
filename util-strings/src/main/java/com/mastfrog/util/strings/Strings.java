@@ -658,6 +658,40 @@ public final class Strings {
     }
 
     /**
+     * Convenience method for joining strings delimited by ", ".
+     *
+     * @param parts Objects to invoke toString() on and concatenate together
+     * @return A string
+     */
+    public static String commas(Iterable<?> parts) {
+        return join(", ", parts);
+    }
+
+    /**
+     * Convenience method for joining strings delimited by ", ".
+     *
+     * @param a The first object
+     * @param b More objects
+     * @return A string
+     */
+    public static String commas(Object a, Object... more) {
+        if (a instanceof Iterable<?> && more.length == 0) {
+            return join(", ", (Iterable<?>) a);
+        }
+        List<Object> all = new ArrayList<>(more.length + 1);
+        return commas(all);
+    }
+
+    public static <T> void concatenate(String delimiter, Iterable<T> iter, StringBuilder into, Function<? super T, String> toString) {
+        for (Iterator<T> it = iter.iterator(); it.hasNext();) {
+            into.append(toString.apply(it.next()));
+            if (it.hasNext()) {
+                into.append(delimiter);
+            }
+        }
+    }
+
+    /**
      * Join strings using the passed delimiter.
      *
      * @param delim A delimiter
@@ -1189,7 +1223,6 @@ public final class Strings {
     public static String literalReplaceAllIgnoreCase(String pattern, String replacement, String in) {
         return literalReplaceAll(pattern, replacement, in, true).toString();
     }
-
 
     /**
      * Replace all occurrances of a pattern in a character sequence without the

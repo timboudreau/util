@@ -7,7 +7,7 @@ package com.mastfrog.abstractions;
  *
  * @author Tim Boudreau
  */
-interface Wrapper<W> extends Named {
+public interface Wrapper<W> extends Named {
 
     /**
      * Get the object wrapped by this one.

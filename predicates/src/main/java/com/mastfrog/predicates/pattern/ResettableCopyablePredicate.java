@@ -21,15 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util.predicate;
+package com.mastfrog.predicates.pattern;
 
+import com.mastfrog.abstractions.Copyable;
+import com.mastfrog.abstractions.Resettable;
 import java.util.function.Predicate;
 
 /**
  *
  * @author Tim Boudreau
  */
-public interface ResettableCopyablePredicate<T, R extends ResettableCopyablePredicate<T, R>> extends Predicate<T>, Resettable<R>, Copyable<R> {
+public interface ResettableCopyablePredicate<T, R extends ResettableCopyablePredicate<T, R>> extends Predicate<T>, Resettable, Copyable<R> {
 
     @Override
     public ResettableCopyablePredicate<T, ?> or(Predicate<? super T> other);
