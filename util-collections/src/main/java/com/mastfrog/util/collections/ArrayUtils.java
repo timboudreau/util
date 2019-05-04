@@ -1065,18 +1065,88 @@ public class ArrayUtils {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         if (aLength != bLength) {
-            System.out.println("Lengths do not match");
             return false;
         }
-        for (; aFromIndex < aToIndex && bFromIndex < bToIndex; aFromIndex++,bFromIndex++) {
+        for (; aFromIndex < aToIndex && bFromIndex < bToIndex; aFromIndex++, bFromIndex++) {
             if (a[aFromIndex] != b[bFromIndex]) {
-                System.out.println("a[" + aFromIndex + "] " + a[aFromIndex]  + "!= b[" + bFromIndex + "] " + b[bFromIndex]);
                 return false;
-            } else {
-                System.out.println("ok: a[" + aFromIndex + "] " + a[aFromIndex]  + "!= b[" + bFromIndex + "] " + b[bFromIndex]);
             }
         }
         return true;
     }
 
+    /**
+     * Create a new array with the passed value at position 0
+     * and the remainder after.
+     *
+     * @param first The element to prepend
+     * @param more The rest of the resulting array
+     * @return An array
+     */
+    public static String[] prepend(String first, String... more) {
+        String[] result = new String[more.length + 1];
+        System.arraycopy(more, 0, result, 1, more.length);
+        result[0] = first;
+        return result;
+    }
+
+    /**
+     * Create a new array with the passed value at position 0
+     * and the remainder after.
+     *
+     * @param first The element to prepend
+     * @param more The rest of the resulting array
+     * @return An array
+     */
+    public static int[] prepend(int first, int... more) {
+        int[] result = new int[more.length + 1];
+        System.arraycopy(more, 0, result, 1, more.length);
+        result[0] = first;
+        return result;
+    }
+
+    /**
+     * Create a new array with the passed value at position 0
+     * and the remainder after.
+     *
+     * @param first The element to prepend
+     * @param more The rest of the resulting array
+     * @return An array
+     */
+    public static long[] prepend(long first, long... more) {
+        long[] result = new long[more.length + 1];
+        System.arraycopy(more, 0, result, 1, more.length);
+        result[0] = first;
+        return result;
+    }
+
+    /**
+     * Create a new array with the passed value at position 0
+     * and the remainder after.
+     *
+     * @param first The element to prepend
+     * @param more The rest of the resulting array
+     * @return An array
+     */
+    public static short[] prepend(short first, short... more) {
+        short[] result = new short[more.length + 1];
+        System.arraycopy(more, 0, result, 1, more.length);
+        result[0] = first;
+        return result;
+    }
+
+    /**
+     * Create a new array with the passed value at position 0
+     * and the remainder after.
+     *
+     * @param first The element to prepend
+     * @param more The rest of the resulting array
+     * @return An array
+     */
+    public static byte[] prepend(byte first, byte... more) {
+        byte[] result = new byte[more.length + 1];
+        System.arraycopy(more, 0, result, 1, more.length);
+        result[0] = first;
+        return result;
+    }
 }

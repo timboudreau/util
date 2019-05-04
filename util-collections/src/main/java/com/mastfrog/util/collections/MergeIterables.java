@@ -1,5 +1,6 @@
 package com.mastfrog.util.collections;
 
+import com.mastfrog.util.strings.Strings;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -48,6 +49,11 @@ final class MergeIterables<T> implements ConcatenatedIterables<T> {
             iterators.add(iterable.iterator());
         }
         return new MergeIterator<T>(iterators);
+    }
+
+    @Override
+    public String toString() {
+        return Strings.join(", ", this);
     }
 
     private static final class MergeIterator<T> implements Iterator<T> {

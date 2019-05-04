@@ -49,7 +49,7 @@ public class VersionInfo implements Comparable<VersionInfo> {
     static final DateTimeFormatter ISO_INSTANT = new DateTimeFormatterBuilder()
             .parseCaseInsensitive()
             .appendInstant()
-//            .parseLenient()
+            //            .parseLenient()
             .toFormatter(Locale.US);
 
     private static final DateTimeFormatter GIT_LOG_FORMAT = new DateTimeFormatterBuilder()
@@ -125,11 +125,15 @@ public class VersionInfo implements Comparable<VersionInfo> {
                     } else {
                         Properties props = new Properties();
                         props.load(in);
-                        version = props.getProperty(artifactId + ".version");
-                        shortCommitHash = props.getProperty(artifactId + ".shortCommitHash");
-                        longCommitHash = props.getProperty(artifactId + ".longCommitHash");
-                        dirty = "dirty".equals(props.getProperty("repoStatus"));
-                        String date = props.getProperty(artifactId + ".commitDate");
+                        System.out.println("LOADED PROPERTIES " + props);
+
+                        version = props.getProperty(artifactId + ".version", props.getProperty("version"));
+                        shortCommitHash = props.getProperty(artifactId + ".shortCommitHash", props.getProperty("shortCommitHash"));
+                        longCommitHash = props.getProperty(artifactId + ".longCommitHash", props.getProperty("longCommitHash"));
+                        dirty = "dirty".equals(props.getProperty(artifactId + ".repoStatus", props.getProperty("repoStatus")));
+                        String isoDate = props.getProperty(artifactId + ".commitDateISO", props.getProperty("commitDateISO"));
+                        String date = isoDate != null ? isoDate : props.getProperty(artifactId + ".commitDate", props.getProperty("commitDate"));
+                        System.out.println("DATE: " + date);
                         Exception first = null;
                         try {
                             if (date != null) {
@@ -138,8 +142,18 @@ public class VersionInfo implements Comparable<VersionInfo> {
                                     OffsetDateTime odt = OffsetDateTime.parse(date, ISO_INSTANT);
                                     commitDate = ZonedDateTime.from(odt).withZoneSameInstant(GMT);
                                 } catch (DateTimeParseException ex) {
-                                    commitDate = ZonedDateTime.parse(date, GIT_LOG_FORMAT);
                                     first = ex;
+                                    try {
+                                        commitDate = ZonedDateTime.parse(date, GIT_LOG_FORMAT);
+                                    } catch (DateTimeParseException ex1) {
+                                        if (first != null) {
+                                            first.addSuppressed(ex1);
+                                        } else {
+                                            first = ex1;
+                                        }
+                                        commitDate = ZonedDateTime.ofInstant(
+                                                Instant.parse(date), ZoneId.systemDefault());
+                                    }
                                 }
                             }
                         } catch (Exception e) {

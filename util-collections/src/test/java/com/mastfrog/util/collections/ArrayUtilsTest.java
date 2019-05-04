@@ -204,13 +204,10 @@ public class ArrayUtilsTest {
         int[] a = new int[] {0, 1, 2, 3, 4, 5};
         int[] b = new int[] {3, 4, 5, 6, 7, 8};
         assertTrue(ArrayUtils.arraysEquals(a, 3, 6, b, 0, 3));
-        System.out.println("\n next\n");
         assertFalse(ArrayUtils.arraysEquals(a, 0, 3, b, 0, 3));
         a[3] = 1;
-        System.out.println("\n next 2\n");
         assertFalse(ArrayUtils.arraysEquals(a, 3, 6, b, 0, 3));
         b[0] = 1;
-        System.out.println("\n next 3\n");
         assertTrue(ArrayUtils.arraysEquals(a, 3, 6, b, 0, 3));
     }
 }
