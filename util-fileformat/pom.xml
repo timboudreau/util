@@ -8,6 +8,7 @@
         <relativePath/>
     </parent>
     <artifactId>util-fileformat</artifactId>
+    <url>https://github.com/timboudreau/util</url>
     <description>Library with no dependencies which supports writing JSON and
         (repeatably, with no generated comments) Properties file formats
     </description>
@@ -29,9 +30,10 @@
     </issueManagement>
     <scm>
         <url>https://github.com/timboudreau/util</url>
-        <connection>scm:git:https://github.com/timboudreau/util.git</connection>
-        <developerConnection>git@github.com/timboudreau/util.git</developerConnection>
+        <connection>scm:git:https://github.com/timboudreau/util</connection>
+        <developerConnection>git@github.com/timboudreau/util</developerConnection>
     </scm>
+    
     <organization>
         <name>Mastfrog Technologies</name>
         <url>https://mastfrog.com</url>
@@ -39,7 +41,8 @@
     <licenses>
         <license>
             <name>MIT</name>
-            <url>http://opensource.org/licenses/MIT</url>
+            <url>https://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
         </license>
     </licenses>
     <developers>

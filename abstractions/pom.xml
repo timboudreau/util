@@ -7,12 +7,25 @@
         <version>2.5.0-dev</version>
     </parent>
     <artifactId>abstractions</artifactId>
-    <organization>
-        <name>Mastfrog Technologies</name>
-        <url>https://mastfrog.com</url>
-    </organization>
+    <url>https://github.com/timboudreau/util</url>
+    <scm>
+        <url>https://github.com/timboudreau/util</url>
+        <connection>scm:git:https://github.com/timboudreau/util</connection>
+        <developerConnection>git@github.com/timboudreau/util</developerConnection>
+    </scm>
     <issueManagement>
         <system>Github</system>
         <url>https://github.com/timboudreau/util/issues</url>
-    </issueManagement><packaging>jar</packaging>
+    </issueManagement>
+    <licenses>
+        <license>
+            <name>MIT</name>
+            <url>https://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses><organization>
+        <name>Mastfrog Technologies</name>
+        <url>https://mastfrog.com</url>
+    </organization>
+    
 </project>

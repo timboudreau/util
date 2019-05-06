@@ -8,42 +8,43 @@
         <relativePath/>
     </parent>
     <artifactId>util</artifactId>
+    <url>https://github.com/timboudreau/util</url>
     <name>Utilities</name>
     <dependencies>
         <dependency>
-            <groupId>com.mastfrog</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>util-strings</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.mastfrog</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>util-misc</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.mastfrog</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>util-net</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.mastfrog</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>util-streams</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.mastfrog</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>util-preconditions</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.mastfrog</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>util-net</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.mastfrog</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>util-collections</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.mastfrog</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>util-time</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.mastfrog</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>util-function</artifactId>
         </dependency>
     </dependencies>
@@ -67,9 +68,10 @@
     </issueManagement>
     <scm>
         <url>https://github.com/timboudreau/util</url>
-        <connection>scm:git:https://github.com/timboudreau/util.git</connection>
-        <developerConnection>git@github.com/timboudreau/util.git</developerConnection>
+        <connection>scm:git:https://github.com/timboudreau/util</connection>
+        <developerConnection>git@github.com/timboudreau/util</developerConnection>
     </scm>
+    
     <organization>
         <name>Mastfrog Technologies</name>
         <url>https://mastfrog.com</url>
@@ -77,7 +79,8 @@
     <licenses>
         <license>
             <name>MIT</name>
-            <url>http://opensource.org/licenses/MIT</url>
+            <url>https://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
         </license>
     </licenses>
     <developers>

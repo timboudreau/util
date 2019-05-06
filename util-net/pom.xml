@@ -8,9 +8,10 @@
         <relativePath/>
     </parent>
     <artifactId>util-net</artifactId>
+    <url>https://github.com/timboudreau/util</url>
     <dependencies>
         <dependency>
-            <groupId>com.mastfrog</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>util-preconditions</artifactId>
         </dependency>
     </dependencies>
@@ -21,14 +22,16 @@
     <licenses>
         <license>
             <name>MIT</name>
-            <url>http://opensource.org/licenses/MIT</url>
+            <url>https://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
         </license>
     </licenses>
     <scm>
-        <connection>scm:git:https://github.com/timboudreau/util.git</connection>
         <url>https://github.com/timboudreau/util</url>
-        <developerConnection>scm:git:git@github.com:timboudreau/util.git</developerConnection>
+        <connection>scm:git:https://github.com/timboudreau/util</connection>
+        <developerConnection>git@github.com/timboudreau/util</developerConnection>
     </scm>
+    
     <organization>
         <name>Mastfrog Technologies</name>
         <url>https://mastfrog.com</url>

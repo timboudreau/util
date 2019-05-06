@@ -8,14 +8,27 @@
         <relativePath/>
     </parent>
     <artifactId>bits</artifactId>
-    <organization>
-        <name>Mastfrog Technologies</name>
-        <url>https://mastfrog.com</url>
-    </organization>
+    <url>https://github.com/timboudreau/util</url>
+    <scm>
+        <url>https://github.com/timboudreau/util</url>
+        <connection>scm:git:https://github.com/timboudreau/util</connection>
+        <developerConnection>git@github.com/timboudreau/util</developerConnection>
+    </scm>
     <issueManagement>
         <system>Github</system>
         <url>https://github.com/timboudreau/util/issues</url>
-    </issueManagement><build>
+    </issueManagement>
+    <licenses>
+        <license>
+            <name>MIT</name>
+            <url>https://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses><organization>
+        <name>Mastfrog Technologies</name>
+        <url>https://mastfrog.com</url>
+    </organization>
+    <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -32,7 +45,7 @@
     </build>
     <dependencies>
         <dependency>
-            <groupId>com.mastfrog</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>abstractions</artifactId>
         </dependency>
     </dependencies>
