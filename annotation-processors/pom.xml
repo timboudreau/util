@@ -56,7 +56,10 @@
             </plugin>
         </plugins>
     </build>
-    <url>https://github.com/timboudreau/util</url>
+    <issueManagement>
+        <system>Github</system>
+        <url>https://github.com/timboudreau/util/issues</url>
+    </issueManagement>
     <scm>
         <url>https://github.com/timboudreau/util</url>
         <connection>scm:git:https://github.com/timboudreau/util.git</connection>

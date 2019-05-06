@@ -40,9 +40,19 @@ import org.junit.Test;
  */
 public class SimpleWeakSetTest {
 
+    private void forceGc(Reference<?> ref) throws InterruptedException {
+        for (int i = 0; i < 25; i++) {
+            if (ref.get() == null) {
+                break;
+            }
+            System.gc();
+            System.runFinalization();
+            Thread.sleep(20);
+        }
+    }
+
     @Test
     public void testSomeMethod() throws InterruptedException {
-
         Thing thing1 = new Thing("foo");
         Thing thing2 = new Thing("bar");
         Thing thing3 = new Thing("baz");
@@ -60,41 +70,20 @@ public class SimpleWeakSetTest {
         assertEquals(new HashSet<>(Arrays.asList(thing1, thing2, thing3)).hashCode(), weak.hashCode());
 
         thing1 = null;
-        for (int i = 0; i < 5; i++) {
-            if (ref1.get() == null) {
-                break;
-            }
-            System.gc();
-            System.runFinalization();
-            Thread.sleep(20);
-        }
+        forceGc(ref1);
         assertTrue(weak.contains(thing2));
         assertTrue(weak.contains(thing3));
         assertNull(ref1.get());
         assertEquals(2, weak.size());
 
         thing2 = null;
-        for (int i = 0; i < 5; i++) {
-            if (ref2.get() == null) {
-                break;
-            }
-            System.gc();
-            System.runFinalization();
-            Thread.sleep(20);
-        }
+        forceGc(ref2);
         assertTrue(weak.contains(thing3));
         assertNull(ref2.get());
         assertEquals(1, weak.size());
 
         thing3 = null;
-        for (int i = 0; i < 5; i++) {
-            if (ref3.get() == null) {
-                break;
-            }
-            System.gc();
-            System.runFinalization();
-            Thread.sleep(20);
-        }
+        forceGc(ref3);
         assertNull(ref3.get());
         assertTrue(weak.isEmpty());
 
@@ -104,9 +93,6 @@ public class SimpleWeakSetTest {
         weak.addAll(Arrays.asList(thing1, thing2, thing3));
 
         assertEquals(3, weak.size());
-        ref1 = new WeakReference<>(thing1);
-        ref2 = new WeakReference<>(thing2);
-        ref3 = new WeakReference<>(thing3);
 
         assertTrue(weak.remove(thing2));
         assertFalse(weak.contains(thing2));
