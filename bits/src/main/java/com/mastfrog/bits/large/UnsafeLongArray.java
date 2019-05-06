@@ -6,6 +6,7 @@ import java.lang.ref.ReferenceQueue;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,6 +41,15 @@ final class UnsafeLongArray implements CloseableLongArray, OffHeap {
     UnsafeLongArray(UnsafeLongArray other) {
         this(other.size());
         UNSAFE.copyMemory(other.address, address, size * Long.BYTES);
+    }
+
+    public void ensureWriteOrdering(Consumer<LongArray> c) {
+        UNSAFE.fullFence();
+        try {
+            c.accept(this);
+        } finally {
+            UNSAFE.fullFence();
+        }
     }
 
     @Override
@@ -221,8 +231,8 @@ final class UnsafeLongArray implements CloseableLongArray, OffHeap {
     }
 
     /**
-     * Ensures the reference queue will release the memory if this
-     * object is garbage collected.
+     * Ensures the reference queue will release the memory if this object is
+     * garbage collected.
      *
      * @return A reference
      */

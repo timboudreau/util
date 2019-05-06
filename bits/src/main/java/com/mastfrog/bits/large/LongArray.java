@@ -2,6 +2,7 @@ package com.mastfrog.bits.large;
 
 import java.nio.file.Path;
 import java.util.PrimitiveIterator;
+import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 import java.util.function.LongFunction;
 import java.util.function.LongPredicate;
@@ -497,4 +498,15 @@ public interface LongArray extends Cloneable {
         });
     }
 
+    /**
+     * For off-heap arrays, ensures that the compiler cannot
+     * reorder writes this consumer performs to take effect
+     * after this consumer has exited and the data is assumed
+     * to be consistent.
+     *
+     * @param c A consumer
+     */
+    default void ensureWriteOrdering(Consumer<LongArray> c) {
+        c.accept(this);
+    }
 }

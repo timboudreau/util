@@ -148,7 +148,9 @@ public class LongArrayBitSet implements AutoCloseable {
         long length = wordIndex(nbits - 1) + 1;
         words = arrayFactory.apply(length);
         if (!words.isZeroInitialized()) {
-            words.fill(0, length, 0);
+            words.ensureWriteOrdering(wds -> {
+                wds.fill(0, length, 0);
+            });
         }
     }
 
