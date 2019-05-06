@@ -9,6 +9,10 @@
     </parent>
     <artifactId>graph</artifactId>
     <!--<packaging>nbm</packaging>-->
+    <organization>
+        <name>Mastfrog Technologies</name>
+        <url>https://mastfrog.com</url>
+    </organization>
     <issueManagement>
         <system>Github</system>
         <url>https://github.com/timboudreau/util/issues</url>

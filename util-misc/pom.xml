@@ -23,6 +23,10 @@
         <url>https://github.com/timboudreau/util</url>
         <developerConnection>scm:git:git@github.com:timboudreau/util.git</developerConnection>
     </scm>
+    <organization>
+        <name>Mastfrog Technologies</name>
+        <url>https://mastfrog.com</url>
+    </organization>
     <dependencies>
         <dependency>
             <groupId>com.mastfrog</groupId>

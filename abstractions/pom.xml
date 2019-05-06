@@ -7,6 +7,10 @@
         <version>2.5.0-dev</version>
     </parent>
     <artifactId>abstractions</artifactId>
+    <organization>
+        <name>Mastfrog Technologies</name>
+        <url>https://mastfrog.com</url>
+    </organization>
     <issueManagement>
         <system>Github</system>
         <url>https://github.com/timboudreau/util/issues</url>
