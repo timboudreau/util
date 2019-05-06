@@ -4,6 +4,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashSet;
@@ -11,7 +12,13 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Consumer;
-import static org.junit.Assert.*;
+import java.util.function.IntSupplier;
+import java.util.function.LongSupplier;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -50,6 +57,40 @@ public class MutableBitSetBitsTest {
         BitSet on = (BitSet) bs.clone();
         c.accept(on);
         return on;
+    }
+
+    @Test
+    public void testSuppliers() {
+        BitSet r = randomBits(12);
+        int[] ints = new int[r.cardinality() + 1];
+        Arrays.fill(ints, -1);
+        int ix = 0;
+        for (int i = r.nextSetBit(0); i != -1; i = r.nextSetBit(i + 1)) {
+            ints[ix++] = i;
+        }
+        Bits bits = Bits.fromBitSet(r);
+        IntSupplier supp = bits.asIntSupplier();
+        LongSupplier longs = bits.asLongSupplier();
+        int count = (r.cardinality() * 2) + 2;
+        for (int i = 0; i < count; i++) {
+            int ia = supp.getAsInt();
+            long la = longs.getAsLong();
+            int iix = i % ints.length;
+            int expected = ints[iix];
+            assertEquals(expected, ia);
+            assertEquals(expected, (int) la);
+        }
+
+        Bits empty = Bits.fromBitSet(new BitSet(0));
+        supp = empty.asIntSupplier();
+        for (int i = 0; i < 20; i++) {
+            assertEquals(-1, supp.getAsInt());
+        }
+        empty = Bits.EMPTY;
+        supp = empty.asIntSupplier();
+        for (int i = 0; i < 20; i++) {
+            assertEquals(-1, supp.getAsInt());
+        }
     }
 
     @Test
@@ -484,7 +525,7 @@ public class MutableBitSetBitsTest {
         bits.forEachSetBitAscending(bit -> {
             assertTrue(shifted.get(bit + shiftBy));
         });
-        
+
         shifted.forEachLongSetBitAscending(bit -> {
             assertTrue(bits.get(bit - shiftBy));
         });

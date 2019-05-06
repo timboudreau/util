@@ -5,9 +5,11 @@ import java.util.BitSet;
 import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
+import java.util.function.IntSupplier;
 import java.util.function.IntToDoubleFunction;
 import java.util.function.LongConsumer;
 import java.util.function.LongPredicate;
+import java.util.function.LongSupplier;
 
 /**
  * Read only interface to a BitSet or BitSet-like data structure, which is
@@ -23,7 +25,11 @@ import java.util.function.LongPredicate;
  * </p><p>
  * The main purpose of this interface is to provide an immutable interface to
  * BitSet, and allow for long-indexed and off-heap implementations.
- * </p>
+ * </p><p>
+ * The return value of <code>hashCode()</code> for a Bits should be identical to
+ * that of a BitSet with the same bits set; a default implementation which
+ * computes that without creating large arrays is provided via the method
+ * <code>bitsHashCode()</code>.
  *
  * @author Tim Boudreau
  */
@@ -1686,5 +1692,47 @@ public interface Bits extends Serializable {
             }
         });
         return result;
+    }
+
+    /**
+     * Returns a LongSupplier which will iterate through the set bits, returning
+     * -1 after the last bit and then cycling through all the bits again, ad
+     * infinitum. Useful for things like resuming the sieving of primes, where
+     * you simply need to iterate all previously set bits once before
+     * continuing.
+     *
+     * @return A LongSupplier
+     */
+    default LongSupplier asLongSupplier() {
+        return new LongSupplier() {
+            private long pos = minLong() - 1L;
+
+            @Override
+            public long getAsLong() {
+                pos = nextSetBitLong(pos + 1L);
+                return pos;
+            }
+        };
+    }
+
+    /**
+     * Returns an IntSupplier which will iterate through the set bits, returning
+     * -1 after the last bit and then cycling through all the bits again, ad
+     * infinitum. Useful for things like resuming the sieving of primes, where
+     * you simply need to iterate all previously set bits once before
+     * continuing.
+     *
+     * @return An IntSupplier
+     */
+    default IntSupplier asIntSupplier() {
+        return new IntSupplier() {
+            private int pos = min() - 1;
+
+            @Override
+            public int getAsInt() {
+                pos = nextSetBit(pos + 1);
+                return pos;
+            }
+        };
     }
 }

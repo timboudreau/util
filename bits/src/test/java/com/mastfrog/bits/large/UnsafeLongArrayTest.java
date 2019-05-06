@@ -86,11 +86,9 @@ public class UnsafeLongArrayTest {
         }
         Reference<UnsafeLongArray> ref = new WeakReference<UnsafeLongArray>(arr);
         arr = null;
-        int loops = 0;
         while (ref.get() != null || !handle.isDisposed()) {
             System.gc();
             System.runFinalization();
-            System.out.println("loop " + loops++ + " enq? " + handle.isEnqueued());
         }
         assertEquals(addr, UnsafeLongArray.lastCleared);
     }
