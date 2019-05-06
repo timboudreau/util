@@ -1945,10 +1945,12 @@ public final class CollectionUtils {
         return new LongArrayIterator(vals);
     }
 
+    @SuppressWarnings("deprecation")
     public static Interator toInterator(final int[] vals) {
         return new ArrayInterator(vals);
     }
 
+    @SuppressWarnings("deprecation")
     public static Longerator toLongerator(final long[] vals) {
         return new ArrayLongerator(vals);
     }
@@ -2007,6 +2009,7 @@ public final class CollectionUtils {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static final class ArrayInterator implements Interator {
 
         private final int[] vals;
@@ -2027,6 +2030,7 @@ public final class CollectionUtils {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static final class ArrayLongerator implements Longerator {
 
         private final long[] vals;

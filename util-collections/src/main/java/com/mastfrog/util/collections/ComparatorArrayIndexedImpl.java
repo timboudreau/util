@@ -39,6 +39,7 @@ final class ComparatorArrayIndexedImpl<T> implements IndexedResolvable<T> {
     private final int[] indices;
     private final T[] origOrder;
 
+    @SafeVarargs
     ComparatorArrayIndexedImpl(Comparator<T> compar, T... items) {
         origOrder = items;
         sorted = Arrays.copyOf(items, items.length);

@@ -36,7 +36,7 @@ import org.junit.Test;
  */
 public class MergeIterablesTest {
 
-    private MergeIterables<String> mi = new MergeIterables();
+    private MergeIterables<String> mi = new MergeIterables<>();
     private List<String> list = new ArrayList<>();
 
     @Test

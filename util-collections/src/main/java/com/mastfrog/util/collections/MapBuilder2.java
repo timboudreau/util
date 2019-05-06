@@ -29,6 +29,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -37,24 +39,86 @@ import java.util.function.Function;
  */
 public interface MapBuilder2<T, R> {
 
+    /**
+     * Returns a ValueBuilder whose <code>to(R value)</code> method
+     * will add the passed key and the passed value of type R to the map
+     * being built, and whose <code>finallyTo(R value)</code> will do
+     * the same and build and return the map.
+     *
+     * @param key A key
+     * @return
+     */
     ValueBuilder<T, R> map(T key);
 
+    /**
+     * Map the key and value in one shot.
+     *
+     * @param key The key
+     * @param val The value
+     * @return This
+     */
     default MapBuilder2<T, R> map(T key, R val) {
         return map(key).to(val);
     }
 
+    /**
+     * Performs the second half of adding a key/value pair to the map
+     * builder, specifying the value.
+     *
+     * @param <T> The key type
+     * @param <R>  The value type
+     */
     public interface ValueBuilder<T, R> {
 
+        /**
+         * Add the value associated with the key used to create this
+         * value builder to the owning map builder and return that
+         * map builder.
+         *
+         * @param value The value
+         * @return The map builder, for adding more key/value pairs
+         */
         MapBuilder2<T, R> to(R value);
 
+        /**
+         * Add the value associated with the key used to create this
+         * value builder to the owning map builder and finish that
+         * builder, returning the resulting map.
+         *
+         * @param value A value
+         * @return A map
+         */
         Map<T, R> finallyTo(R value);
     }
 
+    /**
+     * Build the map, retuning a map of some type.
+     *
+     * @return A map representing the key/value pairs added to this builder
+     */
     Map<T, R> build();
 
+    /**
+     * Build the map, retuning specifically a linked hash map.
+     *
+     * @return A map representing the key/value pairs added to this builder
+     */
     Map<T, R> buildLinkedHashMap();
 
+    /**
+     * Build the map, retuning specifically a map which may not be
+     * modified.
+     *
+     * @return A map representing the key/value pairs added to this builder
+     */
     Map<T, R> buildImmutableMap();
+
+    default MapBuilder2<T, R> maybeMap(BooleanSupplier testCondition, Consumer<MapBuilder2<T, R>> callIfTrue) {
+        if (testCondition.getAsBoolean()) {
+            callIfTrue.accept(this);
+        }
+        return this;
+    }
 
     public default HashingMapBuilder<T, R> toHashingMapBuilder(String algorithm) {
         return toHashingMapBuilder(algorithm, (o) -> {

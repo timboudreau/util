@@ -179,6 +179,7 @@ public interface LongList extends List<Long> {
      *
      * @return A longerator
      */
+    @SuppressWarnings("deprecation")
     Longerator longerator();
 
     /**

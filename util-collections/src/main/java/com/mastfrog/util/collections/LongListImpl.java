@@ -472,6 +472,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
         return sorted;
     }
 
+    @SuppressWarnings("deprecation")
     public boolean sort() {
         if (!sorted) {
             Collections.sort(this);
@@ -494,6 +495,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
         return sorted;
     }
 
+    @SuppressWarnings("deprecation")
     public Longerator longerator() {
         return new Longerator() {
             int ix = -1;

@@ -372,6 +372,7 @@ public abstract class IntSet implements Set<Integer>, Cloneable {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public <T> T[] toArray(T[] a) {
             return (T[]) new Object[0];
         }

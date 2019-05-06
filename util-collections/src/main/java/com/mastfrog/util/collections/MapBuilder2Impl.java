@@ -54,6 +54,13 @@ final class MapBuilder2Impl<T, R> implements MapBuilder2<T, R> {
 
     @Override
     public Map<T, R> buildImmutableMap() {
+        if (data.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        if (data.size() == 1) {
+            Map.Entry<T, R> e = data.entrySet().iterator().next();
+            return Collections.singletonMap(e.getKey(), e.getValue());
+        }
         return Collections.unmodifiableMap(build());
     }
 
