@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.mastfrog</groupId>
         <artifactId>util-parent</artifactId>
-        <version>2.5.0</version>
+        <version>2.5.1-dev</version>
     </parent>
     <artifactId>abstractions</artifactId>
     <url>https://github.com/timboudreau/util</url>
