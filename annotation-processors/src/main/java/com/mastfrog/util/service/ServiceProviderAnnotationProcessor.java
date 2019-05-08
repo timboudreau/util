@@ -59,12 +59,12 @@ public final class ServiceProviderAnnotationProcessor extends AbstractLineOrient
 
     @Override
     protected int getOrder(AnnotationMirror anno) {
-        Integer val = utils.annotationValue(anno, "order", Integer.class);
-        return val == null ? DEFAULT_ORDER : val.intValue();
+        Integer val = utils().annotationValue(anno, "order", Integer.class);
+        return val == null ? DEFAULT_ORDER : val;
     }
 
     @Override
-    protected void handleOne(Element e, AnnotationMirror anno, int order) {
+    protected void handleOne(Element e, AnnotationMirror anno, int order, AnnotationUtils utils) {
         Set<Modifier> modifiers = e.getModifiers();
         if (!(e instanceof TypeElement)) {
             fail("@ServiceProvider is only applicable to classes");
