@@ -14,6 +14,11 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>annotation-tools</artifactId>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
