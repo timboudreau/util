@@ -231,4 +231,23 @@ public interface IndexedResolvable<T> extends Indexed<T>, IntResolvable, IntSize
             }
         };
     }
+
+    default LongIndexedResolvable<T> toLongIndexedResolvable() {
+        return new LongIndexedResolvable<T>() {
+            @Override
+            public T forIndex(long index) {
+                return IndexedResolvable.this.forIndex((int) index);
+            }
+
+            @Override
+            public long size() {
+                return IndexedResolvable.this.size();
+            }
+
+            @Override
+            public long indexOf(Object obj) {
+                return IndexedResolvable.this.indexOf(obj);
+            }
+        };
+    }
 }
