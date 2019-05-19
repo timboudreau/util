@@ -35,7 +35,7 @@ public class AddressWithPortTest {
 
     @Test
     public void testParseIpv4() {
-        AddressWithPort<?> expected = new AddressWithPort(new Ipv4Address("127.0.0.1"), 80);
+        AddressWithPort<?> expected = new AddressWithPort<>(new Ipv4Address("127.0.0.1"), 80);
         assertArrayEquals(new byte[] {127, 0, 0, 1}, expected.address().toByteArray());
         assertEquals(80, expected.port());
         AddressWithPort<?> p = AddressWithPort.parse("127.0.0.1:80");
@@ -46,7 +46,7 @@ public class AddressWithPortTest {
     @Test
     public void testParseIpv6() {
         Ipv6Address addr = new Ipv6Address(0xfe02L << (64-16), 1);
-        AddressWithPort<?> expected = new AddressWithPort(addr, 80);
+        AddressWithPort<?> expected = new AddressWithPort<>(addr, 80);
         AddressWithPort<?> a = AddressWithPort.parse("fe02:0000:0000:0000:0000:0000:0000:0001:80");
         assertEquals(addr, a.address());
         assertEquals(expected, a);

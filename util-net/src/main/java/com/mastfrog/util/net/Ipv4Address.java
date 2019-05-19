@@ -116,6 +116,10 @@ public final class Ipv4Address implements Address {
         return AddressPurpose.of(this);
     }
 
+    public AddressWithPort<Ipv4Address> withPort(int port) {
+        return new AddressWithPort<>(this, port);
+    }
+
     @Override
     public InetSocketAddress toSocketAddress(int port) throws UnknownHostException {
         if (port < 0 || port > 65535) {

@@ -197,22 +197,48 @@ public class Ipv6AddressTest {
         assertEquals(addr, p, a.purpose());
     }
 
-
     @Test
     public void testConversions() throws UnknownHostException {
-        int[] arr = new int[] {       0xfe02, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1};
+        int[] arr = new int[]{0xfe02, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1};
         Ipv6Address a = new Ipv6Address("fe02:0000:0000:0000:0000:0000:0000:0001");
         assertArrayEquals(arr, a.toIntArray());
         Ipv6Address b = new Ipv6Address(arr);
         assertEquals(a, b);
         assertArrayEquals(arr, b.toIntArray());
-        Ipv6Address c = new Ipv6Address(0xfe02L << (64-16), 1);
+        Ipv6Address c = new Ipv6Address(0xfe02L << (64 - 16), 1);
         assertEquals(a, c);
         assertArrayEquals(arr, c.toIntArray());
         assertArrayEquals(a.toByteArray(), b.toByteArray());
         assertArrayEquals(a.toByteArray(), c.toByteArray());
 
         Inet6Address ad = (Inet6Address) Inet6Address.getByAddress(a.toByteArray());
-        
+        assertArrayEquals(c.toByteArray(), ad.getAddress());
     }
+
+    @Test(expected = IllegalArgumentException.class)
+    @SuppressWarnings("ResultOfObjectAllocationIgnored")
+    public void testParseInvalid() {
+        Ipv6Address x = new Ipv6Address("fe02:0000:0000:0000:0000:0000:0001");
+        System.out.println("X " + x);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @SuppressWarnings("ResultOfObjectAllocationIgnored")
+    public void testParseInvalid2() {
+        new Ipv6Address("fe02:0000:0000:0000:0000:0000:0000:0001:0001");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @SuppressWarnings("ResultOfObjectAllocationIgnored")
+    public void testParseInvalid3() {
+        Ipv6Address y = new Ipv6Address("fe02:0000:0000:0000:0000:0000:0000:0001:");
+        System.out.println("Y: " + y);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @SuppressWarnings("ResultOfObjectAllocationIgnored")
+    public void testParseInvalid4() {
+        new Ipv6Address("fe02:0000:0000:0000:0000:0000:0000:feel");
+    }
+
 }

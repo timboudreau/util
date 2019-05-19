@@ -94,4 +94,28 @@ public class Ipv4AddressTest {
         Ipv4Address a = new Ipv4Address(addr);
         assertEquals(addr, p, a.purpose());
     }
+
+    @Test(expected = IllegalArgumentException.class)
+    @SuppressWarnings("ResultOfObjectAllocationIgnored")
+    public void testParseInvalid() {
+        new Ipv4Address("127.0.0.1.5");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @SuppressWarnings("ResultOfObjectAllocationIgnored")
+    public void testParseInvalid2() {
+        new Ipv4Address("");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @SuppressWarnings("ResultOfObjectAllocationIgnored")
+    public void testParseInvalid3() {
+        new Ipv4Address("1.2.3");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @SuppressWarnings("ResultOfObjectAllocationIgnored")
+    public void testParseInvalid4() {
+        new Ipv4Address("1.2.3.m");
+    }
 }

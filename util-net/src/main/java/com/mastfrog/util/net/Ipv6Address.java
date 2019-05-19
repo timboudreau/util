@@ -90,6 +90,10 @@ public class Ipv6Address implements Address {
         return AddressPurpose.of(this);
     }
 
+    public AddressWithPort<Ipv6Address> withPort(int port) {
+        return new AddressWithPort<>(this, port);
+    }
+
     private static int[] parse(CharSequence s) {
         notNull("s", s);
         if (s.length() == 0) {
@@ -106,6 +110,9 @@ public class Ipv6Address implements Address {
             switch (currChar) {
                 case ':':
                 case '.':
+                    if (index >= ints.length) {
+                        throw new IllegalArgumentException("Too many elements: '" + s + "'");
+                    }
                     if (lastBoundary < i - 1) {
                         CharSequence sub = s.subSequence(lastBoundary + 1, i);
                         if (sub.length() > 4 && !expectingDecimal) {
@@ -188,6 +195,11 @@ public class Ipv6Address implements Address {
             }
 
             index++;
+        } else {
+            if (s.length() >= 2 && s.charAt(s.length() - 2) != ':') {
+                throw new IllegalArgumentException("Too many address components - " + (index + 1)
+                        + " in '" + s + "'");
+            }
         }
         if (index <= 7 && remainderStart >= 0) {
             int moveLen = index - remainderStart;
@@ -196,6 +208,8 @@ public class Ipv6Address implements Address {
             System.arraycopy(ints, remainderStart, temp, 0, temp.length);
             Arrays.fill(ints, remainderStart, remainderStart + temp.length, 0);
             System.arraycopy(temp, 0, ints, moveTo, temp.length);
+        } else if (index != 8 && remainderStart == -1) {
+            throw new IllegalArgumentException("Not enough components and no trailing :: in '" + s + "'");
         }
         return ints;
     }
