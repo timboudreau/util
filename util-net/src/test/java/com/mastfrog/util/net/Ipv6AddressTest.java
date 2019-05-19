@@ -24,6 +24,9 @@
 package com.mastfrog.util.net;
 
 import java.math.BigInteger;
+import java.net.Inet6Address;
+import java.net.UnknownHostException;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -175,5 +178,41 @@ public class Ipv6AddressTest {
         assertEquals(addr, new Ipv6Address(addr.toString()));
         assertEquals(addr, new Ipv6Address(addr.toStringShorthand()));
         assertEquals("fe80::184d:1cbc:f0dd:e656", addr.toStringShorthand());
+    }
+
+    @Test
+    public void testPurpose() {
+        assertPurpose("fe80:0000:0000:0000:0:0:0:e656", AddressPurpose.HOST);
+        assertPurpose("fe80:0000:0000:0000:0:0:0:02f", AddressPurpose.LINK_LOCAL);
+        assertPurpose("fe80:0000:0000:0000:0:0:0:03ff", AddressPurpose.LINK_LOCAL);
+        assertPurpose("2607:f8b0:4006:800::200e", AddressPurpose.HOST);
+        assertPurpose("::1", AddressPurpose.LOOPBACK);
+        assertPurpose("::FFFF", AddressPurpose.LOOPBACK);
+        assertPurpose("::FFFF:FFFF", AddressPurpose.LOOPBACK);
+        assertPurpose("ff02:0000:0000:0000:0000:0000:0000:0001", AddressPurpose.MULTICAST);
+    }
+
+    static void assertPurpose(String addr, AddressPurpose p) {
+        Ipv6Address a = new Ipv6Address(addr);
+        assertEquals(addr, p, a.purpose());
+    }
+
+
+    @Test
+    public void testConversions() throws UnknownHostException {
+        int[] arr = new int[] {       0xfe02, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1};
+        Ipv6Address a = new Ipv6Address("fe02:0000:0000:0000:0000:0000:0000:0001");
+        assertArrayEquals(arr, a.toIntArray());
+        Ipv6Address b = new Ipv6Address(arr);
+        assertEquals(a, b);
+        assertArrayEquals(arr, b.toIntArray());
+        Ipv6Address c = new Ipv6Address(0xfe02L << (64-16), 1);
+        assertEquals(a, c);
+        assertArrayEquals(arr, c.toIntArray());
+        assertArrayEquals(a.toByteArray(), b.toByteArray());
+        assertArrayEquals(a.toByteArray(), c.toByteArray());
+
+        Inet6Address ad = (Inet6Address) Inet6Address.getByAddress(a.toByteArray());
+        
     }
 }

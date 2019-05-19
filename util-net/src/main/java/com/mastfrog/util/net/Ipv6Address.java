@@ -17,18 +17,17 @@ package com.mastfrog.util.net;
 
 import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.math.BigInteger;
-import java.net.InetAddress;
+import java.net.Inet6Address;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
-
 /**
  * Represents an IPv6 address in a typed DNS record.
  */
-public class Ipv6Address implements Comparable<Ipv6Address> {
+public class Ipv6Address implements Address {
 
     private final long low;
     private final long high;
@@ -44,7 +43,7 @@ public class Ipv6Address implements Comparable<Ipv6Address> {
         notNull("ints", ints);
         ByteBuffer buf = ByteBuffer.allocate(BYTES_SIZE);
         for (int i = 0; i < ints.length; i++) {
-            buf.putShort((short)ints[i]);
+            buf.putShort((short) ints[i]);
         }
         buf.flip();
         this.high = buf.getLong();
@@ -81,6 +80,16 @@ public class Ipv6Address implements Comparable<Ipv6Address> {
         return 2;
     }
 
+    @Override
+    public int size() {
+        return 8;
+    }
+
+    @Override
+    public AddressPurpose purpose() {
+        return AddressPurpose.of(this);
+    }
+
     private static int[] parse(CharSequence s) {
         notNull("s", s);
         if (s.length() == 0) {
@@ -115,8 +124,8 @@ public class Ipv6Address implements Comparable<Ipv6Address> {
                                     + " in '" + s + "'");
                         }
                         try {
-                            ints[index] = expectingDecimal?Integer.parseInt(sub.toString())
-                                    :Integer.parseInt(sub.toString(), 16);
+                            ints[index] = expectingDecimal ? Integer.parseInt(sub.toString())
+                                    : Integer.parseInt(sub.toString(), 16);
                             if (ints[index] > 65535) {
                                 throw new IllegalArgumentException("Value out of range: " + ints[index]
                                         + " (" + Integer.toHexString(ints[index]) + ") - must be between "
@@ -191,8 +200,8 @@ public class Ipv6Address implements Comparable<Ipv6Address> {
         return ints;
     }
 
-    public InetAddress toInetAddress() throws UnknownHostException {
-        return InetAddress.getByAddress(toByteArray());
+    public Inet6Address toInetAddress() throws UnknownHostException {
+        return (Inet6Address) Inet6Address.getByAddress(toByteArray());
     }
 
     public InetSocketAddress toDnsServerAddress() throws UnknownHostException {
@@ -212,7 +221,7 @@ public class Ipv6Address implements Comparable<Ipv6Address> {
         final int[] ints = new int[count];
 
         for (int i = 0; i < count; i++) {
-            long curr = i < 4?high:low;
+            long curr = i < 4 ? high : low;
             ints[i] = (int) (((curr << i * 16) >>> 16 * (count - 1)) & 0xFFFF);
         }
         return ints;
@@ -235,7 +244,7 @@ public class Ipv6Address implements Comparable<Ipv6Address> {
     }
 
     private int valueAtIntegerPosition(int position) {
-        long curr = position >= 0 && position < 4?high:low;
+        long curr = position >= 0 && position < 4 ? high : low;
         int s = (int) (((curr << position * 16) >>> 16 * 7) & 0xFFFF);
         return s;
     }
@@ -322,8 +331,23 @@ public class Ipv6Address implements Comparable<Ipv6Address> {
     }
 
     @Override
-    public int compareTo(Ipv6Address o) {
-        return o.low == low && o.high == high?0
-                :toBigInteger().compareTo(o.toBigInteger());
+    public int compareTo(Address o) {
+        if (o instanceof Ipv6Address) {
+            Ipv6Address a = (Ipv6Address) o;
+            if (a.low == low && a.high == high) {
+                return 0;
+            }
+            if (a.high == high && a.low != low) {
+                return low > a.low ? 1 : -1;
+            }
+            return high > a.high ? 1 : -1;
+        } else {
+            return toBigInteger().compareTo(o.toBigInteger());
+        }
+    }
+
+    @Override
+    public InetSocketAddress toSocketAddress(int port) throws UnknownHostException {
+        return new InetSocketAddress(toInetAddress(), port);
     }
 }

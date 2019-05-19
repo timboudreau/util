@@ -74,4 +74,24 @@ public class Ipv4AddressTest {
         Ipv4Address addr3 = new Ipv4Address(addr.toString());
         assertEquals(addr, addr3);
     }
+
+    @Test
+    public void testPurpose() {
+        assertPurpose("127.0.0.1", AddressPurpose.LOOPBACK);
+        assertPurpose("127.0.0.23", AddressPurpose.LOOPBACK);
+        assertPurpose("127.0.0.255", AddressPurpose.LOOPBACK);
+        assertPurpose("255.255.255.255", AddressPurpose.IPv4_BROADCAST_WILDCARD);
+        assertPurpose("224.0.0.1", AddressPurpose.MULTICAST);
+        assertPurpose("239.0.0.255", AddressPurpose.MULTICAST);
+        assertPurpose("227.0.0.255", AddressPurpose.MULTICAST);
+        assertPurpose("0.0.0.0", AddressPurpose.ALL_HOST_ADDRESSES);
+        assertPurpose("169.254.1.1", AddressPurpose.LINK_LOCAL);
+        assertPurpose("192.168.2.1", AddressPurpose.HOST);
+
+    }
+
+    static void assertPurpose(String addr, AddressPurpose p) {
+        Ipv4Address a = new Ipv4Address(addr);
+        assertEquals(addr, p, a.purpose());
+    }
 }

@@ -16,18 +16,19 @@
 package com.mastfrog.util.net;
 
 import static com.mastfrog.util.preconditions.Checks.notNull;
+import java.math.BigInteger;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
-
 /**
- * Wraps an integer that represents an IP v4 address in typed dns records,
- * and provides methods to read and write as various Java types.
+ * Wraps an integer that represents an IP v4 address in typed dns records, and
+ * provides methods to read and write as various Java types.
  */
-public final class Ipv4Address implements Comparable<Ipv4Address> {
+public final class Ipv4Address implements Address {
 
     private final int address;
 
@@ -59,13 +60,23 @@ public final class Ipv4Address implements Comparable<Ipv4Address> {
         return 1;
     }
 
+    public int size() {
+        return 4;
+    }
+
+    public BigInteger toBigInteger() {
+        return BigInteger.valueOf(address);
+    }
+
     /**
      * Get the address as an array of integers.
      */
+    @Override
     public int[] toIntArray() {
         return toInts(intValue());
     }
 
+    @Override
     public byte[] toByteArray() {
         return toBytes(intValue());
     }
@@ -90,14 +101,22 @@ public final class Ipv4Address implements Comparable<Ipv4Address> {
         return addressToString(address);
     }
 
-    public InetAddress toInetAddress() throws UnknownHostException {
-        return InetAddress.getByAddress(toBytes(address));
+    @Override
+    public Inet4Address toInetAddress() throws UnknownHostException {
+        return (Inet4Address) InetAddress.getByAddress(toBytes(address));
     }
 
+    @Override
     public InetSocketAddress toDnsServerAddress() throws UnknownHostException {
         return toSocketAddress(53);
     }
 
+    @Override
+    public AddressPurpose purpose() {
+        return AddressPurpose.of(this);
+    }
+
+    @Override
     public InetSocketAddress toSocketAddress(int port) throws UnknownHostException {
         if (port < 0 || port > 65535) {
             throw new IllegalArgumentException("Invalid port number " + port);
@@ -141,7 +160,7 @@ public final class Ipv4Address implements Comparable<Ipv4Address> {
             char c = seq.charAt(i);
             boolean last = i == max - 1;
             if (c == delimiter || last) {
-                result.add(seq.subSequence(start, last?c == delimiter?i:i + 1:i));
+                result.add(seq.subSequence(start, last ? c == delimiter ? i : i + 1 : i));
                 start = i + 1;
             }
         }
@@ -178,8 +197,13 @@ public final class Ipv4Address implements Comparable<Ipv4Address> {
     }
 
     @Override
-    public int compareTo(Ipv4Address o) {
-        return address == o.address?0
-                :longValue() > o.longValue()?1:-1;
+    public int compareTo(Address o) {
+        if (o instanceof Ipv4Address) {
+            Ipv4Address a = (Ipv4Address) o;
+            long val = longValue();
+            long aval = a.longValue();
+            return val > aval ? 1 : val == aval ? 0 : -1;
+        }
+        return toBigInteger().compareTo(o.toBigInteger());
     }
 }
