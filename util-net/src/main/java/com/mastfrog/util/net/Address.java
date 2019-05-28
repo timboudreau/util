@@ -24,6 +24,7 @@
 package com.mastfrog.util.net;
 
 import java.math.BigInteger;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -62,6 +63,10 @@ public interface Address extends Comparable<Address> {
         return toString();
     }
 
+    default String toStringBase10() {
+        return toString();
+    }
+
     default AddressWithPort<?> withPort(int port) {
         return new AddressWithPort<>(this, port);
     }
@@ -73,6 +78,14 @@ public interface Address extends Comparable<Address> {
             return AddressKind.IPv6;
         } else {
             throw new AssertionError(getClass().getName() + " does not implement kind()");
+        }
+    }
+
+    public static Address fromInetAddress(InetAddress addr) {
+        if (addr instanceof Inet6Address) {
+            return new Ipv6Address(addr.getAddress());
+        } else {
+            return new Ipv4Address(addr.getAddress());
         }
     }
 

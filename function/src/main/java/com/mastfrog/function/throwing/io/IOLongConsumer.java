@@ -1,5 +1,7 @@
 package com.mastfrog.function.throwing.io;
 
+import com.mastfrog.function.throwing.ThrowingLongConsumer;
+import java.io.IOException;
 import java.util.Objects;
 import java.util.function.LongConsumer;
 
@@ -9,14 +11,14 @@ import java.util.function.LongConsumer;
  * @author Tim Boudreau
  */
 @FunctionalInterface
-public interface IOLongConsumer {
+public interface IOLongConsumer extends ThrowingLongConsumer {
 
-    void consume(long val) throws Exception;
+    void accept(long val) throws IOException;
 
     default IOLongConsumer andThen(LongConsumer after) {
         Objects.requireNonNull(after);
         return (long t) -> {
-            consume(t);
+            accept(t);
             after.accept(t);
         };
     }
@@ -24,8 +26,8 @@ public interface IOLongConsumer {
     default IOLongConsumer andThen(IOLongConsumer after) {
         Objects.requireNonNull(after);
         return (long t) -> {
-            consume(t);
-            after.consume(t);
+            accept(t);
+            after.accept(t);
         };
     }
 

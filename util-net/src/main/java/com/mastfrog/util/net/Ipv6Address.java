@@ -94,6 +94,18 @@ public class Ipv6Address implements Address {
         return new AddressWithPort<>(this, port);
     }
 
+    public String toStringBase10() {
+        StringBuilder sb = new StringBuilder((size() * 4) - 1);
+        int[] r = toIntArray();
+        for (int i = 0; i < r.length; i++) {
+            if (sb.length() > 0) {
+                sb.append('.');
+            }
+            sb.append(i);
+        }
+        return sb.toString();
+    }
+
     private static int[] parse(CharSequence s) {
         notNull("s", s);
         if (s.length() == 0) {

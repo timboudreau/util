@@ -34,7 +34,7 @@ import java.net.UnknownHostException;
  *
  * @author Tim Boudreau
  */
-public final class AddressWithPort<T extends Address> {
+public final class AddressWithPort<T extends Address> implements Comparable<AddressWithPort<?>> {
 
     private final T address;
     private final int port;
@@ -86,6 +86,7 @@ public final class AddressWithPort<T extends Address> {
         return address.kind();
     }
 
+    @Override
     public boolean equals(Object o) {
         if (o == this) {
             return true;
@@ -138,6 +139,17 @@ public final class AddressWithPort<T extends Address> {
 
     public String toStringShorthand() {
         return address.toStringShorthand() + ':' + port;
+    }
+
+    @Override
+    public int compareTo(AddressWithPort<?> o) {
+        Address a = address;
+        Address b = o.address;
+        int result = a.compareTo(b);
+        if (result == 0) {
+            result = port > o.port ? 1 : port == o.port ? 0 : -1;
+        }
+        return result;
     }
 
 }

@@ -63,6 +63,10 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
 
     void set(int key, T val);
 
+    default IntMap<T> toSynchronizedIntMap() {
+        return new IntMapSynchronized<>(this);
+    }
+
     @FunctionalInterface
     public interface IntMapConsumer<T> {
 

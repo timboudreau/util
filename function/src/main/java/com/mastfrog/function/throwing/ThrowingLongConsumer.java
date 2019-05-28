@@ -11,12 +11,12 @@ import java.util.function.LongConsumer;
 @FunctionalInterface
 public interface ThrowingLongConsumer {
 
-    void consume(long val) throws Exception;
+    void accept(long val) throws Exception;
 
     default ThrowingLongConsumer andThen(LongConsumer after) {
         Objects.requireNonNull(after);
         return (long t) -> {
-            consume(t);
+            accept(t);
             after.accept(t);
         };
     }
@@ -24,8 +24,8 @@ public interface ThrowingLongConsumer {
     default ThrowingLongConsumer andThen(ThrowingLongConsumer after) {
         Objects.requireNonNull(after);
         return (long t) -> {
-            consume(t);
-            after.consume(t);
+            accept(t);
+            after.accept(t);
         };
     }
 

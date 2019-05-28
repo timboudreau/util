@@ -10,7 +10,9 @@ import java.io.IOException;
  */
 @FunctionalInterface
 public interface IORunnable extends ThrowingRunnable {
+    public static final IORunnable NO_OP = new NoOpIORunnable();
 
+    @Override
     public void run() throws IOException;
 
     default IORunnable andThen(IORunnable next) {
