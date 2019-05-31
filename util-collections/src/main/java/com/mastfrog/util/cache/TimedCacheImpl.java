@@ -24,9 +24,9 @@ import java.util.logging.Logger;
  */
 class TimedCacheImpl<T, R, E extends Exception> implements TimedCache<T, R, E> {
 
-    private final long timeToLive;
+    final long timeToLive;
     private final Answerer<T, R, E> answerer;
-    private final Map<T, CacheEntry> cache;
+    final Map<T, CacheEntry> cache;
     private BiConsumer<T, R> onExpire;
 
     TimedCacheImpl(long ttl, Answerer<T, R, E> answerer) {
@@ -293,7 +293,7 @@ class TimedCacheImpl<T, R, E extends Exception> implements TimedCache<T, R, E> {
         }
     }
 
-    private final class CacheEntry implements Expirable {
+    final class CacheEntry implements Expirable {
 
         volatile long touched = System.currentTimeMillis();
         final T key;
@@ -304,6 +304,7 @@ class TimedCacheImpl<T, R, E extends Exception> implements TimedCache<T, R, E> {
             this.value = value;
         }
 
+        @Override
         public String toString() {
             return key + ":" + value;
         }
@@ -327,8 +328,7 @@ class TimedCacheImpl<T, R, E extends Exception> implements TimedCache<T, R, E> {
         }
 
         private long remaining() {
-            long rem = Math.max(0, (System.currentTimeMillis() - touched) - timeToLive);
-            return rem;
+            return  Math.max(0, timeToLive - (System.currentTimeMillis() - touched));
         }
 
         @Override
