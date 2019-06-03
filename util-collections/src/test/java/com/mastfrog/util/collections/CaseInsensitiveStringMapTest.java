@@ -52,8 +52,8 @@ public class CaseInsensitiveStringMapTest {
         assertEquals(d, a);
         assertEquals(a.hashCode(), d.hashCode());
         
-        assertEquals(a, "Hello");
-        assertEquals("hello".hashCode(), a.hashCode());
+//        assertEquals(a, "Hello");
+//        assertEquals("hello".hashCode(), a.hashCode());
         
     }   
     

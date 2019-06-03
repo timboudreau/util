@@ -26,16 +26,8 @@ package com.mastfrog.util.collections;
 import com.mastfrog.util.preconditions.Checks;
 import com.mastfrog.util.strings.Strings;
 import com.mastfrog.util.collections.HeteroMap.Key;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+
+import java.util.*;
 
 /**
  * Map of types to objects with that type. Can be used with either class objects
@@ -84,9 +76,7 @@ public final class HeteroMap implements Iterable<Map.Entry<Key<?>, Object>> {
     @SuppressWarnings("unchecked")
     public Map<String, Object> toStringObjectMap() {
         List<Key> keys = new ArrayList<>(map.keySet());
-        Collections.sort(keys, (a, b) -> {
-            return a.name.compareTo(b.name);
-        });
+        Collections.sort(keys, Comparator.comparing(a -> a.name));
         Map<String, Object> result = new LinkedHashMap<>();
         for (Key key : keys) {
             result.put(key.name, get(key));

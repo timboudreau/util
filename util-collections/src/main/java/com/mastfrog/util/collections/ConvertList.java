@@ -138,7 +138,7 @@ final class ConvertList<T, R> implements List<T> {
 
     @Override
     public boolean addAll(int index, Collection<? extends T> c) {
-        return orig.addAll(new ConvertList<>(origType, type, toList(c), new ReverseConverter<R, T>(converter)));
+        return orig.addAll(new ConvertList<>(origType, type, toList(c), new ReverseConverter<>(converter)));
     }
 
     @SuppressWarnings("unchecked")
@@ -227,7 +227,7 @@ final class ConvertList<T, R> implements List<T> {
         while (e1.hasNext() && e2.hasNext()) {
             T o1 = e1.next();
             Object o2 = e2.next();
-            if (!(o1 == null ? o2 == null : o1.equals(o2))) {
+            if (!(Objects.equals(o1, o2))) {
                 return false;
             }
         }

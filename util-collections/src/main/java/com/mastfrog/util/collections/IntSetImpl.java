@@ -68,23 +68,20 @@ final class IntSetImpl extends IntSet {
     }
 
     public IntSetImpl intersection(IntSetImpl other) {
-        BitSet b1 = this.bits;
         BitSet nue = (BitSet) other.bits;
-        nue.and(b1);
+        nue.and(this.bits);
         return new IntSetImpl(nue);
     }
 
     public IntSetImpl or(IntSet other) {
-        BitSet b1 = this.bits;
         BitSet nue = (BitSet) other.toBits();
-        nue.or(b1);
+        nue.or(this.bits);
         return new IntSetImpl(nue);
     }
 
     public IntSet xor(IntSet other) {
-        BitSet b1 = this.bits;
         BitSet nue = (BitSet) other.toBits();
-        nue.xor(b1);
+        nue.xor(this.bits);
         return new IntSetImpl(nue);
     }
 

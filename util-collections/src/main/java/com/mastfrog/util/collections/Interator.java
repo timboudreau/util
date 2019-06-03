@@ -36,22 +36,22 @@ import java.util.function.IntSupplier;
 @Deprecated
 public interface Interator extends IntSupplier{
 
-    public boolean hasNext();
+    boolean hasNext();
 
-    public int next();
+    int next();
 
     @Override
-    public default int getAsInt() {
+    default int getAsInt() {
         return hasNext() ? next() : -1;
     }
 
-    public default void forEachRemaining(IntConsumer consumer) {
+    default void forEachRemaining(IntConsumer consumer) {
         while (hasNext()) {
             consumer.accept(next());
         }
     }
 
-    public default void forEachRemaining(Consumer<? super Integer> action) {
+    default void forEachRemaining(Consumer<? super Integer> action) {
         while (hasNext()) {
             action.accept(next());
         }

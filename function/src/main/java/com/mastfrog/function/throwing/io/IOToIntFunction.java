@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2017 Tim Boudreau.
+ * Copyright 2019 Mastfrog Technologies.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,35 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+package com.mastfrog.function.throwing.io;
 
-package com.mastfrog.util.collections;
-
-import static com.mastfrog.util.preconditions.Checks.notNull;
-import java.lang.reflect.Array;
-import java.util.AbstractList;
+import com.mastfrog.function.throwing.ThrowingToIntFunction;
+import java.io.IOException;
 
 /**
  *
  * @author Tim Boudreau
  */
-class UnknownTypeArrayList extends AbstractList<Object> {
-
-    private final Object array;
-
-    public UnknownTypeArrayList(Object array) {
-        this.array = notNull("array", array);
-        if (!array.getClass().isArray()) {
-            throw new IllegalArgumentException("Not an array: " + array);
-        }
-    }
+@FunctionalInterface
+public interface IOToIntFunction<T> extends ThrowingToIntFunction<T> {
 
     @Override
-    public Object get(int index) {
-        return Array.get(array, index);
-    }
-
-    @Override
-    public int size() {
-        return Array.getLength(array);
-    }
+    int applyAsInt(T value) throws IOException;
 }

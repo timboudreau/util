@@ -126,10 +126,7 @@ public class SimpleWeakSetTest {
                 return false;
             }
             final Thing other = (Thing) obj;
-            if (!Objects.equals(this.val, other.val)) {
-                return false;
-            }
-            return true;
+            return Objects.equals(this.val, other.val);
         }
 
         @Override

@@ -104,9 +104,7 @@ public class IntListTest {
     }
     
     void test(Predicate<List<Integer>> a, Predicate<IntListImpl> b) {
-        test((a1, b1) -> {
-            return a.test(a1) == b.test(b1);
-        });
+        test((a1, b1) -> a.test(a1) == b.test(b1));
     }
 
     void test(BiPredicate<List<Integer>, IntListImpl> tester) {

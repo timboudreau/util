@@ -77,8 +77,7 @@ class ConvertedMap<From, T, R, F2 extends From> implements Map<From, R> {
         }
         if (isKey(key)) {
             F2 f = from.cast(key);
-            T realKey = converter.convert(f);
-            return realKey;
+            return converter.convert(f);
         }
         return null;
     }
@@ -228,10 +227,7 @@ class ConvertedMap<From, T, R, F2 extends From> implements Map<From, R> {
                 return false;
             }
             final En other = (En) obj;
-            if (!Objects.equals(this.real, other.real)) {
-                return false;
-            }
-            return true;
+            return Objects.equals(this.real, other.real);
         }
     }
 }

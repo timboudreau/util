@@ -462,12 +462,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
             return Collections.emptyList();
         }
         checkSort();
-        return new Iterable<T>() {
-            @Override
-            public Iterator<T> iterator() {
-                return new ArrIter();
-            }
-        };
+        return () -> new ArrIter();
     }
 
     @Override
@@ -762,7 +757,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
 
         @Override
         public int compareTo(ME o) {
-            return ix == o.ix ? 0 : ix > o.ix ? 1 : -1;
+            return Integer.compare(ix, o.ix);
         }
     }
 
@@ -774,7 +769,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
         sort1(a, with, fromIndex, toIndex - fromIndex);
     }
 
-    private static void sort1(int x[], Object[] with, int off, int len) {
+    private static void sort1(int[] x, Object[] with, int off, int len) {
         // Insertion sort on smallest arrays
         if (len < 7) {
             for (int i = off; i < len + off; i++) {
@@ -837,7 +832,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
         }
     }
 
-    private static void swap(int x[], Object[] with, int a, int b) {
+    private static void swap(int[] x, Object[] with, int a, int b) {
         int t = x[a];
         x[a] = x[b];
         x[b] = t;
@@ -846,13 +841,13 @@ final class ArrayIntMap<T> implements IntMap<T> {
         with[b] = w;
     }
 
-    private static void vecswap(int x[], Object[] with, int a, int b, int n) {
+    private static void vecswap(int[] x, Object[] with, int a, int b, int n) {
         for (int i = 0; i < n; i++, a++, b++) {
             swap(x, with, a, b);
         }
     }
 
-    private static int med3(int x[], Object[] with, int a, int b, int c) {
+    private static int med3(int[] x, Object[] with, int a, int b, int c) {
         return (x[a] < x[b]
                 ? (x[b] < x[c] ? b : x[a] < x[c] ? c : a)
                 : (x[b] > x[c] ? b : x[a] > x[c] ? c : a));

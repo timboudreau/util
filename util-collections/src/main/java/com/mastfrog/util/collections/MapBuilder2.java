@@ -68,7 +68,7 @@ public interface MapBuilder2<T, R> {
      * @param <T> The key type
      * @param <R>  The value type
      */
-    public interface ValueBuilder<T, R> {
+    interface ValueBuilder<T, R> {
 
         /**
          * Add the value associated with the key used to create this
@@ -120,13 +120,11 @@ public interface MapBuilder2<T, R> {
         return this;
     }
 
-    public default HashingMapBuilder<T, R> toHashingMapBuilder(String algorithm) {
-        return toHashingMapBuilder(algorithm, (o) -> {
-            return o.toString().getBytes(UTF_8);
-        });
+    default HashingMapBuilder<T, R> toHashingMapBuilder(String algorithm) {
+        return toHashingMapBuilder(algorithm, (o) -> o.toString().getBytes(UTF_8));
     }
 
-    public default HashingMapBuilder<T, R> toHashingMapBuilder(String algorithm, Function<Object, byte[]> toBytes) {
+    default HashingMapBuilder<T, R> toHashingMapBuilder(String algorithm, Function<Object, byte[]> toBytes) {
         try {
             final MessageDigest digest = MessageDigest.getInstance(algorithm);
             final MapBuilder2<T, R> outer = this;
@@ -202,7 +200,7 @@ public interface MapBuilder2<T, R> {
         }
     }
 
-    public interface HashingMapBuilder<T, R> extends MapBuilder2<T, R> {
+    interface HashingMapBuilder<T, R> extends MapBuilder2<T, R> {
 
         byte[] hash();
 
@@ -211,7 +209,7 @@ public interface MapBuilder2<T, R> {
         @Override
         HashingValueBuilder<T, R> map(T obj);
 
-        public interface HashingValueBuilder<T, R> extends ValueBuilder<T, R> {
+        interface HashingValueBuilder<T, R> extends ValueBuilder<T, R> {
 
             HashingMapBuilder<T, R> to(R obj);
 

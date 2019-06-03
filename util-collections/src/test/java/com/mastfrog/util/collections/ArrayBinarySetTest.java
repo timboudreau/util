@@ -24,11 +24,9 @@
 package com.mastfrog.util.collections;
 
 import com.mastfrog.util.collections.CollectionUtils.IdentityComparator;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Random;
-import java.util.Set;
+
+import java.util.*;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -132,9 +130,7 @@ public class ArrayBinarySetTest {
         }
         Set<Integer> a = new HashSet<>(l);
         int[] strs = ArrayUtils.toIntArray(l);
-        ArrayBinarySet<Integer> b = new ArrayBinarySet<>(false, false, (a1, b1) -> {
-            return a1.compareTo(b1);
-        }, l.toArray(new Integer[0]));
+        ArrayBinarySet<Integer> b = new ArrayBinarySet<>(false, false, Comparator.naturalOrder(), l.toArray(new Integer[0]));
 
         ArrayUtils.shuffle(r, strs);
 

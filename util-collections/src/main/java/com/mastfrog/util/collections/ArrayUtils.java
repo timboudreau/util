@@ -757,7 +757,7 @@ public class ArrayUtils {
             result = (T[]) Array.newInstance(array.getClass().getComponentType(), length);
         } catch (IllegalArgumentException ex) {
             throw new IllegalArgumentException("Exception creating array of type "
-                    + array.getClass().getComponentType() + " for " + array, ex);
+                    + array.getClass().getComponentType() + " for " + Arrays.toString(array), ex);
         }
         System.arraycopy(array, start, result, 0, length);
         return result;

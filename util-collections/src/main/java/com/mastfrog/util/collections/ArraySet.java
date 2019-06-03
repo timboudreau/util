@@ -101,6 +101,6 @@ final class ArraySet<T> extends AbstractSet<T> {
     }
 
     public String toString() {
-        return Strings.join(',', objs).toString();
+        return Strings.join(',', (Object[]) objs).toString();
     }
 }

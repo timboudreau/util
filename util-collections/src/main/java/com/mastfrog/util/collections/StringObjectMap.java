@@ -47,7 +47,7 @@ public class StringObjectMap extends LinkedHashMap<String,Object> {
     public StringObjectMap() {
     }
 
-    public StringObjectMap(Map<? extends String, ? extends Object> m) {
+    public StringObjectMap(Map<? extends String, ?> m) {
         super(m);
     }
 

@@ -10,6 +10,7 @@
 target/*
 /jdk8-stubs/target/
 /nbproject/
+.idea/
 nb-configuration.xml
 
 /annotation-processors/nbproject/

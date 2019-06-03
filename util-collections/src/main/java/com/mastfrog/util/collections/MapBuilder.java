@@ -2,6 +2,7 @@ package com.mastfrog.util.collections;
 
 import com.mastfrog.util.preconditions.Exceptions;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.LinkedHashMap;
@@ -38,11 +39,7 @@ public final class MapBuilder {
         MapBuilder nue = new MapBuilder(digest);
         data.put(name, nue.data);
         if (digest != null) {
-            try {
-                digest.update(name.getBytes("UTF-8"));
-            } catch (UnsupportedEncodingException ex) {
-                Exceptions.chuck(ex);
-            }
+            digest.update(name.getBytes(StandardCharsets.UTF_8));
             digest.update((byte) '!');
         }
         return nue;
@@ -51,13 +48,9 @@ public final class MapBuilder {
     public MapBuilder put(String name, Object type) {
         data.put(name, type);
         if (digest != null) {
-            try {
-                digest.update(name.getBytes("UTF-8"));
-                digest.update((byte) '=');
-                digest.update(("" + type).getBytes("UTF-8"));
-            } catch (UnsupportedEncodingException ex) {
-                Exceptions.chuck(ex);
-            }
+            digest.update(name.getBytes(StandardCharsets.UTF_8));
+            digest.update((byte) '=');
+            digest.update(("" + type).getBytes(StandardCharsets.UTF_8));
         }
         return this;
     }

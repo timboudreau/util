@@ -109,6 +109,7 @@ final class SingleItemList<T> implements List<T> {
         return c.size() == 1 && Objects.equals(item, c.iterator().next());
     }
 
+    @SuppressWarnings("LoopStatementThatDoesntLoop")
     @Override
     public boolean addAll(Collection<? extends T> c) {
         for (T t : c) {

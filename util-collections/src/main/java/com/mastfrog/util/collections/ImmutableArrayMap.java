@@ -59,7 +59,7 @@ class ImmutableArrayMap<T, R> implements Map<T, R>, LongFunction<T> {
         Collections.sort(l, (Entry<T, ?> o1, Entry<T, ?> o2) -> {
             long a = func.indexOf(o1.getKey());
             long b = func.indexOf(o2.getKey());
-            return a == b ? 0 : a > b ? 1 : -1;
+            return Long.compare(a, b);
         });
         keys = CollectionUtils.genericArray(keyType, l.size());
         values = CollectionUtils.genericArray(valType, l.size());

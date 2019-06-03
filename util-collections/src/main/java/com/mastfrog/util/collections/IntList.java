@@ -15,21 +15,21 @@ import java.util.function.IntConsumer;
  */
 public interface IntList extends List<Integer> {
 
-    public static IntList create() {
+    static IntList create() {
         return new IntListImpl();
     }
 
-    public static IntList create(int initialCapacity) {
+    static IntList create(int initialCapacity) {
         return new IntListImpl(initialCapacity);
     }
 
-    public static IntList create(Collection<? extends Integer> vals) {
+    static IntList create(Collection<? extends Integer> vals) {
         IntListImpl result = new IntListImpl(vals.size());
         result.addAll(vals);
         return result;
     }
 
-    public static IntList createFrom(int... vals) {
+    static IntList createFrom(int... vals) {
         return new IntListImpl(vals);
     }
 

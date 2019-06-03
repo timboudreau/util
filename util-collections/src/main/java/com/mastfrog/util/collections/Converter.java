@@ -33,16 +33,16 @@ import java.util.function.Function;
  */
 public interface Converter<T, R> extends Function<R,T> {
 
-    public T convert(R r);
+    T convert(R r);
 
-    public R unconvert(T t);
+    R unconvert(T t);
 
     @Override
-    public default T apply(R r) {
+    default T apply(R r) {
         return convert(r);
     }
 
-    public default Converter<R,T> reverse() {
+    default Converter<R,T> reverse() {
         return new Converter<R,T>() {
             @Override
             public R convert(T r) {

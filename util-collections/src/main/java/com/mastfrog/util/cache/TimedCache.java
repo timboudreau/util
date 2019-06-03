@@ -47,8 +47,8 @@ public interface TimedCache<T, R, E extends Exception> extends Cache<T, R, E> {
      * @param answerer A function which computes the value if it is not cached
      * @return A cache
      */
-    public static <T, R, E extends Exception> TimedCache<T, R, E> createThrowing(long ttl,
-            Answerer<T, R, E> answerer) {
+    static <T, R, E extends Exception> TimedCache<T, R, E> createThrowing(long ttl,
+                                                                          Answerer<T, R, E> answerer) {
         return new TimedCacheImpl<>(ttl, answerer);
     }
 
@@ -63,8 +63,8 @@ public interface TimedCache<T, R, E extends Exception> extends Cache<T, R, E> {
      * @param answerer A function which computes the value if it is not cached
      * @return A cache
      */
-    public static <T, R, E extends Exception> TimedCache<T, R, E> createThrowing(long ttl,
-            Answerer<T, R, E> answerer, MapSupplier<T> backingStoreFactory) {
+    static <T, R, E extends Exception> TimedCache<T, R, E> createThrowing(long ttl,
+                                                                          Answerer<T, R, E> answerer, MapSupplier<T> backingStoreFactory) {
         return new TimedCacheImpl<>(ttl, answerer, backingStoreFactory);
     }
 
@@ -80,8 +80,8 @@ public interface TimedCache<T, R, E extends Exception> extends Cache<T, R, E> {
      * @param answerer A function which computes the value if it is not cached
      * @return A cache
      */
-    public static <T, R> TimedCache<T, R, RuntimeException> create(long ttl,
-            Answerer<T, R, RuntimeException> answerer) {
+    static <T, R> TimedCache<T, R, RuntimeException> create(long ttl,
+                                                            Answerer<T, R, RuntimeException> answerer) {
         return new TimedCacheImpl<>(ttl, answerer);
     }
     /**
@@ -95,7 +95,7 @@ public interface TimedCache<T, R, E extends Exception> extends Cache<T, R, E> {
      * @param answerer A function which computes the value if it is not cached
      * @return A cache
      */
-    public static <T, R> TimedCache<T, R, RuntimeException> create(long ttl, Answerer<T, R, RuntimeException> answerer, MapSupplier<T> backingStoreFactory) {
+    static <T, R> TimedCache<T, R, RuntimeException> create(long ttl, Answerer<T, R, RuntimeException> answerer, MapSupplier<T> backingStoreFactory) {
         return new TimedCacheImpl<>(ttl, answerer, backingStoreFactory);
     }
 

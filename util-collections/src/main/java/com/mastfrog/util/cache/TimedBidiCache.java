@@ -94,6 +94,8 @@ public interface TimedBidiCache<T, R, E extends Exception> extends TimedCache<T,
         return defaultValue;
     }
 
+    Optional<T> cachedKey(R value);
+
     /**
      * Create a reversed view of this cache, where the key type is the value
      * type and vice versa. All modifications are applied to the original cache.
@@ -119,9 +121,7 @@ public interface TimedBidiCache<T, R, E extends Exception> extends TimedCache<T,
 
             @Override
             public TimedCache<R, T, E> onExpire(BiConsumer<R, T> onExpire) {
-                TimedBidiCache.this.onExpire((t, r) -> {
-                    onExpire.accept(r, t);
-                });
+                TimedBidiCache.this.onExpire((t, r) -> onExpire.accept(r, t));
                 return this;
             }
 
@@ -149,6 +149,16 @@ public interface TimedBidiCache<T, R, E extends Exception> extends TimedCache<T,
             @Override
             public Optional<T> getOptional(R key) throws E {
                 return TimedBidiCache.this.getKeyOptional(key);
+            }
+
+            @Override
+            public Optional<T> cachedValue(R key) {
+                return TimedBidiCache.this.cachedKey(key);
+            }
+
+            @Override
+            public Optional<R> cachedKey(T value) {
+                return TimedBidiCache.this.cachedValue(value);
             }
         };
     }

@@ -68,24 +68,21 @@ class Expirer implements Runnable {
     }
 
     void expireOne(Expirable toExpire) {
-        //            if (toExpire.isExpired()) {
         toExpire.expire();
-        //            } else {
-        //                queue.offer(toExpire);
-        //            }
     }
 
     @Override
     public void run() {
         for (;;) {
-            Thread.currentThread().setName("expirer for " + TimedCache.class.getName());
+            Thread.currentThread().setName("Global expirer for "
+                    + TimedCache.class.getSimpleName() + " entries");
             try {
                 Expirable toExpire = queue.take();
                 expireOne(toExpire);
             } catch (InterruptedException ex) {
                 Exceptions.printStackTrace(ex);
+                break;
             }
         }
     }
-
 }

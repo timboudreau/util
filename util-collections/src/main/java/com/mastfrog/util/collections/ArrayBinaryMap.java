@@ -238,7 +238,7 @@ class ArrayBinaryMap<T, R> implements Map<T, R> {
                 return 0;
             }
             if (mp() == o.mp()) {
-                return index == o.index ? 0 : index > o.index ? 1 : -1;
+                return Integer.compare(index, o.index);
             }
             T key = keys.objs[index];
             T other = o.getKey();
@@ -344,13 +344,13 @@ class ArrayBinaryMap<T, R> implements Map<T, R> {
         with[b] = w;
     }
 
-    private static <T> void vecswap(T x[], Object[] with, int a, int b, int n, Comparator<T> comp) {
+    private static <T> void vecswap(T[] x, Object[] with, int a, int b, int n, Comparator<T> comp) {
         for (int i = 0; i < n; i++, a++, b++) {
             swap(x, with, a, b, comp);
         }
     }
 
-    private static <T> int med3(T x[], Object[] with, int a, int b, int c, Comparator<T> comp) {
+    private static <T> int med3(T[] x, Object[] with, int a, int b, int c, Comparator<T> comp) {
         return (isLess(x[a], x[b], comp)
                 ? (isLess(x[b], x[c], comp) ? b : isLess(x[a], x[c], comp) ? c : a)
                 : (isGreater(x[b], x[c], comp) ? b : isGreater(x[a], x[c], comp) ? c : a));

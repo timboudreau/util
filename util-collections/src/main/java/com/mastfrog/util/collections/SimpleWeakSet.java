@@ -68,6 +68,7 @@ class SimpleWeakSet<T> extends AbstractSet<T> {
         return backingStore.keySet().toArray();
     }
 
+    @SuppressWarnings("SuspiciousMethodCalls")
     @Override
     public boolean contains(Object o) {
         return backingStore.containsKey(o);
@@ -117,7 +118,7 @@ class SimpleWeakSet<T> extends AbstractSet<T> {
     }
 
     @Override
-    @SuppressWarnings("element-type-mismatch")
+    @SuppressWarnings({"element-type-mismatch", "SuspiciousMethodCalls"})
     public boolean removeAll(Collection<?> c) {
         boolean changed = false;
         for (Object o : c) {

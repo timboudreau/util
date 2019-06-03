@@ -31,6 +31,7 @@ import java.util.function.IntPredicate;
  *
  * @author Tim Boudreau
  */
+@FunctionalInterface
 public interface BytePredicate {
 
     boolean test(byte value);

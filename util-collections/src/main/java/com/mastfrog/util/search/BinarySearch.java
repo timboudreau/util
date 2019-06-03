@@ -65,13 +65,11 @@ public class BinarySearch<T> {
     }
 
     public BinarySearch(LongResolvable eval, List<T> l) {
-        this(eval, new ListWrap<T>(l));
+        this(eval, new ListWrap<>(l));
     }
 
     public BinarySearch(ToLongFunction<? super Object> eval, final long count, LongFunction<T> getter) {
-        this((value) -> {
-            return eval.applyAsLong(value);
-        }, new LongFunctionWrapper<T>(count, getter));
+        this((value) -> eval.applyAsLong(value), new LongFunctionWrapper<>(count, getter));
     }
 
     public BinarySearch(LongIndexedResolvable<T> res) {
@@ -242,16 +240,16 @@ public class BinarySearch<T> {
     @Deprecated
     public interface Evaluator<T> extends ToLongFunction<T>, LongResolvable {
 
-        public long getValue(T obj);
+        long getValue(T obj);
 
         @Override
-        public default long applyAsLong(T value) {
+        default long applyAsLong(T value) {
             return getValue(value);
         }
 
         @Override
         @SuppressWarnings("unchecked")
-        public default long indexOf(Object obj) {
+        default long indexOf(Object obj) {
             return getValue((T) obj);
         }
     }
@@ -265,9 +263,9 @@ public class BinarySearch<T> {
     @Deprecated
     public interface Indexed<T> extends LongIndexed<T> {
 
-        public T get(long index);
+        T get(long index);
 
-        public long size();
+        long size();
     }
 
     private static final class ListWrap<T> implements LongIndexed<T> {

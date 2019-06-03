@@ -26,13 +26,7 @@ package com.mastfrog.util.collections;
 import static com.mastfrog.util.preconditions.Checks.notNull;
 import static com.mastfrog.util.collections.CollectionUtils.transform;
 import java.lang.reflect.Array;
-import java.util.AbstractList;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.*;
 
 /**
  *
@@ -146,7 +140,7 @@ final class MultiList<T> extends AbstractList<T> {
         while (e1.hasNext() && e2.hasNext()) {
             T o1 = e1.next();
             Object o2 = e2.next();
-            if (!(o1 == null ? o2 == null : o1.equals(o2))) {
+            if (!(Objects.equals(o1, o2))) {
                 return false;
             }
         }

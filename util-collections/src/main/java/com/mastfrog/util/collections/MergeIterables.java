@@ -48,7 +48,7 @@ final class MergeIterables<T> implements ConcatenatedIterables<T> {
         for (Iterable<T> iterable : all) {
             iterators.add(iterable.iterator());
         }
-        return new MergeIterator<T>(iterators);
+        return new MergeIterator<>(iterators);
     }
 
     @Override
@@ -79,7 +79,7 @@ final class MergeIterables<T> implements ConcatenatedIterables<T> {
         @Override
         public boolean hasNext() {
             Iterator<T> curr = iter();
-            return curr == null ? false : curr.hasNext();
+            return curr != null && curr.hasNext();
         }
 
         @Override

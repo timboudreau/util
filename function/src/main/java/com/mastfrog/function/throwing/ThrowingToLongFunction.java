@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2017 Tim Boudreau.
+ * Copyright 2019 Mastfrog Technologies.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,34 +22,15 @@
  * THE SOFTWARE.
  */
 
-package com.mastfrog.util.collections;
-
-import static com.mastfrog.util.preconditions.Checks.notNull;
-import java.lang.reflect.Array;
-import java.util.AbstractList;
+package com.mastfrog.function.throwing;
 
 /**
  *
  * @author Tim Boudreau
  */
-class UnknownTypeArrayList extends AbstractList<Object> {
+@FunctionalInterface
+public interface ThrowingToLongFunction<T> {
 
-    private final Object array;
+    long applyAsLong(T value) throws Exception;
 
-    public UnknownTypeArrayList(Object array) {
-        this.array = notNull("array", array);
-        if (!array.getClass().isArray()) {
-            throw new IllegalArgumentException("Not an array: " + array);
-        }
-    }
-
-    @Override
-    public Object get(int index) {
-        return Array.get(array, index);
-    }
-
-    @Override
-    public int size() {
-        return Array.getLength(array);
-    }
 }

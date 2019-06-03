@@ -109,7 +109,7 @@ public class ArrayIntMapTest {
         int i = 3;
         while (map.size() < 100) {
             int k = i * 2;
-            String v = "v" + Integer.toString(k);
+            String v = "v" + k;
             map.put(k, v);
             mm.put(k, v);
             l.add(k);
@@ -393,7 +393,7 @@ public class ArrayIntMapTest {
     }
 
     private static String i2s(int[] a) {
-        StringBuffer result = new StringBuffer(a.length * 2);
+        StringBuilder result = new StringBuilder(a.length * 2);
         for (int i = 0; i < a.length; i++) {
             result.append(a[i]);
             if (i != a.length - 1) {

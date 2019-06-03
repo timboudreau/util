@@ -68,13 +68,13 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
     }
 
     @FunctionalInterface
-    public interface IntMapConsumer<T> {
+    interface IntMapConsumer<T> {
 
         void accept(int key, T value);
     }
 
     @FunctionalInterface
-    public interface IntMapAbortableConsumer<T> {
+    interface IntMapAbortableConsumer<T> {
 
         boolean accept(int key, T value);
     }

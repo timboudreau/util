@@ -82,9 +82,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
     }
 
     LongListImpl(long[] longs, boolean[] sortVal, int batchSize) {
-        this(longs, (sorted) -> {
-            sortVal[0] = sorted;
-        }, batchSize);
+        this(longs, (sorted) -> sortVal[0] = sorted, batchSize);
         this.sorted = sortVal[0];
     }
 
@@ -98,9 +96,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
     }
 
     LongListImpl(long[][] longs, boolean[] sortVal, int batchSize) {
-        this(longs, (sorted) -> {
-            sortVal[0] = sorted;
-        }, batchSize);
+        this(longs, (sorted) -> sortVal[0] = sorted, batchSize);
         this.sorted = sortVal[0];
     }
 

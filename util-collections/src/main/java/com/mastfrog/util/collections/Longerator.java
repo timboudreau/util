@@ -43,23 +43,23 @@ public interface Longerator extends LongSupplier {
     boolean hasNext();
 
     @Override
-    public default long getAsLong() {
+    default long getAsLong() {
         return hasNext() ? next() : -1;
     }
 
-    public default void forEachRemaining(LongConsumer consumer) {
+    default void forEachRemaining(LongConsumer consumer) {
         while (hasNext()) {
             consumer.accept(next());
         }
     }
 
-    public default void forEachRemaining(Consumer<? super Long> action) {
+    default void forEachRemaining(Consumer<? super Long> action) {
         while (hasNext()) {
             action.accept(next());
         }
     }
 
-    public default Longerator of(long[] longs) {
+    default Longerator of(long[] longs) {
         return new Longerator() {
             int ix = -1;
 
@@ -75,7 +75,7 @@ public interface Longerator extends LongSupplier {
         };
     }
 
-    public default Longerator of(Collection<? extends Long> coll) {
+    default Longerator of(Collection<? extends Long> coll) {
         return new Longerator() {
             private final Iterator<? extends Long> iter = coll.iterator();
 
@@ -95,7 +95,7 @@ public interface Longerator extends LongSupplier {
         };
     }
 
-    public default Iterator<Long> toIterator() {
+    default Iterator<Long> toIterator() {
         return new Iterator<Long>() {
             @Override
             public boolean hasNext() {

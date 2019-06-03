@@ -30,6 +30,7 @@ import java.io.IOException;
  *
  * @author Tim Boudreau
  */
+@FunctionalInterface
 public interface IOBiPredicate<In1, In2> extends ThrowingBiPredicate<In1, In2> {
 
     @Override

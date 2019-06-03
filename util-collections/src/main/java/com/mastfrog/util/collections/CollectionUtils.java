@@ -642,7 +642,7 @@ public final class CollectionUtils {
         public int compare(Object o1, Object o2) {
             int a = System.identityHashCode(o1);
             int b = System.identityHashCode(o2);
-            return a == b ? 0 : a > b ? 1 : -1;
+            return Integer.compare(a, b);
         }
     }
 
@@ -1607,7 +1607,7 @@ public final class CollectionUtils {
      */
     public static <T> Iterator<T> toReverseIterator(T[] array) {
         Checks.notNull("array", array);
-        return new ReverseArrayIterator<T>(array);
+        return new ReverseArrayIterator<>(array);
     }
 
     /**
@@ -1687,7 +1687,7 @@ public final class CollectionUtils {
          *
          * @return null if no next item, otherwise the next item
          */
-        public T getIfHasNext();
+        T getIfHasNext();
     }
 
     private static final class AtomicIteratorImpl<T> implements AtomicIterator<T> {
@@ -1808,7 +1808,7 @@ public final class CollectionUtils {
         @Override
         public boolean hasNext() {
             Iterator<T> curr = iter();
-            return curr == null ? false : curr.hasNext();
+            return curr != null && curr.hasNext();
         }
 
         @Override

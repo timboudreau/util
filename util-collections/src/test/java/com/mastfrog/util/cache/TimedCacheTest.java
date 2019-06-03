@@ -26,9 +26,7 @@ public class TimedCacheTest {
     @Test
     public void testCache() throws Throwable {
         Set<Integer> expiredInts = Collections.synchronizedSet(new HashSet<>());
-        BiConsumer<Integer, String> onExpire = (i, s) -> {
-            expiredInts.add(i);
-        };
+        BiConsumer<Integer, String> onExpire = (i, s) -> expiredInts.add(i);
         EXPIRER.blockExpire();
         BidiCacheImpl<Integer, String, RuntimeException> cache
                 = (BidiCacheImpl<Integer, String, RuntimeException>) TimedCache.<Integer, String>create(60,
@@ -57,9 +55,7 @@ public class TimedCacheTest {
 
     @BeforeClass
     public static void setup() {
-        TimedCacheImpl.expirerFactory = () -> {
-            return EXPIRER;
-        };
+        TimedCacheImpl.expirerFactory = () -> EXPIRER;
     }
 
     private static TestExpirer EXPIRER = new TestExpirer();
@@ -94,8 +90,8 @@ public class TimedCacheTest {
                 wait(100);
             }
             Expirable last = lastOffered.getAndSet(null);
-            assertNotNull(last);
-            assertEquals(txt, last.toString());
+            assertNotNull("Last is null", last);
+            assertEquals("Wrong last offered",txt, last.toString());
             if (latch != null) {
                 latch.countDown();
                 latch = null;

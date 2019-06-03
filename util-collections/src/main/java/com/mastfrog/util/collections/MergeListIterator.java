@@ -102,7 +102,7 @@ final class MergeListIterator<T> implements ListIterator<T> {
     @Override
     public boolean hasNext() {
         ListIterator<T> it = iter(true);
-        return it == null ? false : it.hasNext();
+        return it != null && it.hasNext();
     }
 
     @Override

@@ -134,7 +134,7 @@ public class MultiListTest {
 
     @Test
     public void testMergeListIterator() {
-        MergeListIterator<String> it = new MergeListIterator<String>(iters);
+        MergeListIterator<String> it = new MergeListIterator<>(iters);
         ListIterator<String> x = all.listIterator();
         while (x.hasNext()) {
             assertTrue("No next, but should be ", it.hasNext());

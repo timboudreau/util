@@ -30,6 +30,7 @@ import java.util.List;
  *
  * @author Tim Boudreau
  */
+@FunctionalInterface
 public interface BooleanConsumer {
 
     void accept(boolean val);

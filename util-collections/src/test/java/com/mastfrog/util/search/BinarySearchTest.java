@@ -61,7 +61,7 @@ public class BinarySearchTest {
     @Test
     public void testSearchFor() {
         List<W> l = W.listOf(5, 10, 15, 20, 25, 30, 35, 40);
-        BinarySearch<W> bs = new BinarySearch<W>(new E(), l);
+        BinarySearch<W> bs = new BinarySearch<>(new E(), l);
 
         W w = bs.searchFor(9, Bias.FORWARD);
         assertNotNull(w);
@@ -89,7 +89,7 @@ public class BinarySearchTest {
 
         l = W.listOf(105, 10, 15, 20, 25, 30, 35, 40);
         try {
-            bs = new BinarySearch<W>(new E(), l);
+            bs = new BinarySearch<>(new E(), l);
             fail("Constructed out of order");
         } catch (Throwable t) {
         }
@@ -104,7 +104,7 @@ public class BinarySearchTest {
         }
 
         public static List<W> listOf(long... values) {
-            List<W> result = new LinkedList<W>();
+            List<W> result = new LinkedList<>();
             for (long l : values) {
                 result.add(new W(l));
             }
@@ -125,10 +125,7 @@ public class BinarySearchTest {
                 return false;
             }
             final W other = (W) obj;
-            if (this.value != other.value) {
-                return false;
-            }
-            return true;
+            return this.value == other.value;
         }
 
         @Override

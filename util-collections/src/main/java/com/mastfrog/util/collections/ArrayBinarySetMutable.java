@@ -264,10 +264,7 @@ class ArrayBinarySetMutable<T> extends AbstractSet<T> {
         }
         T test = objs[end];
         int comparison = comp.compare(obj, test);
-        if (comparison > 0) {
-            return true;
-        }
-        return false;
+        return comparison > 0;
     }
 
     @Override
@@ -373,7 +370,7 @@ class ArrayBinarySetMutable<T> extends AbstractSet<T> {
     }
 
     private boolean eq(T a, T b) {
-        return ((a == null) != (b == null)) ? false : comparatorEquality ? comp.compare(a, b) == 0 : Objects.equals(a, b);
+        return ((a == null) == (b == null)) && (comparatorEquality ? comp.compare(a, b) == 0 : Objects.equals(a, b));
     }
 
     @Override
@@ -409,7 +406,7 @@ class ArrayBinarySetMutable<T> extends AbstractSet<T> {
         for (int i = 0; i < nue.length; i++) {
             T o = nue[i];
             if (o == null) {
-                throw new NullPointerException("Null in " + Strings.join(',', nue));
+                throw new NullPointerException("Null in " + Strings.join(',', (Object[]) nue));
             }
             int origIndex = origEnd == 0 ? -1 : ArrayBinarySet.binaryComparatorSearch(comparatorEquality, o, objs, 0, origEnd, comp);
             boolean alreadyAdded = eq(last, o);
@@ -456,7 +453,7 @@ class ArrayBinarySetMutable<T> extends AbstractSet<T> {
 
     void shiftLeft(int to, int from, int rangeLength) {
         T[] ext = ArrayUtils.extract(objs, from, rangeLength);
-        System.out.println("shift left " + from + " (" + objs[from] + ") to " + to + " rangeLength " + rangeLength + " clobbering " + objs[to] + " sliding " + Strings.join(',', ext));
+        System.out.println("shift left " + from + " (" + objs[from] + ") to " + to + " rangeLength " + rangeLength + " clobbering " + objs[to] + " sliding " + Strings.join(',', (Object[]) ext));
         System.arraycopy(objs, from, objs, to, rangeLength);
         rangeRemoved(from, from - to, end);
         end -= from - to;

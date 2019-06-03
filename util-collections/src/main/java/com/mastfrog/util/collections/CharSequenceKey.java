@@ -64,7 +64,7 @@ final class CharSequenceKey<T extends CharSequence> implements CharSequence {
 
     @Override
     public CharSequence subSequence(int start, int end) {
-        return new CharSequenceKey<CharSequence>(value.subSequence(start, end));
+        return new CharSequenceKey<>(value.subSequence(start, end));
     }
 
     @Override
@@ -82,8 +82,7 @@ final class CharSequenceKey<T extends CharSequence> implements CharSequence {
     }
 
     public boolean equals(Object o) {
-        return o instanceof CharSequence
-                ? Strings.charSequencesEqual(value, (CharSequence) o, true) : false;
+        return o instanceof CharSequence && Strings.charSequencesEqual(value, (CharSequence) o, true);
     }
 
     public String toString() {

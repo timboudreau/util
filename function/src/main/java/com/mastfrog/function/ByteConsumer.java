@@ -27,6 +27,7 @@ package com.mastfrog.function;
  *
  * @author Tim Boudreau
  */
+@FunctionalInterface
 public interface ByteConsumer {
 
     void accept(byte b);

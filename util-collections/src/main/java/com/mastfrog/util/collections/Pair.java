@@ -64,10 +64,7 @@ final class Pair<A, B> {
         if (!Objects.equals(this.a, other.a)) {
             return false;
         }
-        if (!Objects.equals(this.b, other.b)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.b, other.b);
     }
 
     public String toString() {
@@ -83,16 +80,14 @@ final class Pair<A, B> {
     }
 
     public static <A, B> Function<B, Pair<A, B>> from(A a) {
-        return (B b) -> {
-            return new Pair<A, B>(a, b);
-        };
+        return (B b) -> new Pair<>(a, b);
     }
 
     public <C> Pair<A, C> transformB(Function<B, C> func) {
-        return new Pair<A, C>(a, func.apply(b));
+        return new Pair<>(a, func.apply(b));
     }
 
     public <C> Pair<C, B> transformA(Function<A, C> func) {
-        return new Pair<C, B>(func.apply(a), b);
+        return new Pair<>(func.apply(a), b);
     }
 }

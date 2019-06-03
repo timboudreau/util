@@ -47,6 +47,12 @@ class TimedCacheImpl<T, R, E extends Exception> implements TimedCache<T, R, E> {
     }
 
     @Override
+    public Optional<R> cachedValue(T key) {
+        CacheEntry e = cache.get(key);
+        return e == null ? Optional.empty() : Optional.ofNullable(e.value);
+    }
+
+    @Override
     public boolean remove(T key) {
         return cache.remove(key) != null;
     }
@@ -152,6 +158,10 @@ class TimedCacheImpl<T, R, E extends Exception> implements TimedCache<T, R, E> {
     }
 
     CacheEntry createEntry(T key, R val) {
+        // XXX should create reversed entries for bidi caches here,
+        // make CacheEntry an interface and allow an entry to have
+        // child entries that hold the reverse value which do not
+        // get enqueued, just expired
         CacheEntry result = new CacheEntry(key, val);
         cache.put(key, result);
         caches().offer(result);
@@ -199,6 +209,12 @@ class TimedCacheImpl<T, R, E extends Exception> implements TimedCache<T, R, E> {
         BidiCacheImpl(TimedCacheImpl<T, R, E> orig, Answerer<R, T, E> reverseAnswerer) {
             super(orig);
             this.reverseAnswerer = reverseAnswerer;
+        }
+
+        @Override
+        public Optional<T> cachedKey(R value) {
+            TimedCacheImpl<T, R, E>.CacheEntry e = reverseEntries.get(value);
+            return Optional.ofNullable(e.key);
         }
 
         @Override
@@ -328,7 +344,7 @@ class TimedCacheImpl<T, R, E extends Exception> implements TimedCache<T, R, E> {
         }
 
         private long remaining() {
-            return  Math.max(0, timeToLive - (System.currentTimeMillis() - touched));
+            return Math.max(0, timeToLive - (System.currentTimeMillis() - touched));
         }
 
         @Override
@@ -340,7 +356,7 @@ class TimedCacheImpl<T, R, E extends Exception> implements TimedCache<T, R, E> {
         public int compareTo(Delayed o) {
             long a = getDelay(MILLISECONDS);
             long b = o.getDelay(MILLISECONDS);
-            return a > b ? 1 : a == b ? 0 : -1;
+            return Long.compare(a, b);
         }
     }
 
@@ -351,7 +367,9 @@ class TimedCacheImpl<T, R, E extends Exception> implements TimedCache<T, R, E> {
         return EXPIRER;
     }
 
-    static Supplier<Expirer> expirerFactory = Expirer::new;
     private static Expirer EXPIRER;
-
+    @SuppressWarnings("StaticNonFinalUsedInInitialization")
+    static Supplier<Expirer> expirerFactory = () -> {
+        return EXPIRER == null ? EXPIRER = new Expirer() : EXPIRER;
+    };
 }

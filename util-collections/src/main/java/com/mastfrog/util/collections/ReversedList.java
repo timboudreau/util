@@ -87,6 +87,9 @@ final class ReversedList<T> implements List<T> {
 
     @Override
     public boolean addAll(Collection<? extends T> clctn) {
+        if (clctn.isEmpty()) {
+            return false;
+        }
         boolean result = true;
         for (T obj : clctn) {
             del.add(0, obj);

@@ -184,14 +184,14 @@ final class IdentityList<T> implements List<T> {
 
     @Override
     public T set(int index, T element) {
-        Identity<T> u = new Identity<T>(element);
+        Identity<T> u = new Identity<>(element);
         Identity<T> old = l.set(index, u);
         return old == null ? null : old.get();
     }
 
     @Override
     public void add(int index, T element) {
-        l.add(index, new Identity<T>(element));
+        l.add(index, new Identity<>(element));
     }
 
     @Override
@@ -224,12 +224,12 @@ final class IdentityList<T> implements List<T> {
 
     @Override
     public ListIterator<T> listIterator() {
-        return new ConvertIterator<>(l.listIterator(), new C<T>());
+        return new ConvertIterator<>(l.listIterator(), new C<>());
     }
 
     @Override
     public ListIterator<T> listIterator(int index) {
-        return new ConvertIterator<>(l.listIterator(index), new C<T>());
+        return new ConvertIterator<>(l.listIterator(index), new C<>());
     }
 
     @Override
@@ -286,7 +286,7 @@ final class IdentityList<T> implements List<T> {
 
         @Override
         public Identity<T> unconvert(T r) {
-            return new Identity<T>(r);
+            return new Identity<>(r);
         }
 
         @Override

@@ -68,6 +68,15 @@ public interface Cache<T, R, E extends Exception> extends AutoCloseable {
     Optional<R> getOptional(T key) throws E;
 
     /**
+     * Get the cached value if present, but do not
+     * compute a value if not.
+     *
+     * @param key A key
+     * @return An optional
+     */
+    Optional<R> cachedValue(T key);
+
+    /**
      * Get an object if it is available, using the passed function to
      * convert the result if it is non-null.
      *

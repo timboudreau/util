@@ -93,6 +93,7 @@ final class SupplierMap<T, R> implements Map<T, R> {
      */
     @SuppressWarnings("element-type-mismatch")
     public R getIfPresent(Object key) {
+        //noinspection SuspiciousMethodCalls
         return delegate.get(key);
     }
 
