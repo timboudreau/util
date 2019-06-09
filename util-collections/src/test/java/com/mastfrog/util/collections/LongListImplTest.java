@@ -285,10 +285,10 @@ public class LongListImplTest {
     private void check(String msg, List<Long> expect, LongListImpl got) {
         long[] exp = ArrayUtils.toLongArray(expect);
         long[] gt = got.toLongArray();
-        if (!Arrays.equals(exp, gt)) {
-            System.out.println("EXP " + expect);
-            System.out.println("GOT " + Arrays.toString(got.toLongArray()));
-        }
+//        if (!Arrays.equals(exp, gt)) {
+//            System.out.println("EXP " + expect);
+//            System.out.println("GOT " + Arrays.toString(got.toLongArray()));
+//        }
         assertArrayEquals(msg, exp, gt);
         assertEquals(expect, got);
         assertEquals("hashCode mismatch", expect.hashCode(), got.hashCode());
@@ -564,9 +564,9 @@ public class LongListImplTest {
         assertTrue("List with optimized insert at batch boundary should think it's sorted: " + ll,
                 ll.isSorted());
 
-        System.out.println("\ngo\n\n");
+//        System.out.println("\ngo\n\n");
         ll.addAll(5, new long[]{36, 37, 38});
-        System.out.println("NOW " + ll);
+//        System.out.println("NOW " + ll);
         assertFalse("List with unsorted additions should not think it's sorted",
                 ll.isSorted());
         ll.sort();

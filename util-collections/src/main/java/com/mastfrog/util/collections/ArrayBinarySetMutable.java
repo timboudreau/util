@@ -453,12 +453,11 @@ class ArrayBinarySetMutable<T> extends AbstractSet<T> {
 
     void shiftLeft(int to, int from, int rangeLength) {
         T[] ext = ArrayUtils.extract(objs, from, rangeLength);
-        System.out.println("shift left " + from + " (" + objs[from] + ") to " + to + " rangeLength " + rangeLength + " clobbering " + objs[to] + " sliding " + Strings.join(',', (Object[]) ext));
+//        System.out.println("shift left " + from + " (" + objs[from] + ") to " + to + " rangeLength " + rangeLength + " clobbering " + objs[to] + " sliding " + Strings.join(',', (Object[]) ext));
         System.arraycopy(objs, from, objs, to, rangeLength);
         rangeRemoved(from, from - to, end);
         end -= from - to;
         assert noDuplicates();
-        System.out.println("I AM NOW " + this);
     }
 
     private boolean noDuplicates() {

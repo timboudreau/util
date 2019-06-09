@@ -21,7 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package com.mastfrog.util.cache;
 
 import com.mastfrog.util.preconditions.Exceptions;
@@ -59,12 +58,13 @@ class Expirer implements Runnable {
     private void checkStarted() {
         if (!started) {
             started = true;
+            Thread expireThread = new Thread(this);
+            expireThread.setName("Global expirer for "
+                    + TimedCache.class.getSimpleName() + " entries");
+            expireThread.setPriority(prio);
+            expireThread.setDaemon(true);
+            expireThread.start();
         }
-        Thread expireThread = new Thread(this);
-        expireThread.setName("antlr-cache-expire");
-        expireThread.setPriority(prio);
-        expireThread.setDaemon(true);
-        expireThread.start();
     }
 
     void expireOne(Expirable toExpire) {
@@ -74,8 +74,6 @@ class Expirer implements Runnable {
     @Override
     public void run() {
         for (;;) {
-            Thread.currentThread().setName("Global expirer for "
-                    + TimedCache.class.getSimpleName() + " entries");
             try {
                 Expirable toExpire = queue.take();
                 expireOne(toExpire);
