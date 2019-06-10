@@ -44,6 +44,8 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -138,8 +140,43 @@ public final class Streams {
         return bytesCopied;
     }
 
+    /**
+     * Read a UTF-8 string from a stream.
+     *
+     * @param in An input stream
+     * @return A string
+     * @throws IOException If something goes wrong
+     */
     public static String readUTF8String(InputStream in) throws IOException {
-        return readString(in, "UTF-8");
+        return readString(in, UTF_8);
+    }
+
+    /**
+     * Read an ASCII string from a stream.
+     *
+     * @param in An input stream
+     * @return A string
+     * @throws IOException If something goes wrong
+     */
+    public static String readAsciiString(InputStream in) throws IOException {
+        return readString(in, US_ASCII);
+    }
+
+    /**
+     * Read a UTF-8 string from a resource relative to a class file.
+     *
+     * @param relativeTo The class
+     * @param filename The file name or relative path
+     * @return A string, or null if no such resource exists
+     * @throws IOException If something goes wrong
+     */
+    public static String readResourceAsUTF8(Class<?> relativeTo, String filename) throws IOException {
+        try (InputStream in = relativeTo.getResourceAsStream(filename)) {
+            if (in == null) {
+                return null;
+            }
+            return readUTF8String(in);
+        }
     }
 
     /**
@@ -193,6 +230,18 @@ public final class Streams {
      */
     public static String readString(final InputStream in, String charset) throws IOException {
         try (Reader r = new BufferedReader(new InputStreamReader(in, Charset.forName(charset)))) {
+            return readString(r);
+        }
+    }
+    /**
+     * Read a string with a specified charset
+     * @param in An input stream
+     * @param charset A character set
+     * @return A string
+     * @throws IOException if something goes wrong
+     */
+    public static String readString(final InputStream in, Charset charset) throws IOException {
+        try (Reader r = new BufferedReader(new InputStreamReader(in, charset))) {
             return readString(r);
         }
     }
