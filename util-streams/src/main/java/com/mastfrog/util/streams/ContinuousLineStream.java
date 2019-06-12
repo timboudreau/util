@@ -3,7 +3,7 @@ package com.mastfrog.util.streams;
 import static com.mastfrog.util.preconditions.Checks.nonNegative;
 import static com.mastfrog.util.preconditions.Checks.nonZero;
 import static com.mastfrog.util.preconditions.Checks.notNull;
-import static com.mastfrog.util.preconditions.Checks.readableAndNonZeroLength;
+import static com.mastfrog.util.preconditions.Checks.readable;
 import com.mastfrog.util.preconditions.Exceptions;
 import java.io.File;
 import java.io.FileInputStream;
@@ -59,7 +59,8 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
         try {
             nonZero("bufferSize", nonNegative("bufferSize", bufferSize));
             notNull("charset", charset);
-            readableAndNonZeroLength("file", file);
+//            readableAndNonZeroLength("file", file);
+            readable("file", file);
             ContinuousStringStream stream = new ContinuousStringStream(new FileInputStream(file).getChannel(), bufferSize);
             CharsetDecoder decoder = charset.newDecoder();
             return new ContinuousLineStream(stream, decoder, bufferSize);
