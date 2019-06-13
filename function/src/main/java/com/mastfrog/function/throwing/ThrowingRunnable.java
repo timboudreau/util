@@ -39,24 +39,51 @@ public interface ThrowingRunnable {
     public static final ThrowingRunnable NO_OP = new NoOpThrowingRunnable();
 
     /**
-     * Returns a runnable which can be added to asynchronously (all
-     * andThen() style methods return the instance) and which will
-     * discard all composed-in runnables once run is called.
+     * Returns a runnable which can be added to asynchronously (all andThen()
+     * style methods return the instance) and which will discard all composed-in
+     * runnables once run is called.
      *
      * @return A ThrowingRunnable with the described characteristics
      */
     public static ThrowingRunnable oneShot() {
-        return new ComposableThrowingRunnable(true);
+        return new ComposableThrowingRunnable(true, false);
     }
 
     /**
-     * Returns a runnable which can be added to asynchronously (all
-     * andThen() style methods return the instance).
+     * Returns a runnable which can be added to asynchronously (all andThen()
+     * style methods return the instance).
      *
      * @return A ThrowingRunnable with the described characteristics
      */
     public static ThrowingRunnable composable() {
-        return new ComposableThrowingRunnable(false);
+        return new ComposableThrowingRunnable(false, false);
+    }
+
+    /**
+     * Returns a runnable which can be added to asynchronously (all andThen()
+     * style methods return the instance) and which will discard all composed-in
+     * runnables once run is called.
+     *
+     * @param lifo If true, use last-in / first-out order for running (reverses
+     * the distinction between <code>andAlwaysRun()</code> and
+     * <code>andAlwaysRunFirst()</code>)
+     * @return A ThrowingRunnable with the described characteristics
+     */
+    public static ThrowingRunnable oneShot(boolean lifo) {
+        return new ComposableThrowingRunnable(true, lifo);
+    }
+
+    /**
+     * Returns a runnable which can be added to asynchronously (all andThen()
+     * style methods return the instance).
+     *
+     * @param lifo If true, use last-in / first-out order for running (reverses
+     * the distinction between <code>andAlwaysRun()</code> and
+     * <code>andAlwaysRunFirst()</code>)
+     * @return A ThrowingRunnable with the described characteristics
+     */
+    public static ThrowingRunnable composable(boolean lifo) {
+        return new ComposableThrowingRunnable(false, lifo);
     }
 
     /**
@@ -122,7 +149,136 @@ public interface ThrowingRunnable {
     }
 
     /**
-     * Variant on <code>andAlways</code> which only executes the second
+     * Variant on <code>andThen</code> which guarantees that the passed runnable
+     * will be run <i>regardless of whether this one's run() method throws an
+     * exception</i>, and which guarantees that the passed runable is run
+     * <b>before</b>
+     * this one's <code>run()</code> method - if both throw exceptions, the
+     * first's exception will be added as a suppressed exception to the
+     * second's.
+     *
+     * @param run Another runnable
+     * @return a wrapper around this and the other
+     */
+    default ThrowingRunnable andAlwaysFirst(ThrowingRunnable run) {
+        return () -> {
+            Exception[] ex = new Exception[1];
+            try {
+                run.run();
+            } catch (Exception ex1) {
+                ex[0] = ex1;
+            } finally {
+                try {
+                    ThrowingRunnable.this.run();
+                } catch (Exception ex2) {
+                    if (ex[0] == null) {
+                        ex[0] = ex2;
+                    } else {
+                        ex[0].addSuppressed(ex2);
+                    }
+                }
+            }
+            if (ex[0] != null) {
+                throw ex[0];
+            }
+        };
+    }
+
+    /**
+     * Create a ThrowingRunnable which invokes the passed supplier and passes
+     * its output to the passed consumer whenever <code>run()</code> is called.
+     *
+     * @param <T>
+     * @param supp
+     * @param cons
+     * @return
+     */
+    default <T> ThrowingRunnable of(ThrowingSupplier<T> supp, ThrowingConsumer<T> cons) {
+        return () -> {
+            cons.accept(supp.get());
+        };
+    }
+
+    default ThrowingRunnable of(Runnable r) {
+        return r::run;
+    }
+
+    /**
+     * Variant on <code>andThen</code> which guarantees that the passed runnable
+     * will be run <i>regardless of whether this one's run() method throws an
+     * exception</i> - if both throw exceptions, the second's exception will be
+     * added as a suppressed exception to the first. Offers the same
+     * functionality as <code>andAlways(ThrowingRunnable)</code> for
+     * <code>Runnable</code>s - named differently so lambda users will not have
+     * to cast as one or the other.
+     *
+     * @param run Another runnable
+     * @return a wrapper around this and the other
+     */
+    default ThrowingRunnable andAlwaysRun(Runnable run) {
+        return () -> {
+            Exception[] ex = new Exception[1];
+            try {
+                ThrowingRunnable.this.run();
+            } catch (Exception ex1) {
+                ex[0] = ex1;
+            } finally {
+                try {
+                    run.run();
+                } catch (Exception ex2) {
+                    if (ex[0] == null) {
+                        ex[0] = ex2;
+                    } else {
+                        ex[0].addSuppressed(ex2);
+                    }
+                }
+            }
+            if (ex[0] != null) {
+                throw ex[0];
+            }
+        };
+    }
+
+    /**
+     * Variant on <code>andThen</code> which guarantees that the passed Runnable
+     * will be run <i>regardless of whether this one's run() method throws an
+     * exception</i>, and which guarantees that the passed runable is run
+     * <b>before</b>
+     * this one's <code>run()</code> method - if both throw exceptions, the
+     * first's exception will be added as a suppressed exception to the
+     * second's. Offers the same functionality as
+     * <code>andAlwaysFirst(ThrowingRunnable)</code> for <code>Runnables</code> - named differently so
+     * lambda users will not have to cast as one or the other.
+     *
+     * @param run Another runnable
+     * @return a wrapper around this and the other
+     */
+    default ThrowingRunnable andAlwaysRunFirst(Runnable run) {
+        return () -> {
+            Exception[] ex = new Exception[1];
+            try {
+                run.run();
+            } catch (Exception ex1) {
+                ex[0] = ex1;
+            } finally {
+                try {
+                    ThrowingRunnable.this.run();
+                } catch (Exception ex2) {
+                    if (ex[0] == null) {
+                        ex[0] = ex2;
+                    } else {
+                        ex[0].addSuppressed(ex2);
+                    }
+                }
+            }
+            if (ex[0] != null) {
+                throw ex[0];
+            }
+        };
+    }
+
+    /**
+     * Variant on <code>andAlwaysRun</code> which only executes the second
      * runnable if the passed BooleanSupplier returns true.
      *
      * @param run Another runnable
@@ -155,7 +311,7 @@ public interface ThrowingRunnable {
     }
 
     /**
-     * Variant on <code>andAlways</code> which guarantees that the passed
+     * Variant on <code>andAlwaysRun</code> which guarantees that the passed
      * runnable will be run <i>regardless of whether this one's run() method
      * throws an exception</i> - if both throw exceptions, the second's
      * exception will be added as a suppressed exception to the first; only
@@ -210,8 +366,8 @@ public interface ThrowingRunnable {
     }
 
     /**
-     * Variant on andThen which only executes the passed runnable if the
-     * boolean test returns true at the time of running.
+     * Variant on andThen which only executes the passed runnable if the boolean
+     * test returns true at the time of running.
      *
      * @param test A test
      * @param run A runnable
@@ -226,7 +382,6 @@ public interface ThrowingRunnable {
         };
     }
 
-
     default ThrowingRunnable andThen(Runnable run) {
         return () -> {
             ThrowingRunnable.this.run();
@@ -239,6 +394,10 @@ public interface ThrowingRunnable {
             ThrowingRunnable.this.run();
             run.call();
         };
+    }
+
+    default void addAsShutdownHook() {
+        Runtime.getRuntime().addShutdownHook(new Thread(toRunnable()));
     }
 
     public static ThrowingRunnable fromAutoCloseable(AutoCloseable e) {

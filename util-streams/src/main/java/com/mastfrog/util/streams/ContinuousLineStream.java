@@ -190,6 +190,8 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
             char prevChar = 0;
             for (int charIndex = 0; charIndex < limit; charIndex++) {
                 char c = characterData.charAt(charIndex);
+                // XXX - double newlines cause a line starting with \n to
+                // be emitted
                 if (c == '\n') {
                     if (charIndex == lineStart) { // 0-length line
                         if (cachedPartialNextLine != null) {

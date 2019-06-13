@@ -23,16 +23,349 @@
  */
 package com.mastfrog.function.throwing;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.Test;
 
-/**
- *
- * @author Tim Boudreau
- */
 public class ThrowingRunnableTest {
+
+    @Test
+    public void testRunsAreInReverseAdditionOrder() throws Throwable {
+        ThrowingRunnable t = ThrowingRunnable.composable(true);
+        List<OrderedR> l = new ArrayList<>(4);
+        List<OrderedR> callOrder = new ArrayList<>(4);
+        for (int i = 0; i < 4; i++) {
+            OrderedR or = new OrderedR(i, callOrder);
+            l.add(or);
+            ThrowingRunnable old = t;
+            t = t.andAlways(or);
+            assertSame(old, t);
+        }
+        t.run();
+        assertEquals(l.size(), callOrder.size());
+        assertTrue(callOrder.containsAll(l), () -> callOrder.toString());
+        for (int i = 0; i < 4; i++) {
+            OrderedR or = callOrder.get(i);
+            assertEquals(3 - i, or.ix, "Call order not reversed: " + callOrder);
+        }
+    }
+
+    static final class OrderedR implements ThrowingRunnable {
+
+        private final int ix;
+        private final List<OrderedR> callOrder;
+
+        OrderedR(int ix, List<OrderedR> callOrder) {
+            this.ix = ix;
+            this.callOrder = callOrder;
+        }
+
+        public String toString() {
+            return Integer.toString(ix);
+        }
+
+        @Override
+        public void run() throws Exception {
+            callOrder.add(this);
+        }
+    }
+
+    @Test
+    public void testComposableAllCalled() throws Throwable {
+        ThrowingRunnable t = ThrowingRunnable.composable();
+        List<AC> all = new ArrayList<AC>();
+        for (int i = 0; i < 20; i++) {
+            ThrowingRunnable old = t;
+            AC ac;
+            if (i % 3 == 2) {
+                ac = new RCR(i, new AtomicBoolean());
+            } else {
+                ac = new RCTR(i, new AtomicBoolean());
+            }
+            all.add(ac);
+            if (ac instanceof ThrowingRunnable) {
+                ThrowingRunnable tr = (ThrowingRunnable) ac;
+                t = t.andAlways(tr);
+            } else {
+                Runnable r = (Runnable) ac;
+                t = t.andAlwaysRun(r);
+            }
+            assertSame(old, t, "andAlways of " + ac + " returned different identity");
+        }
+        for (AC ac : all) {
+            ac.assertNotCalled();
+        }
+        t.run();
+        for (AC ac : all) {
+            ac.assertCalled();
+        }
+        for (AC ac : all) {
+            ac.assertNotCalled();
+        }
+        t.run();
+        for (AC ac : all) {
+            ac.assertCalled();
+        }
+    }
+
+    @Test
+    public void testComposableAllCalledOneShot() throws Throwable {
+        ThrowingRunnable t = ThrowingRunnable.oneShot();
+        List<AC> all = new ArrayList<AC>();
+        for (int i = 0; i < 20; i++) {
+            ThrowingRunnable old = t;
+            AC ac;
+            if (i % 3 == 2) {
+                ac = new RCR(i, new AtomicBoolean());
+            } else {
+                ac = new RCTR(i, new AtomicBoolean());
+            }
+            all.add(ac);
+            if (ac instanceof ThrowingRunnable) {
+                ThrowingRunnable tr = (ThrowingRunnable) ac;
+                t = t.andAlways(tr);
+            } else {
+                Runnable r = (Runnable) ac;
+                t = t.andAlwaysRun(r);
+            }
+            assertSame(old, t, "andAlways of " + ac + " returned different identity");
+        }
+        for (AC ac : all) {
+            ac.assertNotCalled();
+        }
+        t.run();
+        for (AC ac : all) {
+            ac.assertCalled();
+        }
+        for (AC ac : all) {
+            ac.assertNotCalled();
+        }
+        t.run();
+        for (AC ac : all) {
+            ac.assertNotCalled();
+        }
+    }
+
+    @Test
+    public void testComposableAllCalledWithErrors() throws Throwable {
+        ThrowingRunnable t = ThrowingRunnable.composable();
+        List<AC> all = new ArrayList<AC>();
+        for (int i = 0; i < 55; i++) {
+            ThrowingRunnable old = t;
+            AC ac;
+            if (i % 3 == 1) {
+                ac = new RCR(i, new AtomicBoolean());
+            } else if (i % 5 == 0) {
+                if (i % 10 == 0) {
+                    ac = new RCRE(i, new AtomicBoolean(), i % 20 == 0);
+                } else {
+                    ac = new RCTE(i, new AtomicBoolean(), i % 25 == 0);
+                }
+            } else {
+                ac = new RCTR(i, new AtomicBoolean());
+            }
+            all.add(ac);
+            if (ac instanceof ThrowingRunnable) {
+                ThrowingRunnable tr = (ThrowingRunnable) ac;
+                t = t.andAlways(tr);
+            } else {
+                Runnable r = (Runnable) ac;
+                t = t.andAlwaysRun(r);
+            }
+            assertSame(old, t, "andAlways of " + ac + " returned different identity");
+        }
+        for (AC ac : all) {
+            ac.assertNotCalled();
+        }
+        try {
+            t.run();
+            fail("Something should have been thrown");
+        } catch (RE | FooException | XErr re) {
+            // ok
+        }
+        for (AC ac : all) {
+            ac.assertCalled();
+        }
+        for (AC ac : all) {
+            ac.assertNotCalled();
+        }
+        try {
+            t.run();
+            fail("Something should have been thrown");
+        } catch (RE | FooException | XErr re) {
+            // ok
+        }
+        for (AC ac : all) {
+            ac.assertCalled();
+        }
+    }
+
+    @Test
+    public void testComposableAllCalledOneShotWithErrors() throws Throwable {
+        ThrowingRunnable t = ThrowingRunnable.oneShot();
+        List<AC> all = new ArrayList<AC>();
+        for (int i = 0; i < 55; i++) {
+            ThrowingRunnable old = t;
+            AC ac;
+            if (i % 3 == 1) {
+                ac = new RCR(i, new AtomicBoolean());
+            } else if (i % 5 == 0) {
+                if (i % 10 == 0) {
+                    ac = new RCRE(i, new AtomicBoolean(), i % 20 == 0);
+                } else {
+                    ac = new RCTE(i, new AtomicBoolean(), i % 25 == 0);
+                }
+            } else {
+                ac = new RCTR(i, new AtomicBoolean());
+            }
+            all.add(ac);
+            if (ac instanceof ThrowingRunnable) {
+                ThrowingRunnable tr = (ThrowingRunnable) ac;
+                t = t.andAlways(tr);
+            } else {
+                Runnable r = (Runnable) ac;
+                t = t.andAlwaysRun(r);
+            }
+            assertSame(old, t, "andAlways of " + ac + " returned different identity");
+        }
+        for (AC ac : all) {
+            ac.assertNotCalled();
+        }
+        try {
+            t.run();
+            fail("Something should have been thrown");
+        } catch (RE | FooException | XErr re) {
+            // ok
+        }
+        for (AC ac : all) {
+            ac.assertCalled();
+        }
+        for (AC ac : all) {
+            ac.assertNotCalled();
+        }
+        t.run();
+        for (AC ac : all) {
+            ac.assertNotCalled();
+        }
+    }
+
+    interface AC {
+
+        void assertCalled();
+
+        void assertNotCalled();
+    }
+
+    static class RCTR implements ThrowingRunnable, AC {
+
+        private final int ix;
+
+        final AtomicBoolean called;
+
+        RCTR(int ix, AtomicBoolean called) {
+            this.ix = ix;
+            this.called = called;
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + "-" + ix;
+        }
+
+        @Override
+        public void assertNotCalled() {
+            assertFalse(called.get(), this + " was called");
+        }
+
+        @Override
+        public void assertCalled() {
+            boolean result = called.compareAndSet(true, false);
+            assertTrue(result, this + " was not called");
+        }
+
+        @Override
+        public void run() throws Exception {
+            called.set(true);
+        }
+    }
+
+    static class RCR implements Runnable, AC {
+
+        final AtomicBoolean called;
+        private final int ix;
+
+        RCR(int ix, AtomicBoolean called) {
+            this.called = called;
+            this.ix = ix;
+        }
+
+        public String toString() {
+            return getClass().getSimpleName() + "-" + ix;
+        }
+
+        @Override
+        public void assertNotCalled() {
+            assertFalse(called.get());
+        }
+
+        public void assertCalled() {
+            boolean result = called.compareAndSet(true, false);
+            assertTrue(result);
+        }
+
+        @Override
+        public void run() {
+            called.set(true);
+        }
+    }
+
+    static class RCRE extends RCR {
+
+        private final boolean error;
+
+        public RCRE(int ix, AtomicBoolean called, boolean error) {
+            super(ix, called);
+            this.error = error;
+        }
+
+        @Override
+        public void run() {
+            super.run();
+            if (error) {
+                throw new XErr();
+            } else {
+                throw new RE();
+            }
+        }
+    }
+
+    static final class RCTE extends RCTR {
+
+        final boolean error;
+
+        public RCTE(int ix, AtomicBoolean called, boolean error) {
+            super(ix, called);
+            this.error = error;
+        }
+
+        @Override
+        public void run() throws Exception {
+            super.run();
+            if (error) {
+                throw new XErr();
+            } else {
+                throw new FooException();
+            }
+        }
+
+    }
 
     @Test
     public void testConditional() throws Exception {
@@ -147,4 +480,11 @@ public class ThrowingRunnableTest {
 
     }
 
+    static final class XErr extends Error {
+
+    }
+
+    static final class RE extends RuntimeException {
+
+    }
 }

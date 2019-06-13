@@ -124,7 +124,8 @@ public class CharBuffersCharSequenceTest {
     @Test
     public void testEmptyWithEmptyBuffers() throws Exception {
         CharBuffersCharSequence b = new CharBuffersCharSequence(new CharBuffer[]{
-            CharBuffer.allocate(10).position(10), CharBuffer.allocate(10).position(10)
+            (CharBuffer /* jdk 8 */) CharBuffer.allocate(10).position(10),
+            (CharBuffer /* jdk 8 */) CharBuffer.allocate(10).position(10)
         });
         assertEquals(0, b.length());
         assertEquals("", b.toString());
@@ -140,9 +141,9 @@ public class CharBuffersCharSequenceTest {
     @Test
     public void testSomeEmptyBuffers() throws Exception {
         CharBuffersCharSequence b = new CharBuffersCharSequence(new CharBuffer[]{
-            CharBuffer.allocate(10).position(10),
-            CharBuffer.wrap("Hello world"),
-            CharBuffer.allocate(10).position(10)
+            (CharBuffer /* jdk 8 */) CharBuffer.allocate(10).position(10),
+            (CharBuffer /* jdk 8 */) CharBuffer.wrap("Hello world"),
+            (CharBuffer /* jdk 8 */) CharBuffer.allocate(10).position(10)
         });
         assertEquals("Hello world".length(), b.length());
         assertEquals("Hello world", b.toString());

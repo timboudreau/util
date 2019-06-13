@@ -24,6 +24,7 @@
 package com.mastfrog.util.file;
 
 import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -41,6 +42,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
@@ -382,7 +384,25 @@ public class FileUtilsTest {
         Path javaHome = Paths.get(System.getProperty("java.home"));
         Set<Path> paths = FileUtils.find(javaHome, true, "properties");
         assertFalse(paths.isEmpty());
-        assertTrue(paths.contains(Paths.get("conf/logging.properties")));
+        assertEquals(legacyFindProperties(javaHome.toFile(), javaHome.toFile(), new HashSet<>(), true), paths);
+
+        Set<Path> paths2 = FileUtils.find(javaHome, false, "properties");
+        assertFalse(paths2.isEmpty());
+        assertEquals(legacyFindProperties(javaHome.toFile(), javaHome.toFile(), new HashSet<>(), false), paths2);
+    }
+
+    static final Set<Path> legacyFindProperties(File root, File f, Set<Path> addTo, boolean relativize) {
+        if (f.isDirectory()) {
+            for (File f1 : f.listFiles()) {
+                legacyFindProperties(root, f1, addTo, relativize);
+            }
+        } else {
+            if (f.getName().endsWith(".properties")) {
+                Path rel = relativize ? root.toPath().relativize(f.toPath()) : f.toPath();
+                addTo.add(rel);
+            }
+        }
+        return addTo;
     }
 
     static Set<String> setOf(String... strings) {

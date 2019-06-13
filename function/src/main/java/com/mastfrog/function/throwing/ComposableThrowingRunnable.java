@@ -35,9 +35,11 @@ final class ComposableThrowingRunnable implements ThrowingRunnable {
 
     private ThrowingRunnable inner = ThrowingRunnable.NO_OP;
     private final boolean oneShot;
+    private final boolean lifo;
 
-    ComposableThrowingRunnable(boolean oneShot) {
+    ComposableThrowingRunnable(boolean oneShot, boolean lifo) {
         this.oneShot = oneShot;
+        this.lifo = lifo;
     }
 
     @Override
@@ -59,8 +61,26 @@ final class ComposableThrowingRunnable implements ThrowingRunnable {
     }
 
     @Override
+    public synchronized ThrowingRunnable andAlwaysRun(Runnable run) {
+        inner = lifo ? inner.andAlwaysRunFirst(run) : inner.andAlwaysRun(run);
+        return this;
+    }
+
+    @Override
     public synchronized ThrowingRunnable andAlways(ThrowingRunnable run) {
-        inner = inner.andAlways(run);
+        inner = lifo ? inner.andAlwaysFirst(run) : inner.andAlways(run);
+        return this;
+    }
+
+    @Override
+    public ThrowingRunnable andAlwaysRunFirst(Runnable run) {
+        inner = !lifo ? inner.andAlwaysRunFirst(run) : inner.andAlwaysRun(run);
+        return this;
+    }
+
+    @Override
+    public ThrowingRunnable andAlwaysFirst(ThrowingRunnable run) {
+        inner = !lifo ? inner.andAlwaysFirst(run) : inner.andAlways(run);
         return this;
     }
 

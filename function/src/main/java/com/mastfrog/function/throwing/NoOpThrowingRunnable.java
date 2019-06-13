@@ -52,6 +52,16 @@ final class NoOpThrowingRunnable implements ThrowingRunnable {
     }
 
     @Override
+    public ThrowingRunnable andAlwaysRun(Runnable run) {
+        return run::run;
+    }
+
+    @Override
+    public ThrowingRunnable andAlways(ThrowingRunnable run) {
+        return run;
+    }
+
+    @Override
     public String toString() {
         return "no-op-throwing-runnable";
     }
