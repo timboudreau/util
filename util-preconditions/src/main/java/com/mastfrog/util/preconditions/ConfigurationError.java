@@ -23,8 +23,6 @@
  */
 package com.mastfrog.util.preconditions;
 
-import com.mastfrog.util.*;
-
 /**
  * Error which can be thrown during startup/initialization, indicating
  * the application's configuration is so broken startup should be

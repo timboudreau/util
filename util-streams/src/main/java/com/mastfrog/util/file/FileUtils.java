@@ -27,6 +27,7 @@ import com.mastfrog.function.throwing.io.IOFunction;
 import com.mastfrog.function.throwing.io.IOSupplier;
 import com.mastfrog.util.preconditions.Checks;
 import com.mastfrog.util.preconditions.Exceptions;
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -40,6 +41,7 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
@@ -48,14 +50,17 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -71,9 +76,14 @@ public final class FileUtils {
     public static final String SYSPROP_DEFAULT_BUFFER_SIZE = "FileUtils.defaultBufferSize";
     private static final int DEFAULT_BUFFER_SIZE;
     private static final String PREFIX = "java-";
-    private static final AtomicInteger filesIndex = new AtomicInteger(1);
+    private static final AtomicInteger FILES_INDEX = new AtomicInteger(1);
     private static final Set<StandardOpenOption> OPEN_WRITE_CREATE = EnumSet.noneOf(StandardOpenOption.class);
     private static final Set<StandardOpenOption> OPEN_APPEND_CREATE = EnumSet.noneOf(StandardOpenOption.class);
+    private static final FileVisitOption[] NO_FV_OPTIONS = new FileVisitOption[0];
+    private static final FileVisitOption[] FOLLOW_LINKS = new FileVisitOption[]{FileVisitOption.FOLLOW_LINKS};
+
+    private static final String[] DEFAULT_SEARCH_PATH
+            = {"/usr/bin", "/usr/local/bin", "/opt/local/bin", "/bin", "/sbin", "/usr/sbin", "/opt/bin"};
 
     static {
         OPEN_WRITE_CREATE.add(StandardOpenOption.CREATE);
@@ -87,8 +97,47 @@ public final class FileUtils {
             DEFAULT_BUFFER_SIZE = Integer.parseInt(s);
             Checks.greaterThanZero(SYSPROP_DEFAULT_BUFFER_SIZE, DEFAULT_BUFFER_SIZE);
         } else {
+            // 512 is usually at least an even fraction of page size, and is
+            // usually the block size for SSD and NVMe disks, so this is
+            // likely to be optimal on modern systems
             DEFAULT_BUFFER_SIZE = 512;
         }
+    }
+
+    /**
+     * Create a new file with the given name and extension, appending "-1",
+     * "-2", and so forth to the name portion until a name is generated which
+     * does not already exist. Creates a 0-byte file.
+     *
+     * @param dir The folder
+     * @param name The name
+     * @param ext The extension
+     * @return The created file
+     * @throws IOException
+     */
+    public synchronized Path newFile(Path dir, String name, String ext) throws IOException {
+        return Files.createFile(newPath(dir, name, ext));
+    }
+
+    /**
+     * Create a path to a nonexistent file of the given name and extension,
+     * appending "-1", "-2", and so forth to the name portion until a name is
+     * generated which does not already exist.
+     *
+     * @param dir The folder
+     * @param name The name
+     * @param ext The extension
+     * @return The created file
+     * @throws IOException
+     */
+    public synchronized Path newPath(Path dir, String name, String ext) throws IOException {
+        int ix = 0;
+        Path p = dir.resolve(name + "." + ext);
+        while (Files.exists(p)) {
+            p = dir.resolve(name + "-" + ++ix + "." + ext);
+        }
+        Files.createFile(p);
+        return p;
     }
 
     // These methods need to be synchronized so two threads cannot
@@ -154,7 +203,7 @@ public final class FileUtils {
         Path tmp = Paths.get(System.getProperty("java.io.tmpdir"));
         long now = System.currentTimeMillis();
         String base = prefix + Long.toString(now, 36)
-                + "-" + filesIndex.getAndIncrement();
+                + "-" + FILES_INDEX.getAndIncrement();
         Path target = tmp.resolve(base);
         int ix = 1;
         while (Files.exists(target)) {
@@ -739,6 +788,225 @@ public final class FileUtils {
     public static IOFunction<Predicate<CharSequence>, Runnable> tail(Path file,
             Charset charset, int bufferSize, Executor exe) throws IOException {
         return new Tail(exe, file, bufferSize, charset);
+    }
+
+    /**
+     * Find an executable file with the passed file name, search the system path
+     * and the default search path
+     * (<code>/usr/bin:/usr/local/bin:/opt/local/bin:/bin:/sbin:/usr/sbin:/opt/bin</code>).
+     * Null is never returned - if nothing is found, returns a raw path name of
+     * the command name by itself.
+     *
+     * @param command The name of the executable; if the name is a file path,
+     * only the file name portion is used
+     * @return A path, which may or may not exist.
+     */
+    public static Path findExecutable(String command) {
+        return findExecutable(command, true, true);
+    }
+
+    /**
+     * Find an executable file with the passed file name, search the system path
+     * and the default search path
+     * (<code>/usr/bin:/usr/local/bin:/opt/local/bin:/bin:/sbin:/usr/sbin:/opt/bin</code>).
+     * Null is never returned - if nothing is found, returns a raw path name of
+     * the command name by itself.
+     *
+     * @param command The name of the executable; if the name is a file path,
+     * only the file name portion is used
+     * @param alsoSearch A path or list of paths to search <i>first</i>,
+     * preferring any executable of the right name found in these locations
+     * @return A path, which may or may not exist.
+     */
+    public static Path findExecutable(String command, String... alsoSearch) {
+        return findExecutable(command, true, true, alsoSearch);
+    }
+
+    /**
+     * Find an executable file with the passed file name, search the system path
+     * and the default search path
+     * (<code>/usr/bin:/usr/local/bin:/opt/local/bin:/bin:/sbin:/usr/sbin:/opt/bin</code>).
+     * Null is never returned - if nothing is found, returns a raw path name of
+     * the command name by itself.
+     *
+     * @param command The name of the executable; if the name is a file path,
+     * only the file name portion is used
+     * @param useDefaultSearchPath if true, search the default search path in
+     * addition to any <code>PATH</code> variable in the environment (if
+     * <code>useSystemPath</code> is true)
+     * (<code>/usr/bin:/usr/local/bin:/opt/local/bin:/bin:/sbin:/usr/sbin:/opt/bin</code>).
+     * @param useSystemPath Search any system path provided by the
+     * <code>PATH</code> environment variable
+     * @param alsoSearch A path or list of paths to search <i>first</i>,
+     * preferring any executable of the right name found in these locations
+     * @return A path, which may or may not exist.
+     */
+    public static Path findExecutable(String command, boolean useDefaultSearchPath, boolean useSystemPath, String... alsoSearch) {
+        command = Paths.get(command).getFileName().toString();
+        Set<String> searched = new HashSet<>();
+        for (String als : alsoSearch) {
+            for (String path : splitUniqueNoEmpty(File.pathSeparatorChar, als)) {
+                Path dir = Paths.get(path);
+                Path file = dir.resolve(command);
+                if (Files.exists(file) && Files.isExecutable(file)) {
+                    return file;
+                }
+                searched.add(path);
+            }
+        }
+        if (useSystemPath) {
+            String systemPath = System.getenv("PATH");
+            if (systemPath != null) {
+                for (String path : splitUniqueNoEmpty(File.pathSeparatorChar, systemPath)) {
+                    Path dir = Paths.get(path);
+                    Path file = dir.resolve(command);
+                    if (Files.exists(file) && Files.isExecutable(file)) {
+                        return file;
+                    }
+                    searched.add(path);
+                }
+            }
+        }
+        if (useDefaultSearchPath) {
+            for (String path : DEFAULT_SEARCH_PATH) {
+                if (!searched.contains(path)) {
+                    Path dir = Paths.get(path);
+                    Path file = dir.resolve(command);
+                    if (Files.exists(file) && Files.isExecutable(file)) {
+                        return file;
+                    }
+                    searched.add(path);
+                }
+            }
+        }
+        return Paths.get(command);
+    }
+
+    /**
+     * Duplicates Strings.splitUniqueNoEmpty to avoid a dependency. Splits a
+     * string on a delimiter character, trimming resulting strings and returning
+     * a set of unique non-empty strings.
+     *
+     * @param splitOn The character to split on
+     * @param path A string
+     * @return A set of unique, trimmed strings created from splitting the
+     * passed string on the delimiter character
+     */
+    static Set<String> splitUniqueNoEmpty(char splitOn, String path) {
+        if (path == null) {
+            return Collections.emptySet();
+        }
+        Set<String> seqs = new LinkedHashSet<>();
+        StringBuilder curr = new StringBuilder();
+        int max = path.length();
+        for (int i = 0; i < max; i++) {
+            char c = path.charAt(i);
+            if (c == splitOn || i == max - 1) {
+                if (i == max - 1 && c != splitOn) {
+                    curr.append(c);
+                }
+                String s = curr.toString().trim();
+                if (s.length() > 0) {
+                    seqs.add(s);
+                }
+                curr.setLength(0);
+            } else {
+                curr.append(c);
+            }
+        }
+        return seqs;
+    }
+
+    /**
+     * Get a predicate for filtering file streams which only lets files through.
+     *
+     * @return A predicate
+     */
+    public static Predicate<Path> filesOnly() {
+        return pth -> !Files.isDirectory(pth);
+    }
+
+    /**
+     * Get a predicate for filtering file streams which only lets folders
+     * through.
+     *
+     * @return A predicate
+     */
+    public static Predicate<Path> foldersOnly() {
+        return pth -> !Files.isDirectory(pth);
+    }
+
+    /**
+     * Get a predicate for filtering file streams which only lets non-folders
+     * with a give file extension delimited by <code>.</code> through.
+     *
+     * @return A predicate
+     */
+    public static Predicate<Path> byExtension(String ext) {
+        Checks.notEmpty("ext", Checks.notNull("ext", ext));
+        if (ext.charAt(0) != '.') {
+            ext = '.' + ext;
+        }
+        final String extension = ext;
+        return pth -> pth.toString().endsWith(extension);
+    }
+
+    /**
+     * Find all files in the subtree under a folder which have the given file
+     * extension.
+     *
+     * @param dir A folder
+     * @param extension A file extension
+     * @return A set of paths
+     * @throws IOException If something goes wrong
+     */
+    public static Set<Path> find(Path dir, String extension) throws IOException {
+        return find(dir, false, extension);
+    }
+
+    /**
+     * Find all files in the subtree under a folder which have the given file
+     * extension.
+     *
+     * @param dir A folder
+     * @param relativize If true, returned paths will be relative to the passed
+     * folder
+     * @param extension A file extension
+     * @return A set of paths
+     * @throws IOException If something goes wrong
+     */
+    public static Set<Path> find(Path dir, boolean relativize, String extension) throws IOException {
+        Set<Path> result = new LinkedHashSet<>(24);
+        Predicate<Path> test = filesOnly().and(byExtension(extension));
+        int count = search(relativize, dir, false, test, result::add);
+        return count == 0 ? Collections.emptySet() : result;
+    }
+
+    /**
+     * Search the subtree of a directory for paths.
+     *
+     * @param relativize If true, pass the portion of the path relative to the
+     * folder, not the absolute path of each match.
+     * @param dir The folder
+     * @param followLinks If true, follow symlinks
+     * @param predicate A predicate to determine which are paths are passed to
+     * the consumer
+     * @param consumer A consumer to receive matches
+     * @return The number of matches which were passed to the consumer
+     * @throws IOException If something goes wrong
+     */
+    public static int search(boolean relativize, Path dir, boolean followLinks, Predicate<? super Path> predicate, Consumer<? super Path> consumer) throws IOException {
+        int[] count = new int[1];
+        try (Stream<Path> all = Files.walk(dir, followLinks ? FOLLOW_LINKS : NO_FV_OPTIONS)) {
+            all.filter(predicate).forEach(path -> {
+                if (relativize) {
+                    path = dir.relativize(path);
+                }
+                consumer.accept(path);
+                count[0]++;
+            });
+        }
+        return count[0];
     }
 
     private FileUtils() {

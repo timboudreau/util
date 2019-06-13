@@ -27,6 +27,8 @@ import java.io.File;
 import java.lang.reflect.Array;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
@@ -44,8 +46,37 @@ import java.util.Set;
 public final class Checks {
 
     static boolean disabled = Boolean.getBoolean("checksDisabled");
+    private static final LinkOption[] NO_OPTS = new LinkOption[0];
 
     private Checks() {
+    }
+
+    /**
+     * Determine if a string value contains only digits.
+     *
+     * @param name
+     * @param value
+     * @return
+     */
+    public static String isDigits(String name, String value) {
+        if (disabled) {
+            return value;
+        }
+        if (name == null) {
+            name = value;
+        }
+        notNull(name, value);
+        int max = value.length();
+        for (int i = 0; i < max; i++) {
+            char c = value.charAt(i);
+            if (!Character.isDigit(c)) {
+                throw new InvalidArgumentException(name + " contains '"
+                        + c + "' (0x" + Integer.toHexString(c) + ") "
+                        + "which cannot be parsed as an integer: "
+                        + value);
+            }
+        }
+        return value;
     }
 
     public static long canCastToInt(String name, long value) {
@@ -53,10 +84,10 @@ public final class Checks {
             return value;
         }
         if (value > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException(name + " too large for an integer: " + value);
+            throw new InvalidArgumentException(name + " too large for an integer: " + value);
         }
         if (value < Integer.MIN_VALUE) {
-            throw new IllegalArgumentException(name + " too small for an integer: " + value);
+            throw new InvalidArgumentException(name + " too small for an integer: " + value);
         }
         return value;
     }
@@ -103,7 +134,7 @@ public final class Checks {
      *
      * @param name The name of the argument
      * @param val The value
-     * @throws IllegalArgumentException if the number is negative
+     * @throws InvalidArgumentException if the number is negative
      */
     public static <T extends Number> T nonNegative(String name, T val) {
         if (disabled) {
@@ -111,7 +142,7 @@ public final class Checks {
         }
         notNull("name", name);
         if (val.longValue() < 0) {
-            throw new IllegalArgumentException(name + " cannot be a negative number but is " + val);
+            throw new InvalidArgumentException(name + " cannot be a negative number but is " + val);
         }
         return val;
     }
@@ -121,7 +152,7 @@ public final class Checks {
      *
      * @param name The name of the argument
      * @param val The value
-     * @throws IllegalArgumentException if the number is negative
+     * @throws InvalidArgumentException if the number is negative
      */
     public static int nonNegative(String name, int val) {
         if (disabled) {
@@ -129,7 +160,7 @@ public final class Checks {
         }
         notNull("name", name);
         if (val < 0) {
-            throw new IllegalArgumentException(name + " cannot be a negative number but is " + val);
+            throw new InvalidArgumentException(name + " cannot be a negative number but is " + val);
         }
         return val;
     }
@@ -139,7 +170,7 @@ public final class Checks {
      *
      * @param name The name of the argument
      * @param val The value
-     * @throws IllegalArgumentException if the number is negative
+     * @throws InvalidArgumentException if the number is negative
      */
     public static long nonNegative(String name, long val) {
         if (disabled) {
@@ -147,7 +178,7 @@ public final class Checks {
         }
         notNull("name", name);
         if (val < 0) {
-            throw new IllegalArgumentException(name + " cannot be a negative number but is " + val);
+            throw new InvalidArgumentException(name + " cannot be a negative number but is " + val);
         }
         return val;
     }
@@ -157,7 +188,7 @@ public final class Checks {
      *
      * @param name The name of the argument
      * @param val The value
-     * @throws IllegalArgumentException if the number is negative
+     * @throws InvalidArgumentException if the number is negative
      */
     public static <T extends Number> T greaterThanOne(String name, T val) {
         if (disabled) {
@@ -165,7 +196,7 @@ public final class Checks {
         }
         notNull("name", name);
         if (val.longValue() < 1) {
-            throw new IllegalArgumentException(name + " cannot be < 1 but is " + val);
+            throw new InvalidArgumentException(name + " cannot be < 1 but is " + val);
         }
         return val;
     }
@@ -175,7 +206,7 @@ public final class Checks {
      *
      * @param name The name of the argument
      * @param val The value
-     * @throws IllegalArgumentException if the number is negative
+     * @throws InvalidArgumentException if the number is negative
      */
     public static int greaterThanOne(String name, int val) {
         if (disabled) {
@@ -183,7 +214,7 @@ public final class Checks {
         }
         notNull("name", name);
         if (val < 1) {
-            throw new IllegalArgumentException(name + " cannot be < 1 but is " + val);
+            throw new InvalidArgumentException(name + " cannot be < 1 but is " + val);
         }
         return val;
     }
@@ -193,7 +224,7 @@ public final class Checks {
      *
      * @param name The name of the argument
      * @param val The value
-     * @throws IllegalArgumentException if the number is negative
+     * @throws InvalidArgumentException if the number is negative
      */
     public static long greaterThanOne(String name, long val) {
         if (disabled) {
@@ -201,7 +232,7 @@ public final class Checks {
         }
         notNull("name", name);
         if (val < 1L) {
-            throw new IllegalArgumentException(name + " cannot be < 1 but is " + val);
+            throw new InvalidArgumentException(name + " cannot be < 1 but is " + val);
         }
         return val;
     }
@@ -211,7 +242,7 @@ public final class Checks {
      *
      * @param name The name of the argument
      * @param val The value
-     * @throws IllegalArgumentException if the number is negative
+     * @throws InvalidArgumentException if the number is negative
      */
     public static <T extends Number> T greaterThanZero(String name, T val) {
         if (disabled) {
@@ -219,7 +250,7 @@ public final class Checks {
         }
         notNull("name", name);
         if (val.longValue() < 1 || val.doubleValue() < 1) {
-            throw new IllegalArgumentException(name + " cannot be < 1 but is " + val);
+            throw new InvalidArgumentException(name + " cannot be < 1 but is " + val);
         }
         return val;
     }
@@ -229,7 +260,7 @@ public final class Checks {
      *
      * @param name The name of the argument
      * @param val The value
-     * @throws IllegalArgumentException if the number is negative
+     * @throws InvalidArgumentException if the number is negative
      */
     public static int greaterThanZero(String name, int val) {
         if (disabled) {
@@ -237,7 +268,7 @@ public final class Checks {
         }
         notNull("name", name);
         if (val < 1) {
-            throw new IllegalArgumentException(name + " cannot be < 1 but is " + val);
+            throw new InvalidArgumentException(name + " cannot be < 1 but is " + val);
         }
         return val;
     }
@@ -247,7 +278,7 @@ public final class Checks {
      *
      * @param name The name of the argument
      * @param val The value
-     * @throws IllegalArgumentException if the number is negative
+     * @throws InvalidArgumentException if the number is negative
      */
     public static long greaterThanZero(String name, long val) {
         if (disabled) {
@@ -255,7 +286,7 @@ public final class Checks {
         }
         notNull("name", name);
         if (val < 1) {
-            throw new IllegalArgumentException(name + " cannot be < 1 but is " + val);
+            throw new InvalidArgumentException(name + " cannot be < 1 but is " + val);
         }
         return val;
     }
@@ -269,8 +300,8 @@ public final class Checks {
      *
      * @param name The parameter name for use in an exception
      * @param array An array
-     * @throws IllegalArgumentException if array is not an array
-     * @throws IllegalArgumentException
+     * @throws InvalidArgumentException if array is not an array
+     * @throws InvalidArgumentException
      */
     public static <T> T notEmptyOrNull(String name, T array) {
         if (disabled) {
@@ -279,10 +310,10 @@ public final class Checks {
         notNull(name, array);
         Class<?> arrType = array.getClass();
         if (!arrType.isArray()) {
-            throw new IllegalArgumentException("Not an array: " + array);
+            throw new InvalidArgumentException("Not an array: " + array);
         }
         if (Array.getLength(array) == 0) {
-            throw new IllegalArgumentException(name + " has 0 length");
+            throw new InvalidArgumentException(name + " has 0 length");
         }
         return array;
     }
@@ -295,7 +326,7 @@ public final class Checks {
      *
      * @param name The name of the parameter
      * @param arr An array of some sort
-     * @throws IllegalArgumentException if the array has null elements, or if
+     * @throws InvalidArgumentException if the array has null elements, or if
      * array is an array of primitive types (these cannot contain null values
      * and do not need such checking)
      * @throws NullArgumentException if the passed array is null
@@ -308,7 +339,7 @@ public final class Checks {
         notNull(name, arr);
         Class<?> arrType = arr.getClass();
         if (arrType.getComponentType().isPrimitive()) {
-            throw new IllegalArgumentException("Null checks not "
+            throw new InvalidArgumentException("Null checks not "
                     + "needed for primitive arrays such as "
                     + name + " (" + arrType.getComponentType() + ")");
 
@@ -327,7 +358,7 @@ public final class Checks {
      *
      * @param name The name of the parameter
      * @param val A number
-     * @throws IllegalArgumentException if the value of the number equals 0
+     * @throws InvalidArgumentException if the value of the number equals 0
      */
     public static <T extends Number> T nonZero(String name, T val) {
         if (disabled) {
@@ -345,7 +376,7 @@ public final class Checks {
      *
      * @param name The name of the parameter
      * @param val A number
-     * @throws IllegalArgumentException if the value of the number equals 0
+     * @throws InvalidArgumentException if the value of the number equals 0
      */
     public static int nonZero(String name, int val) {
         if (disabled) {
@@ -362,7 +393,7 @@ public final class Checks {
      *
      * @param name The name of the parameter
      * @param val A number
-     * @throws IllegalArgumentException if the value of the number equals 0
+     * @throws InvalidArgumentException if the value of the number equals 0
      */
     public static long nonZero(String name, long val) {
         if (disabled) {
@@ -379,7 +410,7 @@ public final class Checks {
      *
      * @param name The name of the string used in the exception
      * @param value A string value
-     * @throws IllegalArgumentException if the String is empty,
+     * @throws InvalidArgumentException if the String is empty,
      * <i>but not if it is null</i>
      */
     public static <T extends CharSequence> T notEmpty(String name, T value) {
@@ -388,11 +419,11 @@ public final class Checks {
         }
         notNull("name", name);
         if (value instanceof String && ((String) value).isEmpty()) {
-            throw new IllegalArgumentException("String " + name
+            throw new InvalidArgumentException("String " + name
                     + " cannot be 0-length");
         }
         if (value != null && value.length() == 0) {
-            throw new IllegalArgumentException("String " + name
+            throw new InvalidArgumentException("String " + name
                     + " cannot be 0-length");
         }
         return value;
@@ -403,7 +434,7 @@ public final class Checks {
             return;
         }
         if (collection != null && collection.isEmpty()) {
-            throw new IllegalArgumentException(name + " cannot be an empty "
+            throw new InvalidArgumentException(name + " cannot be an empty "
                     + "collection (" + collection + ")");
         }
     }
@@ -413,7 +444,7 @@ public final class Checks {
      *
      * @param name The parameter name for use in the exception message
      * @param value The value
-     * @throws IllegalArgumentException if the value is null or "".equals(value)
+     * @throws InvalidArgumentException if the value is null or "".equals(value)
      * @throws NullArgumentException if the passed value is null
      */
     public static <T extends CharSequence> T notNullOrEmpty(String name, T value) {
@@ -432,7 +463,7 @@ public final class Checks {
      * @param value The value (may be null - use notNull(name, value) for null
      * checks
      * @param chars An array of characters
-     * @throws IllegalArgumentException if the value contains any of the passed
+     * @throws InvalidArgumentException if the value contains any of the passed
      * characters, or if the passed character array length is 0
      * @throws NullArgumentException if the passed char array is null
      */
@@ -445,19 +476,19 @@ public final class Checks {
             return;
         }
         if (chars.length == 0) {
-            throw new IllegalArgumentException("0 length list of characters");
+            throw new InvalidArgumentException("0 length list of characters");
         }
         if (chars.length == 1) {
             int index = indexIn(value, chars[0]);
             if (index > 0) {
-                throw new IllegalArgumentException("Illegal character at "
+                throw new InvalidArgumentException("Illegal character at "
                         + index + " in " + value);
             }
         } else {
             for (char c : chars) {
                 int index = indexIn(value, chars[0]);
                 if (index > 0) {
-                    throw new IllegalArgumentException("Illegal character " + c
+                    throw new InvalidArgumentException("Illegal character " + c
                             + "at " + index + " in " + value);
                 }
             }
@@ -493,7 +524,7 @@ public final class Checks {
             return;
         }
         if (value != null && indexIn(value, c) < 0) {
-            throw new IllegalArgumentException(name + " must contain a '" + c + "' character but does not (" + value + ")");
+            throw new InvalidArgumentException(name + " must contain a '" + c + "' character but does not (" + value + ")");
         }
     }
 
@@ -513,7 +544,7 @@ public final class Checks {
         if (!(collection instanceof Set)) {
             Set<Object> nue = new HashSet<>(collection);
             if (nue.size() != collection.size()) {
-                throw new IllegalArgumentException(name + " contains duplicate entries (" + collection + ")");
+                throw new InvalidArgumentException(name + " contains duplicate entries (" + collection + ")");
             }
         }
     }
@@ -524,7 +555,7 @@ public final class Checks {
      * @param name The parameter name for constructing the exception message
      * @param value a string or equivalent. May be null, use notNull() for null
      * checks.
-     * @throws IllegalArgumentException if the passed value starts with the
+     * @throws InvalidArgumentException if the passed value starts with the
      * passed character
      */
     public static void mayNotStartWith(String name, CharSequence value, char c) {
@@ -532,7 +563,7 @@ public final class Checks {
             return;
         }
         if (value != null && value.length() > 0 && c == value.charAt(0)) {
-            throw new IllegalArgumentException(name + " may not start with a '" + c + "' character (" + value + ")");
+            throw new InvalidArgumentException(name + " may not start with a '" + c + "' character (" + value + ")");
         }
     }
 
@@ -558,12 +589,12 @@ public final class Checks {
 
     /**
      * Check that the given argument is of the given length, throw an
-     * IllegalArgumentException if that is not the case.
+     * InvalidArgumentException if that is not the case.
      *
      * @param name The parameter name for constructing the exception message
      * @param length The required length of the given value
      * @param value The value to check the length of
-     * @throws IllegalArgumentException if the length of the passed in value is
+     * @throws InvalidArgumentException if the length of the passed in value is
      * not equal to the specified required length
      * @throws NullPointerException if the name is null
      * @throws NullArgumentException if the value is null
@@ -574,7 +605,7 @@ public final class Checks {
         }
         notNull(name, value);
         if (value.length != length) {
-            throw new IllegalArgumentException("value " + Objects.toString(value) + " does not have the required arguments of " + length);
+            throw new InvalidArgumentException("value " + Objects.toString(value) + " does not have the required arguments of " + length);
         }
     }
 
@@ -589,8 +620,202 @@ public final class Checks {
         }
         notNull("file", file);
         if (!file.exists() || !file.isFile()) {
-            throw new IllegalArgumentException(file + " does not exist or is not a regular file");
+            throw new InvalidArgumentException(file + " does not exist or is not a regular file");
         }
+    }
+
+    /**
+     * Asserts that a file must exist.
+     *
+     * @param file The file
+     */
+    public static Path exists(Path file) {
+        if (disabled) {
+            return file;
+        }
+        return exists(Objects.toString(file), file);
+    }
+
+    /**
+     * Asserts that a file must exist.
+     *
+     * @param paramName the parameter name
+     * @param file The file
+     */
+    public static Path exists(String paramName, Path file) {
+        if (disabled) {
+            return file;
+        }
+        if (!Files.exists(notNull(paramName, file))) {
+            throw new InvalidArgumentException(paramName + " does not exist: " + file);
+        }
+        return file;
+    }
+
+    /**
+     * Test that file.
+     *
+     * @param file The file
+     * @return the file
+     */
+    public static Path readable(Path file) {
+        if (disabled) {
+            return file;
+        }
+        return readable(Objects.toString(file), file);
+    }
+
+    /**
+     * Test that a file exists and is readable.
+     *
+     * @param paramName The parameter name
+     * @param file The file
+     * @return the path
+     */
+    public static Path readable(String paramName, Path file) {
+        if (disabled) {
+            return file;
+        }
+        if (!Files.isReadable(exists(paramName, notNull(paramName, file)))) {
+            throw new InvalidArgumentException(file + " not readable");
+        }
+        return file;
+    }
+
+    /**
+     * Assert that a file exists and is a regular file.
+     *
+     * @param file The path
+     * @return The file
+     */
+    public static Path regularFile(Path file) {
+        if (disabled) {
+            return file;
+        }
+        return regularFile(file, NO_OPTS);
+    }
+
+    /**
+     * Assert that a file exists and is a regular file.
+     *
+     * @param file The path
+     * @param opts link options for Files.isRegularFile()
+     * @return The file
+     */
+    public static Path regularFile(Path file, LinkOption... opts) {
+        if (disabled) {
+            return file;
+        }
+        return regularFile(Objects.toString(file), file, opts);
+    }
+
+    /**
+     * Assert that a file exists and is a regular file.
+     *
+     * @param paramName the parameter name
+     * @param file The path
+     * @param opts link options for Files.isRegularFile()
+     * @return The file
+     */
+    public static Path regularFile(String paramName, Path file, LinkOption... opts) {
+        if (disabled) {
+            return file;
+        }
+        notNull("file", file);
+        exists(file);
+        if (!Files.isRegularFile(file, opts)) {
+            throw new InvalidArgumentException(file + " not readable");
+        }
+        return file;
+    }
+
+    /**
+     * Test that file.
+     *
+     * @param file The file
+     */
+    public static Path writable(Path file) {
+        if (disabled) {
+            return file;
+        }
+        return writable(Objects.toString(file), file);
+    }
+
+    public static Path writable(String paramName, Path file) {
+        if (disabled) {
+            return file;
+        }
+        notNull("file", file);
+        exists(file);
+        if (!Files.isWritable(file)) {
+            throw new InvalidArgumentException(paramName + " not writable: " + file);
+        }
+        return file;
+    }
+
+    /**
+     * Test that file.
+     *
+     * @param file The file
+     */
+    public static Path executable(Path file) {
+        if (disabled) {
+            return file;
+        }
+        return executable(Objects.toString(file), file);
+    }
+
+    public static Path executable(String paramName, Path file) {
+        if (disabled) {
+            return file;
+        }
+        notNull(paramName, file);
+        exists(file);
+        if (!Files.isExecutable(file)) {
+            throw new InvalidArgumentException(paramName + " not executable: " + file);
+        }
+        return file;
+    }
+
+    public static Path fileExists(Path file) {
+        if (disabled) {
+            return file;
+        }
+        return fileExists(Objects.toString(file), file);
+    }
+
+    /**
+     * Test that file exists and is a file not a folder.
+     *
+     * @param file The file
+     */
+    public static Path fileExists(String paramName, Path file) {
+        if (disabled) {
+            return file;
+        }
+        notNull(paramName, file);
+        exists(paramName, file);
+        if (!Files.isRegularFile(file)) {
+            throw new InvalidArgumentException(paramName + " does not exist or is not a regular file: " + file);
+        }
+        return file;
+    }
+
+    /**
+     * Test that file exists and is a file not a folder.
+     *
+     * @param file The file
+     */
+    public static Path folderExists(String paramName, Path file) {
+        if (disabled) {
+            return file;
+        }
+        notNull(paramName, file);
+        exists(paramName, file);
+        if (!Files.exists(file) || !Files.isDirectory(file)) {
+            throw new InvalidArgumentException(file + " does not exist or is not a folder");
+        }
+        return file;
     }
 
     /**
@@ -605,7 +830,7 @@ public final class Checks {
         }
         notNull(paramName, file);
         if (!file.exists() || !file.isFile()) {
-            throw new IllegalArgumentException(paramName + " does not exist or is not a regular file: " + file);
+            throw new InvalidArgumentException(paramName + " does not exist or is not a regular file: " + file);
         }
         return file;
     }
@@ -621,7 +846,7 @@ public final class Checks {
         }
         notNull("file", file);
         if (!file.exists() || !file.isDirectory()) {
-            throw new IllegalArgumentException(file + " does not exist or is not a regular file");
+            throw new InvalidArgumentException(file + " does not exist or is not a regular file");
         }
     }
 
@@ -637,10 +862,10 @@ public final class Checks {
         notNull(paramName, file);
         Path pth = file.toPath();
         if (!file.exists()) {
-            throw new IllegalArgumentException(paramName + " does not exist: " + file);
+            throw new InvalidArgumentException(paramName + " does not exist: " + file);
         }
         if (!file.isDirectory()) {
-            throw new IllegalArgumentException(paramName + " is not a directory: " + file);
+            throw new InvalidArgumentException(paramName + " is not a directory: " + file);
         }
         return file;
     }
@@ -656,7 +881,7 @@ public final class Checks {
         }
         fileExists(file);
         if (!file.canRead()) {
-            throw new IllegalArgumentException("Read permission missing on " + file);
+            throw new InvalidArgumentException("Read permission missing on " + file);
         }
     }
 
@@ -671,7 +896,7 @@ public final class Checks {
         }
         fileExists(paramName, file);
         if (!file.canRead()) {
-            throw new IllegalArgumentException(paramName + " exists and is a file but is not readable: " + file);
+            throw new InvalidArgumentException(paramName + " exists and is a file but is not readable: " + file);
         }
         return file;
     }
@@ -686,7 +911,7 @@ public final class Checks {
             return file;
         }
         if (readable(paramName, file).length() == 0) {
-            throw new IllegalArgumentException(paramName + " exists and is a file but is not readable: " + file);
+            throw new InvalidArgumentException(paramName + " exists and is a file but is not readable: " + file);
         }
         return file;
     }
@@ -708,8 +933,7 @@ public final class Checks {
             if (seq.length() > 30) {
                 seq = seq.subSequence(0, 30) + "...";
             }
-            throw new IllegalArgumentException("Cannot be encoded in " + charset.name() + " '" + seq + "'");
+            throw new InvalidArgumentException("Cannot be encoded in " + charset.name() + " '" + seq + "'");
         }
     }
-
 }

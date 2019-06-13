@@ -1,7 +1,7 @@
-/* 
+/*
  * The MIT License
  *
- * Copyright 2013 Tim Boudreau.
+ * Copyright 2019 Mastfrog Technologies.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,15 +24,14 @@
 package com.mastfrog.util.preconditions;
 
 /**
- * Special IllegalArgumentException for null parameters.  Checks.* use this
- * rather than NullPointerException to distinguish cases of code passing an illegal
- * null (clearly a bug on our part) from situations at runtime where something
- * is null which may not be in our code.
+ * Specialization of IllegalArgumentException to differentiate stack traces from
+ * Checks.* tests (caller bug) from bugs in library code.
  *
  * @author Tim Boudreau
  */
-public class NullArgumentException extends IllegalArgumentException {
-    public NullArgumentException (String msg) {
-        super (msg);
+public class InvalidArgumentException extends IllegalArgumentException {
+
+    InvalidArgumentException(String s) {
+        super(s);
     }
 }

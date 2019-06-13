@@ -21,21 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package com.mastfrog.util.streams;
 
-import com.mastfrog.util.streams.Streams;
-import com.mastfrog.util.streams.HashingInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import org.junit.*;
 
 import static org.junit.Assert.*;
 
-/**
- *
- * @author tim
- */
 public class HashingInputStreamTest {
 
     @Test
@@ -53,7 +46,7 @@ public class HashingInputStreamTest {
         ByteArrayOutputStream two = new ByteArrayOutputStream();
 
         int copied = Streams.copy(hin, two);
-        assertEquals (bytes.length, copied);
+        assertEquals(bytes.length, copied);
         hin.close();
 
         byte[] nue = two.toByteArray();

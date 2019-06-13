@@ -24,6 +24,11 @@
 package com.mastfrog.util.file;
 
 import java.nio.CharBuffer;
+import java.util.Spliterator;
+import java.util.Spliterator.OfInt;
+import java.util.function.IntConsumer;
+import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 
 /**
  *
@@ -80,6 +85,55 @@ final class CharBuffersCharSequence implements CharSequence {
     public CharSequence subSequence(int start, int end) {
         // XXX this could be optimized
         return toString().subSequence(start, end);
+    }
+
+    @Override
+    public IntStream chars() {
+        return StreamSupport.intStream(spliterator(), false);
+    }
+
+    private OfInt spliterator() {
+        return new OfInt() {
+            private int bufferIndex = 0;
+            private int indexInBuffer = -1;
+
+            @Override
+            public OfInt trySplit() {
+                return this;
+            }
+
+            @Override
+            public boolean tryAdvance(IntConsumer action) {
+                CharBuffer buf = null;
+                while (bufferIndex < buffers.length) {
+                    buf = buffers[bufferIndex];
+                    indexInBuffer++;
+                    if (indexInBuffer >= buf.length()) {
+                        bufferIndex++;
+                        indexInBuffer = -1;
+                        buf = null;
+                    } else {
+                        break;
+                    }
+                }
+                if (buf != null) {
+                    action.accept(buffers[bufferIndex].charAt(indexInBuffer));
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            @Override
+            public long estimateSize() {
+                return length();
+            }
+
+            @Override
+            public int characteristics() {
+                return Spliterator.ORDERED | Spliterator.NONNULL | Spliterator.IMMUTABLE;
+            }
+        };
     }
 
     @Override

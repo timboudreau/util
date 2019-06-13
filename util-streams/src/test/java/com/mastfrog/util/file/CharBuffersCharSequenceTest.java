@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -40,6 +41,36 @@ import org.junit.Test;
 public class CharBuffersCharSequenceTest {
 
     @Test
+    public void testChars() throws IOException {
+        String[] stuff = {"Hello", "world", "ьшокола", "this is some stuff"};
+        StringBuilder sb = new StringBuilder();
+        CharBuffer[] bufs = new CharBuffer[stuff.length];
+        for (int i = 0; i < stuff.length; i++) {
+            bufs[i] = CharBuffer.wrap(stuff[i]);
+            sb.append(stuff[i]);
+        }
+        CharBuffersCharSequence seq = new CharBuffersCharSequence(bufs);
+        assertEquals(sb.toString(), seq.toString());
+
+        IntStream expChars = sb.chars();
+        IntStream gotChars = seq.chars();
+
+        assertEquals(expChars.count(), gotChars.count());
+        expChars = sb.chars();
+        gotChars = seq.chars();
+        List<Integer> expected = collect(expChars);
+        List<Integer> got = collect(gotChars);
+
+        assertEquals(expected, got);
+    }
+
+    static List<Integer> collect(IntStream ints) {
+        List<Integer> result = new ArrayList<>();
+        ints.forEach(result::add);
+        return result;
+    }
+
+    @Test
     public void testCbSeq() throws IOException {
         List<CharBuffer> l = new ArrayList<>();
         for (String s : TEST_CONTENT.split("\n")) {
@@ -47,11 +78,10 @@ public class CharBuffersCharSequenceTest {
             l.add(CharBuffer.wrap("\n"));
         }
         CharSequence s = new CharBuffersCharSequence(l.toArray(new CharBuffer[0]));
-        System.out.println("COMBINE TO " + s);
         assertEquals(TEST_CONTENT.length(), s.length());
         assertEquals(TEST_CONTENT, s.toString());
-        assertEquals("Hash codes do not match",TEST_CONTENT.hashCode(), s.hashCode());
-        assertTrue("Equality test failed for '" + s + "'",s.equals(TEST_CONTENT));
+        assertEquals("Hash codes do not match", TEST_CONTENT.hashCode(), s.hashCode());
+        assertTrue("Equality test failed for '" + s + "'", s.equals(TEST_CONTENT));
         for (int i = 0; i < TEST_CONTENT.length(); i++) {
             char expect = TEST_CONTENT.charAt(i);
             char got = s.charAt(i);
@@ -123,7 +153,7 @@ public class CharBuffersCharSequenceTest {
                 // ok
             }
         }
-        assertEquals("Hash codes do not match","Hello world".hashCode(), b.hashCode());
+        assertEquals("Hash codes do not match", "Hello world".hashCode(), b.hashCode());
         assertTrue("Equality test failed for '" + b + "'", b.equals("Hello world"));
     }
 

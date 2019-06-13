@@ -36,14 +36,21 @@ import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -346,6 +353,40 @@ public class FileUtilsTest {
             }
         }
         return sb.toString();
+    }
+
+    @Test
+    public void testSplit() throws IOException {
+        Set<String> expect = setOf("/tmp/foo", "/usr/bin/bar", "/home/tim/work", "/dev/dogwhiskers");
+        assertEquals(expect, FileUtils.splitUniqueNoEmpty(':', "/tmp/foo:/usr/bin/bar:/home/tim/work:/dev/dogwhiskers"));
+        assertEquals(expect, FileUtils.splitUniqueNoEmpty(':', " /tmp/foo:/usr/bin/bar : /home/tim/work :/dev/dogwhiskers"));
+        assertEquals(expect, FileUtils.splitUniqueNoEmpty(':', ":/tmp/foo:/usr/bin/bar:/home/tim/work:/dev/dogwhiskers"));
+        assertEquals(expect, FileUtils.splitUniqueNoEmpty(':', ":/tmp/foo::/usr/bin/bar: : :/home/tim/work:/dev/dogwhiskers:::"));
+        assertEquals(setOf("/foo/bar"), FileUtils.splitUniqueNoEmpty(':', "/foo/bar"));
+        assertEquals(Collections.emptySet(), FileUtils.splitUniqueNoEmpty(':', ""));
+        assertEquals(Collections.emptySet(), FileUtils.splitUniqueNoEmpty(':', null));
+    }
+
+    @Test
+    public void findJavaCommand() throws IOException {
+        Path dir = Paths.get(System.getProperty("java.home")).resolve("bin");
+        Path expect = dir.resolve("java");
+        assertTrue(Files.exists(expect));
+        assertTrue(Files.isExecutable(expect));
+        assertEquals(expect, FileUtils.findExecutable("java", true, true, dir.toString()));
+        assertNotNull(FileUtils.findExecutable("java", true, true));
+    }
+
+    @Test
+    public void testFind() throws IOException {
+        Path javaHome = Paths.get(System.getProperty("java.home"));
+        Set<Path> paths = FileUtils.find(javaHome, true, "properties");
+        assertFalse(paths.isEmpty());
+        assertTrue(paths.contains(Paths.get("conf/logging.properties")));
+    }
+
+    static Set<String> setOf(String... strings) {
+        return new LinkedHashSet<>(Arrays.asList(strings));
     }
 
     @BeforeClass

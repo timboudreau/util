@@ -23,12 +23,10 @@
  */
 package com.mastfrog.util.streams;
 
-import com.mastfrog.util.streams.Streams;
-import com.mastfrog.util.streams.ByteBufferCollectionInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.LinkedList;
@@ -45,6 +43,7 @@ public class ByteBufferCollectionInputStreamTest {
 
     long orig = System.currentTimeMillis();
     long ix = orig + 1;
+
     private String randomString() {
         byte[] bytes = new byte[20];
         ThreadLocalRandom.current().nextBytes(bytes);
@@ -61,8 +60,6 @@ public class ByteBufferCollectionInputStreamTest {
 
     @Test
     public void testUids() throws IOException {
-        File tmp = new File(System.getProperty("java.io.tmpdir"));
-        File x = new File(tmp, "ids.seed");
         String last = "";
         for (int i = 0; i < 20; i++) {
             String curr = randomString();
@@ -71,7 +68,7 @@ public class ByteBufferCollectionInputStreamTest {
             last = curr;
         }
     }
-    
+
     @Test
     public void testRead() throws Exception {
         assertTrue(true);
@@ -84,7 +81,6 @@ public class ByteBufferCollectionInputStreamTest {
         assertEquals(sb.toString(), s);
 
         // test various pathologies
-
         in = new ByteBufferCollectionInputStream();
         s = Streams.readString(in, 20);
         assertEquals("", s);
@@ -94,12 +90,15 @@ public class ByteBufferCollectionInputStreamTest {
         assertEquals("", s);
 
         sb = new StringBuilder();
-        in = new ByteBufferCollectionInputStream(ByteBuffer.allocate(0), ByteBuffer.allocate(0), buffer('a', 17, sb));
+        in = new ByteBufferCollectionInputStream(ByteBuffer.allocate(0),
+                ByteBuffer.allocate(0), buffer('a', 17, sb));
         s = Streams.readString(in, 15);
         assertEquals(sb.toString(), s);
 
         sb = new StringBuilder();
-        in = new ByteBufferCollectionInputStream(ByteBuffer.allocate(0), ByteBuffer.allocate(0), buffer('d', 13, sb), ByteBuffer.allocate(0));
+        in = new ByteBufferCollectionInputStream(ByteBuffer.allocate(0),
+                ByteBuffer.allocate(0), buffer('d', 13, sb),
+                ByteBuffer.allocate(0));
         s = Streams.readString(in, 10);
         assertEquals(sb.toString(), s);
 
@@ -116,10 +115,7 @@ public class ByteBufferCollectionInputStreamTest {
     private ByteBuffer buffer(char c, int count, StringBuilder sb) throws Exception {
         byte[] b = new byte[count];
         Arrays.fill(b, (byte) c);
-        sb.append(new String(b, "US-ASCII"));
+        sb.append(new String(b, US_ASCII));
         return ByteBuffer.wrap(b);
-//        ByteBuffer res = ByteBuffer.allocateDirect(Math.max(128, count));
-//        res.put(b);
-//        return res;
     }
 }
