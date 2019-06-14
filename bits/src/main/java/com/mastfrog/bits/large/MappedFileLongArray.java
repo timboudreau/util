@@ -11,6 +11,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -58,6 +59,12 @@ final class MappedFileLongArray implements CloseableLongArray {
         this(newTempFile(), size);
     }
 
+    @Override
+    public boolean isZeroInitialized() {
+        // This could return true on OS's other than SmartOS / Solaris?
+        return false;
+    }
+
     public Path file() {
         return file;
     }
@@ -82,13 +89,18 @@ final class MappedFileLongArray implements CloseableLongArray {
         });
     }
 
+    static AtomicInteger FILE_UNIQUIFIER = new AtomicInteger();
+
     private static Path newTempFile() {
         Path tmp = Paths.get(System.getProperty("java.io.tmpdir"));
         int ix = 0;
-        String now = Long.toString(System.currentTimeMillis(), 36);
-        Path result = tmp.resolve(now + ".longs");
+        String base = Long.toString(System.currentTimeMillis(), 36)
+                + "-" + FILE_UNIQUIFIER.incrementAndGet();
+        String ext = MappedFileLongArray.class.getSimpleName().toLowerCase();
+        Path result = tmp.resolve(base + "."
+                + ext);
         while (Files.exists(result)) {
-            result = tmp.resolve(now + "-" + ix++ + ".longs");
+            result = tmp.resolve(base + "-" + ix++ + "." + ext);
         }
         return result;
     }
