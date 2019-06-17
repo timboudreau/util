@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Predicate;
 import org.junit.After;
@@ -47,9 +48,10 @@ public class TailTest {
 
     private Path tmp;
 
-    @Test
+    @Test(timeout=5000)
     public void testSomeMethod() throws IOException, InterruptedException {
-        Tail tail = new Tail(Executors.newSingleThreadExecutor(), tmp, 256, UTF_8);
+        ExecutorService exe = Executors.newSingleThreadExecutor();
+        Tail tail = new Tail(exe, tmp, 256, UTF_8);
         C c = new C();
         Runnable canceller = tail.watch(c);
         try (PrintStream ps = new PrintStream(tmp.toFile(), "UTF-8")) {
@@ -64,8 +66,9 @@ public class TailTest {
             ps.println("Gwerp.");
         }
         Thread.sleep(2100);
-        c.assertSeen("Hello", "Goodbye.", "Whatevs.", "Woo hoo.", "Gwerp.");
         canceller.run();
+        exe.shutdown();
+        c.assertSeen("Hello", "Goodbye.", "Whatevs.", "Woo hoo.", "Gwerp.");
     }
 
     private static final class C implements Predicate<CharSequence> {

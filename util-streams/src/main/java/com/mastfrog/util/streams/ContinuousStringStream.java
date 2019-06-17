@@ -1,5 +1,6 @@
 package com.mastfrog.util.streams;
 
+import com.mastfrog.util.file.FileUtils;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -62,6 +63,14 @@ public final class ContinuousStringStream implements AutoCloseable {
         return fileChannel.position();
     }
 
+    boolean hasContent() throws IOException {
+        return available() > 0 || readBuffer.position() > 0;
+    }
+
+    long size() throws IOException {
+        return fileChannel.size();
+    }
+
     /**
      * Decode whatever characters are available into the passed CharBuffer. Note
      * that for multi-byte encodings, CharsetDecoders are stateful, and a
@@ -75,28 +84,63 @@ public final class ContinuousStringStream implements AutoCloseable {
      * @throws IOException If something goes wrong
      */
     public synchronized CoderResult decode(CharBuffer target, CharsetDecoder charsetDecoder) throws IOException {
-        if (fileChannel.position() == fileChannel.size()) {
-            return CoderResult.UNDERFLOW;
-        }
-        for (;;) {
-            // Clear the mark and limit
+        CoderResult[] r = new CoderResult[1];
+        if (readBuffer.position() == readBuffer.capacity()) {
             readBuffer.clear();
-            // Slurp in whatever we can
-            int numBytesRead = fileChannel.read(readBuffer);
-            // get ready to copy data out
-            readBuffer.flip();
-            // got nothing?  We're done for now.
-            if (numBytesRead <= 0) {
-                return CoderResult.UNDERFLOW;
+        }
+        int count = FileUtils.decode(fileChannel, readBuffer, target, charsetDecoder, true, r);
+        if (count > 0) {
+            target.flip();
+        }
+        return r[0];
+    }
+
+    static String escape(CharBuffer s) {
+        s = s.duplicate();
+        s.flip();
+        StringBuilder sb = new StringBuilder();
+        int start = s.position();
+        int max = s.length();
+        for (int i = start; i < max; i++) {
+            char c = s.charAt(i);
+            switch (c) {
+                case '\n':
+                    sb.append("\\n");
+                    break;
+                default:
+                    sb.append(c);
             }
-            // Decode the bytes into the character set
-            CoderResult characterDecodingResult = charsetDecoder.decode(readBuffer, target, true);
-            // If we're done, get out
-            long remainingLength = target.capacity() - target.position();
-            // Loop until the buffer is full
-            if (remainingLength <= 0) {
-                return characterDecodingResult;
+        }
+        return sb.toString();
+    }
+
+    static String escape(CharSequence s) {
+        StringBuilder sb = new StringBuilder();
+        int start = 0;
+        int max = s.length();
+        for (int i = start; i < max; i++) {
+            char c = s.charAt(i);
+            switch (c) {
+                case '\n':
+                    sb.append("\\n");
+                    break;
+                default:
+                    sb.append(c);
             }
+        }
+        return sb.toString();
+    }
+
+    static String escape(char c) {
+        switch (c) {
+            case '\n':
+                return "\\n";
+            case '\t':
+                return "\\t";
+            case 0:
+                return "\\0";
+            default:
+                return "" + c;
         }
     }
 }

@@ -27,6 +27,7 @@ import com.mastfrog.function.throwing.io.IOFunction;
 import com.mastfrog.function.throwing.io.IOSupplier;
 import com.mastfrog.util.preconditions.Checks;
 import com.mastfrog.util.preconditions.Exceptions;
+import com.mastfrog.util.streams.ContinuousLineStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -56,6 +57,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Spliterator;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -63,6 +65,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * Utility methods for reading and writing files and directories. The read and
@@ -640,36 +643,58 @@ public final class FileUtils {
         }
     }
 
-    static int decode(ReadableByteChannel fileChannel, ByteBuffer readBuffer, CharBuffer target, CharsetDecoder charsetDecoder, boolean permissive) throws IOException {
-//        if (readBuffer.position() == 0 && fileChannel.position() == fileChannel.size()) {
-//            return -1;
-//        }
+    public static int decode(ReadableByteChannel fileChannel, ByteBuffer readBuffer, CharBuffer target, CharsetDecoder charsetDecoder, boolean permissive) throws IOException {
+        int result = decode(fileChannel, readBuffer, target, charsetDecoder, permissive, null);
+        target.flip();
+        return result;
+    }
+
+    public static int decode(ReadableByteChannel fileChannel, ByteBuffer readBuffer, CharBuffer target, CharsetDecoder charsetDecoder, boolean permissive, CoderResult[] res) throws IOException {
+        CoderResult lastCoderResult = null;
         int numBytesRead;
         int total = 0;
-        CoderResult lastCoderResult = null;
         for (;;) {
+            long oldPos = readBuffer.position();
             numBytesRead = fileChannel.read(readBuffer);
-            if (readBuffer.position() > 0) {
+            if (readBuffer.position() > oldPos || oldPos > 0) {
                 ByteBuffer rb = readBuffer;
-                total += Math.max(0, numBytesRead);
+                total += Math.max(0, numBytesRead) + oldPos;
                 // got nothing?  We're done for now.
                 if (numBytesRead < 0 && rb.position() == 0) {
                     return -1;
                 }
-                if (numBytesRead <= 0 /*&& fileChannel.position() == fileChannel.size() */ && rb.position() == rb.limit()) {
+                // If we got zero and the read buffer was fully read,
+                // we can do no more now
+                if (numBytesRead <= 0 && rb.position() == rb.limit()) {
                     return -1;
                 }
                 rb.flip();
                 // Decode the bytes into the character set
                 lastCoderResult = charsetDecoder.decode(rb, target, true);
                 if (rb.position() < rb.limit()) {
+                    // Some trailing bytes that were not enough to convert
+                    // into characters; move them to the front of the buffer,
+                    // an leave the buffer with its position set to the
+                    // number of unused bytes, so the next pass of reading
+                    // can append some more
                     ByteBuffer tail = rb.slice();
                     rb.rewind();
                     rb.put(tail);
+                    // If we've filled the output buffer, we have to stop -
+                    // the caller needs to respect the position of the
+                    // read buffer and pass it back in the same state to
+                    // continue reading
+                    if (target.position() == target.capacity()) {
+                        break;
+                    }
                 } else {
+                    // We used up the read buffer, so rewind it for the next
+                    // pass
                     rb.rewind();
                 }
                 if (!permissive) {
+                    // if strict mode, throw an error if we got something we
+                    // couldn't decode
                     if (lastCoderResult.isError() || lastCoderResult.isUnmappable() || lastCoderResult.isMalformed()) {
                         lastCoderResult.throwException();
                     }
@@ -681,12 +706,9 @@ public final class FileUtils {
                 break;
             }
         }
-        if (!permissive /*&& fileChannel.position() == fileChannel.size()*/) {
-            if (lastCoderResult.isUnderflow()) {
-                lastCoderResult.throwException();
-            }
+        if (res != null) {
+            res[0] = lastCoderResult;
         }
-        target.flip();
         return total;
     }
 
@@ -1007,6 +1029,95 @@ public final class FileUtils {
             });
         }
         return count[0];
+    }
+
+    /**
+     * Get a stream which lazily loads each line of a file as UTF-8 (unlike
+     * Files.readAllLines()) allowing very large files to be parsed line by line
+     * without iteration necessarily requiring more than
+     * <code>(DEFAULT_BUFFER_SIZE * 2) + (maxLineLength * charset-max-bytes-per-char)</code>
+     * bytes of memory.
+     *
+     * @param path the file path
+     * @param the buffer size for the byte gathering buffer (the character
+     * buffer size will be one of two byte chars sized using a heuristic based
+     * on the charset's deocder's reported average bytes per character).
+     *
+     * @return A stream of lines. Note, since I/O is involved, the returned
+     * stream
+     * <i>can</i> throw undeclared IOExceptions
+     */
+    public static Stream<CharSequence> lines(Path path) {
+        return lines(path, DEFAULT_BUFFER_SIZE, UTF_8);
+    }
+
+    /**
+     * Get a stream which lazily loads each line of a file (unlike
+     * Files.readAllLines()) allowing very large files to be parsed line by line
+     * without iteration necessarily requiring more than
+     * <code>(bufferSize * 2) + (maxLineLength * charset-max-bytes-per-char)</code>
+     * bytes of memory.
+     *
+     * @param path the file path
+     * @param the buffer size for the byte gathering buffer (the character
+     * buffer size will be one of two byte chars sized using a heuristic based
+     * on the charset's deocder's reported average bytes per character).
+     *
+     * @return A stream of lines. Note, since I/O is involved, the returned
+     * stream
+     * <i>can</i> throw undeclared IOExceptions
+     */
+    public static Stream<CharSequence> lines(Path path, Charset charset) {
+        return lines(path, DEFAULT_BUFFER_SIZE, charset);
+    }
+
+    /**
+     * Get a stream which lazily loads each line of a file (unlike
+     * Files.readAllLines()) allowing very large files to be parsed line by line
+     * without iteration necessarily requiring more than
+     * <code>(bufferSize * 2) + (maxLineLength * charset-max-bytes-per-char)</code>
+     * bytes of memory.
+     *
+     * @param path the file path
+     * @param the buffer size for the byte gathering buffer (the character
+     * buffer size will be one of two byte chars sized using a heuristic based
+     * on the charset's deocder's reported average bytes per character).
+     *
+     * @return A stream of lines. Note, since I/O is involved, the returned
+     * stream
+     * <i>can</i> throw undeclared IOExceptions
+     */
+    public static Stream<CharSequence> lines(Path path, int bufferSize, Charset charset) {
+        ContinuousLineStream lines = ContinuousLineStream.of(path, DEFAULT_BUFFER_SIZE, charset);
+        return StreamSupport.stream(() -> new Spliterator<CharSequence>() {
+            @Override
+            public boolean tryAdvance(Consumer<? super CharSequence> action) {
+                try {
+                    if (lines.hasMoreLines()) {
+                        action.accept(lines.nextLine());
+                        return true;
+                    }
+                } catch (IOException ex) {
+                    return Exceptions.chuck(ex);
+                }
+                return false;
+            }
+
+            @Override
+            public Spliterator<CharSequence> trySplit() {
+                return null;
+            }
+
+            @Override
+            public long estimateSize() {
+                return Long.MAX_VALUE;
+            }
+
+            @Override
+            public int characteristics() {
+                return Spliterator.NONNULL | Spliterator.ORDERED;
+            }
+        }, Spliterator.NONNULL | Spliterator.ORDERED, false);
     }
 
     private FileUtils() {

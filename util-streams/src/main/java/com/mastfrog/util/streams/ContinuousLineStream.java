@@ -14,6 +14,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -47,23 +48,87 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
      * @return
      * @throws IllegalArgumentException if the file is not readable
      */
+    public static ContinuousLineStream of(Path file) {
+        return of(file.toFile());
+    }
+
+    /**
+     * Create a UTF-8 line stream with the specified <i>byte</i> buffer size.
+     *
+     * @param file The file
+     * @param bufferSize the size of the read buffer which will be used to
+     * collect lines - for better performance, the size should be > the average
+     * line length in bytes for the character set
+     * @return
+     * @throws IllegalArgumentException if the file is not readable
+     */
+    public static ContinuousLineStream of(Path file, int bufferSize) {
+        return of(file.toFile(), bufferSize);
+    }
+
+    /**
+     * Create a line stream for the specified encoding with the specified
+     * <i>byte</i> buffer size.
+     *
+     * @param file The file
+     * @param bufferSize the size of the read buffer which will be used to
+     * collect lines - for better performance, the size should be > the average
+     * line length in bytes for the character set
+     * @param charset The character set the file's data uses
+     * @return
+     * @throws IllegalArgumentException if the file is not readable
+     */
+    public static ContinuousLineStream of(Path file, int bufferSize, Charset charset) {
+        return of(file.toFile(), bufferSize, charset);
+    }
+
+    /**
+     * Create a UTF-8 line stream with a buffer size of 8192 bytes.
+     *
+     * @param file The file
+     * @return
+     * @throws IllegalArgumentException if the file is not readable
+     */
     public static ContinuousLineStream of(File file) {
         return of(file, 8192);
     }
 
+    /**
+     * Create a UTF-8 line stream with the specified <i>byte</i> buffer size.
+     *
+     * @param file The file
+     * @param bufferSize the size of the read buffer which will be used to
+     * collect lines - for better performance, the size should be > the average
+     * line length in bytes for the character set
+     * @return
+     * @throws IllegalArgumentException if the file is not readable
+     */
     public static ContinuousLineStream of(File file, int bufferSize) {
         return of(file, bufferSize, UTF_8);
     }
 
+    /**
+     * Create a line stream for the specified encoding with the specified
+     * <i>byte</i> buffer size.
+     *
+     * @param file The file
+     * @param bufferSize the size of the read buffer which will be used to
+     * collect lines - for better performance, the size should be > the average
+     * line length in bytes for the character set
+     * @param charset The character set the file's data uses
+     * @return
+     * @throws IllegalArgumentException if the file is not readable
+     */
     public static ContinuousLineStream of(File file, int bufferSize, Charset charset) {
         try {
             nonZero("bufferSize", nonNegative("bufferSize", bufferSize));
             notNull("charset", charset);
-//            readableAndNonZeroLength("file", file);
             readable("file", file);
+            CharsetDecoder dec = charset.newDecoder();
+            int charBufferSize = Math.max(2, ((int) Math.ceil(dec.averageCharsPerByte() * (float) bufferSize)));
             ContinuousStringStream stream = new ContinuousStringStream(new FileInputStream(file).getChannel(), bufferSize);
             CharsetDecoder decoder = charset.newDecoder();
-            return new ContinuousLineStream(stream, decoder, bufferSize);
+            return new ContinuousLineStream(stream, decoder, charBufferSize);
         } catch (FileNotFoundException ex) {
             // readableAndNonZeroLength will throw an IllegalArgumentException before any
             // FileNotFoundException could be thrown
@@ -89,7 +154,8 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
      */
     public synchronized boolean hasMoreLines() throws IOException {
         check();
-        return !queuedLines.isEmpty();
+        boolean result = !queuedLines.isEmpty();
+        return result;
     }
 
     /**
@@ -141,10 +207,20 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
         return stringStream.available();
     }
 
+    private CharBuffer lastCharBuffer;
+
     private CharBuffer readCharacters() throws IOException {
-        CharBuffer characterData = ByteBuffer.allocateDirect(byteCount).asCharBuffer();
+        // Note that we MUST NOT reuse this buffer repeatedly, since we are
+        // saving subsequences of it as queued lines, and rewinding and reusing
+        // this buffer will cause those subsequences to have their data
+        // replaced by whatever was loaded next.  So we use it until it's
+        // full, and then discard it - though we could implement some sort
+        // of pooling strategy if we were that paranoid about zero allocations
+        if (lastCharBuffer != null && lastCharBuffer.position() < lastCharBuffer.limit()) {
+            return lastCharBuffer;
+        }
+        CharBuffer characterData = lastCharBuffer = ByteBuffer.allocateDirect(byteCount).asCharBuffer();
         stringStream.decode(characterData, charsetDecoder);
-        characterData.flip();
         return characterData;
     }
 
@@ -179,56 +255,86 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
      *
      * @throws IOException
      */
+    long sizeAtLastFindNext = -1;
+
     private synchronized void findNextLines() throws IOException {
-        if (stringStream.available() < 0 || !queuedLines.isEmpty()) {
-            return;
-        }
-        while (queuedLines.isEmpty() && stringStream.available() > 0) {
+//        if (stringStream.available() < 0 || !queuedLines.isEmpty()) {
+//        if (!stringStream.hasContent() || !queuedLines.isEmpty()) {
+//            return;
+//        }
+//        System.out.println("\nfindNextLines");
+        while (queuedLines.isEmpty() && stringStream.hasContent()) {
             CharBuffer characterData = readCharacters();
-            int lineStart = 0;
+            int lineStart = characterData.position();
             int limit = characterData.limit();
             char prevChar = 0;
-            for (int charIndex = 0; charIndex < limit; charIndex++) {
-                char c = characterData.charAt(charIndex);
+            int charIndex = 0;
+            while (characterData.remaining() > 0) {
+                char c = characterData.get();
                 // XXX - double newlines cause a line starting with \n to
                 // be emitted
+//                System.out.println(((char) ('a' + charIndex)) + ". " + escape(c) + " cachedPartial " + (cachedPartialNextLine == null ? "null" : escape(cachedPartialNextLine)));
                 if (c == '\n') {
                     if (charIndex == lineStart) { // 0-length line
                         if (cachedPartialNextLine != null) {
+//                            System.out.println("  a");
                             queuedLines.add(cachedPartialNextLine);
                             cachedPartialNextLine = null;
                         } else {
+//                            System.out.println("  b");
                             queuedLines.add("");
+                            lineStart = charIndex + 1;
                         }
                     } else {
                         int end = Math.max(0, prevChar == '\r' ? charIndex - 1 : charIndex);
-                        CharSequence currentLine = subsequence(characterData, lineStart, end);
+                        int oldPos = characterData.position();
+                        characterData.position(lineStart);
+                        CharSequence currentLine = subsequence(characterData, 0, end - lineStart);
+                        characterData.position(oldPos);
                         if (cachedPartialNextLine != null) {
+//                            while (cachedPartialNextLine.length() > 0 && cachedPartialNextLine.charAt(0) == '\n') {
+//                                queuedLines.add("");
+//                                cachedPartialNextLine = cachedPartialNextLine.substring(1, cachedPartialNextLine.length());
+//                            }
+//                            System.out.println("  c - " + escape(cachedPartialNextLine + currentLine));
                             queuedLines.add(cachedPartialNextLine + currentLine);
                             cachedPartialNextLine = null;
                         } else {
+                            if (currentLine.length() > 0 && currentLine.charAt(0) == '\n') {
+                                currentLine = currentLine.subSequence(1, currentLine.length());
+                            }
+//                            System.out.println("  d - " + escape(currentLine));
                             queuedLines.add(currentLine);
                         }
                         lineStart = charIndex + 1;
                     }
-                }
-                if (charIndex == limit - 1 && c != '\n') {
-                    CharSequence partialLine = subsequence(characterData, lineStart, charIndex + 1);
+                } else if (charIndex == limit - 1) {
+                    int oldPos = characterData.position();
+                    characterData.position(lineStart);
+                    CharSequence partialLine = subsequence(characterData, 0, (charIndex + 1) - lineStart);
+                    if (partialLine.length() > 0 && partialLine.charAt(0) == '\n') {
+                        partialLine = partialLine.subSequence(1, partialLine.length());
+                    }
+                    characterData.position(oldPos);
                     if (cachedPartialNextLine == null) {
+//                        System.out.println("  d " + escape(partialLine));
                         // Use a string - we don't want to hold the whole buffer
                         // which may contain earlier lines
                         cachedPartialNextLine = partialLine.toString();
                     } else {
+//                        System.out.println("  e " + escape(partialLine));
                         // Concatenate if we never found a newline while looping
                         cachedPartialNextLine += partialLine.toString();
                     }
                 }
                 prevChar = c;
+                charIndex++;
             }
         }
+//        System.out.println("done.");
     }
 
-    public void close() throws Exception {
+    public void close() throws IOException {
         stringStream.close();
     }
 

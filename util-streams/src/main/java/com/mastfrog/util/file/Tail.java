@@ -99,6 +99,10 @@ final class Tail implements IOFunction<Predicate<CharSequence>, Runnable> {
                     return;
                 }
                 WatchKey k = watch.take();
+                // If this is not called, resetting the watch does
+                // nothing
+                k.pollEvents();
+//                System.out.println("TAKE " + k.pollEvents());
                 // This is unreliable
                 /*
                 boolean foundOurFile = false;
@@ -125,7 +129,8 @@ final class Tail implements IOFunction<Predicate<CharSequence>, Runnable> {
                     if (canceller.isCancelled()) {
                         return;
                     }
-                    if (!lineConsumer.test(stream.nextLine())) {
+                    CharSequence line = stream.nextLine();
+                    if (!lineConsumer.test(line)) {
                         return;
                     }
                 }

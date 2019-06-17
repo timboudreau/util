@@ -47,6 +47,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -89,6 +90,41 @@ public class FileUtilsTest {
             FileUtils.decode(channel, readBuffer, buf, US_ASCII.newDecoder(), true);
         }
         assertEquals(TEST_CONTENT, buf.toString());
+    }
+
+    @Test(timeout = 3000)
+    public void testDecodeWithMismatchedBufferSizes() throws IOException {
+        List<CharBuffer> buffers = new ArrayList<>();
+        ByteBuffer readBuffer = ByteBuffer.allocate(30);
+        int length = 0;
+        CharBuffer buf = CharBuffer.allocate(15);
+        try (FileChannel channel = FileChannel.open(asciiFile, StandardOpenOption.READ)) {
+//            while (channel.position() < channel.size()) {
+            while (true) {
+                int count = FileUtils.decode(channel, readBuffer, buf, US_ASCII.newDecoder(), true);
+                boolean full = readBuffer.position() == readBuffer.limit();
+                if (count <= 0) {
+                    break;
+                }
+                if (buf.limit() > 0) {
+                    CharBuffer b = CharBuffer.allocate(buf.limit());
+                    b.put(buf);
+                    b.flip();
+                    buffers.add(b);
+                    buf.clear();
+                } else {
+                    break;
+                }
+                if (full) {
+                    readBuffer.rewind();
+                }
+            }
+        }
+        StringBuilder sb = new StringBuilder();
+        for (CharBuffer b : buffers) {
+            sb.append(b.toString());
+        }
+        assertEquals(TEST_CONTENT, sb.toString());
     }
 
     @Test
@@ -403,6 +439,73 @@ public class FileUtilsTest {
             }
         }
         return addTo;
+    }
+
+    @Test(timeout = 4000)
+    public void testLinesAscii() {
+        List<String> expected = Arrays.asList(TEST_CONTENT.split("\n"));
+        List<String> got = new ArrayList<>();
+        Stream<String> stream = FileUtils.lines(asciiFile, US_ASCII).map(CharSequence::toString);
+        stream.forEach(got::add);
+        assertEquals(expected, got);
+    }
+
+    @Test(timeout = 4000)
+    public void testLinesUtf16Ascii() {
+        List<String> expected = Arrays.asList(TEST_CONTENT.split("\n"));
+        List<String> got = new ArrayList<>();
+        Stream<String> stream = FileUtils.lines(utf16asciiFile, UTF_16).map(CharSequence::toString);
+        stream.forEach(got::add);
+        assertEquals(expected, got);
+    }
+
+    @Test(timeout = 4000)
+    public void testLinesUtf16AsciiOddBufferSize() {
+        // If we use a buffer that takes an odd number of bytes, some reads
+        // will leave the read ByteBuffer with the first byte of the next
+        // character at the tail - here we make sure that that byte is not
+        // lost
+        List<String> expected = Arrays.asList(TEST_CONTENT.split("\n"));
+        List<String> got = new ArrayList<>();
+        Stream<String> stream = FileUtils.lines(utf16asciiFile, 13, UTF_16).map(CharSequence::toString);
+        stream.forEach(got::add);
+        assertEquals(expected, got);
+    }
+
+    @Test(timeout = 4000)
+    public void testLinesUtf8NonAscii() {
+        List<String> expected = Arrays.asList(nonAsciiMultiline.split("\n"));
+        List<String> got = new ArrayList<>();
+        Stream<String> stream = FileUtils.lines(utf8nonAsciiFile, UTF_8).map(CharSequence::toString);
+        stream.forEach(got::add);
+        assertEquals(expected, got);
+    }
+
+    @Test(timeout = 4000)
+    public void testLinesUtf8NonAsciiOddBufferSize() {
+        List<String> expected = Arrays.asList(nonAsciiMultiline.split("\n"));
+        List<String> got = new ArrayList<>();
+        Stream<String> stream = FileUtils.lines(utf8nonAsciiFile, 3, UTF_8).map(CharSequence::toString);
+        stream.forEach(got::add);
+        assertEquals(expected, got);
+    }
+
+    @Test(timeout = 4000)
+    public void testLinesUtf16NonAscii() {
+        List<String> expected = Arrays.asList(nonAsciiMultiline.split("\n"));
+        List<String> got = new ArrayList<>();
+        Stream<String> stream = FileUtils.lines(utf16nonAsciiFile, UTF_16).map(CharSequence::toString);
+        stream.forEach(got::add);
+        assertEquals(expected, got);
+    }
+
+    @Test(timeout = 4000)
+    public void testLinesUtf16NonAsciiOddBufferSize() {
+        List<String> expected = Arrays.asList(nonAsciiMultiline.split("\n"));
+        List<String> got = new ArrayList<>();
+        Stream<String> stream = FileUtils.lines(utf16nonAsciiFile, 27, UTF_16).map(CharSequence::toString);
+        stream.forEach(got::add);
+        assertEquals(expected, got);
     }
 
     static Set<String> setOf(String... strings) {
