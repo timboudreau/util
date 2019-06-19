@@ -258,11 +258,9 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
     long sizeAtLastFindNext = -1;
 
     private synchronized void findNextLines() throws IOException {
-//        if (stringStream.available() < 0 || !queuedLines.isEmpty()) {
-//        if (!stringStream.hasContent() || !queuedLines.isEmpty()) {
-//            return;
-//        }
-//        System.out.println("\nfindNextLines");
+        if (!stringStream.hasContent() || !queuedLines.isEmpty()) {
+            return;
+        }
         while (queuedLines.isEmpty() && stringStream.hasContent()) {
             CharBuffer characterData = readCharacters();
             int lineStart = characterData.position();
@@ -273,15 +271,12 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
                 char c = characterData.get();
                 // XXX - double newlines cause a line starting with \n to
                 // be emitted
-//                System.out.println(((char) ('a' + charIndex)) + ". " + escape(c) + " cachedPartial " + (cachedPartialNextLine == null ? "null" : escape(cachedPartialNextLine)));
                 if (c == '\n') {
                     if (charIndex == lineStart) { // 0-length line
                         if (cachedPartialNextLine != null) {
-//                            System.out.println("  a");
                             queuedLines.add(cachedPartialNextLine);
                             cachedPartialNextLine = null;
                         } else {
-//                            System.out.println("  b");
                             queuedLines.add("");
                             lineStart = charIndex + 1;
                         }
@@ -292,18 +287,12 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
                         CharSequence currentLine = subsequence(characterData, 0, end - lineStart);
                         characterData.position(oldPos);
                         if (cachedPartialNextLine != null) {
-//                            while (cachedPartialNextLine.length() > 0 && cachedPartialNextLine.charAt(0) == '\n') {
-//                                queuedLines.add("");
-//                                cachedPartialNextLine = cachedPartialNextLine.substring(1, cachedPartialNextLine.length());
-//                            }
-//                            System.out.println("  c - " + escape(cachedPartialNextLine + currentLine));
                             queuedLines.add(cachedPartialNextLine + currentLine);
                             cachedPartialNextLine = null;
                         } else {
                             if (currentLine.length() > 0 && currentLine.charAt(0) == '\n') {
                                 currentLine = currentLine.subSequence(1, currentLine.length());
                             }
-//                            System.out.println("  d - " + escape(currentLine));
                             queuedLines.add(currentLine);
                         }
                         lineStart = charIndex + 1;
@@ -317,12 +306,10 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
                     }
                     characterData.position(oldPos);
                     if (cachedPartialNextLine == null) {
-//                        System.out.println("  d " + escape(partialLine));
                         // Use a string - we don't want to hold the whole buffer
                         // which may contain earlier lines
                         cachedPartialNextLine = partialLine.toString();
                     } else {
-//                        System.out.println("  e " + escape(partialLine));
                         // Concatenate if we never found a newline while looping
                         cachedPartialNextLine += partialLine.toString();
                     }
@@ -331,9 +318,9 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
                 charIndex++;
             }
         }
-//        System.out.println("done.");
     }
 
+    @Override
     public void close() throws IOException {
         stringStream.close();
     }

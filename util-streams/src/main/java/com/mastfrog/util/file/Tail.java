@@ -72,7 +72,7 @@ final class Tail implements IOFunction<Predicate<CharSequence>, Runnable> {
             try {
                 watch(cancel, watch, key, stream, lineConsumer);
             } catch (InterruptedException ex) {
-                return;
+                // do nothing
             } catch (IOException ex) {
                 Logger.getLogger(Tail.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -102,26 +102,23 @@ final class Tail implements IOFunction<Predicate<CharSequence>, Runnable> {
                 // If this is not called, resetting the watch does
                 // nothing
                 k.pollEvents();
-//                System.out.println("TAKE " + k.pollEvents());
-                // This is unreliable
-                /*
-                boolean foundOurFile = false;
-                for (WatchEvent<?> e : k.pollEvents()) {
-                    if (e.kind() == ENTRY_MODIFY) {
-                        Path p = (Path) e.context();
-                        if (path.equals(p) || path.getFileName().equals(p)) {
-                            foundOurFile = true;
-                            break;
-                        }
-                    } else if (e.kind() == OVERFLOW) {
-                        foundOurFile = true; // maybe, maybe not.
-                        break;
-                    }
-                }
-                if (!foundOurFile) {
-                    continue;
-                }
-                 */
+                // This is unreliable, at least in tests:
+//                boolean foundOurFile = false;
+//                for (WatchEvent<?> e : k.pollEvents()) {
+//                    if (e.kind() == ENTRY_MODIFY) {
+//                        Path p = (Path) e.context();
+//                        if (path.equals(p) || path.getFileName().equals(p)) {
+//                            foundOurFile = true;
+//                            break;
+//                        }
+//                    } else if (e.kind() == OVERFLOW) {
+//                        foundOurFile = true; // maybe, maybe not.
+//                        break;
+//                    }
+//                }
+//                if (!foundOurFile) {
+//                    continue;
+//                }
                 if (canceller.isCancelled()) {
                     return;
                 }
@@ -129,8 +126,7 @@ final class Tail implements IOFunction<Predicate<CharSequence>, Runnable> {
                     if (canceller.isCancelled()) {
                         return;
                     }
-                    CharSequence line = stream.nextLine();
-                    if (!lineConsumer.test(line)) {
+                    if (!lineConsumer.test(stream.nextLine())) {
                         return;
                     }
                 }
@@ -144,7 +140,11 @@ final class Tail implements IOFunction<Predicate<CharSequence>, Runnable> {
             try {
                 key.cancel();
             } finally {
-                watch.close();
+                try {
+                    watch.close();
+                } finally {
+                    stream.close();
+                }
             }
         }
     }
