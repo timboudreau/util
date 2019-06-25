@@ -479,7 +479,7 @@ public class StringsTest {
             sb.append(base);
             base++;
         }
-        assertEquals(count,stringForHash.size());
+        assertEquals(count, stringForHash.size());
     }
 
     @Test
@@ -496,5 +496,11 @@ public class StringsTest {
         assertEquals("", Strings.trim(new StringBuilder(" ")).toString());
         assertEquals("", Strings.trim(new StringBuilder("   ")).toString());
         assertEquals("", Strings.trim(new StringBuilder("    ")).toString());
+    }
+
+    @Test
+    public void testEscaping() {
+        String escaped = Strings.escapeControlCharactersAndQuotes("Foo\tbar\nAnother line\r\nHoo\fSlashes\\");
+        assertEquals("Foo\\tbar\\nAnother line\\r\\nHoo\\fSlashes\\\\", escaped);
     }
 }

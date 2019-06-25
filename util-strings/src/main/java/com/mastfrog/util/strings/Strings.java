@@ -1824,4 +1824,61 @@ public final class Strings {
     public static Function<CharSequence, CharSequence> findPrefixes(CharSequence... prefixen) {
         return MatchWords.findPrefixes(prefixen);
     }
+
+    /**
+     * Perform escaping adequate to convert a string into a JSON or Java source
+     * string.
+     *
+     * @param seq A character sequence
+     * @return An escaped string
+     */
+    public static String escapeControlCharactersAndQuotes(CharSequence seq) {
+        int len = seq.length();
+        StringBuilder sb = new StringBuilder(seq.length() + 1);
+        escapeControlCharactersAndQuotes(seq, len, sb);
+        return sb.toString();
+    }
+
+    /**
+     * Perform escaping adequate to convert a string into a JSON or Java source
+     * string, appending the result to the passed StringBuidler.
+     *
+     * @param seq A character sequence
+     * @param into A string builder
+     * @return An escaped string
+     */
+    public static void escapeControlCharactersAndQuotes(CharSequence seq, StringBuilder into) {
+        escapeControlCharactersAndQuotes(seq, seq.length(), into);
+    }
+
+    private static void escapeControlCharactersAndQuotes(CharSequence seq, int len, StringBuilder sb) {
+        for (int i = 0; i < len; i++) {
+            char c = seq.charAt(i);
+            switch (c) {
+                case '\n':
+                    sb.append("\\n");
+                    break;
+                case '\r':
+                    sb.append("\\r");
+                    break;
+                case '\t':
+                    sb.append("\\t");
+                    break;
+                case '\b':
+                    sb.append("\\b");
+                    break;
+                case '\f':
+                    sb.append("\\f");
+                    break;
+                case '\\':
+                    sb.append("\\\\");
+                    break;
+                case '"':
+                    sb.append("\\\"");
+                    break;
+                default:
+                    sb.append(c);
+            }
+        }
+    }
 }
