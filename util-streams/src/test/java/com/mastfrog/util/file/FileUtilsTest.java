@@ -39,6 +39,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -507,6 +508,28 @@ public class FileUtilsTest {
         stream.forEach(got::add);
         assertEquals(expected, got);
     }
+
+    @Test(timeout = 4000)
+    public void testPermissons() throws IOException {
+        Path tmp = FileUtils.newTempFile("wookie", PosixFilePermission.OWNER_EXECUTE, PosixFilePermission.OWNER_WRITE);
+        try {
+            assertTrue(Files.isExecutable(tmp));
+            assertFalse(Files.isReadable(tmp));
+            assertTrue(Files.isWritable(tmp));
+            assertTrue(tmp.getFileName().toString().startsWith("wookie"));
+        } finally {
+            Files.delete(tmp);
+        }
+    }
+
+    @Test(timeout = 4000)
+    public void testDeleteIfExists() throws IOException {
+        Path tmp = FileUtils.newTempFile("wookie", PosixFilePermission.OWNER_EXECUTE, PosixFilePermission.OWNER_WRITE);
+        assertTrue(FileUtils.deleteIfExists(tmp));
+        assertFalse(FileUtils.deleteIfExists(tmp));
+        assertFalse(FileUtils.deleteIfExists(null));
+    }
+
 
     static Set<String> setOf(String... strings) {
         return new LinkedHashSet<>(Arrays.asList(strings));

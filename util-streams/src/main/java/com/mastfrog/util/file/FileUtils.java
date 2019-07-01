@@ -29,6 +29,7 @@ import com.mastfrog.util.preconditions.Checks;
 import com.mastfrog.util.preconditions.Exceptions;
 import com.mastfrog.util.streams.ContinuousLineStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -50,6 +51,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -64,6 +66,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -84,6 +88,7 @@ public final class FileUtils {
     private static final Set<StandardOpenOption> OPEN_APPEND_CREATE = EnumSet.noneOf(StandardOpenOption.class);
     private static final FileVisitOption[] NO_FV_OPTIONS = new FileVisitOption[0];
     private static final FileVisitOption[] FOLLOW_LINKS = new FileVisitOption[]{FileVisitOption.FOLLOW_LINKS};
+    private static final PosixFilePermission[] NO_PERMISSIONS = new PosixFilePermission[0];
 
     private static final String[] DEFAULT_SEARCH_PATH
             = {"/usr/bin", "/usr/local/bin", "/opt/local/bin", "/bin", "/sbin", "/usr/sbin", "/opt/bin"};
@@ -173,11 +178,24 @@ public final class FileUtils {
      * Create a new temporary file on disk in the system temporary files folder.
      * An empty file is created on disk.
      *
+     * @param perms File permissions - if empty, the default permissions are
+     * used.
+     * @return A new file
+     * @throws IOException If something goes wrong
+     */
+    public synchronized static Path newTempFile(PosixFilePermission... perms) throws IOException {
+        return newTempFile(PREFIX, perms);
+    }
+
+    /**
+     * Create a new temporary file on disk in the system temporary files folder,
+     * with default permissons. An empty file is created on disk.
+     *
      * @return A new file
      * @throws IOException If something goes wrong
      */
     public synchronized static Path newTempFile() throws IOException {
-        return newTempFile(PREFIX);
+        return newTempFile(PREFIX, NO_PERMISSIONS);
     }
 
     /**
@@ -189,9 +207,77 @@ public final class FileUtils {
      * @throws IOException If something goes wrong
      */
     public synchronized static Path newTempFile(String prefix) throws IOException {
-        Path path = newTempPath(prefix);
-        Files.createFile(path);
+        return newTempFile(prefix, NO_PERMISSIONS);
+    }
+
+    /**
+     * Create a new temporary file in the system temporary files folder.
+     *
+     * @param prefix String prefix to prepend to the file name for
+     * identification
+     * @param permissions The file permissions
+     * @return A new folder created on disk
+     * @throws IOException If something goes wrong
+     */
+    public synchronized static Path newTempFile(String prefix, PosixFilePermission... permissions) throws IOException {
+        Path path;
+        synchronized (FileUtils.class) {
+            path = newTempPath(prefix);
+            Files.createFile(path);
+        }
+        setPermissions(path, permissions);
         return path;
+    }
+
+    /**
+     * Convenience varargs version of Files.setPosixFilePermissions without
+     * having to either create an EnumSet, or create an intermediate ArrayList
+     * in order to do that.
+     * <p>
+     * Note: This method will <i>not</i> remove all permissions if it is passed
+     * an empty array - it will simply do nothing. To do that, use
+     * Files.setPosixFilePermissions(path,
+     * EnumSet.noneOf(PosixFilePermission.class).
+     * </p>
+     *
+     * @param path A path
+     * @param permissions A set of permissions
+     * @throws IOException
+     */
+    @SuppressWarnings("ManualArrayToCollectionCopy")
+    public static void setPermissions(Path path, PosixFilePermission... permissions) throws IOException {
+        if (permissions.length == 0) {
+            return;
+        }
+        // cheaper than Arrays.asList()
+        EnumSet<PosixFilePermission> perms = EnumSet.noneOf(PosixFilePermission.class);
+        for (int i = 0; i < permissions.length; i++) {
+            perms.add(permissions[i]);
+        }
+        Files.setPosixFilePermissions(path, perms);
+    }
+
+    /**
+     * For use mainly by tests - delete a file if it exists, swallowing any
+     * NoSuchFileException or FileNotFoundException that might be caused by a
+     * race condition; accepts null as an argument and returns false.
+     *
+     * @param path The file path
+     * @return True if the file was deleted
+     * @throws IOException If something else goes wrong
+     */
+    public static boolean deleteIfExists(Path path) throws IOException {
+        if (path != null) {
+            if (Files.exists(path)) {
+                try {
+                    Files.delete(path);
+                    return true;
+                } catch (FileNotFoundException | NoSuchFileException ex) {
+                    Logger.getLogger(FileUtils.class.getName()).log(Level.FINEST, null, ex);
+                }
+            }
+        }
+        return false;
     }
 
     /**

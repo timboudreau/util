@@ -25,6 +25,7 @@
 package com.mastfrog.util.strings;
 
 import java.util.Random;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 /**
@@ -37,8 +38,8 @@ public class RandomStringsTest {
     public void testRs() {
         RandomStrings rts = new RandomStrings(new Random(1));
         String s = rts.randomChars(5);
-        System.out.println(s);
+        assertEquals(5, s.length());
         String s1 = rts.randomChars(100);
-        System.out.println(s1);
+        assertEquals(100, s1.length());
     }
 }

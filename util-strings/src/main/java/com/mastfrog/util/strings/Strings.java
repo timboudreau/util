@@ -920,7 +920,6 @@ public final class Strings {
         }
         for (int i = 0; i < max; i++) {
             char c = seq.charAt(i);
-//            System.out.println("At " + i + " " + c + " look for " + delim);
             if (delim == c || i == max - 1) {
                 if (lastStart != i) {
                     int offset = i == max - 1 ? i + 1 : i;
@@ -1547,6 +1546,14 @@ public final class Strings {
         return sb.toString();
     }
 
+    public static String toHex(char c) {
+        String result = Integer.toString(c, 16);
+        if (result.length() == 1) {
+            result = "0" + result;
+        }
+        return result;
+    }
+
     public static String toPaddedHex(int[] bytes) {
         StringBuilder sb = new StringBuilder();
         for (int b : bytes) {
@@ -1851,34 +1858,287 @@ public final class Strings {
         escapeControlCharactersAndQuotes(seq, seq.length(), into);
     }
 
-    private static void escapeControlCharactersAndQuotes(CharSequence seq, int len, StringBuilder sb) {
-        for (int i = 0; i < len; i++) {
-            char c = seq.charAt(i);
-            switch (c) {
-                case '\n':
-                    sb.append("\\n");
-                    break;
-                case '\r':
-                    sb.append("\\r");
-                    break;
-                case '\t':
-                    sb.append("\\t");
-                    break;
-                case '\b':
-                    sb.append("\\b");
-                    break;
-                case '\f':
-                    sb.append("\\f");
-                    break;
-                case '\\':
-                    sb.append("\\\\");
-                    break;
-                case '"':
-                    sb.append("\\\"");
-                    break;
-                default:
-                    sb.append(c);
+    public static String singleQuote(CharSequence what) {
+        return quote('\'', what);
+    }
+
+    public static String quote(CharSequence what) {
+        return quote('"', what);
+    }
+
+    public static String quotedLines(Iterable<? extends CharSequence> items) {
+        return quote("\n", items);
+    }
+
+    public static String quotedCommaDelimitedLines(Iterable<? extends CharSequence> items) {
+        return quote(",\n", items);
+    }
+
+    public static String quote(String delimiter, Iterable<? extends CharSequence> items) {
+        return quote('"', delimiter, items);
+    }
+
+    public static String singleQuote(String delimiter, Iterable<? extends CharSequence> items) {
+        return quote('\'', delimiter, items);
+    }
+
+    public static String quote(char quoteChar, String delimiter, Iterable<? extends CharSequence> items) {
+        StringBuilder sb = new StringBuilder();
+        boolean hasDelimiter = delimiter != null && !delimiter.isEmpty();
+        for (Iterator<? extends CharSequence> it = notNull("items", items).iterator(); it.hasNext();) {
+            CharSequence seq = it.next();
+            appendQuoted(quoteChar, seq, Escaper.CONTROL_CHARACTERS.escaping(quoteChar), sb);
+            if (hasDelimiter && it.hasNext()) {
+                sb.append(delimiter);
             }
         }
+        return sb.toString();
+    }
+
+    public static String quote(char quoteChar, CharSequence what) {
+        StringBuilder sb = new StringBuilder(what.length() + 12);
+        appendQuoted(quoteChar, what, Escaper.CONTROL_CHARACTERS.escaping(quoteChar), sb);
+        return sb.toString();
+    }
+
+    private static StringBuilder appendQuoted(char quoteChar, CharSequence what, Escaper escaper, StringBuilder into) {
+        into.append(quoteChar);
+        escape(what, what.length(), escaper, into);
+        into.append(quoteChar);
+        return into;
+    }
+
+    public static String escape(CharSequence seq, Escaper escaper) {
+        StringBuilder sb = new StringBuilder();
+        escape(seq, seq.length(), escaper, sb);
+        return sb.toString();
+    }
+
+    public static void escape(CharSequence seq, int len, Escaper escaper, StringBuilder into) {
+        for (int i = 0; i < len; i++) {
+            char c = seq.charAt(i);
+            CharSequence escaped = escaper.escape(c);
+            if (escaped != null) {
+                into.append(escaped);
+            } else {
+                into.append(c);
+            }
+        }
+    }
+
+    private static void escapeControlCharactersAndQuotes(CharSequence seq, int len, StringBuilder sb) {
+        escape(seq, len, Escaper.CONTROL_CHARACTERS.escapeDoubleQuotes(), sb);
+    }
+
+    /**
+     * Returns a string representation of an integer, prefixed with zeros to fit
+     * the desired length. If the result will not fit in the prescribed number
+     * of characters, a longer string is returned. If the number is negative,
+     * and the requested length is greater than the number of characters
+     * requested, the leading zero is replaced with a '-' so the desired length
+     * is still returned. So,
+     * <ul>
+     * <li><code>zeroPrefix(124, 4) = "0124"</code></li>
+     * <li><code>zeroPrefix(-124, 4) = "-124"</code></li>
+     * <li><code>zeroPrefix(-124, 3) = "-124"</code></li>
+     * <li><code>zeroPrefix(-124, 5) = "-0124"</code></li>
+     * </ul>
+     *
+     * @param value A number
+     * @param length A number of characters for the result, which will be padded
+     * with leading zeros as needed
+     * @return A string representation of the number which will parse to the
+     * original number and may have leading zeros.
+     */
+    public static String zeroPrefix(int value, int length) {
+        return new String(zeroPrefixChars(value, length));
+    }
+
+    /**
+     * Returns a string representation of an integer, prefixed with zeros to fit
+     * the desired length. If the result will not fit in the prescribed number
+     * of characters, a longer string is returned. If the number is negative,
+     * and the requested length is greater than the number of characters
+     * requested, the leading zero is replaced with a '-' so the desired length
+     * is still returned. So,
+     * <ul>
+     * <li><code>zeroPrefix(124, 4) = "0124"</code></li>
+     * <li><code>zeroPrefix(-124, 4) = "-124"</code></li>
+     * <li><code>zeroPrefix(-124, 3) = "-124"</code></li>
+     * <li><code>zeroPrefix(-124, 5) = "-0124"</code></li>
+     * </ul>
+     *
+     * @param value A number
+     * @param length A number of characters for the result, which will be padded
+     * with leading zeros as needed
+     * @return A string representation of the number which will parse to the
+     * original number and may have leading zeros.
+     */
+    public static String zeroPrefix(long value, int length) {
+        return new String(zeroPrefixChars(value, length));
+    }
+
+    static char[] writeInto(int value, char[] target) {
+        if (value == Integer.MIN_VALUE) {
+            return writeInto((long) value, target);
+        }
+        if (value == 0) {
+            if (target.length > 0) {
+                Arrays.fill(target, '0');
+                return target;
+            } else {
+                return new char[]{'0'};
+            }
+        }
+        int cursor = target.length - 1;
+        boolean negative = value < 0;
+        int curr = value;
+        int pos = 0;
+        for (; curr != 0; pos++) {
+            if (cursor < 0) {
+                char[] nue = new char[target.length + 1];
+                System.arraycopy(target, 0, nue, 1, target.length);
+                target = nue;
+                cursor++;
+            }
+            target[cursor--] = (char) ('0' + Math.abs(curr % 10));
+            curr /= 10;
+            if (curr == 0) {
+                break;
+            }
+        }
+        if (pos < target.length) {
+            Arrays.fill(target, 0, target.length - (pos + 1), '0');
+        }
+        if (negative) {
+            if (pos < target.length) {
+                if (target[0] != '0') {
+                    char[] nue = new char[target.length + 1];
+                    System.arraycopy(target, 0, nue, 1, target.length);
+                    target = nue;
+                }
+                target[0] = '-';
+            } else {
+                char[] nue = new char[target.length + 1];
+                System.arraycopy(target, 0, nue, 1, target.length);
+                target = nue;
+                target[0] = '-';
+            }
+        }
+        return target;
+    }
+
+    static char[] writeInto(long value, char[] target) {
+        if (value == 0) {
+            if (target.length > 0) {
+                Arrays.fill(target, '0');
+                return target;
+            } else {
+                return new char[]{'0'};
+            }
+        }
+        int cursor = target.length - 1;
+        boolean negative = value < 0;
+        long curr = value;
+        int pos = 0;
+        for (; curr != 0; pos++) {
+            if (cursor < 0) {
+                char[] nue = new char[target.length + 1];
+                System.arraycopy(target, 0, nue, 1, target.length);
+                target = nue;
+                cursor++;
+            }
+            char nextChar = (char) ('0' + Math.abs(curr % 10));
+            assert nextChar >= '0' && nextChar <= '9' : "@ " + pos + " '"
+                    + nextChar + "' " + cursor + " '" + new String(target)
+                    + "' " + value;
+            target[cursor--] = nextChar;
+            curr /= 10L;
+            if (curr == 0) {
+                break;
+            }
+        }
+        if (pos < target.length) {
+            Arrays.fill(target, 0, target.length - (pos + 1), '0');
+        }
+        if (negative) {
+            if (pos < target.length) {
+                if (target[0] != '0') {
+                    char[] nue = new char[target.length + 1];
+                    System.arraycopy(target, 0, nue, 1, target.length);
+                    target = nue;
+                }
+                target[0] = '-';
+            } else {
+                char[] nue = new char[target.length + 1];
+                System.arraycopy(target, 0, nue, 1, target.length);
+                target = nue;
+                target[0] = '-';
+            }
+        }
+        return target;
+    }
+
+    /**
+     * Returns a string representation of an integer, prefixed with zeros to fit
+     * the desired length. If the result will not fit in the prescribed number
+     * of characters, a longer string is returned. If the number is negative,
+     * and the requested length is greater than the number of characters
+     * requested, the leading zero is replaced with a '-' so the desired length
+     * is still returned. So,
+     * <ul>
+     * <li><code>zeroPrefix(124, 5) = "00124"</code></li>
+     * <li><code>zeroPrefix(124, 4) = "0124"</code></li>
+     * <li><code>zeroPrefix(-124, 4) = "-124"</code></li>
+     * <li><code>zeroPrefix(-124, 3) = "-124"</code></li>
+     * <li><code>zeroPrefix(-124, 5) = "-0124"</code></li>
+     * </ul>
+     *
+     * @param value A number
+     * @param length A number of characters for the result, which will be padded
+     * with leading zeros as needed
+     * @return A string representation of the number which will parse to the
+     * original number and may have leading zeros as a character array
+     */
+    public static char[] zeroPrefixChars(int value, int length) {
+        Checks.nonNegative("length", length);
+        if (value >= 0 && value < 10 && length > 0) {
+            char[] result = new char[length];
+            Arrays.fill(result, 0, length - 1, '0');
+            result[length - 1] = (char) ('0' + value);
+            return result;
+        }
+        return writeInto(value, new char[length]);
+    }
+
+    /**
+     * Returns a string representation of an integer, prefixed with zeros to fit
+     * the desired length. If the result will not fit in the prescribed number
+     * of characters, a longer string is returned. If the number is negative,
+     * and the requested length is greater than the number of characters
+     * requested, the leading zero is replaced with a '-' so the desired length
+     * is still returned. So,
+     * <ul>
+     * <li><code>zeroPrefix(124, 4) = "0124"</code></li>
+     * <li><code>zeroPrefix(-124, 4) = "-124"</code></li>
+     * <li><code>zeroPrefix(-124, 3) = "-124"</code></li>
+     * <li><code>zeroPrefix(-124, 5) = "-0124"</code></li>
+     * </ul>
+     *
+     * @param value A number
+     * @param length A number of characters for the result, which will be padded
+     * with leading zeros as needed
+     * @return A string representation of the number which will parse to the
+     * original number and may have leading zeros as a character array
+     */
+    public static char[] zeroPrefixChars(long value, int length) {
+        Checks.nonNegative("length", length);
+        if (value >= 0 && value < 10 && length > 0) {
+            char[] result = new char[length];
+            Arrays.fill(result, 0, length - 1, '0');
+            result[length - 1] = (char) ('0' + value);
+            return result;
+        }
+        return writeInto(value, new char[length]);
     }
 }

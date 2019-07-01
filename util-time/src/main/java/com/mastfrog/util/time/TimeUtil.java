@@ -24,6 +24,7 @@
 package com.mastfrog.util.time;
 
 import com.mastfrog.util.preconditions.Checks;
+import static com.mastfrog.util.preconditions.Checks.notNullOrEmpty;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.time.Duration;
@@ -52,6 +53,9 @@ import java.util.regex.Pattern;
  * @author Tim Boudreau
  */
 public class TimeUtil {
+
+    private static final Pattern ISO_DURATION_PATTERN = Pattern.compile("^P.+$");
+//    private static final Pattern ISO_DURATION_PATTERN = Pattern.compile("^P(?!$)(\\d+(?:\\.\\d+)?Y)?(\\d+(?:\\.\\d+)?M)?(\\d+(?:\\.\\d+)?W)?(\\d+(?:\\.\\d+)?D)?(T(?=\\d)(\\d+(?:\\.\\d+)?H)?(\\d+(?:\\.\\d+)?M)?(\\d+(?:\\.\\d+)?S)?)?$");
 
     public static final DateTimeFormatter ISO_INSTANT = new DateTimeFormatterBuilder()
             .parseCaseInsensitive()
@@ -575,10 +579,32 @@ public class TimeUtil {
     private static final NumberFormat THREE_DIGITS = new DecimalFormat("000");
     private static final NumberFormat MANY_DIGITS = new DecimalFormat("######00");
 
+    /**
+     * Format a duration to clock format of
+     * <code>days:hours:minutes:seconds.millis</code> omitting any leading
+     * fields which are zeros and preceeded only by fields which are zeros, so,
+     * for example, one minute, 50 seconds and 3 millieconds would be 01:50.003.
+     *
+     * @param dur A duration
+     * @return
+     */
     public static String format(Duration dur) {
         return format(dur, false);
     }
 
+    /**
+     * Format a duration to clock format of
+     * <code>days:hours:minutes:seconds.millis</code> omitting any leading
+     * fields which are zeros and preceeded only by fields which are zeros, so,
+     * for example, one minute, 50 seconds and 3 millieconds would be 01:50.003
+     * if <code>includeAllFields</code> is false and 00:00:01:50.003 if
+     * <code>includeAllFields</code> is true.
+     *
+     * @param dur A duration
+     * @param includeAllFields Include leading fields which are all zeros to
+     * generate a semi-fixed-length (with a caveat for > 99 days).
+     * @return A string representation of a duration
+     */
     public static String format(Duration dur, boolean includeAllFields) {
         long days = dur.toDays();
         long hours = dur.toHours() % 24;
@@ -601,7 +627,64 @@ public class TimeUtil {
         return sb.toString();
     }
 
+    private static boolean isDigits(CharSequence val) {
+        int max = val.length();
+        for (int i = 0; i < max; i++) {
+            if (!Character.isDigit(val.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Parse a duration from
+     * <ul>
+     * <li>ISO 8601 format, or</li>
+     * <li>Clock-format described above, e.g. <code>132:01:10:05.032</code>
+     * equals 132 days, one hour, ten minutes, five seconds:and 32
+     * milliseconds</li>
+     * <li>A number of milliseconds encoded as a string, e.g. 152 equals 152
+     * milliseconds</li>
+     * </ul>
+     * String may contain leading whitespace, but may not be empty with
+     * whitespace trimmed.
+     *
+     * @param val A string value
+     * @throws IllegalArgumentException if the
+     * @throws DateTimeParseException if the string resembles an ISO duration
+     * string but is not one
+     * @return A duration
+     */
+    public static Duration parseDuration(String val) {
+        notNullOrEmpty("val", val);
+        val = val.trim();
+        if (val.length() == 0) {
+            throw new IllegalArgumentException("Passed string is just whitespace");
+        }
+        if (ISO_DURATION_PATTERN.matcher(val).matches()) {
+            return Duration.parse(val);
+        } else if (isDigits(val)) {
+            return Duration.ofMillis(Long.parseLong(val));
+        } else {
+            return parseClockFormatDuration(val);
+        }
+    }
+
+    /**
+     * Parse a duration from "clock format" (see above).
+     *
+     * @param val A duration as a string
+     * @return A duration
+     * @deprecated Use parseDuration(), which differentiates and handles
+     * ISO-8601 strings.
+     */
+    @Deprecated
     public static Duration parse(String val) {
+        return parseClockFormatDuration(val);
+    }
+
+    private static Duration parseClockFormatDuration(String val) {
         long[] vals = new long[5];
         char[] chars = val.toCharArray();
         int ix = vals.length - 1;

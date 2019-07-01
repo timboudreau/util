@@ -52,7 +52,6 @@ public class TimeUtilTest {
         assertEquals(dt.toInstant(), TimeUtil.fromGitLogFormat(TimeUtil.toGitLogFormat(dt)).toInstant());
 
         ZonedDateTime zdt = TimeUtil.fromGitLogFormat(GIT_LOG_ISO_FORMAT).withZoneSameInstant(GMT);
-        System.out.println("ZDT " + zdt);
         assertEquals(4, zdt.getMonthValue());
         assertEquals(28, zdt.getDayOfMonth());
         assertEquals(2019, zdt.getYear());
@@ -122,6 +121,24 @@ public class TimeUtilTest {
         assertEquals(millis, test2);
     }
 
+    @Test
+    public void testDurationParse() {
+        Duration a = Duration.ofDays(362)
+                .plus(Duration.ofHours(3))
+                .plus(Duration.ofMinutes(17))
+                .plus(Duration.ofSeconds(23))
+                .plus(Duration.ofMillis(39));
+        String stringRep = "P362DT3H17M23.039S";
+        Duration b = TimeUtil.parseDuration(a.toString());
+        Duration c = TimeUtil.parseDuration(TimeUtil.format(a));
+        Duration d = TimeUtil.parseDuration(TimeUtil.format(a, true));
+        Duration e = TimeUtil.parseDuration(stringRep);
+        assertEquals(a, b);
+        assertEquals(a, c);
+        assertEquals(a, d);
+        assertEquals(a, e);
+    }
+
     private void testDur(String sht, String full, Duration d) {
         String shortFormatted = TimeUtil.format(d);
         String longFormatted = TimeUtil.format(d, true);
@@ -129,6 +146,7 @@ public class TimeUtilTest {
         assertEquals(full, longFormatted);
         assertEquals(d, TimeUtil.parse(shortFormatted));
         assertEquals(d, TimeUtil.parse(longFormatted));
+        assertEquals(d, TimeUtil.parseDuration(d.toString()));
     }
 
     @Test

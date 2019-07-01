@@ -503,4 +503,229 @@ public class StringsTest {
         String escaped = Strings.escapeControlCharactersAndQuotes("Foo\tbar\nAnother line\r\nHoo\fSlashes\\");
         assertEquals("Foo\\tbar\\nAnother line\\r\\nHoo\\fSlashes\\\\", escaped);
     }
+
+    @Test
+    public void testZeroPrefix() {
+        assertEquals("05", Strings.zeroPrefix(5, 2));
+        assertEquals("00", Strings.zeroPrefix(0, 2));
+        assertEquals("00", Strings.zeroPrefix(-0, 2));
+        assertEquals("-5", Strings.zeroPrefix(-5, 2));
+
+        assertEquals("125", Strings.zeroPrefix(125, 2));
+        assertEquals("-125", Strings.zeroPrefix(-125, 2));
+
+        assertEquals("00125", Strings.zeroPrefix(125, 5));
+        assertEquals("-0125", Strings.zeroPrefix(-125, 5));
+    }
+
+    @Test
+    public void testZeroPrefixLong() {
+        assertEquals("05", Strings.zeroPrefix(5L, 2));
+        assertEquals("00", Strings.zeroPrefix(0L, 2));
+        assertEquals("00", Strings.zeroPrefix(-0L, 2));
+        assertEquals("-5", Strings.zeroPrefix(-5L, 2));
+
+        assertEquals("125", Strings.zeroPrefix(125L, 2));
+        assertEquals("-125", Strings.zeroPrefix(-125L, 2));
+
+        assertEquals("00125", Strings.zeroPrefix(125L, 5));
+        assertEquals("-0125", Strings.zeroPrefix(-125L, 5));
+    }
+
+    @Test
+    public void testWriteInto() {
+        assertWi("125", 125, 2);
+        assertWi("005", 5, 3);
+        assertWi("-05", -5, 3);
+        assertWi("0125", 125, 4);
+        assertWi("00125", 125, 5);
+        assertWi("000125", 125, 6);
+        assertWi("-125", -125, 4);
+        assertWi("125", 125, 3);
+        assertWi("125", 125, 2);
+        assertWi("125", 125, 1);
+        assertWi("125", 125, 0);
+        assertWi("00000000000000000125", 125, 20);
+        assertWi("-0000000000000000125", -125, 20);
+        assertWi("0", 0, 0);
+        assertWi("0", 0, 1);
+        assertWi("-125", -125, 0);
+        assertWi("-125", -125, 1);
+        assertWi("-125", -125, 2);
+        assertWi("-125", -125, 3);
+        assertWi("-125", -125, 4);
+        assertWi("-0125", -125, 5);
+    }
+
+    @Test
+    public void testWriteIntoLong() {
+        String IMV_60 = zp(Integer.MAX_VALUE, 60);
+        String ImV_60 = zp(Integer.MIN_VALUE, 60);
+        String LMV_60 = zp(Long.MAX_VALUE, 60);
+        String LmV_60 = zp(Long.MIN_VALUE, 60);
+        String LMVm1_60 = zp(Long.MAX_VALUE - 1L, 60);
+        String LmVp1_60 = zp(Long.MIN_VALUE + 1L, 60);
+        // sanity check string values for extremes
+        assertEquals(60, IMV_60.length());
+        assertEquals(60, ImV_60.length());
+        assertEquals(60, LMV_60.length());
+        assertEquals(60, LmV_60.length());
+        assertEquals(60, LMVm1_60.length());
+        assertEquals(60, LmVp1_60.length());
+
+        assertEquals(Integer.MAX_VALUE, Integer.parseInt(IMV_60));
+        assertEquals(Integer.MIN_VALUE, Integer.parseInt(ImV_60));
+
+        assertEquals(Long.MAX_VALUE, Long.parseLong(LMV_60));
+        assertEquals(Long.MIN_VALUE, Long.parseLong(LmV_60));
+        assertEquals(Long.MAX_VALUE - 1L, Long.parseLong(LMVm1_60));
+        assertEquals(Long.MIN_VALUE + 1L, Long.parseLong(LmVp1_60));
+
+        assertWi("125", 125L, 2);
+        assertWi("005", 5L, 3);
+        assertWi("-05", -5L, 3);
+        assertWi("0125", 125L, 4);
+        assertWi("00125", 125L, 5);
+        assertWi("000125", 125L, 6);
+        assertWi("-125", -125L, 4);
+        assertWi("125", 125L, 3);
+        assertWi("125", 125L, 2);
+        assertWi("125", 125L, 1);
+        assertWi("125", 125L, 0);
+        assertWi("00000000000000000125", 125L, 20);
+        assertWi("-0000000000000000125", -125L, 20);
+        assertWi("0", 0L, 0);
+        assertWi("0", 0L, 1);
+        assertWi("-125", -125L, 0);
+        assertWi("-125", -125L, 1);
+        assertWi("-125", -125L, 2);
+        assertWi("-125", -125L, 3);
+        assertWi("-125", -125L, 4);
+        assertWi("-0125", -125L, 5);
+
+        assertWi(LMVm1_60, Long.MAX_VALUE - 1L, 60);
+        assertWi(LmVp1_60, Long.MIN_VALUE + 1L, 60);
+        assertWi(LMV_60, Long.MAX_VALUE, 60);
+        assertWi(IMV_60, Integer.MAX_VALUE, 60);
+        assertWi(ImV_60, Integer.MIN_VALUE, 60);
+        assertWi(LmV_60, Long.MIN_VALUE, 60);
+    }
+
+    static String zp(long value, int length) {
+        // Doing zero padding the expensive way for comparison's sake
+        boolean negative = value < 0L;
+        boolean lmv = value == Long.MIN_VALUE;
+        if (negative) {
+            if (lmv) {
+                // We have to special case Long.MIN_VALUE because
+                // Long.MAX_VALUE = -9223372036854775808 and
+                // Long.MIN_VALUE = 9223372036854775807
+                // (note the difference in the last digit), so
+                // Long.MIN_VALUE * -1 = Long.MAX_VALUE + 1 which wraps
+                // around to Long.MIN_VALUE which is, wait for it...
+                // Long.MIN_VALUE again.  So
+                // -Long.MIN_VALUE == Long.MIN_VALUE.
+                // Ain't corner cases grand.
+                value = Long.MAX_VALUE;
+            } else {
+                long old = value;
+                value = -value;
+                if (value != 0L && value == old) {
+                    fail("Huh? " + old + " * -1L = " + value + "?!!");
+                }
+            }
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(value);
+        while (sb.length() < length) {
+            sb.insert(0, '0');
+        }
+        if (negative) {
+            if (sb.charAt(0) == '0') {
+                sb.setCharAt(0, '-');
+            } else {
+                sb.insert(0, '-');
+            }
+        }
+        if (lmv) {
+            char c = (char) (sb.charAt(sb.length() - 1) + 1);
+            sb.setCharAt(sb.length() - 1, c);
+        }
+        return sb.toString();
+    }
+
+    static void assertWi(String exp, int val, int length) {
+        char[] c = new char[length];
+        char[] result = Strings.writeInto(val, c);
+        for (int i = 0; i < result.length; i++) {
+            char cc = result[i];
+            switch (cc) {
+                case '0':
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
+                case '-':
+                    continue;
+                default:
+                    fail("Not a number or minus: '" + cc + "' @ " + i + " in '" + new String(result) + "'");
+
+            }
+        }
+        assertEquals("Wrong result for " + val + " with length " + length, exp, new String(result));
+        assertEquals("Wrong parse result", Integer.parseInt(new String(result)), val);
+    }
+
+    static void assertWi(String exp, long val, int length) {
+        char[] c = new char[length];
+        char[] result = Strings.writeInto(val, c);
+        for (int i = 0; i < result.length; i++) {
+            char cc = result[i];
+            switch (cc) {
+                case '0':
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
+                case '-':
+                    continue;
+                default:
+                    fail("Not a number or minus: '" + cc + "' @ " + i + " in '" + new String(result) + "'");
+            }
+        }
+        assertEquals("Wrong result for " + val + " with length " + length, exp, new String(result));
+        assertEquals("Wrong parse result", Long.parseLong(new String(result)), val);
+    }
+
+    @Test
+    public void testQuote() throws Throwable {
+        assertEquals("\"Hello\\nworld\"", Strings.quote("Hello\nworld"));
+        List<String> lines = Arrays.asList("A\ttab", "Another line", "And another");
+        String exp = "\"A\\ttab\",\n\"Another line\",\n\"And another\"";
+        assertEquals(exp, Strings.quotedCommaDelimitedLines(lines));
+        assertEquals("'This is a\\nthing!'", Strings.singleQuote("This is a\nthing!"));
+    }
+
+    @Test
+    public void testEscaper() throws Throwable {
+        Escaper weird = Escaper.CONTROL_CHARACTERS.escapeDoubleQuotes().and(c -> {
+            switch (c) {
+                case 'q':
+                    return "QQ";
+            }
+            return null;
+        });
+        assertEquals("\\\"The QQueen QQuaffed QQuickly\\\"\\n",
+                Strings.escape("\"The queen quaffed quickly\"\n", weird));
+    }
 }

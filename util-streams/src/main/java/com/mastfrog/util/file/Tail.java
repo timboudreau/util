@@ -27,8 +27,10 @@ import com.mastfrog.function.throwing.io.IOFunction;
 import com.mastfrog.util.streams.ContinuousLineStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import static java.nio.charset.CoderResult.OVERFLOW;
 import java.nio.file.Path;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
+import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.concurrent.Executor;
@@ -83,7 +85,9 @@ final class Tail implements IOFunction<Predicate<CharSequence>, Runnable> {
     private void watch(Canceller canceller, WatchService watch, WatchKey key, ContinuousLineStream stream, Predicate<CharSequence> lineConsumer) throws InterruptedException, IOException {
         canceller.setThread();
         try {
-            for (;;) {
+            int tightLoopCount = 0;
+            long lastLoop = System.currentTimeMillis();
+            for (long polls = 0;; polls++) {
                 if (canceller.isCancelled()) {
                     return;
                 }
@@ -98,27 +102,55 @@ final class Tail implements IOFunction<Predicate<CharSequence>, Runnable> {
                 if (canceller.isCancelled()) {
                     return;
                 }
+
+                // Handle the case that we are starving the
+                // system of threads because we are being handed the
+                // same key over and over - this happens and is OS and
+                // environment dependent
+                long now = System.currentTimeMillis();
+                long elapsed = now - lastLoop;
+                if (elapsed <= 1) {
+                    tightLoopCount++;
+                    if (tightLoopCount > 15) {
+                        tightLoopCount = 0;
+                        Thread.sleep(10);
+                    }
+                } else {
+                    tightLoopCount = 0;
+                }
+                lastLoop = now;
+
                 WatchKey k = watch.take();
                 // If this is not called, resetting the watch does
                 // nothing
                 k.pollEvents();
                 // This is unreliable, at least in tests:
-//                boolean foundOurFile = false;
-//                for (WatchEvent<?> e : k.pollEvents()) {
-//                    if (e.kind() == ENTRY_MODIFY) {
-//                        Path p = (Path) e.context();
-//                        if (path.equals(p) || path.getFileName().equals(p)) {
-//                            foundOurFile = true;
-//                            break;
-//                        }
-//                    } else if (e.kind() == OVERFLOW) {
-//                        foundOurFile = true; // maybe, maybe not.
-//                        break;
-//                    }
-//                }
-//                if (!foundOurFile) {
-//                    continue;
-//                }
+                boolean foundOurFile = false;
+                for (WatchEvent<?> e : k.pollEvents()) {
+                    if (e.kind() == ENTRY_MODIFY) {
+                        Path p = (Path) e.context();
+                        if (path.equals(p) || path.getFileName().equals(p)) {
+                            foundOurFile = true;
+                            break;
+                        }
+                    } else if (e.kind() == OVERFLOW) {
+                        foundOurFile = true; // maybe, maybe not.
+                        break;
+                    }
+                }
+                if (!foundOurFile) {
+                    k.reset();
+                    continue;
+                }
+
+                // If the operating system's watch facility is badly behaved,
+                // we can tie up a ton of CPU time looping at high speed here
+                // (for example, causing tests to lock up the desktop during
+                // development).  Thread.yield() is not guaranteed to do anything
+                // but currently does help the test's timeout thread have a
+                // chance to detect a runaway test.
+                Thread.yield();
+//                System.out.println("poll " + polls);
                 if (canceller.isCancelled()) {
                     return;
                 }
