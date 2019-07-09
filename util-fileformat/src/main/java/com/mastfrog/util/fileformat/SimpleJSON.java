@@ -23,13 +23,17 @@
  */
 package com.mastfrog.util.fileformat;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.Instant;
@@ -68,9 +72,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A simple way to write JSON from primitive values, arrays, maps and lists, for
- * use in annotation processors where depending on a library for doing this is
- * fraught. Date-like objects are serialized to ISO format GMT..
+ * A simple way to write JSON from primitive values, arrays, maps and lists, and
+ * common JDK types for use in annotation processors where depending on a
+ * library for doing this is fraught. Date-like objects are serialized to ISO
+ * 8601 format with time zone GMT.
  * <p/>
  * Useful for libraries which only need to <i>write</i> JSON and cannot afford a
  * dependency on a large JSON library - such as in annotation processors.
@@ -200,7 +205,10 @@ public final class SimpleJSON {
      * @param o
      * @return
      */
-    public boolean canDefinitelySerialize(Object o) {
+    public static boolean canDefinitelySerialize(Object o) {
+        if (o == null) {
+            return true;
+        }
         boolean result = o instanceof Integer
                 || o instanceof CharSequence
                 || o instanceof Long
@@ -238,6 +246,10 @@ public final class SimpleJSON {
                 || o instanceof InetSocketAddress
                 || o instanceof URL
                 || o instanceof UUID
+                || o instanceof File
+                || o instanceof Path
+                || o instanceof BigInteger
+                || o instanceof BigDecimal
                 || o instanceof Class<?>
                 || o instanceof Package
                 || o instanceof Throwable;
@@ -360,6 +372,18 @@ public final class SimpleJSON {
             sb.append(((ZoneOffset) o).getId());
         } else if (o instanceof UUID) {
             sb.append(((UUID) o).toString());
+        } else if (o instanceof File) {
+            sb.append(((File) o).getAbsolutePath());
+        } else if (o instanceof Path) {
+            sb.append(((Path) o).toString());
+        } else if (o instanceof BigInteger) {
+            delimit('"', sb, () -> {
+                sb.append(o.toString());
+            });
+        } else if (o instanceof BigDecimal) {
+            delimit('"', sb, () -> {
+                sb.append(o.toString());
+            });
         } else if (o instanceof Throwable) {
             write(mapifyThrowable((Throwable) o), sb, depth, style);
         } else if (o instanceof Class<?>) {
