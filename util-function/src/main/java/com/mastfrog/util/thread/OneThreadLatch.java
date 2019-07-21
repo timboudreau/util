@@ -25,8 +25,6 @@ package com.mastfrog.util.thread;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Variant on the CountDownLatch pattern, but which can
@@ -35,86 +33,95 @@ import java.util.logging.Logger;
  */
 public class OneThreadLatch {
 
-    private final Sync sync = new Sync(1);
+    private final Sync sync = new Sync();
 
     private static final class Sync extends AbstractQueuedSynchronizer {
 
-        Sync(int count) {
-            setState(count);
+        Sync() {
+            init();
+        }
+
+        void init() {
+            setState(1);
         }
 
         @Override
-        protected boolean tryAcquire(int arg) {
-            int c = getState();
-            if (c == -1) {
-                return true;
+        protected int tryAcquireShared(int acquires) {
+            if (disabled) {
+                return 1;
             }
-            if (c == 0) {
-                boolean result = compareAndSetState(0, 1);
-                return result;
+            // Sets the state positive if negative
+            // If the absolute value of the state is > than the
+            // absolute value in the first iteration, then
+            // release has been called at least once, so acquire
+            for (int c = getState(), initial = c, initialAbs = Math.abs(initial), cAbs = initialAbs; c != 0; c = getState(), cAbs = Math.abs(c)) {
+                if (c < 0 || cAbs > initialAbs || disabled) {
+//                    if (c < 0) {
+                    compareAndSetState(c, cAbs + 1);
+                    return 1;
+//                    }
+//                    return -1;
+                }
+                if (c > 0) {
+                    return -1;
+                }
+                if (disabled) {
+                    return 1;
+                }
+            }
+            return 1;
+        }
+
+        @Override
+        protected boolean tryReleaseShared(int releases) {
+            for (int c = getState(), initial = c, initialAbs = Math.abs(initial), absC = initialAbs;; c = getState(), absC = Math.abs(c)) {
+                if (c > 0 || (/*initial > 0 &&*/absC > initialAbs)) {
+                    if (compareAndSetState(c, -c)) {
+                        int newc = Math.abs(c) + 1;
+                        compareAndSetState(c, newc);
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+
+        int releaseAll() {
+            int count = 0;
+            while (getQueueLength() > 0) {
+                releaseShared(1);
+                count++;
+            }
+            return count;
+        }
+
+        private volatile boolean disabled;
+
+        public boolean enabled(boolean val) {
+            if (disabled != !val) {
+                if (!val) {
+                    disabled = true;
+                    releaseAll();
+                } else {
+                    init();
+                    disabled = false;
+                }
+                return true;
             }
             return false;
         }
 
-        @Override
-        protected boolean tryRelease(int arg) {
-            if (getState() == -1) {
-                return true;
-            }
-            return compareAndSetState(1, 0);
-        }
-
-        @Override
-        protected boolean isHeldExclusively() {
-            return true;
-        }
-
-        int releaseAll() {
-            int q = getQueueLength();
-            for (int i = 0; i < 1000; i++) {
-                release(1);
-                try {
-                    Thread.sleep(1);
-                    if (getState() == 0) {
-                        break;
-                    }
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(OneThreadLatch.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
-            return q;
-        }
-
         boolean disabled(boolean disabled) {
-            if (disabled) {
-                releaseAll();
-                for (;;) {
-                    int c = getState();
-                    if (c == -1) {
-                        return false;
-                    }
-                    if (compareAndSetState(c, -1)) {
-                        return true;
-                    }
-                }
-            } else {
-                for (;;) {
-                    int c = getState();
-                    if (c != -1) {
-                        return false;
-                    }
-                    return compareAndSetState(c, 1);
-                }
-            }
+            return enabled(!disabled);
         }
 
         boolean isDisabled() {
-            return getState() == -1;
+            return disabled;
         }
     }
 
     public boolean releaseOne() {
-        return sync.release(1);
+        return sync.releaseShared(1);
     }
 
     public int releaseAll() {
@@ -141,7 +148,14 @@ public class OneThreadLatch {
         if (sync.isDisabled()) {
             return;
         }
-        await(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        sync.acquireSharedInterruptibly(1);
+    }
+
+    public void awaitUninterruptibly() {
+        if (sync.isDisabled()) {
+            return;
+        }
+        sync.acquireShared(1);
     }
 
     public boolean await(long timeout, TimeUnit unit)

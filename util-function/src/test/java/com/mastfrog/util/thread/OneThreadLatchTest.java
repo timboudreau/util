@@ -81,11 +81,11 @@ public class OneThreadLatchTest {
         latch.disable();
         Thread.sleep(300);
         onExit.await(1500, TimeUnit.MILLISECONDS);
-//        assertEquals("All threads have not exited " + System.currentTimeMillis(), THREADS, exited.get());
-//        assertEquals("All threads have not exited " + System.currentTimeMillis(), 0L, onExit.getCount());
+        assertEquals("All threads have not exited " + System.currentTimeMillis(), THREADS, exited.get());
+        assertEquals("All threads have not exited " + System.currentTimeMillis(), 0L, onExit.getCount());
     }
 
-    @Test(timeout=40000)
+    @Test(timeout = 40000)
     public void testWhenDisabledThreadsAreNotBlocked() throws Throwable {
         Phaser launch = new Phaser(1);
         AtomicBoolean exit = new AtomicBoolean();
