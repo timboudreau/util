@@ -119,7 +119,7 @@ public class ContinuousLineStreamTest {
         }
     }
 
-    @Test(timeout = 12000)
+    @Test(timeout = 64000)
     public void testComplex() throws Exception {
         for (int i = 31; i < 128; i++) {
             StreamHarness.copyOf(31, downloadOrFind(), file, StreamHarness::check);
