@@ -194,8 +194,9 @@ public final class Streams {
 
     /**
      * Read a string with a fixed buffer size
+     *
      * @param in An input stream
-     * @param bufferSize A buffer size, non-negative;  if zero, no buffering
+     * @param bufferSize A buffer size, non-negative; if zero, no buffering
      * @return A string
      * @throws IOException if something goes wrong
      */
@@ -208,9 +209,10 @@ public final class Streams {
 
     /**
      * Read a string with a specified charset and a fixed buffer size
+     *
      * @param in An input stream
      * @param charset A character set
-     * @param bufferSize A buffer size, non-negative;  if zero, no buffering
+     * @param bufferSize A buffer size, non-negative; if zero, no buffering
      * @return A string
      * @throws IOException if something goes wrong
      */
@@ -223,6 +225,7 @@ public final class Streams {
 
     /**
      * Read a string with a specified charset
+     *
      * @param in An input stream
      * @param charset A character set
      * @return A string
@@ -233,8 +236,10 @@ public final class Streams {
             return readString(r);
         }
     }
+
     /**
      * Read a string with a specified charset
+     *
      * @param in An input stream
      * @param charset A character set
      * @return A string
@@ -319,7 +324,9 @@ public final class Streams {
     }
 
     static class NamedInputStream extends FilterInputStream {
+
         private final String name;
+
         NamedInputStream(Object src, InputStream in) {
             super(in);
             name = src + "";
@@ -391,15 +398,38 @@ public final class Streams {
      * Get a ByteBuffer as an InputStream. The passed buffer will be wrapped as
      * a read-only buffer. The position, mark and limit of the passed buffer
      * will remain unmodified, and the returned InputStream will read the byte
-     * buffer from position 0, not its current position.
+     * buffer from position 0, not its current position. Equivalent of calling
+     * <code>asInputStream(true, buf)</code>.
      *
      * @param buf A ByteBuffer
      * @return An InputStream for reading the byte buffer
      */
     public static InputStream asInputStream(ByteBuffer buf) {
+        return asInputStream(true, buf.duplicate());
+    }
+
+    /**
+     * Get a ByteBuffer as an InputStream. The passed buffer will be wrapped as
+     * a read-only buffer. If <code>rewind</code> is true, the passed buffer is
+     * rewound to position 0 before creating the stream. The mark and position
+     * of the buffer <i>are</i> modified by operations on the stream - if you
+     * don't want that, call <code>buf.duplicate()</code> to create a buffer to
+     * pass here.
+     *
+     * @param rewind If true, rewind the buffer (modifying it)
+     * @param buf A ByteBuffer
+     * @return An InputStream for reading the byte buffer
+     */
+    public static InputStream asInputStream(boolean rewind, ByteBuffer buf) {
         ByteBuffer use = buf.asReadOnlyBuffer();
-        use.rewind();
+        if (rewind) {
+            use.rewind();
+        }
         return new ByteBufferInputStream(use);
+    }
+
+    static ByteBufferInputStream _asInputStream(ByteBuffer buf) {
+        return new ByteBufferInputStream(!buf.isReadOnly() ? buf.asReadOnlyBuffer() : buf);
     }
 
     public static InputStream asInputStream(ReadableByteChannel channel) {
@@ -530,6 +560,7 @@ public final class Streams {
     }
 
     private static final class ByteBufferOutputStream extends OutputStream {
+
         private final ByteBuffer buffer;
 
         ByteBufferOutputStream(ByteBuffer buffer) {
@@ -559,43 +590,6 @@ public final class Streams {
         @Override
         public void write(byte[] bytes) throws IOException {
             buffer.put(bytes);
-        }
-    }
-
-    private static final class ByteBufferInputStream extends InputStream {
-
-        private final ByteBuffer buf;
-
-        ByteBufferInputStream(ByteBuffer buf) {
-            this.buf = buf;
-        }
-
-        @Override
-        public int read() throws IOException {
-            return buf.remaining() == 0 ? -1 : buf.get();
-        }
-
-        @Override
-        public int read(byte[] b) throws IOException {
-//            int rem = buf.remaining();
-            int rem = buf.limit() - buf.position();
-            int result = Math.min(rem, b.length);
-            buf.get(b, 0, result);
-            return result;
-        }
-
-        @Override
-        public int read(byte[] b, int off, int len) throws IOException {
-            if (off + len > b.length) {
-                throw new IOException("offset + length=" + (off + len) + " but array length is " + b.length);
-            }
-            int rem = buf.remaining();
-            if (rem == 0) {
-                return -1;
-            }
-            int result = Math.min(len, rem);
-            buf.get(b, off, result);
-            return result;
         }
     }
 

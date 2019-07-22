@@ -181,7 +181,6 @@ public final class CollectionUtils {
 //        BitSet set = new BitSet(allPossibleValues.size());
 //        return new BitSetSet<>(ComparatorListIndexedImpl.create(allPossibleValues), set);
 //    }
-
     public static <T> Set<T> weakSet() {
         return new SimpleWeakSet<>();
     }
@@ -823,7 +822,24 @@ public final class CollectionUtils {
      * @return a map
      */
     public static <T, R> Map<T, R> supplierMap(Supplier<R> valueSupplier) {
-        return new SupplierMap<>(valueSupplier);
+        return new SupplierMap<>(notNull("valueSupplier", valueSupplier));
+    }
+
+    /**
+     * Invert a map, producing a map of value to set of keys.
+     *
+     * @param <T> The original key type
+     * @param <R> The original value type
+     * @param orig The original map
+     * @return A new map
+     */
+    public static <T, R> Map<R, Set<T>> invert(Map<? extends T, ? extends R> orig) {
+        notNull("orig", orig);
+        Map<R, Set<T>> result = supplierMap(HashSet::new);
+        for (Map.Entry<? extends T, ? extends R> e : orig.entrySet()) {
+            result.get(e.getValue()).add(e.getKey());
+        }
+        return result;
     }
 
     /**

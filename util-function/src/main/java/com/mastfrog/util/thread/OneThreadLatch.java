@@ -27,7 +27,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 
 /**
- * Variant on the CountDownLatch pattern, but which can
+ * Variant on the CountDownLatch pattern, which self-resets after releasing a
+ * thread, and releases only one thread at a time.
  *
  * @author Tim Boudreau
  */
@@ -36,6 +37,7 @@ public class OneThreadLatch {
     private final Sync sync = new Sync();
 
     private static final class Sync extends AbstractQueuedSynchronizer {
+        private volatile boolean disabled;
 
         Sync() {
             init();
@@ -56,17 +58,11 @@ public class OneThreadLatch {
             // release has been called at least once, so acquire
             for (int c = getState(), initial = c, initialAbs = Math.abs(initial), cAbs = initialAbs; c != 0; c = getState(), cAbs = Math.abs(c)) {
                 if (c < 0 || cAbs > initialAbs || disabled) {
-//                    if (c < 0) {
                     compareAndSetState(c, cAbs + 1);
                     return 1;
-//                    }
-//                    return -1;
                 }
                 if (c > 0) {
                     return -1;
-                }
-                if (disabled) {
-                    return 1;
                 }
             }
             return 1;
@@ -75,10 +71,9 @@ public class OneThreadLatch {
         @Override
         protected boolean tryReleaseShared(int releases) {
             for (int c = getState(), initial = c, initialAbs = Math.abs(initial), absC = initialAbs;; c = getState(), absC = Math.abs(c)) {
-                if (c > 0 || (/*initial > 0 &&*/absC > initialAbs)) {
+                if (c > 0 || absC > initialAbs) {
                     if (compareAndSetState(c, -c)) {
-                        int newc = Math.abs(c) + 1;
-                        compareAndSetState(c, newc);
+                        compareAndSetState(c, absC + 1);
                         return true;
                     }
                 }
@@ -94,8 +89,6 @@ public class OneThreadLatch {
             }
             return count;
         }
-
-        private volatile boolean disabled;
 
         public boolean enabled(boolean val) {
             if (disabled != !val) {

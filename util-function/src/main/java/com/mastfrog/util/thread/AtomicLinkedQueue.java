@@ -23,12 +23,14 @@
  */
 package com.mastfrog.util.thread;
 
+import com.mastfrog.util.preconditions.Checks;
 import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -39,7 +41,9 @@ import java.util.function.UnaryOperator;
  * A non-blocking, thread-safe, memory-efficient queue using a simple linked
  * list structure and atomic add and drain operations.
  * <p>
- * Note that iteration occurs in reverse order.
+ * Note that iteration occurs in reverse order.  Identity-based removal operations
+ * exist; under concurrency they may spuriously fail, but will report that to
+ * the caller with their result value, and the caller may retry.
  *
  * @author Tim Boudreau
  */
@@ -47,7 +51,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
 
     // A basic linked list structure, where the head is found by
     // iterating backwards
-    private AtomicReference<MessageEntry<Message>> tail;
+    private final AtomicReference<MessageEntry<Message>> tail;
     private Runnable onAdd;
 
     /**
@@ -67,7 +71,16 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
     }
 
     public AtomicLinkedQueue(AtomicLinkedQueue<Message> q) {
-        tail = notNull("q", q).tail;
+        tail = copyRef(q.tail);
+    }
+
+    private static <Message> AtomicReference<MessageEntry<Message>> copyRef(AtomicReference<MessageEntry<Message>> ref) {
+        MessageEntry<Message> orig = ref.get();
+        if (orig == null) {
+            return new AtomicReference<>();
+        } else {
+            return new AtomicReference<>(orig.copy());
+        }
     }
 
     /**
@@ -81,16 +94,21 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
         return new AtomicLinkedQueue<>(this);
     }
 
+    /**
+     * Reverse the contents of this queue in-place.  This
+     * method is not guaranteed to be unaffected by operations
+     * that modify the queue in other threads.
+     */
     public void reverseInPlace() {
         tail.updateAndGet((MessageEntry<Message> t) -> {
             if (t == null) {
                 return t;
             }
             MessageEntry<Message> head = new MessageEntry<>(null, t.message);
-            t = t.prev;
+            t = t.getPrev();
             while (t != null) {
                 head = new MessageEntry<>(head, t.message);
-                t = t.prev;
+                t = t.getPrev();
             }
             return head;
         });
@@ -157,7 +175,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
     }
 
     /**
-     * Drain the queue, returning a list
+     * Drain the queue, returning a list, tail-first.
      *
      * @return A list of messages
      */
@@ -165,7 +183,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
         MessageEntry<Message> oldTail = tail.getAndSet(null);
         // Populate the list iterating backwards from the tail
         if (oldTail != null) {
-            if (oldTail.prev == null) {
+            if (oldTail.getPrev() == null) {
                 return Collections.<Message>singletonList(oldTail.message);
             }
             List<Message> all = new LinkedList<>();
@@ -178,7 +196,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
     /**
      * Drain the queue to an existing list. Note that the queue will be drained
      * to index 0 in the list - if it has existing contents, those will be
-     * pushed forward.
+     * pushed forward (for best performance, pass in a LinkedList).
      *
      * @param all The list
      * @return the list
@@ -187,7 +205,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
         MessageEntry<Message> oldTail = tail.getAndSet(null);
         // Populate the list iterating backwards from the tail
         if (oldTail != null) {
-            if (oldTail.prev == null) {
+            if (oldTail.getPrev() == null) {
                 all.add(oldTail.message);
                 return all;
             }
@@ -208,7 +226,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
         MessageEntry<Message> oldTail = tail.getAndSet(null);
         // Populate the list iterating backwards from the tail
         if (oldTail != null) {
-            if (oldTail.prev == null) {
+            if (oldTail.getPrev() == null) {
                 visitor.accept(oldTail.message);
                 return Collections.<Message>singletonList(oldTail.message);
             }
@@ -225,24 +243,33 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
      *
      * @return An iterator
      */
+    @Override
     public Iterator<Message> iterator() {
-        MessageEntry<Message> tail = this.tail.get();
-        if (tail == null) {
+        MessageEntry<Message> tailLocal = this.tail.get();
+        if (tailLocal == null) {
             return Collections.emptyIterator();
         }
-        return new It<Message>(tail);
+        return new It<>(tailLocal);
     }
 
+    /**
+     * Return a list containing the contents of this queue in order.
+     *
+     * @return A list
+     */
     public List<Message> asList() {
         List<Message> result = new LinkedList<>();
         MessageEntry<Message> t = tail.get();
         while (t != null) {
             result.add(0, t.message);
-            t = t.prev;
+            t = t.getPrev();
         }
         return result;
     }
 
+    /**
+     * Clear the contents of this queue.
+     */
     public void clear() {
         tail.set(null);
     }
@@ -280,7 +307,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
             } else {
                 rejected.add(t.message);
             }
-            t = t.prev;
+            t = t.getPrev();
         }
         accepted.reverseInPlace();
         rejected.reverseInPlace();
@@ -303,7 +330,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
         @Override
         public T next() {
             T result = en.message;
-            en = en.prev;
+            en = en.getPrev();
             return result;
         }
     }
@@ -323,84 +350,189 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
      * @return The size
      */
     public int size() {
-        MessageEntry<Message> tail = this.tail.get();
+        MessageEntry<Message> tailLocal = this.tail.get();
         int result = 0;
-        while (tail != null) {
+        while (tailLocal != null) {
             result++;
-            tail = tail.prev;
+            tailLocal = tailLocal.getPrev();
         }
         return result;
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        MessageEntry<Message> tail = this.tail.get();
-        while (tail != null) {
-            sb.insert(0, tail.message);
-            if (tail.prev != null) {
+        MessageEntry<Message> tailLocal = this.tail.get();
+        while (tailLocal != null) {
+            sb.insert(0, tailLocal.message);
+            if (tailLocal.getPrev() != null) {
                 sb.insert(0, ",");
             }
-            tail = tail.prev;
+            tailLocal = tailLocal.getPrev();
         }
         return sb.toString();
     }
 
+    /**
+     * Pop the most recently added element from this queue.
+     *
+     * @return A message or nulk
+     */
     @SuppressWarnings("unchecked")
     public Message pop() {
-        if (tail == null) {
-            return null;
-        }
         Object[] m = new Object[1];
         tail.getAndUpdate(msg -> {
             if (msg == null) {
                 return null;
             }
             m[0] = msg.message;
-            return msg.prev;
+            return msg.getPrev();
         });
         return (Message) m[0];
     }
 
+    /**
+     * Pop the tail of this queue and push it into another queue.
+     *
+     * @param other The other queue
+     * @param ifNull Will supply a value if this queue is empty
+     * @return The maessage which was moved
+     */
+    @SuppressWarnings("unchecked")
+    public Message popInto(AtomicLinkedQueue<Message> other, Supplier<Message> ifNull) {
+        Checks.notSame("this", "other", this, other);
+        Object[] result = new Object[1];
+        tail.getAndUpdate(oldTail -> {
+            if (oldTail != null) {
+                MessageEntry<Message> prev = oldTail.getPrev();
+                other.tail.getAndUpdate(oldOtherTail -> {
+                    oldTail.updatePrev(oldPrev -> {
+                        result[0] = oldTail.message;
+                        return oldOtherTail;
+                    });
+                    result[0] = oldTail.message;
+                    return oldTail;
+                });
+                return prev;
+            } else {
+                other.tail.getAndUpdate(otherOldTail -> {
+                    Message msg;
+                    result[0] = msg = ifNull.get();
+                    return new MessageEntry<>(otherOldTail, msg);
+                });
+                return null;
+            }
+        });
+        return (Message) result[0];
+    }
+
+    /**
+     * Pop the tail of this queue, removing it, and using the passed supplier if
+     * this queue was empty.
+     *
+     * @param ifNone A supplier for values when none is available to pop
+     * @return The popped message or the result from the supplier
+     */
     public Message pop(Supplier<Message> ifNone) {
         Message result = pop();
         return result == null ? ifNone.get() : result;
     }
 
+    /**
+     * Remove an object, using identity (not equality) testing.
+     * <i><b>Behavior under concurrent access:</b> This method may return false
+     * because another thread is part-way through removing a node adjacent to
+     * one that exists and does contain the requested object - making it
+     * apparently not present when the linked list of nodes is traversed. So
+     * removal <u>may</u>
+     * spuriously fail, but the return value will reliably indicate that.</i>
+     *
+     * @param msg An element to remove
+     * @return True if it is removed
+     */
     public boolean removeByIdentity(Message msg) {
-        if (tail == null) {
-            return false;
+        Remover<Message> remover = new Remover<>(msg);
+        tail.updateAndGet(remover);
+        if (!remover.removed) {
+            tail.updateAndGet(remover);
         }
-        boolean[] removed = new boolean[1];
-        tail.getAndUpdate(t -> {
-            if (t != null && t.message == msg) {
-                return t.prev;
+        return remover.removed;
+    }
+
+    boolean contains(Message msg) {
+        MessageEntry<Message> top = tail.get();
+        while (top != null) {
+            if (msg == top.message) {
+                return true;
+            }
+            top = top.getPrev();
+        }
+        return false;
+    }
+
+    static final class Remover<Message> implements UnaryOperator<MessageEntry<Message>> {
+
+        private final Message toRemove;
+        boolean removed;
+
+        public Remover(Message toRemove) {
+            this.toRemove = toRemove;
+        }
+
+        @Override
+        public MessageEntry<Message> apply(MessageEntry<Message> t) {
+            if (t == null) {
+                return null;
+            }
+            MessageEntry<Message> prev = t.prev;
+            if (t.message == toRemove) {
+                removed = true;
+                return prev;
             } else {
-                while (t != null) {
-                    MessageEntry<Message> nxt = t.prev;
-                    if (nxt != null && nxt.message == msg) {
-                        removed[0] = true;
-                        t.prev = nxt.prev;
-                        break;
-                    }
-                    t = nxt;
-                }
+                t.updatePrev(this);
             }
             return t;
-        });
-        return removed[0];
+        }
     }
 
     /**
      * A single linked list entry in the queue
      */
-    private static final class MessageEntry<Message> {
+    static final class MessageEntry<Message> {
 
-        private MessageEntry<Message> prev;
-        private Message message;
+        private volatile MessageEntry<Message> prev;
+        final Message message;
+        @SuppressWarnings("rawtype")
+        private static final AtomicReferenceFieldUpdater UPDATER
+                = AtomicReferenceFieldUpdater.newUpdater(MessageEntry.class, MessageEntry.class, "prev");
 
         MessageEntry(MessageEntry<Message> prev, Message message) {
             this.prev = prev;
             this.message = message;
+        }
+
+        @SuppressWarnings("unchecked")
+        MessageEntry<Message> getPrev() {
+            return (MessageEntry<Message>) UPDATER.get(this);
+        }
+
+        MessageEntry<Message> copy() {
+            return new MessageEntry<>(prev == null ? null : prev.copy(), message);
+        }
+
+        @SuppressWarnings("unchecked")
+        void setPrev(MessageEntry<Message> prev) {
+            UPDATER.set(this, prev);
+        }
+
+        @SuppressWarnings("unchecked")
+        void updatePrev(UnaryOperator<MessageEntry<Message>> uo) {
+            UPDATER.updateAndGet(this, uo);
+        }
+
+        @SuppressWarnings("unchecked")
+        boolean updatePrev(MessageEntry<Message> expect, MessageEntry<Message> nue) {
+            return UPDATER.compareAndSet(this, expect, nue);
         }
 
         void drainTo(List<? super Message> messages) {
@@ -409,7 +541,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
             MessageEntry<Message> e = this;
             while (e != null) {
                 messages.add(0, e.message);
-                e = e.prev;
+                e = e.getPrev();
             }
         }
 
@@ -418,9 +550,9 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
             // and also collect the total byte count
             MessageEntry<Message> e = this;
             while (e != null) {
-                visitor.accept(e.message);;
+                visitor.accept(e.message);
                 messages.add(0, e.message);
-                e = e.prev;
+                e = e.getPrev();
             }
         }
     }

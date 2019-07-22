@@ -51,6 +51,13 @@ public final class Checks {
     private Checks() {
     }
 
+    public static void notSame(String a, String b, Object oa, Object ob) {
+        if (oa == ob) {
+            throw new InvalidArgumentException(a + " must not be the same object as " + b
+                    + " but was passed " + oa);
+        }
+    }
+
     /**
      * Determine if a string value contains only digits.
      *

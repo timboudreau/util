@@ -35,12 +35,47 @@ import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
+import java.util.Random;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 public class StreamsTest {
+
+    static final Random rnd = new Random(1209109203L);
+
+    private static byte[] randomBytes(int size) {
+        byte[] b = new byte[size];
+        rnd.nextBytes(b);
+        return b;
+    }
+
+    @Test
+    public void testByteBufferInputStreamsWithJDK9Methods() throws IOException {
+        byte[] bytes = randomBytes(2048);
+        ByteBufferInputStream bufferStream = Streams._asInputStream(ByteBuffer.wrap(bytes));
+        ByteArrayInputStream arrayStream = new ByteArrayInputStream(bytes);
+
+        ByteArrayOutputStream a = new ByteArrayOutputStream(bytes.length);
+        ByteArrayOutputStream b = new ByteArrayOutputStream(bytes.length);
+
+        Streams.copy(arrayStream, a);
+        Streams.copy(bufferStream, b);
+        assertArrayEquals(a.toByteArray(), b.toByteArray());
+
+        bufferStream = Streams._asInputStream(ByteBuffer.wrap(bytes));
+        byte[] gotBytes = bufferStream.readAllBytes();
+        assertArrayEquals(bytes, gotBytes);
+
+        bufferStream = Streams._asInputStream(ByteBuffer.wrap(bytes));
+        bufferStream.skip(10);
+        byte[] ourTenBytes = bufferStream.readNBytes(10);
+
+        byte[] realTenBytes = new byte[10];
+        System.arraycopy(bytes, 10, realTenBytes, 0, 10);
+        assertArrayEquals(realTenBytes, ourTenBytes);
+    }
 
     @Test
     public void testAsInputStreams() throws IOException {

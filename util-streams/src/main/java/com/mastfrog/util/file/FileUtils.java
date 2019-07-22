@@ -258,6 +258,24 @@ public final class FileUtils {
     }
 
     /**
+     * For use mainly by tests - delete files if they exist, swallowing any
+     * NoSuchFileException or FileNotFoundException that might be caused by a
+     * race condition; accepts null as an argument and returns false.
+     *
+     * @param path The file path
+     * @param more More files to delete
+     * @return True if any file was deleted
+     * @throws IOException If something else goes wrong
+     */
+    public static boolean deleteIfExists(Path first, Path... more) throws IOException {
+        boolean result = deleteIfExists(first);
+        for (Path p : more) {
+            result |= deleteIfExists(p);
+        }
+        return result;
+    }
+
+    /**
      * For use mainly by tests - delete a file if it exists, swallowing any
      * NoSuchFileException or FileNotFoundException that might be caused by a
      * race condition; accepts null as an argument and returns false.

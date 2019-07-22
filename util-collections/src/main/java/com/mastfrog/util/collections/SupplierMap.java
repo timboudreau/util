@@ -199,14 +199,17 @@ final class SupplierMap<T, R> implements Map<T, R> {
 
     @Override
     public String toString() {
-        StringBuilder result = new StringBuilder(super.toString()).append("[");
+        if (delegate.isEmpty()) {
+            return "{}";
+        }
+        StringBuilder result = new StringBuilder(120).append("{");
         for (Iterator<Map.Entry<T, R>> it = delegate.entrySet().iterator(); it.hasNext();) {
             Map.Entry<T, R> e = it.next();
-            result.append(e.getKey()).append("=").append(e.getValue());
+            result.append(e.getKey()).append(":").append(e.getValue());
             if (it.hasNext()) {
                 result.append(", ");
             }
         }
-        return result.append(']').toString();
+        return result.append('}').toString();
     }
 }

@@ -44,6 +44,7 @@ public final class BufferPool {
     private final AtomicInteger inUseCount = new AtomicInteger();
     private volatile boolean hasWaiter;
     private final int bufferSize;
+    private final boolean direct;
 
     /**
      * Create a pool which will allocate buffers of the given size.
@@ -51,8 +52,13 @@ public final class BufferPool {
      * @param bufferSize The buffer size
      */
     public BufferPool(int bufferSize) {
+        this(bufferSize, true);
+    }
+
+    public BufferPool(int bufferSize, boolean direct) {
         buffers = new CopyOnWriteArrayList<>();
         this.bufferSize = bufferSize;
+        this.direct = direct;
     }
 
     /**
@@ -108,12 +114,13 @@ public final class BufferPool {
     }
 
     /**
-     * Holds one buffer - obtain it from buffer(), and call close() to return
-     * it to the pool.
+     * Holds one buffer - obtain it from buffer(), and call close() to return it
+     * to the pool.
      */
     public final class BufferHolder implements QuietAutoCloseable, Comparable<BufferHolder> {
 
-        final ByteBuffer buf = ByteBuffer.allocateDirect(bufferSize);
+        final ByteBuffer buf = direct ? ByteBuffer.allocateDirect(bufferSize)
+                : ByteBuffer.allocate(bufferSize);
         private final AtomicBoolean inUse = new AtomicBoolean(false);
         private final AtomicLong lastObtained = new AtomicLong();
 
