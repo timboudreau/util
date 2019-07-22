@@ -128,7 +128,9 @@ public class LongArrayBitSetTest {
             if (rnd.nextBoolean()) {
                 odds.clear(i);
                 oddBitSet.clear((int) i);
-                assertMatch(oddBitSet, odds);
+                assertMatch("After clear of bit " + i
+                        + " which should be " + odds.get(i)
+                        + " sets do not matchh", oddBitSet, odds);
             }
         }
     }
@@ -161,7 +163,9 @@ public class LongArrayBitSetTest {
             if (rnd.nextBoolean()) {
                 odds.flip(0, i);
                 oddBitSet.flip(0, (int) i);
-                assertMatch(oddBitSet, odds);
+                assertMatch("After flip of bit " + i
+                        + " which should be " + odds.get(i)
+                        + " sets do not matchh", oddBitSet, odds);
             }
         }
     }
