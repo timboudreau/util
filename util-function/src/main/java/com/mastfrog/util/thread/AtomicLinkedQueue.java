@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.BiConsumer;
@@ -39,11 +40,16 @@ import java.util.function.UnaryOperator;
 
 /**
  * A non-blocking, thread-safe, memory-efficient queue using a simple linked
- * list structure and atomic add and drain operations.
+ * list structure and atomic add and drain operations. Atomicity is achieved by
+ * using a singly-tail-linked data structure using atomic references. Mutation
+ * operations that affect the tail, such as <code>add()</code> and
+ * <code>pop()</code> are guaranteed to be thread-safe and non-blocking;
+ * operations that affect other parts of the queue are not (though
+ * <code>removeByIdentity()</code> will tell you if it failed).
  * <p>
- * Note that iteration occurs in reverse order.  Identity-based removal operations
- * exist; under concurrency they may spuriously fail, but will report that to
- * the caller with their result value, and the caller may retry.
+ * Note that iteration occurs in reverse order. Identity-based removal
+ * operations exist; under concurrency they may spuriously fail, but will report
+ * that to the caller with their result value, and the caller may retry.
  *
  * @author Tim Boudreau
  */
@@ -95,9 +101,9 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
     }
 
     /**
-     * Reverse the contents of this queue in-place.  This
-     * method is not guaranteed to be unaffected by operations
-     * that modify the queue in other threads.
+     * Reverse the contents of this queue in-place. This method is not
+     * guaranteed to be unaffected by operations that modify the queue in other
+     * threads.
      */
     public void reverseInPlace() {
         tail.updateAndGet((MessageEntry<Message> t) -> {
@@ -509,6 +515,11 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
         MessageEntry(MessageEntry<Message> prev, Message message) {
             this.prev = prev;
             this.message = message;
+        }
+
+        @Override
+        public String toString() {
+            return Objects.toString(message);
         }
 
         @SuppressWarnings("unchecked")

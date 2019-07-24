@@ -23,6 +23,9 @@
  */
 package com.mastfrog.util.thread;
 
+import com.mastfrog.function.throwing.ThrowingRunnable;
+import com.mastfrog.function.throwing.io.IORunnable;
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
@@ -96,6 +99,36 @@ public final class AtomicMaximum extends Number {
             exit();
         }
     }
+    /**
+     * Synchronously run the passed Runnable, updating the statistics on
+     * current and total threads while the runnable runs.  This call does
+     * not take any locks.
+     * @param toRun
+     */
+    public void throwingRun (ThrowingRunnable toRun) throws Exception {
+        enter();
+        try {
+            toRun.run();
+        } finally {
+            exit();
+        }
+    }
+
+    /**
+     * Synchronously run the passed Runnable, updating the statistics on
+     * current and total threads while the runnable runs.  This call does
+     * not take any locks.
+     * @param toRun
+     */
+    public void ioRun (IORunnable toRun) throws IOException {
+        enter();
+        try {
+            toRun.run();
+        } finally {
+            exit();
+        }
+    }
+
     
     /**
      * Atomically set the recorded maximum value if the passed value is 
