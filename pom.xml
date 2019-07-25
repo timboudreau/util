@@ -30,6 +30,8 @@
         <module>bits</module>
         <module>graph</module>
         <module>predicates</module>
+        <module>file-channel-pool</module>
+        <module>log-structured-storage</module>
     </modules>
     <issueManagement>
         <system>Github</system>

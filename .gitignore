@@ -45,3 +45,7 @@ nb-configuration.xml
 /util-streams/nbproject/
 /util-streams/testdl.txt
 
+/file-channel-pool/nbproject/
+/file-channel-pool/target/
+/log-structured-storage/nbproject/
+/log-structured-storage/target/
