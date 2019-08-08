@@ -436,7 +436,7 @@ public final class Lease {
      * @return The output of the callback
      * @throws IOException If something goes wrong
      */
-    public synchronized long useAsInt(IOToIntFunction<FileChannel> c) throws IOException {
+    public synchronized int useAsInt(IOToIntFunction<FileChannel> c) throws IOException {
         return pool.underLock(key, () -> {
             FileChannel channel = pool.get(key);
             FileLock lock = null;
