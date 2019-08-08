@@ -56,6 +56,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -65,6 +66,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -1222,6 +1224,71 @@ public final class FileUtils {
                 return Spliterator.NONNULL | Spliterator.ORDERED;
             }
         }, Spliterator.NONNULL | Spliterator.ORDERED, false);
+    }
+
+    /**
+     * For adaptering old and new file apis, convert an iterator of
+     * files to an iterator of paths.
+     *
+     * @param files Some files
+     * @return An iterator
+     */
+    public static Iterator<Path> filesToPaths(Iterator<File> files) {
+        return new ConvertIterator<>(files, File::toPath);
+    }
+
+    /**
+     * For adaptering old and new file apis, convert an iterator of
+     * paths to an iterator of files.
+     *
+     * @param paths Some files
+     * @return An iterator
+     */
+    public static Iterator<File> pathsToFiles(Iterator<Path> paths) {
+        return new ConvertIterator<>(paths, Path::toFile);
+    }
+
+    /**
+     * For adaptering old and new file apis, convert an iterator of
+     * files to an iterable of paths.
+     *
+     * @param files Some files
+     * @return An iterator
+     */
+    public static Iterable<Path> filesToPaths(Iterable<File> file) {
+        return () -> filesToPaths(file.iterator());
+    }
+
+    /**
+     * For adaptering old and new file apis, convert an iterator of
+     * paths to an iterable of files.
+     *
+     * @param paths Some files
+     * @return An iterator
+     */
+    public static Iterable<File> pathsToFiles(Iterable<Path> file) {
+        return () -> pathsToFiles(file.iterator());
+    }
+
+    private static final class ConvertIterator<T, R> implements Iterator<R> {
+
+        private final Iterator<T> iter;
+        private final Function<T, R> func;
+
+        public ConvertIterator(Iterator<T> iter, Function<T, R> func) {
+            this.iter = iter;
+            this.func = func;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return iter.hasNext();
+        }
+
+        @Override
+        public R next() {
+            return func.apply(iter.next());
+        }
     }
 
     private FileUtils() {
