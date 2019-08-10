@@ -1,17 +1,18 @@
 package com.mastfrog.bits.large;
 
 import static com.mastfrog.bits.large.UnsafeUtils.UNSAFE;
+import com.mastfrog.util.file.FileUtils;
+import com.mastfrog.util.preconditions.Exceptions;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,39 +25,39 @@ final class MappedFileLongArray implements CloseableLongArray {
     private static final int HEADER_LENGTH = 16;
     private long workingLength;
     private final Path file;
+    private MappedByteBuffer buffer;
+    private ChannelSupplier channel;
 
     MappedFileLongArray() {
-        this(newTempFile(), 0L);
+        this(newTempFile(), 0L, false);
     }
 
     MappedFileLongArray(Path file) {
-        this(file, 0L);
+        this(file, 0L, true);
     }
 
-    MappedFileLongArray(Path file, long size) {
+    MappedFileLongArray(Path file, long size, boolean expectedToExist) {
         this.file = file;
-        if (Files.exists(file)) {
-            init();
-        } else if (size > 0) {
-            ByteBuffer buf = ByteBuffer.allocate(Long.BYTES * 2);
-            buf.putInt(1);
-            buf.putInt(1);
-            buf.putLong(size);
-            buf.flip();
-            workingLength = size;
-            wrap(() -> {
-                channel().write(buf);
-                channel().position(workingLength - 1);
-                channel.write(ByteBuffer.allocate(1));
-                return null;
-            });
-        } else if (size < 0) {
-            throw new IllegalArgumentException("Negative size " + size);
+        if (size < 0) {
+            throw new IllegalArgumentException("Size is < 0");
+        }
+        if (expectedToExist) {
+            this.channel = new LoadingChannelSupplier(size);
+        } else {
+            this.channel = new ClearingChannelSupplier(size);
         }
     }
 
     MappedFileLongArray(long size) {
-        this(newTempFile(), size);
+        this(newTempFile(), size, false);
+    }
+
+    static Path newTempFile() {
+        try {
+            return FileUtils.newTempFile("mapped-longs");
+        } catch (IOException ex) {
+            return Exceptions.chuck(ex);
+        }
     }
 
     @Override
@@ -69,63 +70,119 @@ final class MappedFileLongArray implements CloseableLongArray {
         return file;
     }
 
-    private void init() {
-        wrap(() -> {
-            FileChannel channel = channel();
-            ByteBuffer ver = ByteBuffer.allocate(Integer.BYTES);
-            channel.position(0);
-            channel.read(ver);
-            ver.flip();
-            if (ver.getInt() != 1) {
-                throw new IOException("Unrecognized version " + ver);
-            }
-            ByteBuffer buf = ByteBuffer.allocate(Long.BYTES);
-            channel.position(sizeOffset());
-            channel.read(buf);
-            buf.flip();
-            workingLength = buf.getLong();
-            channel.position(0);
-            return null;
-        });
+    private static abstract class ChannelSupplier implements Supplier<FileChannel> {
+
+        abstract void close() throws IOException;
     }
 
-    static AtomicInteger FILE_UNIQUIFIER = new AtomicInteger();
+    private class LoadingChannelSupplier extends ChannelSupplier {
 
-    private static Path newTempFile() {
-        Path tmp = Paths.get(System.getProperty("java.io.tmpdir"));
-        int ix = 0;
-        String base = Long.toString(System.currentTimeMillis(), 36)
-                + "-" + FILE_UNIQUIFIER.incrementAndGet();
-        String ext = MappedFileLongArray.class.getSimpleName().toLowerCase();
-        Path result = tmp.resolve(base + "."
-                + ext);
-        while (Files.exists(result)) {
-            result = tmp.resolve(base + "-" + ix++ + "." + ext);
+        private FileChannel channel;
+        private final long targetSize;
+
+        LoadingChannelSupplier(long targetSize) {
+            this.targetSize = targetSize;
         }
-        return result;
-    }
 
-    private MappedByteBuffer buffer;
-    private FileChannel channel;
+        @Override
+        public synchronized FileChannel get() {
+            if (channel != null) {
+                return channel;
+            }
+            return channel = init();
+        }
 
-    private FileChannel channel() {
-        if (channel == null) {
+        private FileChannel init() {
             try {
-                boolean existed = Files.exists(file);
-                channel = FileChannel.open(file, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ);
-                if (!existed) {
-                    ByteBuffer buf = ByteBuffer.allocate(HEADER_LENGTH);
-                    buf.putInt(1);
-                    buf.putInt(1);
-                    buf.putLong(0);
+                channel = FileChannel.open(file, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ, StandardOpenOption.TRUNCATE_EXISTING);
+                if (channel.size() >= HEADER_LENGTH) {
+                    ByteBuffer ver = ByteBuffer.allocate(Integer.BYTES);
+                    channel.position(0);
+                    channel.read(ver);
+                    ver.flip();
+                    if (ver.getInt() != 1) {
+                        throw new IOException("Unrecognized version " + ver);
+                    }
+                    ByteBuffer buf = ByteBuffer.allocate(Long.BYTES);
+                    channel.position(sizeOffset());
+                    channel.read(buf);
                     buf.flip();
-                    channel.write(buf, 0);
+                    workingLength = buf.getLong();
+                    if (workingLength < 0) {
+                        throw new IOException("File is corrupt - reports length " + workingLength);
+                    }
+                    channel.position(0);
+                } else {
+//                    if (targetSize > 0) {
+                        ByteBuffer buf = ByteBuffer.allocate(HEADER_LENGTH);
+                        buf.putInt(1);
+                        buf.putInt(1);
+                        buf.putLong(targetSize);
+                        buf.flip();
+                        channel.write(buf, 0);
+                        channel.position(0);
+                        workingLength = targetSize;
+//                    }
                 }
+                return channel;
             } catch (IOException ex) {
                 Logger.getLogger(MappedFileLongArray.class.getName()).log(Level.SEVERE, null, ex);
+                return Exceptions.chuck(ex);
             }
         }
-        return channel;
+
+        @Override
+        synchronized void close() throws IOException {
+            if (channel != null) {
+                channel.close();
+            }
+        }
+    }
+
+    private class ClearingChannelSupplier extends ChannelSupplier {
+
+        private FileChannel channel;
+        private final long targetSize;
+
+        ClearingChannelSupplier(long targetSize) {
+            this.targetSize = targetSize;
+        }
+
+        @Override
+        public synchronized FileChannel get() {
+            if (channel != null) {
+                return channel;
+            }
+            return channel = init();
+        }
+
+        private FileChannel init() {
+            try {
+                channel = FileChannel.open(file, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ, StandardOpenOption.TRUNCATE_EXISTING);
+                ByteBuffer buf = ByteBuffer.allocate(HEADER_LENGTH);
+                buf.putInt(1);
+                buf.putInt(1);
+                buf.putLong(targetSize);
+                buf.flip();
+                workingLength = targetSize;
+                channel.write(buf, 0);
+                return channel;
+            } catch (IOException ex) {
+                Logger.getLogger(MappedFileLongArray.class.getName()).log(Level.SEVERE, null, ex);
+                return Exceptions.chuck(ex);
+            }
+        }
+
+        @Override
+        synchronized void close() throws IOException {
+            if (channel != null) {
+                channel.close();
+            }
+        }
+    }
+
+    private FileChannel channel() {
+        return channel.get();
     }
 
     private long fileLength(long targetSize) throws IOException {

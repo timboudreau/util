@@ -219,7 +219,7 @@ public class LongArrayBitSetTest {
             assertTrue("tmpdir does not exist", Files.exists(tmp));
             assertTrue("tmpdir not a dir", Files.isDirectory(tmp));
             String nm = pfx + ix++ + ".longs";
-            return new MappedFileLongArray(tmp.resolve(nm), value);
+            return new MappedFileLongArray(tmp.resolve(nm), value, false);
         }
 
         @Override

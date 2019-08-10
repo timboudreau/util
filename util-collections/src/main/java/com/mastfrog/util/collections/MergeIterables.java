@@ -17,6 +17,17 @@ final class MergeIterables<T> implements ConcatenatedIterables<T> {
 
     private final List<Iterable<T>> all = new LinkedList<>();
 
+    MergeIterables(Iterable<T> a, Iterable<T> b) {
+        all.add(a);
+        all.add(b);
+    }
+
+    MergeIterables(Iterable<T> a, Iterable<T> b, Iterable<T> c) {
+        all.add(a);
+        all.add(b);
+        all.add(c);
+    }
+
     @SafeVarargs
     MergeIterables(Iterable<T>... iterables) {
         all.addAll(Arrays.asList(iterables));

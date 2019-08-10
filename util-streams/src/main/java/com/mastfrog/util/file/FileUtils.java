@@ -43,6 +43,7 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -64,6 +65,7 @@ import java.util.Spliterator;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -171,9 +173,46 @@ public final class FileUtils {
      * @throws IOException If something goes wrong
      */
     public synchronized static Path newTempDir(String prefix) throws IOException {
-        Path result = newTempPath(prefix);
-        Files.createDirectories(result);
-        return result;
+        return newTempDir(prefix, NO_PERMISSIONS);
+    }
+
+    /**
+     * Create a new temporary subfolder in the system temporary files folder.
+     *
+     * @param prefix String prefix to prepend to the file name for
+     * identification
+     * @param permissions The file permissions
+     * @return A new folder created on disk
+     * @throws IOException If something goes wrong
+     */
+    public synchronized static Path newTempDir(String prefix, PosixFilePermission... permissions) throws IOException {
+        Path path;
+        boolean setInterrupt = false;
+        synchronized (FileUtils.class) {
+            for (;;) {
+                path = newTempPath(prefix);
+                try {
+                    Files.createDirectories(path);
+                } catch (FileAlreadyExistsException ex) {
+                    // Racing with another process - not unusual in
+                    // parallel tests on a big enough machine
+                    try {
+                        // Add some jitter so we don't livelock with
+                        // the other process, which may be doing the
+                        // same thing
+                        Thread.sleep(ThreadLocalRandom.current().nextInt(100));
+                    } catch (InterruptedException ex1) {
+                        setInterrupt = true;
+                    }
+                }
+                break;
+            }
+        }
+        setPermissions(path, permissions);
+        if (setInterrupt) {
+            Thread.currentThread().interrupt();
+        }
+        return path;
     }
 
     /**
@@ -223,11 +262,31 @@ public final class FileUtils {
      */
     public synchronized static Path newTempFile(String prefix, PosixFilePermission... permissions) throws IOException {
         Path path;
+        boolean setInterrupt = false;
         synchronized (FileUtils.class) {
-            path = newTempPath(prefix);
-            Files.createFile(path);
+            for (;;) {
+                path = newTempPath(prefix);
+                try {
+                    Files.createFile(path);
+                } catch (FileAlreadyExistsException ex) {
+                    // Racing with another process - not unusual in
+                    // parallel tests on a big enough machine
+                    try {
+                        // Add some jitter so we don't livelock with
+                        // the other process, which may be doing the
+                        // same thing
+                        Thread.sleep(ThreadLocalRandom.current().nextInt(100));
+                    } catch (InterruptedException ex1) {
+                        setInterrupt = true;
+                    }
+                }
+                break;
+            }
         }
         setPermissions(path, permissions);
+        if (setInterrupt) {
+            Thread.currentThread().interrupt();
+        }
         return path;
     }
 
@@ -1227,8 +1286,8 @@ public final class FileUtils {
     }
 
     /**
-     * For adaptering old and new file apis, convert an iterator of
-     * files to an iterator of paths.
+     * For adaptering old and new file apis, convert an iterator of files to an
+     * iterator of paths.
      *
      * @param files Some files
      * @return An iterator
@@ -1238,8 +1297,8 @@ public final class FileUtils {
     }
 
     /**
-     * For adaptering old and new file apis, convert an iterator of
-     * paths to an iterator of files.
+     * For adaptering old and new file apis, convert an iterator of paths to an
+     * iterator of files.
      *
      * @param paths Some files
      * @return An iterator
@@ -1249,8 +1308,8 @@ public final class FileUtils {
     }
 
     /**
-     * For adaptering old and new file apis, convert an iterator of
-     * files to an iterable of paths.
+     * For adaptering old and new file apis, convert an iterator of files to an
+     * iterable of paths.
      *
      * @param files Some files
      * @return An iterator
@@ -1260,8 +1319,8 @@ public final class FileUtils {
     }
 
     /**
-     * For adaptering old and new file apis, convert an iterator of
-     * paths to an iterable of files.
+     * For adaptering old and new file apis, convert an iterator of paths to an
+     * iterable of files.
      *
      * @param paths Some files
      * @return An iterator

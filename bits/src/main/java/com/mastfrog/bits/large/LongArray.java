@@ -96,7 +96,7 @@ public interface LongArray extends Cloneable {
      * @return An array
      */
     public static CloseableLongArray mappedFileLongArray(Path file) {
-        return new MappedFileLongArray(file);
+        return new MappedFileLongArray(file, 0, true);
     }
 
     /**
@@ -110,7 +110,7 @@ public interface LongArray extends Cloneable {
      * @return An array
      */
     public static CloseableLongArray mappedFileLongArray(Path file, long size) {
-        return new MappedFileLongArray(file, size);
+        return new MappedFileLongArray(file, size, true);
     }
 
     /**
