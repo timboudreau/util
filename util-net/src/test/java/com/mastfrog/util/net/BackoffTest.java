@@ -111,11 +111,17 @@ public class BackoffTest {
     private void assertArraysNearlyEqual(int jitter, long[] exp, long[] got) {
         assertEquals(exp.length, got.length);
         for (int i = 0; i < exp.length; i++) {
+            if (i == 0) {
+                // Initial invocation may not
+                // be within tolerance without running a bunch of warmup
+                // rounds
+                continue;
+            }
             long expMin = exp[i] - (jitter / 2);
             long expMax = expMin + jitter;
             assertTrue("Expected " + exp[i] + " +/- " + (jitter / 2)
                     + " but got " + got[i] + " which is not >= " + expMin
-                    + " and <= " + expMax,
+                    + " and <= " + expMax + " in " + Arrays.toString(got),
                     got[i] >= expMin && got[i] <= expMax);
         }
     }

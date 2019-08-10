@@ -64,4 +64,31 @@
             </snapshots>
         </repository>
     </repositories>
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M3</version>
+                <executions>
+                    <execution>
+                        <id>default-test</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <!-- For BackoffTest we need to ensure the
+                            garbage collector's behavior is predictable -->
+                            <argLine>-XX:+IgnoreUnrecognizedVMOptions -XX:+UseSerialGC</argLine>
+                            <systemPropertyVariables>
+                                <unit.test>true</unit.test>
+                                <forkNumber>${surefire.forkNumber}</forkNumber>
+                                <system.exit.on.bind.failure>false</system.exit.on.bind.failure>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
