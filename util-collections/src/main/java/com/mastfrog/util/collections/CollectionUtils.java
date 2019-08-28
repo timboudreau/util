@@ -1470,6 +1470,10 @@ public final class CollectionUtils {
         return new IteratorIterable<>(iterator);
     }
 
+    public static <T> Iterable<T> toIterable(Supplier<Enumeration<T>> enumeration) {
+        return () -> toIterator(enumeration.get());
+    }
+
     /**
      * Get an iterator which merges several iterators.
      *

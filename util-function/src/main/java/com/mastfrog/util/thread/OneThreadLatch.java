@@ -233,6 +233,6 @@ public final class OneThreadLatch {
         if (sync.isDisabled()) {
             return true;
         }
-        return sync.tryAcquireNanos(1, unit.toNanos(timeout));
+        return sync.tryAcquireSharedNanos(1, unit.toNanos(timeout));
     }
 }
