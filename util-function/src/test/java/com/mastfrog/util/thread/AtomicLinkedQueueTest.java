@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -49,6 +50,24 @@ import org.junit.Test;
  * @author Tim Boudreau
  */
 public class AtomicLinkedQueueTest {
+
+    @Test
+    public void replaceContents() {
+        AtomicLinkedQueue<String> q1 = new AtomicLinkedQueue<>(Arrays.asList("a", "b", "c", "d"));
+        assertEquals(Arrays.asList("a", "b", "c", "d"), q1.asList());
+        q1.replaceContents(Arrays.asList("e", "f", "g", "h"));
+        assertEquals(Arrays.asList("e", "f", "g", "h"), q1.asList());
+        assertEquals("h", q1.get(0));
+        assertEquals("g", q1.get(1));
+        assertEquals("f", q1.get(2));
+        assertEquals("e", q1.get(3));
+        try {
+            q1.get(4);
+            fail("Should have thrown for nonexistent element");
+        } catch (NoSuchElementException ex) {
+
+        }
+    }
 
     @Test
     public void testCopiesAreIndependent() {

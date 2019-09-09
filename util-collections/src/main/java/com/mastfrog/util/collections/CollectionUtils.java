@@ -186,6 +186,36 @@ public final class CollectionUtils {
     }
 
     /**
+     * Returns a set which is always empty no matter what methods are
+     * called on it, for cases where an API wants to add to a set,
+     * but you would not use the contents and do not want to incur
+     * the memory use.
+     *
+     * @param <T> A type
+     * @return A set which pretends to allow addition, but in fact it never
+     * succeeds
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Set<T> blackHoleSet() {
+        return (Set<T>) BlackHole.SET;
+    }
+
+    /**
+     * Returns a list which is always empty no matter what methods are
+     * called on it, for cases where an API wants to add to a list,
+     * but you would not use the contents and do not want to incur
+     * the memory use.
+     *
+     * @param <T> A type
+     * @return A list which pretends to allow addition, but in fact it never
+     * succeeds
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> List<T> blackHoleList() {
+        return (List<T>) BlackHole.LIST;
+    }
+
+    /**
      * Create a single Iterable which concatenates multiple iterables without
      * copying them into another collection, so iteration happens only once.
      *

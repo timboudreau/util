@@ -122,7 +122,9 @@ class SimpleWeakSet<T> extends AbstractSet<T> {
     public boolean removeAll(Collection<?> c) {
         boolean changed = false;
         for (Object o : c) {
-            changed |= backingStore.remove(o);
+            if (o != null) {
+                changed |= backingStore.remove(o);
+            }
         }
         return changed;
     }
@@ -141,6 +143,9 @@ class SimpleWeakSet<T> extends AbstractSet<T> {
     @Override
     @SuppressWarnings("element-type-mismatch")
     public boolean remove(Object o) {
-        return backingStore.remove(o);
+        if (o != null) {
+             return backingStore.remove(o) != null;
+        }
+        return false;
     }
 }

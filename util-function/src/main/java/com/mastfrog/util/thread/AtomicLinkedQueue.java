@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -395,6 +396,56 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
             return msg.getPrev();
         });
         return (Message) m[0];
+    }
+
+    /**
+     * Get the message at the specified index; note that since this is a
+     * singly-linked atomic queue, this is not a constant-time operation, and
+     * the queue's contents may be changed by another thread while it is
+     * proceeding; in particular, do not use if you expect the queue to
+     * get <i>smaller</i> while in a call to get().
+     *
+     * @param index The offset from the tail
+     * @throws NoSuchElementException if the index > size()
+     * @throws IllegalArgumentException if the index is negative
+     * @return A message
+     */
+    public Message get(int index) {
+        if (index < 0) {
+            throw new IllegalArgumentException("Negative index");
+        }
+        int count = 0;
+        MessageEntry<Message> t = tail.get();
+        while (count < index) {
+            t = t.prev;
+            count++;
+            if (t == null) {
+                throw new NoSuchElementException("No element " + index);
+            }
+        }
+        return t.message;
+    }
+
+    /**
+     * Atomically replace the contents of this queue with the passed collection;
+     * note that this will be done in <i>reverse-iteration-order</i>, so the top
+     * message will be the <i>last</i> one in the passed collection.
+     *
+     * @param newContents The new contents
+     * @throws IllegalArgumentException if a null is encountered in the passed
+     * collection
+     * @return this
+     */
+    public AtomicLinkedQueue<Message> replaceContents(Iterable<? extends Message> newContents) {
+        MessageEntry<Message> curr = null;
+        for (Message m : notNull("newContents", newContents)) {
+            if (m == null) {
+                throw new IllegalArgumentException("newContents collection contains nulls");
+            }
+            curr = new MessageEntry<>(curr, m);
+        }
+        tail.set(curr);
+        return this;
     }
 
     /**
