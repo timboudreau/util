@@ -27,17 +27,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -52,7 +57,53 @@ import org.junit.Test;
 public class AtomicLinkedQueueTest {
 
     @Test
-    public void replaceContents() {
+    public void testStream() {
+        int max = 20000;
+        AtomicLinkedQueue<Integer> q = new AtomicLinkedQueue<>();
+        LinkedList<Integer> expected = new LinkedList<>();
+        for (int i = 0; i < max; i++) {
+            q.add(i);
+            expected.push(i);
+        }
+        LinkedList<Integer> l = new LinkedList<>();
+        try (Stream<Integer> s = q.stream()) {
+            s.forEach(l::add);
+        }
+        assertEquals(expected, l);
+        Map<Set<Integer>, Boolean> m = Collections.synchronizedMap(new IdentityHashMap<>());
+        ThreadLocal<Set<Integer>> tl = ThreadLocal.withInitial(HashSet::new);
+
+        try (Stream<Integer> s = q.parallelStream()) {
+            s.forEach(i -> {
+                Set<Integer> set = tl.get();
+                m.put(set, true);
+                tl.set(set);
+                set.add(i);
+            });
+        }
+        Set<Integer> all = new TreeSet<>();
+        for (Set<Integer> s : m.keySet()) {
+            all.addAll(s);
+        }
+        LinkedList<Integer> parallelGot = new LinkedList<>(all);
+        Collections.reverse(parallelGot);
+        assertEquals(expected, parallelGot);
+
+        List<Set<Integer>> allSets = new ArrayList<>(m.keySet());
+        for (int i = 0; i < allSets.size(); i++) {
+            for (int j = 0; j < allSets.size(); j++) {
+                if (i == j) {
+                    continue;
+                }
+                Set<Integer> copy = new HashSet<>(allSets.get(i));
+                copy.retainAll(allSets.get(j));
+                assertTrue("More than one set contains " + copy, copy.isEmpty());
+            }
+        }
+    }
+
+    @Test
+    public void testReplaceContents() {
         AtomicLinkedQueue<String> q1 = new AtomicLinkedQueue<>(Arrays.asList("a", "b", "c", "d"));
         assertEquals(Arrays.asList("a", "b", "c", "d"), q1.asList());
         q1.replaceContents(Arrays.asList("e", "f", "g", "h"));

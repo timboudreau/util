@@ -31,6 +31,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.BiConsumer;
@@ -38,6 +39,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * A non-blocking, thread-safe, memory-efficient queue using a simple linked
@@ -402,8 +405,8 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
      * Get the message at the specified index; note that since this is a
      * singly-linked atomic queue, this is not a constant-time operation, and
      * the queue's contents may be changed by another thread while it is
-     * proceeding; in particular, do not use if you expect the queue to
-     * get <i>smaller</i> while in a call to get().
+     * proceeding; in particular, do not use if you expect the queue to get
+     * <i>smaller</i> while in a call to get().
      *
      * @param index The offset from the tail
      * @throws NoSuchElementException if the index > size()
@@ -527,6 +530,43 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
         return false;
     }
 
+    /**
+     * Create a concurrent, parallelizable Spliterator over this queue; the
+     * stream's contents will reflect the contents of this queue at the time or
+     * some time after its creation (calling the spliterator's split methods
+     * create a copy of some portion of the original data).
+     *
+     * @return A stream
+     */
+    @Override
+    public Spliterator<Message> spliterator() {
+        return new QSplit<>(tail.get());
+    }
+
+    /**
+     * Create a stream over this queue; the stream's contents will reflect the
+     * contents of this queue at the time or some time after its creation
+     * (calling the spliterator's split methods create a copy of some portion of
+     * the original data).
+     *
+     * @return A stream
+     */
+    public Stream<Message> stream() {
+        return StreamSupport.stream(spliterator(), false);
+    }
+
+    /**
+     * Create a stream over this queue; the stream's contents will reflect the
+     * contents of this queue at the time or some time after its creation
+     * (calling the spliterator's split methods create a copy of some portion of
+     * the original data).
+     *
+     * @return A stream
+     */
+    public Stream<Message> parallelStream() {
+        return StreamSupport.stream(spliterator(), true);
+    }
+
     static final class Remover<Message> implements UnaryOperator<MessageEntry<Message>> {
 
         private final Message toRemove;
@@ -579,17 +619,47 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
         }
 
         MessageEntry<Message> copy() {
-            return new MessageEntry<>(prev == null ? null : prev.copy(), message);
+            MessageEntry<Message> p = getPrev();
+            if (p == this) {
+                throw new IllegalStateException("Loop on " + message);
+            }
+            // If we do this via recursion, the stack can overflow
+            MessageEntry<Message> result = new MessageEntry<>(null, message);
+            MessageEntry<Message> curr = result;
+            while (p != null) {
+                MessageEntry<Message> newPrev = new MessageEntry<>(null, p.message);
+                curr.prev = newPrev;
+                curr = newPrev;
+                p = p.getPrev();
+            }
+            return result;
         }
 
         @SuppressWarnings("unchecked")
         void setPrev(MessageEntry<Message> prev) {
+            if (prev == this) {
+                throw new IllegalArgumentException("Previous cannot be self");
+            }
             UPDATER.set(this, prev);
         }
 
         @SuppressWarnings("unchecked")
         void updatePrev(UnaryOperator<MessageEntry<Message>> uo) {
             UPDATER.updateAndGet(this, uo);
+            if (prev == this) {
+                prev = null;
+                throw new IllegalArgumentException("Previous cannot be self");
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        MessageEntry<Message> replacePrev(UnaryOperator<Message> u) {
+            MessageEntry<Message> result = (MessageEntry<Message>) UPDATER.getAndUpdate(this, u);
+            if (prev == this) {
+                prev = null;
+                throw new IllegalArgumentException("Previous cannot be self");
+            }
+            return result;
         }
 
         @SuppressWarnings("unchecked")
@@ -617,5 +687,86 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
                 e = e.getPrev();
             }
         }
+    }
+
+    static class QSplit<T> implements Spliterator<T> {
+
+        private final AtomicReference<MessageEntry<T>> curr = new AtomicReference<>();
+
+        public QSplit(MessageEntry<T> tail) {
+            curr.set(tail);
+        }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super T> action) {
+            return curr.getAndUpdate(old -> {
+                if (old != null) {
+                    action.accept(old.message);
+                    return old.prev;
+                }
+                return null;
+            }) != null;
+        }
+
+        // This needs to be synchronized so that
+        // we can't split while another split is in
+        // progress and wind up with two splits with
+        // the same elements, since we touch curr twice.
+        @Override
+        public synchronized Spliterator<T> trySplit() {
+            // Get the current tail
+            MessageEntry<T> origTail = curr.get();
+            if (origTail == null) {
+                return null;
+            }
+            // We will be copying all entries - at this point we are
+            // immune from any changes made in the original queue
+            MessageEntry<T> copy = origTail.copy();
+            long sz = size(copy);
+            if (sz < 2) {
+                return null;
+            }
+            long halfwayPoint = sz / 2;
+            long count = 0;
+            MessageEntry<T> hp = copy;
+            while (count < halfwayPoint) {
+                hp = hp.getPrev();
+                if (hp == null) {
+                    return null;
+                }
+                count++;
+            }
+            // This detaches the tail end of our copy below the
+            // halfway point from this one
+            MessageEntry<T> backHalf = hp.replacePrev(old -> {
+                return null;
+            });
+            if (backHalf == null) {
+                return null;
+            }
+            curr.set(copy);
+            return new QSplit<>(backHalf);
+        }
+
+        private long size(MessageEntry<T> e) {
+            long result = 0;
+            while (e != null) {
+                e = e.getPrev();
+                result++;
+            }
+            return result;
+        }
+
+        @Override
+        public long estimateSize() {
+            return size(curr.get());
+        }
+
+        @Override
+        public int characteristics() {
+            return Spliterator.CONCURRENT | Spliterator.NONNULL
+                    | Spliterator.ORDERED | Spliterator.SIZED;
+        }
+
     }
 }
