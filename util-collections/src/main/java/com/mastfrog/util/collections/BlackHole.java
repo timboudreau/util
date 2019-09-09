@@ -68,6 +68,7 @@ abstract class BlackHole<T> {
         return new Object[0];
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] a) {
         return (T[]) new Object[0];
     }

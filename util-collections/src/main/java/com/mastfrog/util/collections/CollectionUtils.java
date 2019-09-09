@@ -53,6 +53,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -853,6 +854,20 @@ public final class CollectionUtils {
      */
     public static <T, R> Map<T, R> supplierMap(Supplier<R> valueSupplier) {
         return new SupplierMap<>(notNull("valueSupplier", valueSupplier));
+    }
+
+    /**
+     * Create a map that, when a call to get() would return null, uses a
+     * supplier to create a new value, adds it and returns that, backed
+     * by a weak-keyed map.
+     *
+     * @param <T> The key type
+     * @param <R> The value type
+     * @param valueSupplier The supplier of values
+     * @return a map
+     */
+    public static <T, R> Map<T,R> weakSupplierMap(Supplier<R> valueSupplier) {
+        return new SupplierMap<>(notNull("valueSupplier", valueSupplier), new WeakHashMap<>());
     }
 
     /**
