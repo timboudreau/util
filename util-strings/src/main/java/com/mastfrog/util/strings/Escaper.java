@@ -27,11 +27,11 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 
 /**
- * Used by various conversion methods on Strings methods.  Takes a character
- * and returns either an escaped string representation of it, or null to
- * indicate the character should be used as is.  Typically used to generate
- * valid lines of code in a language, but could also be used to, say, convert
- * to hexadecimal or anything else.
+ * Used by various conversion methods on Strings methods. Takes a character and
+ * returns either an escaped string representation of it, or null to indicate
+ * the character should be used as is. Typically used to generate valid lines of
+ * code in a language, but could also be used to, say, convert to hexadecimal or
+ * anything else.
  *
  * @author Tim Boudreau
  */
@@ -40,14 +40,14 @@ public interface Escaper {
     CharSequence escape(char c);
 
     /**
-     * For use when logging a badly encoded string.  Converts
-     * unencodable characters to hex and ISO control characters
-     * to hex or their standard escaped Java string representation
-     * if there is one (e.g. 0x05 -> "&lt;0x05&gt;" but \n -> "\n").
+     * For use when logging a badly encoded string. Converts unencodable
+     * characters to hex and ISO control characters to hex or their standard
+     * escaped Java string representation if there is one (e.g. 0x05 ->
+     * "&lt;0x05&gt;" but \n -> "\n").
      *
      * @param cs The character set.
-     * @return A string representation that does not include raw
-     * unencodable or control characters.
+     * @return A string representation that does not include raw unencodable or
+     * control characters.
      */
     static Escaper escapeUnencodableAndControlCharacters(Charset cs) {
         CharsetEncoder enc = cs.newEncoder();
@@ -68,8 +68,8 @@ public interface Escaper {
     }
 
     /**
-     * Returns an escaper which does not escape the specified
-     * character, but otherwise behaves the same as its parent.
+     * Returns an escaper which does not escape the specified character, but
+     * otherwise behaves the same as its parent.
      *
      * @param c A character
      * @return a new escaper
@@ -84,9 +84,8 @@ public interface Escaper {
     }
 
     /**
-     * Combine this escaper with another, such that the passed
-     * escaper is used only on characters this escaper did not
-     * escape.
+     * Combine this escaper with another, such that the passed escaper is used
+     * only on characters this escaper did not escape.
      *
      * @param other Another escaper
      * @return A new escaper
@@ -99,8 +98,8 @@ public interface Escaper {
     }
 
     /**
-     * Returns a new escaper which will also escape the passed
-     * character by prefixing it with \ in output.
+     * Returns a new escaper which will also escape the passed character by
+     * prefixing it with \ in output.
      *
      * @param c A character
      * @return A new escaper
@@ -142,27 +141,42 @@ public interface Escaper {
         });
     }
 
+    public static Escaper NEWLINES_AND_OTHER_WHITESPACE = c -> {
+        switch (c) {
+            case '\n':
+                return "\\n";
+            case '\t':
+                return "\\t";
+            case '\r':
+                return "\\r";
+            case '\b':
+                return "\\b";
+            default:
+                return null;
+        }
+    };
+
     /**
      * Escapes the standard characters which must be escaped for generating
      * valid lines of code in Java or Javascript - \n, \r, \t, \b, \f and \.
-     * Does <i>not</i> escape quote characters (this may differ based on the target
-     * language) - call escapeSingleQuotes() or escapeDoubleQuotes() to create a
-     * wrapper around this escaper which does that.
+     * Does <i>not</i> escape quote characters (this may differ based on the
+     * target language) - call escapeSingleQuotes() or escapeDoubleQuotes() to
+     * create a wrapper around this escaper which does that.
      */
     public static Escaper CONTROL_CHARACTERS = c -> {
         switch (c) {
             case '\n':
-                return ("\\n");
+                return "\\n";
             case '\r':
-                return ("\\r");
+                return "\\r";
             case '\t':
-                return ("\\t");
+                return "\\t";
             case '\b':
-                return ("\\b");
+                return "\\b";
             case '\f':
-                return ("\\f");
+                return "\\f";
             case '\\':
-                return ("\\\\");
+                return "\\\\";
             default:
                 return null;
         }
