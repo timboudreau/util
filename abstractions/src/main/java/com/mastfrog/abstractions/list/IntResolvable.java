@@ -34,7 +34,7 @@ public interface IntResolvable {
 
     int indexOf(Object obj);
 
-    default IntResolvable wrap(List<?> list) {
+    static IntResolvable wrap(List<?> list) {
         return obj -> list.indexOf(obj);
     }
 

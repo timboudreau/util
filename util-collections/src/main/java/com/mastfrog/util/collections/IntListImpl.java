@@ -1,5 +1,6 @@
 package com.mastfrog.util.collections;
 
+import com.mastfrog.util.search.Bias;
 import com.mastfrog.util.strings.Strings;
 import java.io.Serializable;
 import java.util.AbstractList;
@@ -116,6 +117,166 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
                 return i;
             }
         }
+        return -1;
+    }
+
+    public void sort() {
+        if (size > 0) {
+            Arrays.sort(values, 0, size);
+        }
+    }
+
+    public int indexOfPresumingSorted(int value) {
+        return Arrays.binarySearch(values, 0, size, value);
+    }
+
+    public int nearestIndexToPresumingSorted(int value, Bias bias) {
+        if (size == 0) {
+            return -1;
+        } else if (size == 1) {
+            int val = values[0];
+            switch (bias) {
+                case BACKWARD:
+                    if (val <= value) {
+                        return 0;
+                    } else {
+                        return -1;
+                    }
+                case FORWARD:
+                case NEAREST:
+                    if (val >= value) {
+                        return 0;
+                    } else {
+                        return -1;
+                    }
+            }
+        }
+        switch (bias) {
+            case NONE:
+                return indexOfPresumingSorted(value);
+            case FORWARD:
+            case BACKWARD:
+                return nearestIndexToPresumingSorted(0, size - 1, bias, value);
+            case NEAREST:
+                int fwd = nearestIndexToPresumingSorted(0, size - 1, Bias.FORWARD, value);
+                int bwd = nearestIndexToPresumingSorted(0, size - 1, Bias.BACKWARD, value);
+                if (fwd == -1) {
+                    return bwd;
+                } else if (bwd == -1) {
+                    return fwd;
+                } else if (fwd == bwd) {
+                    return fwd;
+                } else {
+                    int fwdDiff = Math.abs(values[fwd] - value);
+                    int bwdDiff = Math.abs(values[bwd] - value);
+                    if (fwdDiff == bwdDiff) {
+                        return fwd;
+                    } else if (fwdDiff < bwdDiff) {
+                        return fwd;
+                    } else {
+                        return bwd;
+                    }
+                }
+            default:
+                throw new AssertionError(bias);
+        }
+    }
+
+    public int last() {
+        if (size == 0) {
+            throw new NoSuchElementException("Empty");
+        }
+        return values[size - 1];
+    }
+
+    public int first() {
+        if (size == 0) {
+            throw new NoSuchElementException("Empty");
+        }
+        return values[0];
+    }
+
+    private int nearestIndexToPresumingSorted(int start, int end, Bias bias, int value) {
+//        System.out.println("nearest " + bias + " to " + value
+//                + " from " + start + ":" + end + " in "
+//                + Arrays.toString(ArrayUtils.extract(values, start, (end - start) + 1)));
+        if (start == end) {
+            int currentVal = values[start];
+            if (currentVal == value) {
+//                System.out.println("   succ -1: " + start);
+                return start;
+            }
+//            System.out.println("  start is end val " + currentVal + " looking for " + value + " with " + bias);
+            switch (bias) {
+                case BACKWARD:
+                    if (currentVal > value) {
+//                        System.out.println("  succ 0: " + start);
+                        return start;
+                    } else {
+//                        System.out.println("  bail -1");
+                        return -1;
+                    }
+                case FORWARD:
+                    if (currentVal < value) {
+//                        System.out.println("  succ 1: " + start);
+                        return start;
+                    } else {
+//                        System.out.println("  bail -2");
+                        return -1;
+                    }
+            }
+        }
+        int startVal = values[start];
+        if (startVal == value) {
+//            System.out.println("  succ 2: " + start);
+            return start;
+        }
+        if (startVal > value) {
+            switch (bias) {
+                case BACKWARD:
+//                    System.out.println("  succ 3: " + (start - 1));
+                    return start - 1;
+                case FORWARD:
+//                    System.out.println("  succ 3a: " + start);
+                    return start;
+                default:
+//                    System.out.println("  bail 2 " + bias);
+                    return -1;
+            }
+        }
+        int endVal = values[end];
+        if (endVal == value) {
+//            System.out.println("  bail 3");
+            return end;
+        }
+        if (endVal < value) {
+            switch (bias) {
+                case BACKWARD:
+//                    System.out.println("  succ 4: " + end);
+                    return end;
+                case FORWARD:
+//                    System.out.println("  succ 4a: " + (end + 1));
+                    int result = end + 1;
+                    return result < size ? result : -1;
+                default:
+//                    System.out.println("  bail 5");
+                    return -1;
+            }
+        }
+        int mid = start + ((end - start) / 2);
+        int midVal = values[mid];
+        if (midVal == value) {
+//            System.out.println("  succ 5: " + mid);
+            return mid;
+        }
+        if (midVal < value && endVal > value) {
+            return nearestIndexToPresumingSorted(mid + 1, end - 1, bias, value);
+        } else if (midVal > value && startVal < value) {
+            return nearestIndexToPresumingSorted(start + 1, mid - 1, bias, value);
+        } else {
+//            System.out.println(" fail " + start + " = " + startVal + " mid " + mid + " = " + midVal + " target " + value);
+        }
+//        System.out.println("  fallthrough " + mid + " midVal " + midVal + " target " + value);
         return -1;
     }
 
@@ -285,7 +446,7 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
     }
 
     @Override
-    public Iterator<Integer> iterator() {
+    public PrimitiveIterator.OfInt iterator() {
         return new Iter();
     }
 
