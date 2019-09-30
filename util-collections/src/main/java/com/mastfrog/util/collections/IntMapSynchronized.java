@@ -26,6 +26,7 @@ package com.mastfrog.util.collections;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.PrimitiveIterator;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.function.BiConsumer;
@@ -77,8 +78,38 @@ final class IntMapSynchronized<T> implements IntMap<T> {
     }
 
     @Override
-    public synchronized Iterator<Integer> keysIterator() {
-        return delegate.keysIterator();
+    public PrimitiveIterator.OfInt keysIterator() {
+        return new SyncPrimIterator(this);
+    }
+
+    @Override
+    public synchronized T getIfPresent(int key, T defaultValue) {
+        return delegate.getIfPresent(key, defaultValue);
+    }
+
+    static final class SyncPrimIterator implements PrimitiveIterator.OfInt {
+
+        private final PrimitiveIterator.OfInt delegate;
+        private final Object lock;
+
+        public SyncPrimIterator(IntMapSynchronized<?> map) {
+            this.lock = map;
+            delegate = map.delegate.keysIterator();
+        }
+
+        @Override
+        public int nextInt() {
+            synchronized (lock) {
+                return delegate.nextInt();
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+            synchronized (lock) {
+                return delegate.hasNext();
+            }
+        }
     }
 
     @Override
@@ -94,11 +125,6 @@ final class IntMapSynchronized<T> implements IntMap<T> {
     @Override
     public synchronized T put(int key, T val) {
         return delegate.put(key, val);
-    }
-
-    @Override
-    public synchronized void set(int key, T val) {
-        delegate.set(key, val);
     }
 
     @Override

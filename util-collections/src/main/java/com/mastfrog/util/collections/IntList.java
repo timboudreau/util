@@ -1,10 +1,29 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * The MIT License
+ *
+ * Copyright 2017 Tim Boudreau.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 package com.mastfrog.util.collections;
 
+import com.mastfrog.util.preconditions.Checks;
 import com.mastfrog.util.search.Bias;
 import com.mastfrog.util.search.BinarySearch;
 import java.util.Collection;
@@ -14,21 +33,45 @@ import java.util.PrimitiveIterator;
 import java.util.function.IntConsumer;
 
 /**
- * Optimized primitive-int-array based list.
+ * Optimized primitive-int-array based list of integers, with
+ * optimized operations and nearest-value search for sorted lists
+ * of non-negative integers.
  *
  * @author Tim Boudreau
  */
 public interface IntList extends List<Integer> {
 
+    /**
+     * Create an IntList with the default capacity (currently 96
+     * for historical reasons).
+     *
+     * @return An IntList
+     */
     static IntList create() {
         return new IntListImpl();
     }
 
+    /**
+     * Create an IntList with the passed capacity which must be
+     * greater than one.
+     *
+     * @param initialCapacity The initial capaacity
+     * @return
+     */
     static IntList create(int initialCapacity) {
-        return new IntListImpl(initialCapacity);
+        return new IntListImpl(Checks.greaterThanOne("initialCapacity", initialCapacity));
     }
 
+    /**
+     * Create an IntList from the passed integer collection.
+     *
+     * @param vals
+     * @return
+     */
     static IntList create(Collection<? extends Integer> vals) {
+        if (vals instanceof IntList) {
+            return ((IntList) vals).copy();
+        }
         IntListImpl result = new IntListImpl(vals.size());
         result.addAll(vals);
         return result;
@@ -210,8 +253,12 @@ public interface IntList extends List<Integer> {
     /**
      * Get the index of a value, using binary search, or the index of a value
      * closest to the passed one, according to the passed Bias argument.
+     * </p><p>
      * <i>If this list is not actually sorted, this method may do anything at
-     * all, including go into an endless loop.</i>
+     * all, including go into an endless loop.  It is up to the caller to
+     * guarantee that the list entries are sorted (duplicate entries are
+     * allowed - see implementation note before)</i> either by calling the
+     * <code>sort()</code> method or by having added entries in order.
      * <p>
      * The Bias parameter works as follows: Say we have a list of
      * <code>0, 10, 20, 30</code>, and you ask for the nearest index to 13. The
@@ -230,6 +277,20 @@ public interface IntList extends List<Integer> {
      * <p>
      * In the event of ambiguity (equidistant possible answers and requesting
      * Bias.NEAREST), Bias.FORWARD is preferred.
+     * </p>
+     * <p>
+     * Since -1 is used to indicate no such value is present, this method
+     * should not be used for lists which may contain negative numbers.
+     * </p>
+     * <p>
+     * <b>Implementation note:</b> The default implementation is
+     * <i>duplicate tolerant</i>, meaning that sorted lists which contain
+     * duplicate entries will not confuse the binary search implementation,
+     * and will always return the <u>greatest</u> index when duplicate
+     * values are present - so a list of
+     * <code>10, 20, 30, 30, 30, 40</code> will return <code> 4 when
+     * queried either for the nearest index to 27 searching forward or
+     * to 35 searching backward.
      * </p>
      *
      * @see BinarySearch
@@ -250,4 +311,24 @@ public interface IntList extends List<Integer> {
      * @return An iterator
      */
     PrimitiveIterator.OfInt iterator();
+
+    /**
+     * Add the supplied amount to all values in the supplied range of indices.
+     *
+     * @param fromIndex The starting index, inclusive
+     * @param toIndex The ending index, exclusive
+     * @param by The amount to add
+     * @return The number of items affected
+     */
+    int adjustValues(int fromIndex, int toIndex, int by);
+
+    /**
+     * Add the supplied amount to the values at all indices at or above the
+     * supplied index.
+     *
+     * @param fromIndex The first affected index
+     * @param by The amount to add
+     * @return The number of items affected
+     */
+    int adjustValues(int fromIndex, int by);
 }

@@ -35,6 +35,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -401,5 +402,24 @@ public class ArrayIntMapTest {
             }
         }
         return result.toString();
+    }
+
+    @Test
+    public void testSingleValueWithSupplier() {
+        AtomicInteger at = new AtomicInteger(10);
+        ArrayIntMap<Integer> m = new ArrayIntMap<>(10, true, at::getAndIncrement);
+
+        assertEquals(Integer.valueOf(10), m.get(0));
+        assertEquals(Integer.valueOf(11), m.get(5));
+        assertEquals(Integer.valueOf(12), m.get(9));
+
+        assertEquals(Integer.valueOf(10), m.get(0));
+        assertEquals(Integer.valueOf(11), m.get(5));
+        assertEquals(Integer.valueOf(12), m.get(9));
+
+        m = new ArrayIntMap<>(10, false, at::getAndIncrement);
+        assertEquals(Integer.valueOf(13), m.get(0));
+        assertEquals(Integer.valueOf(14), m.get(0));
+        assertEquals(Integer.valueOf(15), m.get(0));
     }
 }

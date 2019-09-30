@@ -34,7 +34,10 @@ import java.util.function.Consumer;
 /**
  * A lighter-weight set class for small sets, where the cost of iterating an
  * array is preferable to the larger footprint of a HashSet. Use for constants
- * of a few items that are reused for the life of a class. Immutable.
+ * of a few items that are reused for the life of a class, and should only be
+ * constructed if the caller can guarantee the objects are not duplicate and
+ * will not change their equality contract to become duplicates in their
+ * lifetimes. Immutable.
  *
  * @author Tim Boudreau
  */

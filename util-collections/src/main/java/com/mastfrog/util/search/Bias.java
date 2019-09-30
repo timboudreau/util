@@ -34,21 +34,38 @@ package com.mastfrog.util.search;
 public enum Bias {
 
     /**
-     * If a search result falls between two elements, prefer the next element
+     * If a search result falls between two elements, prefer the next element.
      */
     FORWARD,
     /**
-     * If a search result falls between two elements, prefer the previous element
+     * If a search result falls between two elements, prefer the previous
+     * element.
      */
     BACKWARD,
     /**
      * If a search result falls between two elements, prefer the element with
-     * the minimum distance
+     * the minimum distance.
      */
     NEAREST,
     /**
      * If a search result falls between two elements, return no element unless
-     * there is an exact match
+     * there is an exact match.
      */
     NONE;
+
+    /**
+     * Get the inverse of this bias (only meaningful for forward and backward).
+     *
+     * @return The inverse bias, if that means anything for this instance
+     */
+    public Bias inverse() {
+        switch (this) {
+            case FORWARD:
+                return BACKWARD;
+            case BACKWARD:
+                return FORWARD;
+            default:
+                return this;
+        }
+    }
 }

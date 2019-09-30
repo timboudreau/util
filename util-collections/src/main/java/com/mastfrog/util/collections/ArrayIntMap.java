@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.PrimitiveIterator;
 import java.util.Set;
+import java.util.function.IntConsumer;
 import java.util.function.Supplier;
 
 /**
@@ -46,9 +47,7 @@ import java.util.function.Supplier;
  * Entries may be added only in ascending order, enabling use of
  * Arrays.binarySearch() to quickly locate the relevant entry.
  * <p>
- * This class was originally written for NetBeans core.output2 in 2004, then
- * borrowed by com.mastfrog.util.collections, then borrowed back into a NetBeans
- * module here.
+ * This class was originally written for NetBeans output window in 2004.
  * </p>
  *
  * @author Tim Boudreau
@@ -206,7 +205,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
         if (key > keys[last]) {
             return backward ? keys[last] : keys[0];
         }
-        int idx = Arrays.binarySearch(keys, key);
+        int idx = Arrays.binarySearch(keys, 0, last + 1, key);
         if (idx < 0) {
             idx = -idx + (backward ? -2 : - 1);
             if (idx > last) {
@@ -261,10 +260,55 @@ final class ArrayIntMap<T> implements IntMap<T> {
     }
 
     @SuppressWarnings("unchecked")
+    public T getIfPresent(int key, T defaultValue) {
+        if (last < 0) {
+            return defaultValue;
+        } else if (last == 0) {
+            if (key == keys[0]) {
+                return (T) vals[0];
+            } else {
+                return defaultValue;
+            }
+        }
+        checkSort();
+        int idx = Arrays.binarySearch(keys, 0, last + 1, key);
+        T result = null;
+        if (idx > -1 && idx <= last) {
+            result = (T) vals[idx];
+        } else {
+            result = defaultValue;
+        }
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
     @Override
     public T get(int key) {
+        if (last < 0) {
+            T result = null;
+            if (emptyValue != null) {
+                result = emptyValue.get();
+                if (result != null && addSuppliedValues) {
+                    last = 0;
+                    keys[0] = key;
+                    vals[0] = result;
+                }
+            }
+            return result;
+        } else if (last == 0) {
+            if (key == keys[0]) {
+                return (T) vals[0];
+            } else if (emptyValue != null) {
+                T result = emptyValue.get();
+                if (result != null && addSuppliedValues) {
+                    put(key, result);
+                }
+                return result;
+            }
+            return null;
+        }
         checkSort();
-        int idx = Arrays.binarySearch(keys, key);
+        int idx = Arrays.binarySearch(keys, 0, last + 1, key);
         T result = null;
         if (idx > -1 && idx <= last) {
             result = (T) vals[idx];
@@ -299,7 +343,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
             }
         }
         if (between) {
-            int existingIndex = Arrays.binarySearch(keys, key);
+            int existingIndex = Arrays.binarySearch(keys, 0, last + 1, key);
             if (existingIndex >= 0) {
                 T old = (T) vals[existingIndex];
                 vals[existingIndex] = val;
@@ -323,8 +367,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
         }
     }
 
-    @Override
-    public void set(int key, T val) {
+    void set(int key, T val) { // XXX what was this for?
         vals[key] = val;
     }
 
@@ -362,10 +405,15 @@ final class ArrayIntMap<T> implements IntMap<T> {
      * Get the key which follows the passed key, or -1. Will wrap around 0.
      */
     public int nextEntry(int entry) {
+        if (last < 0) {
+            return -1;
+        } else if (entry > keys[last]) {
+            return -1;
+        }
         checkSort();
         int result = -1;
         if (!isEmpty()) {
-            int idx = Arrays.binarySearch(keys, entry);
+            int idx = Arrays.binarySearch(keys, 0, last + 1, entry);
             if (idx >= 0) {
                 result = idx == keys.length - 1 ? keys[0] : keys[idx + 1];
             }
@@ -377,10 +425,15 @@ final class ArrayIntMap<T> implements IntMap<T> {
      * Get the key which precedes the passed key, or -1. Will wrap around 0.
      */
     public int prevEntry(int entry) {
+        if (last < 0) {
+            return -1;
+        } else if (entry < keys[0]) {
+            return -1;
+        }
         checkSort();
         int result = -1;
         if (!isEmpty()) {
-            int idx = Arrays.binarySearch(keys, entry);
+            int idx = Arrays.binarySearch(keys, 0, last + 1, entry);
             if (idx >= 0) {
                 result = idx == 0 - 1 ? keys[keys.length - 1] : keys[idx - 1];
             }
@@ -430,7 +483,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
             throw new IllegalArgumentException();
         }
 
-        int shift = Arrays.binarySearch(keys, decrement);
+        int shift = Arrays.binarySearch(keys, 0, last + 1, decrement);
         if (shift < 0) {
             shift = -shift - 1;
         }
@@ -514,7 +567,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
         }
         if (key instanceof Integer) {
             int keyVal = ((Integer) key).intValue();
-            int index = Arrays.binarySearch(keys, keyVal);
+            int index = Arrays.binarySearch(keys, 0, last + 1, keyVal);
             if (index >= 0) {
                 T result = (T) vals[index];
                 if (index == 0) {
@@ -570,8 +623,15 @@ final class ArrayIntMap<T> implements IntMap<T> {
     }
 
     @Override
-    public Iterator<Integer> keysIterator() {
+    public PrimitiveIterator.OfInt keysIterator() {
         return new KeyIter();
+    }
+
+    @Override
+    public void forEachKey(IntConsumer cons) {
+        for (int i = 0; i <= last; i++) {
+            cons.accept(keys[i]);
+        }
     }
 
     @Override

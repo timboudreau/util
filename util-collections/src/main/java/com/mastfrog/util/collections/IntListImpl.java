@@ -50,6 +50,9 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
 
     @Override
     public boolean addAll(Collection<? extends Integer> c) {
+        if (c.isEmpty()) {
+            return false;
+        }
         if (c instanceof IntListImpl) {
             if (!c.isEmpty()) {
                 maybeGrow(size + c.size());
@@ -59,7 +62,19 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
             }
             return c.isEmpty();
         } else {
-            return super.addAll(c);
+            Iterator<? extends Integer> ints = c.iterator();
+            if (ints instanceof PrimitiveIterator.OfInt) {
+                int[] nue = new int[c.size()];
+                PrimitiveIterator.OfInt p = (PrimitiveIterator.OfInt) ints;
+                int ix = 0;
+                while (p.hasNext()) {
+                    nue[ix++] = p.nextInt();
+                }
+                addAll(nue);
+                return nue.length > 0;
+            } else {
+                return super.addAll(c);
+            }
         }
     }
 
@@ -127,7 +142,38 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
     }
 
     public int indexOfPresumingSorted(int value) {
+        if (size == 0) {
+            return -1;
+        } else if (size == 1) {
+            return value == values[0] ? 0 : -1;
+        }
         return Arrays.binarySearch(values, 0, size, value);
+    }
+
+    public int adjustValues(int fromIndex, int toIndex, int by) {
+        if (toIndex <= fromIndex) {
+            throw new IllegalArgumentException("toIndex must be > fromIndex, "
+                    + "but got " + fromIndex + ", " + toIndex);
+        }
+        int result = 0;
+        if (by != 0) {
+            for (int i = Math.max(0, fromIndex); i < Math.min(size, toIndex); i++) {
+                values[i] += by;
+                result++;
+            }
+        }
+        return result;
+    }
+
+    public int adjustValues(int aboveIndex, int by) {
+        int result = 0;
+        if (by != 0) {
+            for (int i = Math.max(0, aboveIndex); i < size; i++) {
+                values[i] += by;
+                result++;
+            }
+        }
+        return result;
     }
 
     public int nearestIndexToPresumingSorted(int value, Bias bias) {
@@ -153,10 +199,26 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
         }
         switch (bias) {
             case NONE:
-                return indexOfPresumingSorted(value);
+                int result = indexOfPresumingSorted(value);
+//                if (result < -1) {
+//                    new IllegalStateException("Weird answer for indexOfPresumingSorted with bias none "
+//                        + " " + result + " for value " + value + " in " + this).printStackTrace();
+//                }
+                if (result >= 0) {
+                    while (result < size - 1 && values[result + 1] == values[result]) {
+                        result++;
+                    }
+                }
+                return result;
             case FORWARD:
             case BACKWARD:
-                return nearestIndexToPresumingSorted(0, size - 1, bias, value);
+                int res2 = nearestIndexToPresumingSorted(0, size - 1, bias, value);
+                if (res2 != -1) {
+                    while (res2 < size - 1 && values[res2 + 1] == values[res2]) {
+                        res2++;
+                    }
+                }
+                return res2;
             case NEAREST:
                 int fwd = nearestIndexToPresumingSorted(0, size - 1, Bias.FORWARD, value);
                 int bwd = nearestIndexToPresumingSorted(0, size - 1, Bias.BACKWARD, value);
@@ -197,86 +259,101 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
     }
 
     private int nearestIndexToPresumingSorted(int start, int end, Bias bias, int value) {
-//        System.out.println("nearest " + bias + " to " + value
-//                + " from " + start + ":" + end + " in "
-//                + Arrays.toString(ArrayUtils.extract(values, start, (end - start) + 1)));
+        // duplicate tolerance
+//        while (end > 0 && values[end - 1] == values[end]) {
+//            end--;
+//            System.out.println("adj end to " + end + " looking for " +value);
+//        }
+//        while (start < size - 1 && values[start + 1] == values[start]) {
+//            start++;
+//            System.out.println("adj start to " + start + " looking for " + value);
+//        }
         if (start == end) {
             int currentVal = values[start];
             if (currentVal == value) {
-//                System.out.println("   succ -1: " + start);
                 return start;
             }
-//            System.out.println("  start is end val " + currentVal + " looking for " + value + " with " + bias);
             switch (bias) {
                 case BACKWARD:
-                    if (currentVal > value) {
-//                        System.out.println("  succ 0: " + start);
+                    if (currentVal <= value) {
                         return start;
                     } else {
-//                        System.out.println("  bail -1");
                         return -1;
                     }
                 case FORWARD:
-                    if (currentVal < value) {
-//                        System.out.println("  succ 1: " + start);
+                    if (currentVal >= value) {
                         return start;
                     } else {
-//                        System.out.println("  bail -2");
                         return -1;
                     }
             }
         }
         int startVal = values[start];
         if (startVal == value) {
-//            System.out.println("  succ 2: " + start);
             return start;
         }
         if (startVal > value) {
             switch (bias) {
                 case BACKWARD:
-//                    System.out.println("  succ 3: " + (start - 1));
+                    if (startVal > value) {
+                        return -1;
+                    }
                     return start - 1;
                 case FORWARD:
-//                    System.out.println("  succ 3a: " + start);
                     return start;
                 default:
-//                    System.out.println("  bail 2 " + bias);
                     return -1;
             }
         }
         int endVal = values[end];
         if (endVal == value) {
-//            System.out.println("  bail 3");
             return end;
         }
         if (endVal < value) {
             switch (bias) {
                 case BACKWARD:
-//                    System.out.println("  succ 4: " + end);
                     return end;
                 case FORWARD:
-//                    System.out.println("  succ 4a: " + (end + 1));
                     int result = end + 1;
                     return result < size ? result : -1;
                 default:
-//                    System.out.println("  bail 5");
                     return -1;
             }
         }
         int mid = start + ((end - start) / 2);
         int midVal = values[mid];
+//        while (mid < size-1 && values[mid+1] == midVal) {
+//            mid++;
+//        }
         if (midVal == value) {
-//            System.out.println("  succ 5: " + mid);
             return mid;
         }
+        // If we have an odd number of slots, we can get into trouble here:
         if (midVal < value && endVal > value) {
-            return nearestIndexToPresumingSorted(mid + 1, end - 1, bias, value);
+            int newStart = mid + 1;
+            int newEnd = end - 1;
+            int nextStartValue = values[newStart];
+            if (nextStartValue > value && bias == Bias.BACKWARD && (newEnd - newStart <= 1 || midVal < value)) {
+                return mid;
+            }
+            int nextEndValue = values[newEnd];
+            if (nextEndValue < value && bias == Bias.FORWARD && newEnd - newStart <= 1) {
+                return end;
+            }
+            return nearestIndexToPresumingSorted(newStart, newEnd, bias, value);
         } else if (midVal > value && startVal < value) {
-            return nearestIndexToPresumingSorted(start + 1, mid - 1, bias, value);
-        } else {
-//            System.out.println(" fail " + start + " = " + startVal + " mid " + mid + " = " + midVal + " target " + value);
+            int nextEnd = mid - 1;
+            int nextStart = start + 1;
+            int nextEndValue = values[nextEnd];
+            if (nextEndValue < value && bias == Bias.FORWARD && nextEnd - nextStart <= 1) {
+                return mid;
+            }
+            int newStartValue = values[nextStart];
+            if (bias == Bias.BACKWARD && newStartValue > value && (startVal < value || nextEnd - nextStart <= 1)) {
+                return start;
+            }
+            return nearestIndexToPresumingSorted(nextStart, nextEnd, bias, value);
         }
-//        System.out.println("  fallthrough " + mid + " midVal " + midVal + " target " + value);
         return -1;
     }
 
