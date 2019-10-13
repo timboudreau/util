@@ -33,6 +33,20 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
         return new IntPath(size, items);
     }
 
+    public int first() {
+        if (size == 0) {
+            throw new IndexOutOfBoundsException("Empty");
+        }
+        return items[0];
+    }
+
+    public int last() {
+        if (size == 0) {
+            throw new IndexOutOfBoundsException("empty");
+        }
+        return items[size-1];
+    }
+
     private void growIfNeeded() {
         if (size == items.length - 1) {
             items = Arrays.copyOf(items, items.length + DEFAULT_SIZE);
@@ -44,7 +58,7 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
             items = Arrays.copyOf(items, items.length + values.length);
         }
         System.arraycopy(values, 0, items, size, values.length);
-        size+= values.length;
+        size += values.length;
         return this;
     }
 
@@ -56,7 +70,7 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
 
     IntPath append(IntPath other) {
         int targetSize = size() + other.size();
-        if(items.length < targetSize) {
+        if (items.length < targetSize) {
             items = Arrays.copyOf(items, targetSize);
         }
         System.arraycopy(other.items, 0, items, size, other.size());
@@ -68,12 +82,12 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
         items = Arrays.copyOf(items, size);
         return this;
     }
-    
+
     public IntPath childPath() {
         if (size == 0) {
             return this;
         }
-        int[] nue = new int[size-1];
+        int[] nue = new int[size - 1];
         System.arraycopy(items, 1, nue, 0, nue.length);
         return new IntPath(nue.length, nue);
     }
@@ -82,7 +96,7 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
         if (size == 0) {
             return this;
         }
-        int[] nue = new int[size-1];
+        int[] nue = new int[size - 1];
         System.arraycopy(items, 0, nue, 0, nue.length);
         return new IntPath(nue.length, nue);
     }
@@ -96,7 +110,7 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
     public IntPath reversed() {
         int[] nue = new int[size];
         for (int i = 0; i < size; i++) {
-            nue[i] = items[size-(i+1)];
+            nue[i] = items[size - (i + 1)];
         }
         return new IntPath(size, nue);
     }
@@ -106,7 +120,7 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
     }
 
     public int end() {
-        return size == 0 ? -1 : items[size-1];
+        return size == 0 ? -1 : items[size - 1];
     }
 
     public boolean contains(IntPath path) {
@@ -115,7 +129,7 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
         } else if (path.size() == size) {
             return path.equals(this);
         } else {
-            for (int i = 0; i < size-path.size(); i++) {
+            for (int i = 0; i < size - path.size(); i++) {
                 if (arraysEquals(items, i, i + path.size(), path.items, 0, path.size())) {
                     return true;
                 }
@@ -132,7 +146,7 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
         if (aLength != bLength) {
             return false;
         }
-        for (; aFromIndex < aToIndex && bFromIndex < bToIndex; aFromIndex++,bFromIndex++) {
+        for (; aFromIndex < aToIndex && bFromIndex < bToIndex; aFromIndex++, bFromIndex++) {
             if (a[aFromIndex] != b[bFromIndex]) {
                 return false;
             }
@@ -231,11 +245,12 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
     }
 
     class IIt implements Iterator<Integer> {
+
         int pos = -1;
 
         @Override
         public boolean hasNext() {
-            return pos+1 < size();
+            return pos + 1 < size();
         }
 
         @Override
@@ -244,106 +259,4 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
         }
     }
 
-    public static final class ObjectPath<T> implements Iterable<T>, Comparable<ObjectPath> {
-
-        private final IntPath ip;
-        private final IndexedResolvable<T> indexed;
-
-        public ObjectPath(IntPath ip, IndexedResolvable<T> indexed) {
-            this.ip = ip;
-            this.indexed = indexed;
-        }
-
-        public int size() {
-            return ip.size();
-        }
-
-        public T get(int i) {
-            int value = ip.get(i);
-            return indexed.forIndex(value);
-        }
-
-        public boolean containsPath(ObjectPath<T> other) {
-            return ip.contains(other.ip);
-        }
-
-        public boolean contains(T obj) {
-            int ix = indexOf(obj);
-            return ix >= 0;
-        }
-
-        public int indexOf(T obj) {
-            int ix = indexed.indexOf(obj);
-            return ix < 0 ? -1 : ip.indexOf(ix);
-        }
-
-        public T start() {
-            if (ip.isEmpty()) {
-                return null;
-            }
-            return indexed.forIndex(ip.get(0));
-        }
-        public T end() {
-            if (ip.isEmpty()) {
-                return null;
-            }
-            return indexed.forIndex(ip.get(size() - 1));
-        }
-
-        @Override
-        public int hashCode() {
-            return ip.hashCode();
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder(60);
-            for (int i = 0; i < size(); i++) {
-                T obj = get(i);
-                if (sb.length() != 0) {
-                    sb.append(',');
-                }
-                sb.append(obj);
-            }
-            return sb.toString();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (o == this) {
-                return true;
-            } else if (o == null) {
-                return false;
-            } else if (o instanceof ObjectPath<?>) {
-                ObjectPath<?> other = (ObjectPath<?>) o;
-                return other.ip.equals(ip) && other.indexed.toList().equals(indexed.toList());
-            }
-            return false;
-        }
-
-        @Override
-        public Iterator<T> iterator() {
-            return new Iter();
-        }
-
-        @Override
-        public int compareTo(ObjectPath o) {
-            return ip.compareTo(o.ip);
-        }
-
-        final class Iter implements Iterator<T> {
-
-            int ix = -1;
-
-            @Override
-            public boolean hasNext() {
-                return ix + 1 < size();
-            }
-
-            @Override
-            public T next() {
-                return get(++ix);
-            }
-        }
-    }
 }

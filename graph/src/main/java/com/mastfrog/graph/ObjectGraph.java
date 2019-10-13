@@ -1,5 +1,6 @@
 package com.mastfrog.graph;
 
+import com.mastfrog.graph.ObjectPath;
 import java.io.IOException;
 import java.io.ObjectOutput;
 import java.util.List;
@@ -251,4 +252,5 @@ public interface ObjectGraph<T> {
 
     List<Score<T>> apply(RankingAlgorithm<?> alg);
 
+    List<ObjectPath<T>> pathsBetween(T a, T b);
 }

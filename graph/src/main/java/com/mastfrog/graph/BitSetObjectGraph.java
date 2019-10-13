@@ -20,6 +20,7 @@ import com.mastfrog.graph.algorithm.Algorithm;
 import com.mastfrog.graph.algorithm.RankingAlgorithm;
 import com.mastfrog.graph.algorithm.Score;
 import com.mastfrog.abstractions.list.IndexedResolvable;
+import com.mastfrog.graph.ObjectPath;
 
 /**
  *
@@ -42,6 +43,21 @@ class BitSetObjectGraph<T> implements ObjectGraph<T> {
     BitSetObjectGraph(BitSetGraph graph, int size, ToIntFunction<Object> toId, IntFunction<T> toObject) {
         this.graph = graph;
         this.indexed = new FIndexed<>(size, toId, toObject);
+    }
+
+    public List<ObjectPath<T>> pathsBetween(T a, T b) {
+        int aix = toNodeId(a);
+        int bix = toNodeId(b);
+        if (aix < 0 || bix < 0) {
+            return Collections.emptyList();
+        }
+        List<IntPath> raw = graph.pathsBetween(aix, bix);
+        List<ObjectPath<T>> result = new ArrayList<>(raw.size());
+        for (IntPath ip : raw) {
+            ObjectPath<T> op = new ObjectPath<T>(ip, indexed);
+            result.add(op);
+        }
+        return result;
     }
 
     static boolean sanityCheckArray(String[] sortedArray) {

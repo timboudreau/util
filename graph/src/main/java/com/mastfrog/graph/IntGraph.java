@@ -1,5 +1,6 @@
 package com.mastfrog.graph;
 
+import com.mastfrog.abstractions.list.IndexedResolvable;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
@@ -42,6 +43,10 @@ public interface IntGraph {
 
     public static IntGraphBuilder builder(int expectedSize) {
         return new IntGraphBuilder(expectedSize);
+    }
+
+    default <T> ObjectGraph<T> toObjectGraph(List<T> items) {
+        return new BitSetObjectGraph<>(this, IndexedResolvable.forList(items));
     }
 
     /**

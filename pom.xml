@@ -32,6 +32,7 @@
         <module>predicates</module>
         <module>file-channel-pool</module>
         <module>log-structured-storage</module>
+        <module>converters</module>
     </modules>
     <issueManagement>
         <system>Github</system>

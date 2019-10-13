@@ -55,6 +55,18 @@ final class BitSetStringGraph implements StringGraph {
         return toSet(MutableBits.create(items.length));
     }
 
+    public List<ObjectPath<String>> pathsBetween(String a, String b) {
+        int aix = toNodeId(a);
+        int bix = toNodeId(b);
+        List<IntPath> raw = tree.pathsBetween(aix, bix);
+        List<ObjectPath<String>> result = new ArrayList<>(raw.size());
+        for (IntPath ip : raw) {
+            ObjectPath<String> op = new ObjectPath<String>(ip, indexedImpl);
+            result.add(op);
+        }
+        return result;
+    }
+
     public void save(ObjectOutput out) throws IOException {
         out.writeInt(1);
         out.writeObject(items);

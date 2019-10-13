@@ -64,6 +64,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * String utilities - in particular, contains a number of utility methods for
@@ -2141,4 +2142,49 @@ public final class Strings {
         }
         return writeInto(value, new char[length]);
     }
+
+    /**
+     * For template logging where you don't want to call toString() on some
+     * object unless it actually is getting logged, simply wraps the object you
+     * want to log in another which delegates its toString() method.
+     *
+     * @param stringify An object to stringify or null
+     * @return An object whose toString() method returns the same value
+     */
+    public static Object lazy(Object stringify) {
+        return new LazyToString(stringify);
+    }
+
+    public static Object wrappedSupplier(Supplier<String> s) {
+        return new LazySupplierToString(s);
+    }
+
+    static final class LazyToString {
+
+        private final Object stringify;
+
+        public LazyToString(Object stringify) {
+            this.stringify = stringify;
+        }
+
+        public String toString() {
+            return Objects.toString(stringify);
+        }
+    }
+
+    static final class LazySupplierToString {
+
+        private final Supplier<String> stringify;
+
+        public LazySupplierToString(Supplier<String> stringify) {
+            this.stringify = stringify;
+        }
+
+        public String toString() {
+            String result = stringify.get();
+            return result == null ? "null" : result;
+
+        }
+    }
+
 }

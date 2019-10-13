@@ -1073,6 +1073,11 @@ final class BitSetGraph implements IntGraph {
         List<IntPath> paths = new ArrayList<>();
         IntPath base = new IntPath().add(src);
         PairSet seenPairs = new PairSet(size());
+        // If there is a direct edge, we will miss that, so add it now
+        if (outboundEdges[src].get(target)) {
+            seenPairs.add(src, target);
+            paths.add(new IntPath().add(src).add(target));
+        }
         pathsTo(src, target, base, paths, seenPairs);
         Collections.sort(paths);
         return paths;
@@ -1087,11 +1092,14 @@ final class BitSetGraph implements IntGraph {
             if (seenPairs.contains(src, bit)) {
                 return;
             }
+            seenPairs.add(src, bit);
             if (bit == target) {
                 IntPath found = base.copy().add(target);
                 paths.add(found);
             } else {
-                pathsTo(bit, target, base.copy().add(bit), paths, seenPairs);
+                if (!base.contains(bit)) {
+                    pathsTo(bit, target, base.copy().add(bit), paths, seenPairs);
+                }
             }
         });
     }

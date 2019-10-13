@@ -49,3 +49,5 @@ nb-configuration.xml
 /file-channel-pool/target/
 /log-structured-storage/nbproject/
 /log-structured-storage/target/
+/converters/nbproject/
+/converters/target/
