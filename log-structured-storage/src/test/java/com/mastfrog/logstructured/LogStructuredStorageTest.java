@@ -154,6 +154,16 @@ public class LogStructuredStorageTest {
             if (thrown != null) {
                 Exceptions.chuck(thrown);
             }
+            for (int i = 0; i < 10 && !exited; i++) {
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException ex) {
+                    break;
+                }
+                if (exited) {
+                    break;
+                }
+            }
             if (!exited) {
                 throw new AssertionError("Exited is false");
             }
