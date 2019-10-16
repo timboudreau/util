@@ -24,6 +24,7 @@
 package com.mastfrog.util.collections;
 
 import static com.mastfrog.util.preconditions.Checks.greaterThanZero;
+import static com.mastfrog.util.preconditions.Checks.isInstance;
 import static com.mastfrog.util.preconditions.Checks.nonNegative;
 import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.lang.reflect.Array;
@@ -1076,8 +1077,8 @@ public class ArrayUtils {
     }
 
     /**
-     * Create a new array with the passed value at position 0
-     * and the remainder after.
+     * Create a new array with the passed value at position 0 and the remainder
+     * after.
      *
      * @param first The element to prepend
      * @param more The rest of the resulting array
@@ -1091,8 +1092,8 @@ public class ArrayUtils {
     }
 
     /**
-     * Create a new array with the passed value at position 0
-     * and the remainder after.
+     * Create a new array with the passed value at position 0 and the remainder
+     * after.
      *
      * @param first The element to prepend
      * @param more The rest of the resulting array
@@ -1106,8 +1107,32 @@ public class ArrayUtils {
     }
 
     /**
-     * Create a new array with the passed value at position 0
-     * and the remainder after.
+     * Create a new array with the passed value at position 0 and the remainder
+     * after.
+     *
+     * @param first The element to prepend
+     * @param more The rest of the resulting array
+     * @return An array
+     */
+    @SafeVarargs
+    @SuppressWarnings("unchecked")
+    public static <T> T[] prepend(T first, T... more) {
+        notNull("more", more);
+        isInstance("first", more.getClass().getComponentType(), first);
+        if (more.length == 0) {
+            T[] result = CollectionUtils.genericArray((Class<? super T>) more.getClass().getComponentType(), 1);
+            result[0] = first;
+            return result;
+        }
+        T[] result = CollectionUtils.genericArray((Class<? super T>) more.getClass().getComponentType(), more.length + 1);
+        System.arraycopy(more, 0, result, 1, more.length);
+        result[0] = first;
+        return result;
+    }
+
+    /**
+     * Create a new array with the passed value at position 0 and the remainder
+     * after.
      *
      * @param first The element to prepend
      * @param more The rest of the resulting array
@@ -1121,8 +1146,8 @@ public class ArrayUtils {
     }
 
     /**
-     * Create a new array with the passed value at position 0
-     * and the remainder after.
+     * Create a new array with the passed value at position 0 and the remainder
+     * after.
      *
      * @param first The element to prepend
      * @param more The rest of the resulting array
@@ -1136,8 +1161,8 @@ public class ArrayUtils {
     }
 
     /**
-     * Create a new array with the passed value at position 0
-     * and the remainder after.
+     * Create a new array with the passed value at position 0 and the remainder
+     * after.
      *
      * @param first The element to prepend
      * @param more The rest of the resulting array

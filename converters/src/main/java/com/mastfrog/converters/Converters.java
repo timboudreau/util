@@ -74,6 +74,15 @@ public final class Converters {
         }
     }
 
+    public boolean isEmpty() {
+        return entries.isEmpty();
+    }
+
+    @Override
+    public String toString() {
+        return graph().toString();
+    }
+
     /**
      * Convert the input object to the output type if possible; the input type
      * may be a subtype of the registered conversion function.
@@ -99,6 +108,47 @@ public final class Converters {
         return to.cast(converter.apply(from));
     }
 
+    @SuppressWarnings("unchecked")
+    public <F, T> Class<? super F> convertingAs(F from, Class<T> to) {
+        List<ObjectPath<Class<?>>> paths = paths(from.getClass(), to);
+        if (!paths.isEmpty()) {
+            return (Class<? super F>) paths.get(0).first();
+        }
+        return null;
+    }
+
+    public <F, T> boolean canConvert(F from, Class<T> to) {
+        boolean result = !paths(from.getClass(), to).isEmpty();
+        if (!result) {
+            for (Class<?> type : compatibleTypes(from.getClass())) {
+                result = !paths(type, to).isEmpty();
+                if (result) {
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+
+    public <F, T> boolean hasConverter(Class<F> from, Class<T> to) {
+        return !paths(from.getClass(), to).isEmpty();
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> Set<Class<? super T>> compatibleTypes(T obj) {
+        Set<Class<? super T>> types = new HashSet<>();
+        Class<?> specificType = obj.getClass();
+        for (ConverterEntry<?, ?> e : entries) {
+            if (e.from.isAssignableFrom(specificType)) {
+                types.add((Class<? super T>) e.from);
+            }
+            if (e.to.isAssignableFrom(specificType)) {
+                types.add((Class<? super T>) e.to);
+            }
+        }
+        return types;
+    }
+
     @SuppressWarnings({"rawtypes", "unchecked"})
     private <F, T> List<ObjectPath<Class<?>>> paths(Class<F> from, Class<T> to) {
         List<ObjectPath<Class<?>>> paths = graph().pathsBetween(from, to);
@@ -116,7 +166,10 @@ public final class Converters {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    <F, T> Function<? super F, ? extends T> converter(Class<F> from, Class<T> to) {
+    public <F, T> Function<? super F, ? extends T> converter(Class<F> from, Class<T> to) {
+        if (from == to) {
+            return IdentityFunction.INSTANCE;
+        }
         List<ObjectPath<Class<?>>> pathsBetween = paths(from, to);
         if (pathsBetween.isEmpty()) {
             return null;
@@ -129,6 +182,16 @@ public final class Converters {
 //        assert from == first;
 //        Function<F, ?> result = f(from, iter.next(), iter);
 //        return (Function<F, T>) result;
+    }
+
+    static class IdentityFunction implements Function {
+
+        private static final IdentityFunction INSTANCE = new IdentityFunction();
+
+        @Override
+        public Object apply(Object t) {
+            return t;
+        }
     }
 
     /**

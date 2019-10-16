@@ -5,6 +5,7 @@
         <groupId>com.mastfrog</groupId>
         <artifactId>mastfrog-parent</artifactId>
         <version>2.5.1-dev</version>
+        <relativePath/>
     </parent>
     <artifactId>converters</artifactId>
     <packaging>jar</packaging>
