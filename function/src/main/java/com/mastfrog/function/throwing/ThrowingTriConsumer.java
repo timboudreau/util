@@ -23,6 +23,9 @@
  */
 package com.mastfrog.function.throwing;
 
+import com.mastfrog.function.TriConsumer;
+import com.mastfrog.util.preconditions.Exceptions;
+
 /**
  * Like a BiConsumer but taking three arguments, which can throw.
  *
@@ -37,6 +40,23 @@ public interface ThrowingTriConsumer<T, R, S> {
         return (a, b, s) -> {
             apply(a, b, s);
             next.apply(a, b, s);
+        };
+    }
+
+    /**
+     * Convert to a non-throwing equivalent. Note that the resulting method
+     * <i>will</i> rethrow any thrown checked exceptions.
+     *
+     * @return An equivalent function that does not declare the exceptions which
+     * it throws (but may thrown them anyway)
+     */
+    default TriConsumer<T, R, S> toNonThrowing() {
+        return (t, r, s) -> {
+            try {
+                apply(t, r, s);
+            } catch (Exception ex) {
+                Exceptions.chuck(ex);
+            }
         };
     }
 }

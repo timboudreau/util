@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.collections;
 
+import static com.mastfrog.util.collections.CollectionUtils.genericArray;
 import static com.mastfrog.util.preconditions.Checks.greaterThanZero;
 import static com.mastfrog.util.preconditions.Checks.isInstance;
 import static com.mastfrog.util.preconditions.Checks.nonNegative;
@@ -77,6 +78,50 @@ public class ArrayUtils {
         System.arraycopy(a, 0, nue, 0, a.length);
         System.arraycopy(b, 0, nue, a.length, b.length);
         return nue;
+    }
+
+    /**
+     * Concatenate multiple arrays of objects into a single new array. Note: The
+     * passed arrays must have the same <i>exact</i> type returned by
+     * <code>getClass().getComponentType()</code> or an exception will be
+     * thrown.
+     *
+     * @param a The first array
+     * @param b The second array
+     * @param cs Additional arrays
+     * @return An array of bytes comprising both
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T[] concatenate(T[] a, T[] b, T[]... cs) {
+        int total = a.length + b.length;
+        Class<?> compType = null;
+        for (int i = 0; i < cs.length; i++) {
+            T[] c = cs[i];
+            total += c.length;
+            if (compType == null) {
+                compType = c.getClass().getComponentType();
+            } else {
+                Class<?> currType = c.getClass().getComponentType();
+                if (compType != currType) {
+                    throw new IllegalArgumentException("Arrays passed to "
+                            + "ArrayUtils.concatenate() must have the same "
+                            + "*exact* component type, but found " + compType
+                            + " at 0 and " + currType + " at " + i);
+                }
+            }
+        }
+        T[] result = genericArray((Class<? super T>) a.getClass().getComponentType(),
+                total);
+        int pos = 0;
+        System.arraycopy(a, pos, result, 0, a.length);
+        pos += a.length;
+        System.arraycopy(b, 0, result, pos, b.length);
+        pos += b.length;
+        for (T[] c : cs) {
+            System.arraycopy(c, 0, result, pos, c.length);
+            pos += c.length;
+        }
+        return result;
     }
 
     /**

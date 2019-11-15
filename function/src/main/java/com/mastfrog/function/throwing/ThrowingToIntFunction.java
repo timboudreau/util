@@ -21,8 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package com.mastfrog.function.throwing;
+
+import com.mastfrog.util.preconditions.Exceptions;
+import java.util.function.ToIntFunction;
 
 /**
  *
@@ -33,4 +35,20 @@ public interface ThrowingToIntFunction<T> {
 
     int applyAsInt(T value) throws Exception;
 
+    /**
+     * Convert to a non-throwing equivalent. Note that the resulting method
+     * <i>will</i> rethrow any thrown checked exceptions.
+     *
+     * @return An equivalent function that does not declare the exceptions which
+     * it throws
+     */
+    default ToIntFunction<T> toNonThrowing() {
+        return t -> {
+            try {
+                return applyAsInt(t);
+            } catch (Exception ex) {
+                return Exceptions.chuck(ex);
+            }
+        };
+    }
 }

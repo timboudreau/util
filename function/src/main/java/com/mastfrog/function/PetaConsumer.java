@@ -24,19 +24,19 @@
 package com.mastfrog.function;
 
 /**
- * Like a BiConsumer but with four arguments, which can throw.
+ * Like a BiConsumer but with five arguments.
  *
  * @author Tim Boudreau
  */
 @FunctionalInterface
-public interface QuadConsumer<A, B, C, D> {
+public interface PetaConsumer<A, B, C, D, E> {
 
-    void accept(A a, B b, C c, D d);
+    void accept(A a, B b, C c, D d, E e);
 
-    default QuadConsumer<A, B, C, D> andThen(QuadConsumer<? super A, ? super B, ? super C, ? super D> other) {
-        return (a, b, c, d) -> {
-            this.accept(a, b, c, d);
-            other.accept(a, b, c, d);
+    default PetaConsumer<A, B, C, D, E> andThen(PetaConsumer<? super A, ? super B, ? super C, ? super D, ? super E> other) {
+        return (a, b, c, d, e) -> {
+            this.accept(a, b, c, d, e);
+            other.accept(a, b, c, d, e);
         };
     }
 }

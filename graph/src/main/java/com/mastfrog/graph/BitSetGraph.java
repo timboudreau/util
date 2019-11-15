@@ -475,43 +475,6 @@ final class BitSetGraph implements IntGraph {
                 .setParameter(EigenvectorCentrality.USE_IN_EDGES, inEdges)
                 .setParameter(EigenvectorCentrality.IGNORE_SELF_EDGES, ignoreSelfEdges)
                 .setParameter(EigenvectorCentrality.NORMALIZE, l2norm).apply(this);
-
-        /*
-        int sz = size();
-        double[] unnormalized = new double[sz];
-        double[] centrality = new double[sz];
-        Arrays.fill(centrality, 1.0 / (double) sz);
-        double diff = 0.0;
-        int iter = 0;
-        do {
-            for (int i = 0; i < sz; i++) {
-                Bits dests = inEdges ? inboundEdges[i] : neighbors(i);
-                double sum = dests.sum(centrality, ignoreSelfEdges ? i : Integer.MIN_VALUE);
-                unnormalized[i] = sum;
-                double s;
-                if (l2norm) {
-                    double l2sum = 0.0;
-                    for (int j = 0; j < sz; j++) {
-                        l2sum += unnormalized[j] * unnormalized[j];
-                    }
-                    s = (l2sum == 0.0) ? 1.0 : 1 / sqrt(l2sum);
-                } else {
-                    double l1sum = 0.0;
-                    for (int j = 0; j < sz; j++) {
-                        l1sum += unnormalized[j];
-                    }
-                    s = l1sum == 0.0 ? 1.0 : 1 / l1sum;
-                }
-                diff = 0.0;
-                for (int j = 0; j < sz; j++) {
-                    double val = unnormalized[j] * s;
-                    diff += Math.abs(centrality[j] - val);
-                    centrality[j] = val;
-                }
-            }
-        } while (iter++ < maxIterations && diff > minDiff);
-        return centrality;
-        */
     }
 
     public double sum(IntToDoubleFunction func) {
@@ -543,44 +506,6 @@ final class BitSetGraph implements IntGraph {
                 .setParameter(PageRank.DAMPING_FACTOR, dampingFactor)
                 .setParameter(PageRank.MAXIMUM_ITERATIONS, maximumIterations)
                 .setParameter(PageRank.NORMALIZE, normalize).apply(this);
-        /*
-        double difference;
-        int cnt = 0;
-        double n = size();
-        double[] result = new double[size()];
-        for (int i = 0; i < result.length; i++) {
-            result[i] = 1d / n;
-        }
-        do {
-            difference = 0.0;
-            double danglingFactor = 0;
-            if (normalize) {
-                danglingFactor = dampingFactor / n * sum(i -> {
-                    if (children(i).isEmpty()) {
-                        return result[i];
-                    }
-                    return 0D;
-                });
-            }
-            for (int i = 0; i < size(); i++) {
-                double inputSum = inboundEdges[i].sum((int j) -> {
-                    double outDegree = children(j).cardinality();
-                    if (outDegree != 0) {
-                        return result[j] / outDegree;
-                    }
-                    return 0D;
-                });
-                double val = (1.0 - dampingFactor) / n
-                        + dampingFactor * inputSum + danglingFactor;
-                difference += Math.abs(val - result[i]);
-                if (result[i] < val) {
-                    result[i] = val;
-                }
-            }
-            cnt++;
-        } while ((difference > minDifference) && cnt < maximumIterations);
-        return result;
-        */
     }
 
     @Override

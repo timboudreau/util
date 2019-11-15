@@ -23,13 +23,42 @@
  */
 package com.mastfrog.function.throwing;
 
+import com.mastfrog.function.QuadConsumer;
+import com.mastfrog.util.preconditions.Exceptions;
+
 /**
  * Like a BiConsumer but with four arguments, which can throw.
  *
  * @author Tim Boudreau
  */
 @FunctionalInterface
-public interface ThrowingQuadConsumer<T, R, S, U> {
+public interface ThrowingQuadConsumer<A, B, C, D> {
 
-    void apply(T a, R b, S s, U u) throws Exception;
+    void apply(A a, B b, C s, D u) throws Exception;
+
+    default ThrowingQuadConsumer<A, B, C, D> andThen(ThrowingQuadConsumer<? super A, ? super B, ? super C, ? super D> other) {
+        return (a, b, c, d) -> {
+            this.apply(a, b, c, d);
+            other.apply(a, b, c, d);
+        };
+    }
+
+    /**
+     * Convert to a non-throwing consumer. Note that checked exceptions
+     * <i>will</i> be thrown from the resulting consumer via Exceptions.chuck()
+     * - the prohibition on undeclared checked exceptions is compile-time, not
+     * runtime.
+     *
+     * @return A peta consumer
+     */
+    default QuadConsumer<A, B, C, D> toQuadConsumer() {
+        return (a, b, c, d) -> {
+            try {
+                apply(a, b, c, d);
+            } catch (Exception ex) {
+                Exceptions.chuck(ex);
+            }
+        };
+    }
+
 }

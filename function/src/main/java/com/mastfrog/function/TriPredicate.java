@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2018 Tim Boudreau.
+ * Copyright 2019 Mastfrog Technologies.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,22 +21,33 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 package com.mastfrog.function;
 
 /**
- * Like a BiConsumer but with four arguments, which can throw.
+ * Three argument predicate.
  *
  * @author Tim Boudreau
  */
 @FunctionalInterface
-public interface QuadConsumer<A, B, C, D> {
+public interface TriPredicate<A, B, C> {
 
-    void accept(A a, B b, C c, D d);
+    boolean test(A a, B b, C c);
 
-    default QuadConsumer<A, B, C, D> andThen(QuadConsumer<? super A, ? super B, ? super C, ? super D> other) {
-        return (a, b, c, d) -> {
-            this.accept(a, b, c, d);
-            other.accept(a, b, c, d);
+    default TriPredicate<A, B, C> and(TriPredicate<? super A, ? super B, ? super C> other) {
+        return (a, b, c) -> {
+            return test(a, b, c) && other.test(a, b, c);
+        };
+    }
+
+    default TriPredicate<A, B, C> or(TriPredicate<? super A, ? super B, ? super C> other) {
+        return (a, b, c) -> {
+            return test(a, b, c) || other.test(a, b, c);
+        };
+    }
+    default TriPredicate<A, B, C> xor(TriPredicate<? super A, ? super B, ? super C> other) {
+        return (a, b, c) -> {
+            return test(a, b, c) != other.test(a, b, c);
         };
     }
 }

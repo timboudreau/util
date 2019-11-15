@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2018 Tim Boudreau.
+ * Copyright 2019 Mastfrog Technologies.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,22 +21,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.function;
+package com.mastfrog.function.throwing.io;
+
+import com.mastfrog.function.throwing.ThrowingToIntBiFunction;
+import java.io.IOException;
 
 /**
- * Like a BiConsumer but with four arguments, which can throw.
  *
  * @author Tim Boudreau
  */
-@FunctionalInterface
-public interface QuadConsumer<A, B, C, D> {
+public interface IOToIntBiFunction<A, B> extends ThrowingToIntBiFunction<A, B> {
 
-    void accept(A a, B b, C c, D d);
-
-    default QuadConsumer<A, B, C, D> andThen(QuadConsumer<? super A, ? super B, ? super C, ? super D> other) {
-        return (a, b, c, d) -> {
-            this.accept(a, b, c, d);
-            other.accept(a, b, c, d);
-        };
-    }
+    int applyAsInt(A a, B b) throws IOException;
 }

@@ -21,57 +21,40 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.function.throwing;
+package com.mastfrog.function.throwing.io;
 
-import com.mastfrog.function.TriPredicate;
-import com.mastfrog.util.preconditions.Exceptions;
+import com.mastfrog.function.throwing.*;
+import java.io.IOException;
 
 /**
  *
  * @author Tim Boudreau
  */
-public interface ThrowingTriPredicate<In1, In2, In3> {
+public interface IOTriPredicate<In1, In2, In3> extends ThrowingTriPredicate<In1, In2, In3> {
 
-    boolean test(In1 a, In2 b, In3 c) throws Exception;
+    boolean test(In1 a, In2 b, In3 c) throws IOException;
 
-    default ThrowingTriPredicate<In1, In2, In3> and(ThrowingTriPredicate<? super In1, ? super In2, ? super In3> other) {
+    default IOTriPredicate<In1, In2, In3> and(IOTriPredicate<? super In1, ? super In2, ? super In3> other) {
         return (a, b, c) -> {
             return this.test(a, b, c) && other.test(a, b, c);
         };
     }
 
-    default ThrowingTriPredicate<In1, In2, In3> or(ThrowingTriPredicate<? super In1, ? super In2, ? super In3> other) {
+    default IOTriPredicate<In1, In2, In3> or(IOTriPredicate<? super In1, ? super In2, ? super In3> other) {
         return (a, b, c) -> {
             return this.test(a, b, c) || other.test(a, b, c);
         };
     }
 
-    default ThrowingTriPredicate<In1, In2, In3> andNot(ThrowingTriPredicate<? super In1, ? super In2, ? super In3> other) {
+    default IOTriPredicate<In1, In2, In3> andNot(IOTriPredicate<? super In1, ? super In2, ? super In3> other) {
         return (a, b, c) -> {
             return this.test(a, b, c) && !other.test(a, b, c);
         };
     }
 
-    default ThrowingTriPredicate<In1, In2, In3> xor(ThrowingTriPredicate<? super In1, ? super In2, ? super In3> other) {
+    default IOTriPredicate<In1, In2, In3> xor(IOTriPredicate<? super In1, ? super In2, ? super In3> other) {
         return (a, b, c) -> {
             return this.test(a, b, c) != other.test(a, b, c);
-        };
-    }
-
-    /**
-     * Convert to a non-throwing equivalent. Note that the resulting method
-     * <i>will</i> rethrow any thrown checked exceptions.
-     *
-     * @return An equivalent function that does not declare the exceptions which
-     * it throws (but may thrown them anyway)
-     */
-    default TriPredicate<In1, In2, In3> toNonThrowing() {
-        return (t, r, s) -> {
-            try {
-                return test(t, r, s);
-            } catch (Exception ex) {
-                return Exceptions.chuck(ex);
-            }
         };
     }
 }

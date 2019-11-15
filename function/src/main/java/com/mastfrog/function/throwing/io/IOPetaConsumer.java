@@ -21,7 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.function;
+package com.mastfrog.function.throwing.io;
+
+import com.mastfrog.function.throwing.ThrowingPetaConsumer;
+import java.io.IOException;
 
 /**
  * Like a BiConsumer but with four arguments, which can throw.
@@ -29,14 +32,15 @@ package com.mastfrog.function;
  * @author Tim Boudreau
  */
 @FunctionalInterface
-public interface QuadConsumer<A, B, C, D> {
+public interface IOPetaConsumer<A, B, C, D, E> extends ThrowingPetaConsumer<A, B, C, D, E> {
 
-    void accept(A a, B b, C c, D d);
+    void accept(A a, B b, C c, D d, E e) throws IOException;
 
-    default QuadConsumer<A, B, C, D> andThen(QuadConsumer<? super A, ? super B, ? super C, ? super D> other) {
-        return (a, b, c, d) -> {
-            this.accept(a, b, c, d);
-            other.accept(a, b, c, d);
+    default IOPetaConsumer<A, B, C, D, E> andThen(IOPetaConsumer<? super A, ? super B, ? super C, ? super D, ? super E> other) {
+        return (a, b, c, d, e) -> {
+            this.accept(a, b, c, d, e);
+            other.accept(a, b, c, d, e);
         };
     }
+
 }

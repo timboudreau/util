@@ -23,7 +23,9 @@
  */
 package com.mastfrog.function;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.LongPredicate;
+import java.util.function.LongSupplier;
 
 /**
  * A predicate which takes two primitive longs.
@@ -37,6 +39,12 @@ public interface LongBiPredicate {
     static LongBiPredicate ALWAYS = (a, b) -> true;
 
     boolean test(long a, long b);
+
+    default BooleanSupplier toBooleanSupplier(LongSupplier a, LongSupplier b) {
+        return () -> {
+            return test(a.getAsLong(), b.getAsLong());
+        };
+    }
 
     default LongBiPredicate negate() {
         return (a, b) -> {

@@ -31,7 +31,14 @@ import java.io.IOException;
  * @author Tim Boudreau
  */
 @FunctionalInterface
-public interface IOQuadConsumer<T, R, S, U> {
+public interface IOQuadConsumer<A, B, C, D> {
 
-    void apply(T a, R b, S s, U u) throws IOException;
+    void apply(A a, B b, C s, D u) throws IOException;
+
+    default IOQuadConsumer<A, B, C, D> andThen(IOQuadConsumer<? super A, ? super B, ? super C, ? super D> other) {
+        return (a, b, c, d) -> {
+            this.apply(a, b, c, d);
+            other.apply(a, b, c, d);
+        };
+    }
 }

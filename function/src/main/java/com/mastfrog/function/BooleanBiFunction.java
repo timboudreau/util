@@ -29,6 +29,7 @@ import java.util.function.BiFunction;
  * BiFunction which returns a primitive boolean.
  *
  * @author Tim Boudreau
+ * @deprecated Effectively this is a BiPredicate
  */
 @FunctionalInterface
 public interface BooleanBiFunction<S, T> extends BiFunction<S, T, Boolean> {

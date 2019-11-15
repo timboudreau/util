@@ -27,6 +27,7 @@ import java.util.Comparator;
 import java.util.function.Function;
 import java.util.function.IntPredicate;
 import java.util.function.Supplier;
+import java.util.function.ToIntBiFunction;
 
 /**
  * A BiFunction returning a primitive int. Extends Comparator for convenience,
@@ -36,9 +37,9 @@ import java.util.function.Supplier;
  * @author Tim Boudreau
  */
 @FunctionalInterface
-public interface ToIntBiFunction<T> extends Comparator<T> {
+public interface ToIntHomoBiFunction<T> extends Comparator<T>, ToIntBiFunction<T,T> {
 
-    int apply(T a, T b);
+    int applyAsInt(T a, T b);
 
     static <R extends Comparable<R>> EnhIntSupplier comparer(Supplier<R> a, Supplier<R> b) {
         return () -> a.get().compareTo(b.get());
@@ -48,52 +49,52 @@ public interface ToIntBiFunction<T> extends Comparator<T> {
         return () -> a.compareTo(b);
     }
 
-    static <R extends Comparable<R>> ToIntBiFunction<R> comparison() {
+    static <R extends Comparable<R>> ToIntHomoBiFunction<R> comparison() {
         return Comparable::compareTo;
     }
 
-    default <R> ToIntBiFunction<R> transform(Function<R, T> func) {
-        return (R a, R b) -> ToIntBiFunction.this.apply(func.apply(a), func.apply(b));
+    default <R> ToIntHomoBiFunction<R> transform(Function<R, T> func) {
+        return (R a, R b) -> ToIntHomoBiFunction.this.applyAsInt(func.apply(a), func.apply(b));
     }
 
-    default <R> ToIntBiFunction<T> ifZero(R ra, R rb, ToIntBiFunction<R> next) {
+    default <R> ToIntHomoBiFunction<T> ifZero(R ra, R rb, ToIntHomoBiFunction<R> next) {
         return or((int value) -> value != 0, ra, rb, next);
     }
 
-    default <R> ToIntBiFunction<T> ifZero(Supplier<R> ra, Supplier<R> rb, ToIntBiFunction<R> next) {
+    default <R> ToIntHomoBiFunction<T> ifZero(Supplier<R> ra, Supplier<R> rb, ToIntHomoBiFunction<R> next) {
         return or((int value) -> value != 0, ra, rb, next);
     }
 
-    default <R> ToIntBiFunction<T> or(IntPredicate test, R ra, R rb, ToIntBiFunction<R> next) {
+    default <R> ToIntHomoBiFunction<T> or(IntPredicate test, R ra, R rb, ToIntHomoBiFunction<R> next) {
         return (T a, T b) -> {
-            int result = ToIntBiFunction.this.apply(a, b);
+            int result = ToIntHomoBiFunction.this.applyAsInt(a, b);
             if (!test.test(result)) {
-                return next.apply(ra, rb);
+                return next.applyAsInt(ra, rb);
             }
             return result;
         };
     }
 
-    default <R> ToIntBiFunction<T> or(IntPredicate test, Supplier<R> ra, Supplier<R> rb, ToIntBiFunction<R> next) {
+    default <R> ToIntHomoBiFunction<T> or(IntPredicate test, Supplier<R> ra, Supplier<R> rb, ToIntHomoBiFunction<R> next) {
         return (T a, T b) -> {
-            int result = ToIntBiFunction.this.apply(a, b);
+            int result = ToIntHomoBiFunction.this.applyAsInt(a, b);
             if (!test.test(result)) {
-                return next.apply(ra.get(), rb.get());
+                return next.applyAsInt(ra.get(), rb.get());
             }
             return result;
         };
     }
 
     default EnhIntSupplier toIntSupplier(Supplier<T> a, Supplier<T> b) {
-        return () -> ToIntBiFunction.this.apply(a.get(), b.get());
+        return () -> ToIntHomoBiFunction.this.applyAsInt(a.get(), b.get());
     }
 
     default EnhIntSupplier toIntSupplier(T a, T b) {
-        return () -> ToIntBiFunction.this.apply(a, b);
+        return () -> ToIntHomoBiFunction.this.applyAsInt(a, b);
     }
 
     @Override
     public default int compare(T o1, T o2) {
-        return ToIntBiFunction.this.apply(o1, o2);
+        return ToIntHomoBiFunction.this.applyAsInt(o1, o2);
     }
 }

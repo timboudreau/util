@@ -23,40 +23,17 @@
  */
 package com.mastfrog.function.throwing;
 
-import com.mastfrog.function.TriPredicate;
 import com.mastfrog.util.preconditions.Exceptions;
+import java.util.function.ToLongBiFunction;
 
 /**
  *
  * @author Tim Boudreau
  */
-public interface ThrowingTriPredicate<In1, In2, In3> {
+@FunctionalInterface
+public interface ThrowingToLongBiFunction<A, B> {
 
-    boolean test(In1 a, In2 b, In3 c) throws Exception;
-
-    default ThrowingTriPredicate<In1, In2, In3> and(ThrowingTriPredicate<? super In1, ? super In2, ? super In3> other) {
-        return (a, b, c) -> {
-            return this.test(a, b, c) && other.test(a, b, c);
-        };
-    }
-
-    default ThrowingTriPredicate<In1, In2, In3> or(ThrowingTriPredicate<? super In1, ? super In2, ? super In3> other) {
-        return (a, b, c) -> {
-            return this.test(a, b, c) || other.test(a, b, c);
-        };
-    }
-
-    default ThrowingTriPredicate<In1, In2, In3> andNot(ThrowingTriPredicate<? super In1, ? super In2, ? super In3> other) {
-        return (a, b, c) -> {
-            return this.test(a, b, c) && !other.test(a, b, c);
-        };
-    }
-
-    default ThrowingTriPredicate<In1, In2, In3> xor(ThrowingTriPredicate<? super In1, ? super In2, ? super In3> other) {
-        return (a, b, c) -> {
-            return this.test(a, b, c) != other.test(a, b, c);
-        };
-    }
+    long applyAsLong(A a, B b) throws Exception;
 
     /**
      * Convert to a non-throwing equivalent. Note that the resulting method
@@ -65,10 +42,10 @@ public interface ThrowingTriPredicate<In1, In2, In3> {
      * @return An equivalent function that does not declare the exceptions which
      * it throws (but may thrown them anyway)
      */
-    default TriPredicate<In1, In2, In3> toNonThrowing() {
-        return (t, r, s) -> {
+    default ToLongBiFunction<A, B> toNonThrowing() {
+        return (a, b) -> {
             try {
-                return test(t, r, s);
+                return applyAsLong(a, b);
             } catch (Exception ex) {
                 return Exceptions.chuck(ex);
             }

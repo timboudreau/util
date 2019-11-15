@@ -1,5 +1,7 @@
 package com.mastfrog.function;
 
+import java.util.function.IntSupplier;
+
 /**
  * A BiConsumer of primitive ints.
  *
@@ -9,6 +11,12 @@ package com.mastfrog.function;
 public interface IntBiConsumer {
 
     void accept(int a, int b);
+
+    default Runnable toRunnable(IntSupplier a, IntSupplier b) {
+        return () -> {
+            accept(a.getAsInt(), b.getAsInt());
+        };
+    }
 
     default IntBiConsumer andThen(IntBiConsumer next) {
         return (a, b) -> {

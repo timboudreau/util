@@ -23,7 +23,9 @@
  */
 package com.mastfrog.function.throwing;
 
+import com.mastfrog.function.TriFunction;
 import com.mastfrog.util.preconditions.Checks;
+import com.mastfrog.util.preconditions.Exceptions;
 
 /**
  * Like a BiFunction, but taking three arguments, which can throw.
@@ -38,5 +40,22 @@ public interface ThrowingTriFunction<T, U, V, R> {
     default <W> ThrowingTriFunction<T, U, V, W> andThen(ThrowingFunction<? super R, ? extends W> after) {
         Checks.notNull("after", after);
         return (T t, U u, V v) -> after.apply(apply(t, u, v));
+    }
+
+    /**
+     * Convert to a non-throwing equivalent. Note that the resulting method
+     * <i>will</i> rethrow any thrown checked exceptions.
+     *
+     * @return An equivalent function that does not declare the exceptions which
+     * it throws (but may thrown them anyway)
+     */
+    default TriFunction<T, U, V, R> toNonThrowing() {
+        return (t, r, s) -> {
+            try {
+                return apply(t, r, s);
+            } catch (Exception ex) {
+                return Exceptions.chuck(ex);
+            }
+        };
     }
 }

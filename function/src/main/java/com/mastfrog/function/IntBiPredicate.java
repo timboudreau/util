@@ -23,7 +23,9 @@
  */
 package com.mastfrog.function;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.IntPredicate;
+import java.util.function.IntSupplier;
 
 /**
  * A predicate which takes two primitive integers.
@@ -37,6 +39,12 @@ public interface IntBiPredicate {
     static IntBiPredicate ALWAYS = (a, b) -> true;
 
     boolean test(int a, int b);
+
+    default BooleanSupplier toBooleanSupplier(IntSupplier a, IntSupplier b) {
+        return () -> {
+            return test(a.getAsInt(), b.getAsInt());
+        };
+    }
 
     default IntBiPredicate negate() {
         return (a, b) -> {

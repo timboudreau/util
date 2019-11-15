@@ -21,8 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package com.mastfrog.function.throwing;
+
+import com.mastfrog.util.preconditions.Exceptions;
+import java.util.function.ToLongFunction;
 
 /**
  *
@@ -33,4 +35,20 @@ public interface ThrowingToLongFunction<T> {
 
     long applyAsLong(T value) throws Exception;
 
+    /**
+     * Convert to a non-throwing equivalent. Note that the resulting method
+     * <i>will</i> rethrow any thrown checked exceptions.
+     *
+     * @return An equivalent function that does not declare the exceptions which
+     * it throws (but may thrown them anyway)
+     */
+    default ToLongFunction<T> toNonThrowing() {
+        return val -> {
+            try {
+                return applyAsLong(val);
+            } catch (Exception ex) {
+                return Exceptions.chuck(ex);
+            }
+        };
+    }
 }
