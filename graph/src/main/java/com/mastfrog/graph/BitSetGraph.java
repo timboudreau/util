@@ -984,6 +984,21 @@ final class BitSetGraph implements IntGraph {
         Iterator<IntPath> iter = pathsBetween(src, target).iterator();
         return iter.hasNext() ? Optional.of(iter.next()) : Optional.empty();
     }
+    /**
+     * Get the shortest path between two nodes in the graph. If multiple paths
+     * of the shortest length exist, one will be returned, but which is
+     * unspecified.
+     *
+     * @param src The source node
+     * @param target The target node
+     * @return An optional which, if non-empty, contains a path for which no
+     * shorter path between the same two nodes exists
+     */
+    @Override
+    public Optional<IntPath> shortestUndirectedPathBetween(int src, int target) {
+        Iterator<IntPath> iter = undirectedPathsBetween(src, target).iterator();
+        return iter.hasNext() ? Optional.of(iter.next()) : Optional.empty();
+    }
 
     /**
      * Get a list of all paths between the source and target node, sorted low to
@@ -1014,6 +1029,41 @@ final class BitSetGraph implements IntGraph {
             return;
         }
         outboundEdges[src].forEachSetBitAscending(bit -> {
+            if (seenPairs.contains(src, bit)) {
+                return;
+            }
+            seenPairs.add(src, bit);
+            if (bit == target) {
+                IntPath found = base.copy().add(target);
+                paths.add(found);
+            } else {
+                if (!base.contains(bit)) {
+                    pathsTo(bit, target, base.copy().add(bit), paths, seenPairs);
+                }
+            }
+        });
+    }
+
+    public List<IntPath> undirectedPathsBetween(int src, int target) {
+        List<IntPath> paths = new ArrayList<>();
+        IntPath base = new IntPath().add(src);
+        PairSet seenPairs = new PairSet(size());
+        // If there is a direct edge, we will miss that, so add it now
+        if (neighbors(src).get(target)) {
+            seenPairs.add(src, target);
+            paths.add(new IntPath().add(src).add(target));
+        }
+        undirectedPathsTo(src, target, base, paths, seenPairs);
+        Collections.sort(paths);
+        return paths;
+    }
+
+    private void undirectedPathsTo(int src, int target, IntPath base, List<? super IntPath> paths, PairSet seenPairs) {
+        if (src == target) {
+            paths.add(base.copy().add(target));
+            return;
+        }
+        neighbors(src).forEachSetBitAscending(bit -> {
             if (seenPairs.contains(src, bit)) {
                 return;
             }

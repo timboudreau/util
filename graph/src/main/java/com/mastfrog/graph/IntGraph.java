@@ -482,6 +482,10 @@ public interface IntGraph {
      */
     void save(ObjectOutput out) throws IOException;
 
+    Optional<IntPath> shortestUndirectedPathBetween(int src, int target);
+
+    List<IntPath> undirectedPathsBetween(int src, int target);
+
     default StringGraph toStringGraph(String[] sortedNodeNames) {
         return new BitSetStringGraph(this, sortedNodeNames);
     }
