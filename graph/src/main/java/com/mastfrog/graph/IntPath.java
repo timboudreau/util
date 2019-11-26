@@ -258,5 +258,4 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
             return get(++pos);
         }
     }
-
 }

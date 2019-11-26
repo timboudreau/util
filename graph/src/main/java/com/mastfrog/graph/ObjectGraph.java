@@ -1,12 +1,13 @@
 package com.mastfrog.graph;
 
-import com.mastfrog.graph.ObjectPath;
+import com.mastfrog.abstractions.list.IndexedResolvable;
 import java.io.IOException;
 import java.io.ObjectOutput;
 import java.util.List;
 import java.util.Set;
 import com.mastfrog.graph.algorithm.RankingAlgorithm;
 import com.mastfrog.graph.algorithm.Score;
+import java.util.function.BiConsumer;
 
 /**
  *
@@ -220,22 +221,6 @@ public interface ObjectGraph<T> {
     }
 
     /**
-     * Create a graph from the passed bit set graph, and a pre-sorted array of
-     * unique strings where integer nodes in the passed graph correspond to
-     * offsets within the array. The array must be sorted, not have duplicates,
-     * and have a matching number of elements for the unique node ids in the
-     * tree. If assertions are on, asserts will check that these invariants
-     * hold.
-     *
-     * @param graph A graph
-     * @param sortedArray An array of strings matching the requirements stated
-     * above
-     * @return A graph of strings which wraps the original graph
-     */
-//    public static <T> ObjectGraph<T> create(IntGraph graph, IntFunction<T> convert) {
-//        return new BitSetObjectGraph<T>(graph, convert);
-//    }
-    /**
      * Optimized serialization support.
      *
      * @param out The output
@@ -243,14 +228,55 @@ public interface ObjectGraph<T> {
      */
     public void save(ObjectOutput out) throws IOException;
 
-//    public static <T> ObjectGraph<T> load(ObjectInput in) throws IOException, ClassNotFoundException {
-//        return BitSetObjectGraph.load(in);
-//    }
-    int toNodeId(T name);
+    /**
+     * Get the integer id used internally for a node.
+     *
+     * @param node A node
+     * @return An index or -1
+     */
+    int toNodeId(T node);
 
+    /**
+     * Get the node for an index.
+     *
+     * @param index The index
+     * @return A node
+     */
     T toNode(int index);
 
     List<Score<T>> apply(RankingAlgorithm<?> alg);
 
+    /**
+     * Get the set of paths that exist between two nodes.
+     *
+     * @param a A first node
+     * @param b A second node
+     * @return The paths
+     */
     List<ObjectPath<T>> pathsBetween(T a, T b);
+
+    /**
+     * Convert this graph to its (usually internal) IntGraph, needed for
+     * serialization.
+     *
+     * @param consumer A consumer that takes the list of items and the
+     * graph.
+     */
+    void toIntGraph(BiConsumer<IndexedResolvable<? extends T>, IntGraph> consumer);
+
+    /**
+     * Create a copy of this graph, omitting the passed set of
+     * items.
+     *
+     * @param items The items to omit
+     * @return A new graph
+     */
+    ObjectGraph<T> omitting(Set<T> items);
+
+    /**
+     * Get the number of elements in this graph.
+     *
+     * @return The size
+     */
+    int size();
 }

@@ -11,6 +11,7 @@ import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 import com.mastfrog.bits.Bits;
 import com.mastfrog.function.IntBiConsumer;
+import java.util.function.BiConsumer;
 
 /**
  *
@@ -25,6 +26,7 @@ public interface IntGraph {
     public static IntGraph create(Bits[] references) {
         return new BitSetGraph(references);
     }
+
     public static IntGraph create(BitSet[] references) {
         return new BitSetGraph(references);
     }
@@ -468,7 +470,9 @@ public interface IntGraph {
     void walkUpwards(int startingWith, IntGraphVisitor v);
 
     /**
-     * Get the maximum node id + 1 of this graph, or the number of nodes.
+     * Get the maximum node id + 1 of this graph, or the number of logical
+     * nodes. Note that this is not the same as the number of <i>nodes that have
+     * edges</i>.
      *
      * @return The size
      */
@@ -482,11 +486,47 @@ public interface IntGraph {
      */
     void save(ObjectOutput out) throws IOException;
 
+    /**
+     * Get the shortest undirected path between two nodes.
+     *
+     * @param src The first node
+     * @param target The second node
+     * @return A path if one exists
+     */
     Optional<IntPath> shortestUndirectedPathBetween(int src, int target);
 
+    /**
+     * Get a list of all inbound and outbound paths between two nodes.
+     *
+     * @param src The first node
+     * @param target The second node
+     * @return A list of paths
+     */
     List<IntPath> undirectedPathsBetween(int src, int target);
 
     default StringGraph toStringGraph(String[] sortedNodeNames) {
         return new BitSetStringGraph(this, sortedNodeNames);
     }
+
+    /**
+     * Create a new graph, sans the passed array of items - the resulting graph
+     * will be smaller and if mapped to objects, have different indices than the
+     * original.
+     *
+     * @param items Items which should not be present - indices previously
+     * present will be shifted downwards.
+     * @return A new graph with some items removed.
+     */
+    IntGraph omitting(int... items);
+
+    /**
+     * Compare this graph and another; it is assumed that they
+     * have the same size.
+     *
+     * @param other Another graph
+     * @param c A consumer which will be passed two arguments: A
+     * graph containing only added edges, and a graph containing only
+     * removed edges
+     */
+    void diff(IntGraph other, BiConsumer<IntGraph, IntGraph> c);
 }

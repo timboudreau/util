@@ -19,6 +19,7 @@ import com.mastfrog.graph.algorithm.Algorithm;
 import com.mastfrog.graph.algorithm.EigenvectorCentrality;
 import com.mastfrog.graph.algorithm.PageRank;
 import com.mastfrog.function.IntBiConsumer;
+import java.util.function.BiConsumer;
 
 /**
  * A highly compact graph based on bit sets.
@@ -1182,5 +1183,87 @@ final class BitSetGraph implements IntGraph {
         }
         final BitSetGraph other = (BitSetGraph) obj;
         return Arrays.deepEquals(this.outboundEdges, other.outboundEdges);
+    }
+
+    @Override
+    public IntGraph omitting(int... items) {
+        if (items.length == 0) {
+            return this;
+        }
+        int[] finalItems = Arrays.copyOf(items, items.length);
+        Arrays.sort(finalItems);
+        assert noDuplicates(finalItems);
+        BitSet[] newOutbound = new BitSet[outboundEdges.length - finalItems.length];
+        BitSet[] newInbound = new BitSet[newOutbound.length];
+        int cumulativeRemoved = 0;
+        for (int i = 0; i < outboundEdges.length; i++) {
+            int pos = Arrays.binarySearch(finalItems, i);
+            if (pos >= 0) {
+                cumulativeRemoved++;
+                continue;
+            }
+            Bits oldOutbound = outboundEdges[i];
+            Bits oldInbound = inboundEdges[i];
+            BitSet newOut = new BitSet(oldOutbound.cardinality());
+            BitSet newIn = new BitSet(oldInbound.cardinality());
+            newOutbound[i-cumulativeRemoved] = newOut;
+            newInbound[i-cumulativeRemoved] = newIn;
+            oldOutbound.forEachSetBitAscending(bit -> {
+                boolean isRemoved = Arrays.binarySearch(finalItems, bit) >= 0;
+                if (isRemoved) {
+                    return;
+                }
+                int indexToSet = bit - valueCountBelow(bit, finalItems);
+                newOut.set(indexToSet);
+            });
+            oldInbound.forEachSetBitAscending(bit -> {
+                boolean isRemoved = Arrays.binarySearch(finalItems, bit) >= 0;
+                if (isRemoved) {
+                    return;
+                }
+                int indexToSet = bit - valueCountBelow(bit, finalItems);
+                newIn.set(indexToSet);
+            });
+        }
+        return new BitSetGraph(newOutbound, newInbound);
+    }
+
+    static int valueCountBelow(int value, int[] sortedArray) {
+        int result = 0;
+        for (int i = 0; i < sortedArray.length; i++) {
+            if (sortedArray[i] < value) {
+                result++;
+            } else {
+                break;
+            }
+        }
+        return result;
+    }
+
+    static boolean noDuplicates(int[] arr) {
+        int last = -1;
+        for (int i = 0; i < arr.length; i++) {
+            if (i != 0 && last == arr[i]) {
+                return false;
+            }
+            last = arr[i];
+        }
+        return true;
+    }
+
+    public void diff(IntGraph other, BiConsumer<IntGraph, IntGraph> c) {
+        IntGraphBuilder added = new IntGraphBuilder();
+        IntGraphBuilder removed = new IntGraphBuilder();
+        edges((a, b) -> {
+            if (!other.containsEdge(a, b)) {
+                removed.addEdge(a, b);
+            }
+        });
+        other.edges((a, b) -> {
+            if (!containsEdge(a, b)) {
+                added.addEdge(a, b);
+            }
+        });
+        c.accept(added.build(), removed.build());
     }
 }

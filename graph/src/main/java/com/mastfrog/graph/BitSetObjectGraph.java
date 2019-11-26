@@ -20,7 +20,7 @@ import com.mastfrog.graph.algorithm.Algorithm;
 import com.mastfrog.graph.algorithm.RankingAlgorithm;
 import com.mastfrog.graph.algorithm.Score;
 import com.mastfrog.abstractions.list.IndexedResolvable;
-import com.mastfrog.graph.ObjectPath;
+import java.util.function.BiConsumer;
 
 /**
  *
@@ -43,6 +43,11 @@ class BitSetObjectGraph<T> implements ObjectGraph<T> {
     BitSetObjectGraph(BitSetGraph graph, int size, ToIntFunction<Object> toId, IntFunction<T> toObject) {
         this.graph = graph;
         this.indexed = new FIndexed<>(size, toId, toObject);
+    }
+
+    @Override
+    public void toIntGraph(BiConsumer<IndexedResolvable<? extends T>, IntGraph> consumer) {
+        consumer.accept(indexed, graph);
     }
 
     public List<ObjectPath<T>> pathsBetween(T a, T b) {
@@ -454,5 +459,29 @@ class BitSetObjectGraph<T> implements ObjectGraph<T> {
     @Override
     public List<Score<T>> apply(RankingAlgorithm<?> alg) {
         return alg.apply(graph, this::toNode);
+    }
+
+    @Override
+    public ObjectGraph<T> omitting(Set<T> items) {
+        int total = 0;
+        int[] indices = new int[items.size()];
+        for (T item : items) {
+            int ix = indexed.indexOf(item);
+            if (ix >= 0) {
+                indices[total++] = ix;
+            }
+        }
+        if (total < items.size()) {
+            indices = Arrays.copyOf(indices, total);
+        }
+        List<T> newItems = new ArrayList<>(indexed.toList());
+        newItems.removeAll(items);
+        return new BitSetObjectGraph<T>(graph.omitting(indices),
+                IndexedResolvable.forList(newItems));
+    }
+
+    @Override
+    public int size() {
+        return graph.size();
     }
 }

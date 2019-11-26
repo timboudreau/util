@@ -8,6 +8,9 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import com.mastfrog.bits.Bits;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -43,6 +46,100 @@ public class BitSetGraphTest {
     IntGraph graph;
     IntGraph cyclesGraph;
     IntGraph pathologicalGraph;
+
+    static class Edg {
+
+        final int from;
+        final int to;
+
+        public Edg(int from, int to) {
+            this.from = from;
+            this.to = to;
+        }
+
+        public String toString() {
+            return from + "->" + to;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 5;
+            hash = 71 * hash + this.from;
+            hash = 71 * hash + this.to;
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final Edg other = (Edg) obj;
+            if (this.from != other.from) {
+                return false;
+            }
+            return this.to == other.to;
+        }
+    }
+
+    private Set<Edg> pairsRemoved(int[][] orig, int... sorted) {
+        Set<Edg> result = new HashSet<>();
+        for (int i = 0; i < orig.length; i++) {
+            int[] pair = orig[i];
+            if (Arrays.binarySearch(sorted, pair[0]) >= 0
+                    || Arrays.binarySearch(sorted, pair[1]) >= 0) {
+                result.add(new Edg(pair[0], pair[1]));
+                continue;
+            }
+        }
+        return result;
+    }
+
+    private int[][] elidePairs(int[][] orig, int... sorted) {
+        List<int[]> nue = new ArrayList<>();
+        for (int i = 0; i < orig.length; i++) {
+            int[] pair = orig[i];
+            if (Arrays.binarySearch(sorted, pair[0]) >= 0
+                    || Arrays.binarySearch(sorted, pair[1]) >= 0) {
+                continue;
+            }
+            int vb0 = BitSetGraph.valueCountBelow(pair[0], sorted);
+            int vb1 = BitSetGraph.valueCountBelow(pair[1], sorted);
+            int[] newPair = new int[]{pair[0] - vb0, pair[1] - vb1};
+            nue.add(newPair);
+        }
+        int[][] result = new int[nue.size()][];
+        for (int i = 0; i < nue.size(); i++) {
+            result[i] = nue.get(i);
+        }
+        return result;
+    }
+
+    @Test
+    public void testOmitting() {
+        IntGraph nue = cyclesGraph.omitting(2, 20);
+        IntGraph expected = new IntGraphBuilder().addEdges(elidePairs(EDGES_WITH_CYCLES, 2, 20)).build();
+        assertEquals(nue, expected);
+    }
+
+    @Test
+    public void testDiff() {
+        IntGraph nue = cyclesGraph.omitting(30, 31);
+        Set<Edg> expectedRemoved = pairsRemoved(EDGES_WITH_CYCLES, 30, 31);
+        cyclesGraph.diff(nue, (added, removed) -> {
+            assertEquals(0, added.size());
+            assertFalse(removed.size() == 0);
+            for (Edg e : expectedRemoved) {
+                assertTrue("Not removed: " + e, removed.containsEdge(e.from, e.to));
+            }
+        });
+    }
 
     @Test
     public void sanityCheckGraph() {
@@ -214,7 +311,6 @@ public class BitSetGraphTest {
         for (int i = 100; i < 140; i++) {
             assertFalse("Bits after end should not be set but " + i + " is, in " + inverted, inverted.get(i));
         }
-
     }
 
     @Before

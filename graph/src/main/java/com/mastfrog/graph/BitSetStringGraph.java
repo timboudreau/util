@@ -18,6 +18,7 @@ import com.mastfrog.graph.algorithm.Algorithm;
 import com.mastfrog.graph.algorithm.RankingAlgorithm;
 import com.mastfrog.graph.algorithm.Score;
 import com.mastfrog.abstractions.list.IndexedResolvable;
+import java.util.function.BiConsumer;
 
 /**
  *
@@ -32,6 +33,11 @@ final class BitSetStringGraph implements StringGraph {
     BitSetStringGraph(IntGraph tree, String[] sortedArray) {
         this.tree = tree;
         this.items = sortedArray;
+    }
+
+    @Override
+    public void toIntGraph(BiConsumer<IndexedResolvable<? extends String>, IntGraph> consumer) {
+        consumer.accept(IndexedResolvable.fromArray(items), tree);
     }
 
     static boolean sanityCheckArray(String[] sortedArray) {
@@ -386,5 +392,29 @@ final class BitSetStringGraph implements StringGraph {
     @Override
     public List<Score<String>> apply(RankingAlgorithm<?> alg) {
         return alg.apply(tree, this::toNode);
+    }
+
+    @Override
+    public StringGraph omitting(Set<String> items) {
+        int total = 0;
+        int[] indices = new int[items.size()];
+        for (String item : items) {
+            int ix = indexedImpl.indexOf(item);
+            if (ix >= 0) {
+                indices[total++] = ix;
+            }
+        }
+        if (total < items.size()) {
+            indices = Arrays.copyOf(indices, total);
+        }
+        List<String> newItems = new ArrayList<>(indexedImpl.toList());
+        newItems.removeAll(items);
+        return new BitSetStringGraph(tree.omitting(indices),
+                newItems.toArray(new String[newItems.size()]));
+    }
+
+    @Override
+    public int size() {
+        return tree.size();
     }
 }
