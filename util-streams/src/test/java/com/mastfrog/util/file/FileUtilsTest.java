@@ -93,7 +93,7 @@ public class FileUtilsTest {
         assertEquals(TEST_CONTENT, buf.toString());
     }
 
-    @Test(timeout = 3000)
+    @Test(timeout = 7500)
     public void testDecodeWithMismatchedBufferSizes() throws IOException {
         List<CharBuffer> buffers = new ArrayList<>();
         ByteBuffer readBuffer = ByteBuffer.allocate(30);
@@ -153,37 +153,37 @@ public class FileUtilsTest {
         assertEquals(TEST_CONTENT, sb.toString());
     }
 
-    @Test(timeout = 3000)
+    @Test(timeout = 7500)
     public void testRead() throws IOException {
         CharSequence seq = FileUtils.readAscii(asciiFile);
         assertStringsEquals(TEST_CONTENT, seq.toString());
     }
 
-    @Test(timeout = 3000)
+    @Test(timeout = 7500)
     public void testReadAsciiUtf16() throws IOException {
         CharSequence seq = FileUtils.readCharSequence(utf16asciiFile, 10, UTF_16, true);
         assertStringsEquals(TEST_CONTENT, seq.toString());
     }
 
-    @Test(timeout = 3000)
+    @Test(timeout = 7500)
     public void testReadMultiBuffer() throws IOException {
         CharSequence seq = FileUtils.readCharSequence(asciiFile, 10, US_ASCII, true);
         assertStringsEquals(TEST_CONTENT, seq.toString());
     }
 
-    @Test(timeout = 3000)
+    @Test(timeout = 7500)
     public void testReadMultiBufferUtf16() throws IOException {
         CharSequence seq = FileUtils.readCharSequence(utf16asciiFile, 10, UTF_16, true);
         assertStringsEquals(TEST_CONTENT, seq.toString());
     }
 
-    @Test(timeout = 3000)
+    @Test(timeout = 7500)
     public void testReadByteOverByte() throws IOException {
         CharSequence seq = FileUtils.readCharSequence(asciiFile, 1, US_ASCII, true);
         assertStringsEquals(TEST_CONTENT, seq.toString());
     }
 
-    @Test(timeout = 3000)
+    @Test(timeout = 7500)
     public void testEmptyFileByteOverByte() throws IOException {
         Path nue = FileUtils.newTempFile("x");
         try {
@@ -195,7 +195,7 @@ public class FileUtilsTest {
         }
     }
 
-    @Test(timeout = 3000)
+    @Test(timeout = 7500)
     public void testEmptyFile() throws IOException {
         Path nue = FileUtils.newTempFile("y");
         try {
@@ -207,7 +207,7 @@ public class FileUtilsTest {
         }
     }
 
-    @Test(timeout = 3000)
+    @Test(timeout = 7500)
     public void testRangeOfFileAndBufferSizes() throws IOException {
         for (int fileSize = 1; fileSize < 51; fileSize++) {
             Path tf = FileUtils.newTempFile("testRangeOfFileAndBufferSizes-" + fileSize);
@@ -230,43 +230,43 @@ public class FileUtilsTest {
     }
 
     // multi-byte encoding tests
-    @Test(timeout = 3000)
+    @Test(timeout = 7500)
     public void testReadNonAsciiUtf8() throws IOException {
         CharSequence seq = FileUtils.readCharSequence(utf8nonAsciiFile, 1024, UTF_8, true);
         assertStringsEquals(nonAsciiMultiline, seq.toString());
     }
 
-    @Test(timeout = 3000)
+    @Test(timeout = 7500)
     public void testReadMultiBufferNonAsciiUtf8() throws IOException {
         CharSequence seq = FileUtils.readCharSequence(utf8nonAsciiFile, 10, UTF_8, true);
         assertStringsEquals(nonAsciiMultiline, seq.toString());
     }
 
-    @Test(timeout = 3000)
+    @Test(timeout = 7500)
     public void testReadNonAsciiUtf16() throws IOException {
         CharSequence seq = FileUtils.readCharSequence(utf16nonAsciiFile, 1024, UTF_16, true);
         assertStringsEquals(nonAsciiMultiline, seq.toString());
     }
 
-    @Test(timeout = 3000)
+    @Test(timeout = 7500)
     public void testReadMultiBufferNonAsciiUtf16() throws IOException {
         CharSequence seq = FileUtils.readCharSequence(utf16nonAsciiFile, 10, UTF_16, true);
         assertStringsEquals(nonAsciiMultiline, seq.toString());
     }
 
-    @Test(timeout = 3000)
+    @Test(timeout = 7500)
     public void testReadByteOverByteNonAsciiUtf8() throws IOException {
         CharSequence seq = FileUtils.readCharSequence(utf8nonAsciiFile, 1, UTF_8, true);
         assertStringsEquals(nonAsciiMultiline, seq.toString());
     }
 
-    @Test(timeout = 3000)
+    @Test(timeout = 7500)
     public void testReadByteOverByteNonAsciiUtf16() throws IOException {
         CharSequence seq = FileUtils.readCharSequence(utf16nonAsciiFile, 1, UTF_16, true);
         assertStringsEquals(nonAsciiMultiline, seq.toString());
     }
 
-    @Test(timeout = 3000)
+    @Test(timeout = 7500)
     public void testPWrite() throws Exception {
 //        String s = "ζㅄζ末";
 //        String s = "ллгεшβॻㄿддβогоㄾаmвčгhлодďяагδεㄿсheиввॠákॻлkηиεáдčηк' ex";

@@ -58,7 +58,7 @@ public class OneThreadLatchTest {
         pool.shutdownNow();
     }
 
-    @Test(timeout = 40000)
+    @Test(timeout = 50000)
     public void testExactlyOneThreadRuns() throws Throwable {
         Phaser launch = new Phaser(1);
         AtomicInteger exited = new AtomicInteger();
@@ -75,7 +75,7 @@ public class OneThreadLatchTest {
         Thread.sleep(100);
         launch.arriveAndDeregister();
         latch.releaseOne();
-        Thread.sleep(50);
+        Thread.sleep(150);
         exit.set(true);
         assertEquals(1, max.getMaximum());
         latch.disable();
