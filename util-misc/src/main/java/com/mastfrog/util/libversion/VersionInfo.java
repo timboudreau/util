@@ -125,7 +125,6 @@ public class VersionInfo implements Comparable<VersionInfo> {
                     } else {
                         Properties props = new Properties();
                         props.load(in);
-                        System.out.println("LOADED PROPERTIES " + props);
 
                         version = props.getProperty(artifactId + ".version", props.getProperty("version"));
                         shortCommitHash = props.getProperty(artifactId + ".shortCommitHash", props.getProperty("shortCommitHash"));
@@ -133,12 +132,10 @@ public class VersionInfo implements Comparable<VersionInfo> {
                         dirty = "dirty".equals(props.getProperty(artifactId + ".repoStatus", props.getProperty("repoStatus")));
                         String isoDate = props.getProperty(artifactId + ".commitDateISO", props.getProperty("commitDateISO"));
                         String date = isoDate != null ? isoDate : props.getProperty(artifactId + ".commitDate", props.getProperty("commitDate"));
-                        System.out.println("DATE: " + date);
                         Exception first = null;
                         try {
                             if (date != null) {
                                 try {
-                                    System.out.println("PARSE " + date);
                                     OffsetDateTime odt = OffsetDateTime.parse(date, ISO_INSTANT);
                                     commitDate = ZonedDateTime.from(odt).withZoneSameInstant(GMT);
                                 } catch (DateTimeParseException ex) {
@@ -214,6 +211,9 @@ public class VersionInfo implements Comparable<VersionInfo> {
     }
 
     public String deweyDecimalVersion() {
+        if (version == null) {
+            return "0.0.0";
+        }
         StringBuilder sb = new StringBuilder();
         int max = version.length();
         boolean lastWasDot = true;
@@ -223,13 +223,13 @@ public class VersionInfo implements Comparable<VersionInfo> {
                 break;
             }
             lastWasDot = c == '.';
-            if (!Character.isDigit(c) && c == '.') {
+            if (!Character.isDigit(c) && c != '.') {
                 break;
             }
             sb.append(c);
         }
         if (sb.length() == 0) {
-            return "0.0";
+            return "0.0.0";
         }
         return sb.toString();
     }
