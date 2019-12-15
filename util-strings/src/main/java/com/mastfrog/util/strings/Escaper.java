@@ -37,7 +37,26 @@ import java.nio.charset.CharsetEncoder;
  */
 public interface Escaper {
 
+    /**
+     * Escape one character, returning an escaped version of it if
+     * one is needed, and otherwise returning null.
+     *
+     * @param c A character
+     * @return A character sequence to replace the character with, or
+     * null if no escaping is needed
+     */
     CharSequence escape(char c);
+
+    /**
+     * Returns an escaped version of the input character sequence
+     * using this Escaper.
+     *
+     * @param input The input
+     * @return The escaped version of it
+     */
+    default String escape(CharSequence input) {
+        return Strings.escape(input, this);
+    }
 
     /**
      * For use when logging a badly encoded string. Converts unencodable
@@ -141,6 +160,47 @@ public interface Escaper {
         });
     }
 
+    /**
+     * Escapes double quotes, ampersands, less-than and greater-than
+     * to their SGML entities.
+     */
+    public static Escaper BASIC_HTML = c -> {
+        switch(c) {
+            case '"':
+                return "&quot;";
+            case '&':
+                return "&amp;";
+            case '<':
+                return "&lt;";
+            case '>':
+                return "&gt;";
+            default :
+                return null;
+        }
+    };
+
+    /**
+     * Escapes double quotes, ampersands, less-than and greater-than
+     * to their SGML entities, and replaces \n with &lt;br&gt;.
+     */
+    public static Escaper HTML_WITH_LINE_BREAKS = c -> {
+        CharSequence result = BASIC_HTML.escape(c);
+        if (result == null) {
+            switch(c) {
+                case '\r':
+                    result = "";
+                    break;
+                case '\n':
+                    result = "<br>";
+            }
+        }
+        return result;
+    };
+
+    /**
+     * Replaces \n, \r, \t and \b with literal strings starting
+     * with \.
+     */
     public static Escaper NEWLINES_AND_OTHER_WHITESPACE = c -> {
         switch (c) {
             case '\n':
@@ -181,5 +241,4 @@ public interface Escaper {
                 return null;
         }
     };
-
 }

@@ -112,9 +112,54 @@ final class ArrayIntMap<T> implements IntMap<T> {
         nextKey = max;
         last = max - 1;
 
-        if (resort) {
-            checkSort();
+
+//        if (resort) {
+//            checkSort();
+//        }
+    }
+
+    ArrayIntMap(int[] keys, Object[] vals) {
+        if (keys.length != vals.length) {
+            throw new IllegalArgumentException("Key and value array sizes do "
+                    + "not match: " + keys.length + " and " + vals.length);
         }
+        if (keys.length > 0) {
+            int last = -1;
+            resort = false;
+            int max = last;
+            for (int i = 0; i < keys.length; i++) {
+                int val = keys[i];
+                if (val == last) {
+                    throw new IllegalArgumentException("Duplicate keys: " + val);
+                }
+                if (val < last) {
+                    resort = true;
+                }
+                last = val;
+                max = Math.max(max, last);
+            }
+            nextKey = max+1;
+            this.keys = Arrays.copyOf(keys, keys.length);
+            this.vals = Arrays.copyOf(vals, vals.length);
+            this.last = this.vals.length-1;
+            emptyValue = null;
+        } else {
+            last=-1;
+            this.keys = new int[5];
+            this.vals = new Object[5];
+            nextKey = Integer.MIN_VALUE;
+            emptyValue = null;
+        }
+    }
+
+    @Override
+    public int[] keysArray() {
+        return Arrays.copyOf(keys, last + 1);
+    }
+
+    @Override
+    public Object[] valuesArray() {
+        return Arrays.copyOf(vals, last + 1);
     }
 
     public ArrayIntMap<T> copy() {
@@ -171,7 +216,14 @@ final class ArrayIntMap<T> implements IntMap<T> {
 
     @Override
     public boolean containsKey(int key) {
-        if (resort) {
+        if (key >= nextKey) {
+            return false;
+        }
+        if (isEmpty()) {
+            return false;
+        } else if (last == 0) {
+            return key == keys[0];
+        } else if (resort) {
             int max = size();
             for (int i = 0; i < max; i++) {
                 if (keys[i] == key) {
@@ -186,7 +238,11 @@ final class ArrayIntMap<T> implements IntMap<T> {
                     return false;
                 }
             }
-            return this.get(key) != null;
+            if (this.emptyValue == null) {
+                return this.get(key) != null;
+            } else {
+                return this.getIfPresent(key, null) != null;
+            }
         }
     }
 
@@ -292,6 +348,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
                     last = 0;
                     keys[0] = key;
                     vals[0] = result;
+                    nextKey = Math.max(nextKey, key + 1);
                 }
             }
             return result;
@@ -334,6 +391,10 @@ final class ArrayIntMap<T> implements IntMap<T> {
         if (last >= 0) {
             if (keys[last] == key && vals[last] == val) {
                 return val;
+            } else if (keys[last] == key) {
+                T old = (T) vals[last];
+                vals[last] = val;
+                return old;
             }
             if (key < keys[last]) {
                 resort = true;
@@ -354,7 +415,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
             growArrays();
         }
         last++;
-        nextKey = key + 1;
+        nextKey = Math.max(key + 1, nextKey);
         keys[last] = key;
         vals[last] = val;
         return null;
@@ -367,12 +428,8 @@ final class ArrayIntMap<T> implements IntMap<T> {
         }
     }
 
-    void set(int key, T val) { // XXX what was this for?
-        vals[key] = val;
-    }
-
     private void growArrays() {
-        int newSize = last < 250 ? last + Math.min(5, last + (last / 3)) : 300;
+        int newSize = last < 250 ? last + Math.max(5, last + (last / 3)) : last + (last / 2);
         int[] newKeys = new int[newSize];
         Object[] newVals = new Object[newSize];
         System.arraycopy(keys, 0, newKeys, 0, keys.length);
@@ -382,18 +439,23 @@ final class ArrayIntMap<T> implements IntMap<T> {
         vals = newVals;
     }
 
+    private static final int serialVersionUID = 1;
+
     private void writeObject(ObjectOutputStream out) throws IOException {
-        int[] ints = new int[size()];
-        Object[] vals = new Object[size()];
-        System.arraycopy(this.keys, 0, ints, 0, ints.length);
-        System.arraycopy(this.vals, 0, vals, 0, ints.length);
+        int[] ints = keys.length == size() ? keys : Arrays.copyOf(keys, size());
+        Object[] vals = this.vals.length == size() ? this.vals : Arrays.copyOf(this.vals, size());
         out.writeObject(ints);
         out.writeObject(vals);
+        out.writeBoolean(resort);
+        out.writeInt(nextKey);
     }
 
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         int[] keys = (int[]) in.readObject();
         Object[] vals = (Object[]) in.readObject();
+        resort = in.readBoolean();
+        nextKey = in.readInt();
+        last = keys.length - 1;
         if (keys.length != vals.length) {
             throw new IOException("Different lengths arrays");
         }
@@ -453,18 +515,15 @@ final class ArrayIntMap<T> implements IntMap<T> {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("IntMap@") //NOI18N
-                .append(System.identityHashCode(this)).append('{');
-
-        for (int i = 0; i < size(); i++) {
-            sb.append("["); //NOI18N
+        StringBuilder sb = new StringBuilder(size() * 8).append('{'); //NOI18N
+        int sz = size();
+        for (int i = 0; i < sz; i++) {
             sb.append(keys[i]);
-            sb.append(":"); //NOI18N
+            sb.append("="); //NOI18N
             sb.append(vals[i]);
-            sb.append("]"); //NOI18N
-        }
-        if (size() == 0) {
-            sb.append("empty"); //NOI18N
+            if (i != sz - 1) {
+                sb.append(", ");
+            }
         }
         return sb.append('}').toString();
     }
@@ -556,49 +615,63 @@ final class ArrayIntMap<T> implements IntMap<T> {
 
     @Override
     public T put(Integer key, T value) {
+        if (key == null) {
+            throw new IllegalArgumentException("Null not allowed as a key");
+        }
         return this.put(key.intValue(), value);
     }
 
-    @Override
     @SuppressWarnings("unchecked")
+    public T remove(int keyVal) {
+        if (last >= 0 && keyVal == keys[last]) {
+            T old = (T) vals[last];
+            vals[last] = null;
+            last--;
+            return old;
+        }
+        int index = Arrays.binarySearch(keys, 0, last + 1, keyVal);
+        if (index >= 0) {
+            T result = (T) vals[index];
+            if (index == 0) {
+                int[] newKeys = new int[keys.length];
+                Object[] newVals = new Object[vals.length];
+                System.arraycopy(keys, 1, newKeys, 0, keys.length - 1);
+                System.arraycopy(vals, 1, newVals, 0, vals.length - 1);
+                newKeys[newKeys.length - 1] = Integer.MAX_VALUE;
+                last--;
+                keys = newKeys;
+                vals = newVals;
+            } else if (index == last) {
+                keys[last] = Integer.MAX_VALUE;
+                vals[last] = null;
+                last--;
+                return result;
+            } else {
+                int[] newKeys = new int[keys.length];
+                Object[] newVals = new Object[vals.length];
+                System.arraycopy(keys, 0, newKeys, 0, index);
+                System.arraycopy(vals, 0, newVals, 0, index);
+                System.arraycopy(keys, index + 1, newKeys, index, keys.length - (index + 1));
+                System.arraycopy(vals, index + 1, newVals, index, vals.length - (index + 1));
+                newKeys[newKeys.length - 1] = Integer.MAX_VALUE;
+                newVals[newVals.length - 1] = null;
+                last--;
+                keys = newKeys;
+                vals = newVals;
+            }
+            return result;
+        }
+        return null;
+    }
+
+    @Override
     public T remove(Object key) {
         if (last == -1) {
             return null;
         }
         if (key instanceof Integer) {
             int keyVal = ((Integer) key).intValue();
-            int index = Arrays.binarySearch(keys, 0, last + 1, keyVal);
-            if (index >= 0) {
-                T result = (T) vals[index];
-                if (index == 0) {
-                    int[] newKeys = new int[keys.length];
-                    Object[] newVals = new Object[vals.length];
-                    System.arraycopy(keys, 1, newKeys, 0, keys.length - 1);
-                    System.arraycopy(vals, 1, newVals, 0, vals.length - 1);
-                    newKeys[newKeys.length - 1] = Integer.MAX_VALUE;
-                    last--;
-                    keys = newKeys;
-                    vals = newVals;
-                } else if (index == last) {
-                    keys[last] = Integer.MAX_VALUE;
-                    vals[last] = null;
-                    last--;
-                    return result;
-                } else {
-                    int[] newKeys = new int[keys.length];
-                    Object[] newVals = new Object[vals.length];
-                    System.arraycopy(keys, 0, newKeys, 0, index);
-                    System.arraycopy(vals, 0, newVals, 0, index);
-                    System.arraycopy(keys, index + 1, newKeys, index, keys.length - (index + 1));
-                    System.arraycopy(vals, index + 1, newVals, index, vals.length - (index + 1));
-                    newKeys[newKeys.length - 1] = Integer.MAX_VALUE;
-                    newVals[newVals.length - 1] = null;
-                    last--;
-                    keys = newKeys;
-                    vals = newVals;
-                }
-                return result;
-            }
+            return remove(keyVal);
         }
         return null;
     }
@@ -606,7 +679,8 @@ final class ArrayIntMap<T> implements IntMap<T> {
     @Override
     public void putAll(Map<? extends Integer, ? extends T> m) {
         for (Entry<? extends Integer, ? extends T> e : m.entrySet()) {
-            put(e.getKey(), e.getValue());
+            int k = e.getKey();
+            put(k, e.getValue());
         }
     }
 
@@ -916,6 +990,18 @@ final class ArrayIntMap<T> implements IntMap<T> {
     private class KeySet implements Set<Integer> {
 
         @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder(size() * 3).append('[');
+            for (int i = 0; i < last + 1; i++) {
+                sb.append(keys[i]);
+                if (i != last) {
+                    sb.append(", ");
+                }
+            }
+            return sb.append(']').toString();
+        }
+
+        @Override
         public int size() {
             return last + 1;
         }
@@ -1149,6 +1235,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
             return false;
         }
 
+        @Override
         public int hashCode() {
             int hashCode = 1;
             for (int i = 0; i <= last; i++) {
@@ -1157,15 +1244,16 @@ final class ArrayIntMap<T> implements IntMap<T> {
             return hashCode;
         }
 
+        @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new StringBuilder("[");
             for (int i = 0; i <= last; i++) {
                 if (sb.length() > 0) {
-                    sb.append(",");
+                    sb.append(", ");
                 }
                 sb.append(vals[i]);
             }
-            return sb.toString();
+            return sb.append(']').toString();
         }
     }
 }

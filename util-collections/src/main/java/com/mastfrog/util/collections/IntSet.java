@@ -36,8 +36,8 @@ package com.mastfrog.util.collections;
  */
 import java.util.BitSet;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.PrimitiveIterator;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.IntConsumer;
@@ -83,6 +83,10 @@ public abstract class IntSet implements Set<Integer>, Cloneable {
     }
 
     public static IntSet create(Collection<? extends Integer> set) {
+        return new IntSetImpl(set);
+    }
+
+    public static IntSet toIntSet(Collection<? extends Integer> set) {
         if (set instanceof IntSet) {
             return (IntSet) set;
         } else {
@@ -262,9 +266,12 @@ public abstract class IntSet implements Set<Integer>, Cloneable {
     @Override
     public abstract void clear();
 
+    @Override
+    public abstract PrimitiveIterator.OfInt iterator();
+
     public static final IntSet EMPTY = new Empty();
 
-    private static final class Empty extends IntSet {
+    private static final class Empty extends IntSet implements PrimitiveIterator.OfInt {
 
         @Override
         BitSet bitsUnsafe() {
@@ -333,7 +340,7 @@ public abstract class IntSet implements Set<Integer>, Cloneable {
 
         @Override
         public int last() {
-            throw new UnsupportedOperationException("Empty.");
+            throw new NoSuchElementException("Empty.");
         }
 
         @Override
@@ -362,8 +369,8 @@ public abstract class IntSet implements Set<Integer>, Cloneable {
         }
 
         @Override
-        public Iterator<Integer> iterator() {
-            return Collections.emptyIterator();
+        public PrimitiveIterator.OfInt iterator() {
+            return this;
         }
 
         @Override
@@ -405,6 +412,16 @@ public abstract class IntSet implements Set<Integer>, Cloneable {
         @Override
         public boolean removeAll(Collection<?> c) {
             throw new UnsupportedOperationException("Immutable.");
+        }
+
+        @Override
+        public int nextInt() {
+            throw new NoSuchElementException();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return false;
         }
     }
 }

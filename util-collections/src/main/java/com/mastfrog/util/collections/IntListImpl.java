@@ -1,7 +1,6 @@
 package com.mastfrog.util.collections;
 
 import com.mastfrog.util.search.Bias;
-import com.mastfrog.util.strings.Strings;
 import java.io.Serializable;
 import java.util.AbstractList;
 import java.util.Arrays;
@@ -552,7 +551,14 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
 
     @Override
     public String toString() {
-        return Strings.join(',', this);
+        StringBuilder sb = new StringBuilder(2 + (4 * size)).append('[');
+        for (int i = 0; i < size; i++) {
+            sb.append(get(i));
+            if (i != size-1) {
+                sb.append(", ");
+            }
+        }
+        return sb.append(']').toString();
     }
 
     @Override

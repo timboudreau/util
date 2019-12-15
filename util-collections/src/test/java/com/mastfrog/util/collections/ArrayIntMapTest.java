@@ -36,6 +36,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -54,6 +56,175 @@ public class ArrayIntMapTest {
 
     {
         nf.setMinimumIntegerDigits(4);
+    }
+    public void testEmptyWithSupplierAddingSupplied() {
+        ArrayIntMap<Thing> m = new ArrayIntMap<>(10, true, new ThingSupplier());
+        assertFalse(m.containsKey(5));
+        assertEquals(0, m.size());
+        Thing t5 = new Thing(5);
+        m.put(5, t5);
+        assertEquals(1, m.size());
+        assertTrue(m.containsValue(t5));
+        assertTrue(m.containsKey(5));
+        assertTrue(m.keySet().contains(5));
+        assertArrayEquals(new int[] {5}, m.keys());
+        assertFalse(m.containsKey(1000));
+        Thing t1000 = m.get(1000);
+        assertNotNull(t1000);
+        assertTrue(m.containsKey(1000));
+        assertEquals(2, m.size());
+        assertArrayEquals(new int[] {5, 1000}, m.keys());
+        assertSame(t1000, m.get(1000));
+        assertEquals(1000, t1000.t);
+        Thing t1001 = m.get(1001);
+        assertNotNull(t1001);
+        assertEquals(1001, t1001.t);
+        assertTrue(m.containsKey(1001));
+        assertArrayEquals(new int[] {5, 1000, 1001}, m.keys());
+        assertEquals(3, m.size());
+        assertFalse(m.isEmpty());
+        Thing tRem = m.remove(5);
+        assertSame(t5, tRem);
+        assertFalse(m.isEmpty());
+        assertTrue(m.containsKey(1000));
+        assertTrue(m.containsKey(1001));
+        assertEquals(2, m.size());
+        assertArrayEquals(new int[] {1000, 1001}, m.keys());
+    }
+
+    @Test
+    public void testArraysConstructor() {
+        IntMap<String> im = IntMap.of(new int[] {1,2,3,4}, new String[] {"one", "two", "three", "four"});
+        assertEquals(4, im.size());
+        for (int i = 1; i < 5; i++) {
+            String exp;
+            switch(i) {
+                case 1 :
+                    exp = "one";
+                    break;
+                case 2 :
+                    exp = "two";
+                    break;
+                case 3 :
+                    exp = "three";
+                    break;
+                case 4 :
+                    exp = "four";
+                    break;
+                default :
+                    throw new AssertionError(i);
+            }
+            assertEquals(exp, im.get(i));
+        }
+        im.remove(3);
+        assertFalse(im.containsKey(3));
+        assertNull(im.get(3));
+        for (int i = 1; i < 5; i++) {
+            String exp;
+            switch(i) {
+                case 1 :
+                    exp = "one";
+                    break;
+                case 2 :
+                    exp = "two";
+                    break;
+                case 3 :
+                    exp = null;
+                    break;
+                case 4 :
+                    exp = "four";
+                    break;
+                default :
+                    throw new AssertionError(i);
+            }
+            assertEquals(exp, im.get(i));
+        }
+    }
+
+    @Test
+    public void testPutOutOfOrder() {
+        // .size()
+        ArrayIntMap<Thing> m = new ArrayIntMap<>(10, true, new ThingSupplier());
+        m.put(51, new Thing(51));
+        assertEquals(1, m.size());
+        assertTrue(m.keySet().contains(Integer.valueOf(51)));
+        assertFalse(m.isEmpty());
+        assertTrue(m.containsKey(51));
+        m.put(9, new Thing(9));
+        assertEquals(2, m.size());
+        assertFalse(m.isEmpty());
+        assertTrue(m.containsKey(9));
+        assertTrue(m.keySet().contains(Integer.valueOf(9)));
+        assertTrue(m.keySet().contains(Integer.valueOf(51)));
+    }
+    @Test
+    public void testPutInOrder() {
+        // .size()
+        ArrayIntMap<Thing> m = new ArrayIntMap<>(10, true, new ThingSupplier());
+        m.put(1, new Thing(1));
+        assertEquals(1, m.size());
+        assertTrue(m.keySet().contains(Integer.valueOf(1)));
+        assertFalse(m.isEmpty());
+        assertTrue(m.containsKey(1));
+        m.put(9, new Thing(9));
+        assertEquals(2, m.size());
+        assertFalse(m.isEmpty());
+        assertTrue(m.containsKey(9));
+        assertTrue(m.keySet().contains(Integer.valueOf(9)));
+        assertTrue(m.keySet().contains(Integer.valueOf(1)));
+    }
+
+
+    public void testEmptyWithSupplierNotAddingSupplied() {
+        ArrayIntMap<Thing> m = new ArrayIntMap<>(10, false, new ThingSupplier());
+        assertFalse(m.containsKey(5));
+        Thing t5 = new Thing(5);
+        m.put(5, t5);
+        assertTrue(m.containsValue(t5));
+        assertTrue(m.containsKey(5));
+        assertFalse(m.containsKey(1000));
+        Thing t1000 = m.get(1000);
+        assertNotNull(t1000);
+        assertFalse(m.containsKey(1000));
+        assertEquals(1000, t1000.t);
+        Thing t1001 = m.get(1001);
+        assertNotNull(t1001);
+        assertEquals(1001, t1001.t);
+        assertFalse(m.isEmpty());
+        Thing tRem = m.remove(5);
+        assertSame(t5, tRem);
+        assertTrue(m.isEmpty());
+    }
+
+    static final class ThingSupplier implements Supplier<Thing> {
+        private int counter = 1000;
+
+        @Override
+        public Thing get() {
+            return new Thing(counter++);
+        }
+    }
+
+    private static class Thing {
+        private final int t;
+
+        public Thing(int t) {
+            this.t = t;
+        }
+
+        public String toString() {
+            return "T" + t;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof Thing && ((Thing) o).t == t;
+        }
+
+        @Override
+        public int hashCode() {
+            return t * 31;
+        }
     }
 
     @Test

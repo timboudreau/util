@@ -27,6 +27,7 @@ import com.mastfrog.util.search.Bias;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.PrimitiveIterator;
+import java.util.PrimitiveIterator.OfInt;
 import java.util.function.IntConsumer;
 
 /**
@@ -64,11 +65,53 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
      */
     void decrementKeys(int decrement);
 
+    public static <T> IntMap<T> of(int[] keys, T[] vals) {
+        return new ArrayIntMap(keys, vals);
+    }
+
+    /**
+     * Get the keys as an array.
+     *
+     * @return The keys
+     */
+    default int[] keysArray() {
+        int[] result = new int[size()];
+        int ix = 0;
+        for (OfInt oi = keysIterator(); oi.hasNext();) {
+            result[ix++] = oi.nextInt();
+        }
+        return result;
+    }
+
+    /**
+     * Get the values as an array.
+     *
+     * @return The values
+     */
+    default Object[] valuesArray() {
+        Object[] result = new Object[size()];
+        int ix = 0;
+        for (OfInt oi = keysIterator(); oi.hasNext();) {
+            result[ix++] = get(oi.nextInt());
+        }
+        return result;
+    }
+
     /**
      *
      * @return
      */
     Iterable<Map.Entry<Integer, T>> entries();
+
+    /**
+     * Remove a key returning the item for it, if any.
+     *
+     * @param key A key
+     * @return A value or null
+     */
+    default T remove(int key) {
+        return remove(Integer.valueOf(key));
+    }
 
     /**
      * Get the map entry corresponding to a key (or if not present and this map

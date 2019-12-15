@@ -27,6 +27,7 @@ import java.lang.reflect.Array;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.PrimitiveIterator;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.IntConsumer;
@@ -253,11 +254,11 @@ final class IntSetImpl extends IntSet {
     }
 
     @Override
-    public Iterator<Integer> iterator() {
+    public PrimitiveIterator.OfInt iterator() {
         return new BitSetIterator(bits);
     }
 
-    private static final class BitSetIterator implements Iterator<Integer> {
+    private static final class BitSetIterator implements Iterator<Integer>, PrimitiveIterator.OfInt {
 
         int pos = 0;
         private final BitSet bits;
@@ -272,7 +273,7 @@ final class IntSetImpl extends IntSet {
         }
 
         @Override
-        public Integer next() {
+        public int nextInt() {
             int result = bits.nextSetBit(pos);
             if (result == -1) {
                 throw new IndexOutOfBoundsException("No more values");
@@ -352,7 +353,7 @@ final class IntSetImpl extends IntSet {
             }
             result = !bs.isEmpty();
             if (result) {
-                bits.and(bs);
+                bits.or(bs);
             }
         }
         return result;
@@ -441,13 +442,13 @@ final class IntSetImpl extends IntSet {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("[");
-        for (int curr = bits.nextSetBit(0), i = 0; curr != -1; i++, curr = bits.nextSetBit(curr + 1)) {
+        StringBuilder sb = new StringBuilder(size() * 8).append('[');
+        for (int curr = bits.nextSetBit(0); curr != -1; curr = bits.nextSetBit(curr + 1)) {
             sb.append(curr);
             if (bits.nextSetBit(curr + 1) != -1) {
-                sb.append(',');
+                sb.append(", ");
             }
         }
-        return sb.toString();
+        return sb.append(']').toString();
     }
 }
