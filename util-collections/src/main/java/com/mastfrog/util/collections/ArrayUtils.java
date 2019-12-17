@@ -1159,6 +1159,21 @@ public class ArrayUtils {
      * @param more The rest of the resulting array
      * @return An array
      */
+    public static char[] prepend(char first, char... more) {
+        char[] result = new char[more.length + 1];
+        System.arraycopy(more, 0, result, 1, more.length);
+        result[0] = first;
+        return result;
+    }
+
+    /**
+     * Create a new array with the passed value at position 0 and the remainder
+     * after.
+     *
+     * @param first The element to prepend
+     * @param more The rest of the resulting array
+     * @return An array
+     */
     @SafeVarargs
     @SuppressWarnings("unchecked")
     public static <T> T[] prepend(T first, T... more) {
