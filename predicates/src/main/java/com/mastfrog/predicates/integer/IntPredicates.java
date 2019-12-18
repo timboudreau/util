@@ -23,6 +23,7 @@
  */
 package com.mastfrog.predicates.integer;
 
+import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -105,7 +106,7 @@ public final class IntPredicates {
     }
 
     public static EnhIntPredicate anyOf(int[] all) {
-        Arrays.sort(all);
+        Arrays.sort(notNull("all", all));
         return new ArrayPredicate(all, false);
     }
 
