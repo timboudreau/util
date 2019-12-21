@@ -2144,6 +2144,51 @@ public final class Strings {
     }
 
     /**
+     * If a string, trimmed, starts and ends with the same character
+     * and that character is ' or ", returns the subsequence between
+     * the quote characters.
+     *
+     * @param s A string
+     * @return The string or the unquoted substring
+     */
+    public static String unquote(String s) {
+        s = s.trim();
+        if (s.length() > 1) {
+            char start = s.charAt(0);
+            if (start == '"' || start == '\'') {
+                char end = s.charAt(s.length() - 1);
+                if (end == start) {
+                    return s.substring(1, s.length()-1);
+                }
+            }
+        }
+        return s;
+    }
+
+    /**
+     * If a character sequence starts and ends with the same character
+     * and that character is ' or ", returns the subsequence between
+     * the quote characters.
+     *
+     * @param s A string
+     * @return The string or the unquoted substring
+     */
+    public static CharSequence unquoteCharSequence(CharSequence s) {
+        int len = s.length();
+        if (len > 1) {
+            char start = s.charAt(0);
+            if (start == '"' || start == '\'') {
+                char end = s.charAt(len - 1);
+                if (end == start) {
+                    return s.subSequence(1, s.length()-1);
+                }
+            }
+        }
+        return s;
+
+    }
+
+    /**
      * For template logging where you don't want to call toString() on some
      * object unless it actually is getting logged, simply wraps the object you
      * want to log in another which delegates its toString() method.
