@@ -41,6 +41,7 @@ import java.util.function.IntConsumer;
  */
 public interface IntList extends List<Integer> {
 
+
     /**
      * Create an IntList with the default capacity (currently 96
      * for historical reasons).
@@ -136,6 +137,8 @@ public interface IntList extends List<Integer> {
      * @param c A consumer
      */
     void forEach(IntConsumer c);
+
+    void forEachReversed(IntConsumer c);
 
     /**
      * Implements List.get()

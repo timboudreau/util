@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2019 Tim Boudreau.
+ * Copyright 2020 Mastfrog Technologies.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,35 +23,45 @@
  */
 package com.mastfrog.function;
 
-import java.util.function.BooleanSupplier;
-
 /**
  *
  * @author Tim Boudreau
  */
 @FunctionalInterface
-public interface ByteSupplier extends EnhIntSupplier {
+public interface FloatBiConsumer {
 
-    byte getAsByte();
+    /**
+     * Accept two floating point values.
+     *
+     * @param a The first float
+     * @param b The second float
+     */
+    void accept(float a, float b);
 
-    @Override
-    public default int getAsInt() {
-        return getAsByte();
-    }
-
-    default EnhIntSupplier toUnsignedIntSupplier() {
-        return () -> {
-            return getAsByte() & 0xFF;
+    /**
+     * Convert this to a DoubleBiConsumer; the resulting consumer will
+     * throw an exception if passed values that cannot be expressed as
+     * a float.
+     *
+     * @return A BiConsumer of doubles
+     */
+    default DoubleBiConsumer toDoubleBiConsumer() {
+        return (double a, double b) -> {
+            if (a < Float.MIN_VALUE || a > Float.MAX_VALUE || b < Float.MIN_VALUE || b > Float.MAX_VALUE) {
+                throw new IllegalArgumentException("Value out of range for floats: " + a + " and " + b);
+            }
+            accept((float) a, (float) b);
         };
     }
 
-    default EnhIntSupplier toSignedIntSupplier() {
-        return () -> {
-            return getAsByte();
-        };
-    }
-
-    default BooleanSupplier toBooleanSupplier(BytePredicate pred) {
-        return () -> pred.test(getAsByte());
+    /**
+     * Convert a DoubleBiConsumer to one accepting floats, for
+     * use with method references.
+     *
+     * @param bc A bi-consumer of doubles
+     * @return A bi-consumer of floats
+     */
+    static FloatBiConsumer fromDoubleBiConsumer(DoubleBiConsumer bc) {
+        return bc::accept;
     }
 }

@@ -125,6 +125,34 @@ public enum RangeRelation implements BoundaryRelation {
      * @param bEnd The second range's end
      * @return The relationship
      */
+    public static RangeRelation get(double aStart, double aEnd, double bStart, double bEnd) {
+        if (aStart == bStart && aEnd == bEnd) {
+            return EQUAL;
+        } else if (aEnd <= bStart) {
+            return BEFORE;
+        } else if (aStart >= bEnd) {
+            return AFTER;
+        } else if (aStart <= bStart && aEnd >= bEnd) {
+            return CONTAINS;
+        } else if (bStart <= aStart && bEnd >= aEnd) {
+            return CONTAINED;
+        } else if (aStart < bStart && aEnd > bStart && aEnd < bEnd) {
+            return STRADDLES_START;
+        } else if (aStart > bStart && aStart < bEnd && aEnd > bEnd) {
+            return STRADDLES_END;
+        }
+        throw new AssertionError(aStart + "," + aEnd + "," + bStart + "," + bEnd);
+    }
+
+    /**
+     * Get the relationship between two ranges.
+     *
+     * @param aStart The first range's start
+     * @param aEnd The first range's end
+     * @param bStart The second ranges's start
+     * @param bEnd The second range's end
+     * @return The relationship
+     */
     public static RangeRelation get(long aStart, long aEnd, long bStart, long bEnd) {
         if (aStart == bStart && aEnd == bEnd) {
             return EQUAL;

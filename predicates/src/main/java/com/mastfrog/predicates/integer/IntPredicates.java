@@ -106,6 +106,9 @@ public final class IntPredicates {
     }
 
     public static EnhIntPredicate anyOf(int[] all) {
+        if (all.length == 0) {
+            return FixedIntPredicate.INT_FALSE;
+        }
         Arrays.sort(notNull("all", all));
         return new ArrayPredicate(all, false);
     }

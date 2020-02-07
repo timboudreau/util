@@ -40,13 +40,14 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.DoubleUnaryOperator;
 
 /**
  * Utility functions that operate on arrays.
  *
  * @author Tim Boudreau
  */
-public class ArrayUtils {
+public final class ArrayUtils {
 
     private static final Object[] EMPTY = new Object[0];
 
@@ -229,6 +230,110 @@ public class ArrayUtils {
     }
 
     /**
+     * Split a single array of bytes into two arrays.
+     *
+     * @param arr The array
+     * @param splitPoint The first split point
+     * @return An array of arrays of bytes
+     */
+    public static double[][] split(double[] arr, int splitPoint) {
+        greaterThanZero("splitPoint", splitPoint);
+        notNull("arr", arr);
+        if (splitPoint >= arr.length) {
+            throw new IllegalArgumentException("splitPoint - " + splitPoint
+                    + " must be < the array's length of " + arr.length);
+        }
+        double[] a = new double[splitPoint];
+        double[] b = new double[arr.length - splitPoint];
+        System.arraycopy(arr, 0, a, 0, splitPoint);
+        System.arraycopy(arr, splitPoint, b, 0, b.length);
+        return new double[][]{a, b};
+    }
+
+    /**
+     * Split a single array of bytes into multiple arrays.
+     *
+     * @param arr The array
+     * @param splitPoint1 The first split point
+     * @param splitPoint2 The second split point
+     * @return An array of arrays of bytes
+     */
+    public static double[][] split(double[] arr, int splitPoint1, int splitPoint2) {
+        greaterThanZero("splitPoint1", splitPoint1);
+        greaterThanZero("splitPoint2", splitPoint2);
+        if (splitPoint2 <= splitPoint1) {
+            throw new IllegalArgumentException("splitPoint2 must be "
+                    + "> splitPoint1: " + splitPoint1 + "," + splitPoint2);
+        }
+        if (splitPoint1 >= notNull("arr", arr).length) {
+            throw new IllegalArgumentException("splitPoint1 - " + splitPoint1
+                    + " - is greater than the array size of " + arr.length);
+        }
+        if (splitPoint2 >= arr.length) {
+            throw new IllegalArgumentException("splitPoint2 - " + splitPoint2
+                    + " - is greater than the array size of " + arr.length);
+        }
+        double[] a = new double[splitPoint1];
+        double[] b = new double[splitPoint2 - splitPoint1];
+        double[] c = new double[arr.length - splitPoint2];
+        System.arraycopy(arr, 0, a, 0, splitPoint1);
+        System.arraycopy(arr, splitPoint1, b, 0, b.length);
+        System.arraycopy(arr, splitPoint2, c, 0, c.length);
+        return new double[][]{a, b, c};
+    }
+
+    /**
+     * Split a single array of bytes into multiple arrays.
+     *
+     * @param arr The array
+     * @param splitPoint1 The first split point
+     * @param splitPoint2 The second split point
+     * @param splitPoint3 The third split point
+     * @param more More split points
+     * @return An array of arrays of bytes
+     */
+    public static double[][] split(double[] arr, int splitPoint1, int splitPoint2, int splitPoint3, int... more) {
+        greaterThanZero("splitPoint1", splitPoint1);
+        greaterThanZero("splitPoint2", splitPoint2);
+        if (splitPoint2 <= splitPoint1) {
+            throw new IllegalArgumentException("splitPoint2 must be "
+                    + "> splitPoint1: " + splitPoint1 + "," + splitPoint2);
+        }
+        if (splitPoint1 >= notNull("arr", arr).length) {
+            throw new IllegalArgumentException("splitPoint1 - " + splitPoint1
+                    + " - is greater than the array size of " + arr.length);
+        }
+        if (splitPoint2 >= arr.length) {
+            throw new IllegalArgumentException("splitPoint2 - " + splitPoint2
+                    + " - is greater than the array size of " + arr.length);
+        }
+        double[] a = new double[splitPoint1];
+        double[] b = new double[splitPoint2 - splitPoint1];
+        double[] c = new double[splitPoint3 - splitPoint2];
+        double[] d = new double[(more.length > 0 ? more[0] : arr.length) - splitPoint3];
+        System.arraycopy(arr, 0, a, 0, splitPoint1);
+        System.arraycopy(arr, splitPoint1, b, 0, b.length);
+        System.arraycopy(arr, splitPoint2, c, 0, c.length);
+        System.arraycopy(arr, splitPoint3, d, 0, d.length);
+        if (more.length == 0) {
+            return new double[][]{a, b, c, d};
+        }
+        List<double[]> all = new ArrayList<>(4 + more.length);
+        all.addAll(Arrays.asList(a, b, c, d));
+        for (int i = 1; i < more.length; i++) {
+            double[] nue = new double[more[i] - more[i - 1]];
+            System.arraycopy(arr, more[i - 1], nue, 0, nue.length);
+            all.add(nue);
+            if (i == more.length - 1 && arr.length - more[i] > 0) {
+                nue = new double[arr.length - more[i]];
+                System.arraycopy(arr, more[i], nue, 0, nue.length);
+                all.add(nue);
+            }
+        }
+        return all.toArray(new double[all.size()][]);
+    }
+
+    /**
      * Concatenate multiple arrays of bytes into a single new array.
      *
      * @param a The first array
@@ -307,6 +412,58 @@ public class ArrayUtils {
     }
 
     /**
+     * Concatenate multiple arrays of ints into a single new array.
+     *
+     * @param a The first array
+     * @param b The second array
+     * @param cs Additional arrays
+     * @return An array of ints comprising both
+     */
+    public static float[] concatenate(float[] a, float[] b, float[]... cs) {
+        int total = a.length + b.length;
+        for (float[] c : cs) {
+            total += c.length;
+        }
+        float[] result = new float[total];
+        int pos = 0;
+        System.arraycopy(a, pos, result, 0, a.length);
+        pos += a.length;
+        System.arraycopy(b, 0, result, pos, b.length);
+        pos += b.length;
+        for (float[] c : cs) {
+            System.arraycopy(c, 0, result, pos, c.length);
+            pos += c.length;
+        }
+        return result;
+    }
+
+    /**
+     * Concatenate multiple arrays of ints into a single new array.
+     *
+     * @param a The first array
+     * @param b The second array
+     * @param cs Additional arrays
+     * @return An array of ints comprising both
+     */
+    public static double[] concatenate(double[] a, double[] b, double[]... cs) {
+        int total = a.length + b.length;
+        for (double[] c : cs) {
+            total += c.length;
+        }
+        double[] result = new double[total];
+        int pos = 0;
+        System.arraycopy(a, pos, result, 0, a.length);
+        pos += a.length;
+        System.arraycopy(b, 0, result, pos, b.length);
+        pos += b.length;
+        for (double[] c : cs) {
+            System.arraycopy(c, 0, result, pos, c.length);
+            pos += c.length;
+        }
+        return result;
+    }
+
+    /**
      * Concatenate two arrays of bytes into a single new array.
      *
      * @param a The first array
@@ -329,6 +486,34 @@ public class ArrayUtils {
      */
     public static int[] concatenate(int[] a, int[] b) {
         int[] nue = new int[a.length + b.length];
+        System.arraycopy(a, 0, nue, 0, a.length);
+        System.arraycopy(b, 0, nue, a.length, b.length);
+        return nue;
+    }
+
+    /**
+     * Concatenate two arrays of doubles into a single new array.
+     *
+     * @param a The first array
+     * @param b The second array
+     * @return An array of ints comprising both
+     */
+    public static double[] concatenate(double[] a, double[] b) {
+        double[] nue = new double[a.length + b.length];
+        System.arraycopy(a, 0, nue, 0, a.length);
+        System.arraycopy(b, 0, nue, a.length, b.length);
+        return nue;
+    }
+
+    /**
+     * Concatenate two arrays of floats into a single new array.
+     *
+     * @param a The first array
+     * @param b The second array
+     * @return An array of ints comprising both
+     */
+    public static float[] concatenate(float[] a, float[] b) {
+        float[] nue = new float[a.length + b.length];
         System.arraycopy(a, 0, nue, 0, a.length);
         System.arraycopy(b, 0, nue, a.length, b.length);
         return nue;
@@ -640,6 +825,40 @@ public class ArrayUtils {
      * @param rnd A random
      * @param array An array
      */
+    public static void shuffle(Random rnd, double[] array) {
+        for (int i = 0; i < array.length - 2; i++) {
+            int r = rnd.nextInt(array.length);
+            if (i != r) {
+                double hold = array[i];
+                array[i] = array[r];
+                array[r] = hold;
+            }
+        }
+    }
+
+    /**
+     * Fisher-Yates shuffle.
+     *
+     * @param rnd A random
+     * @param array An array
+     */
+    public static void shuffle(Random rnd, float[] array) {
+        for (int i = 0; i < array.length - 2; i++) {
+            int r = rnd.nextInt(array.length);
+            if (i != r) {
+                float hold = array[i];
+                array[i] = array[r];
+                array[r] = hold;
+            }
+        }
+    }
+
+    /**
+     * Fisher-Yates shuffle.
+     *
+     * @param rnd A random
+     * @param array An array
+     */
     public static void shuffle(Random rnd, int[] array) {
         for (int i = 0; i < array.length - 2; i++) {
             int r = rnd.nextInt(array.length);
@@ -755,6 +974,44 @@ public class ArrayUtils {
             return Arrays.copyOf(array, length);
         }
         byte[] result = new byte[length];
+        System.arraycopy(array, start, result, 0, length);
+        return result;
+    }
+
+    /**
+     * Extract a subsequence from an array.
+     *
+     * @param array The array
+     * @param start The start
+     * @param length The length
+     * @return an array
+     */
+    public static double[] extract(double[] array, int start, int length) {
+        notNull("array", array);
+        nonNegative("length", length);
+        if (start == 0) {
+            return Arrays.copyOf(array, length);
+        }
+        double[] result = new double[length];
+        System.arraycopy(array, start, result, 0, length);
+        return result;
+    }
+
+    /**
+     * Extract a subsequence from an array.
+     *
+     * @param array The array
+     * @param start The start
+     * @param length The length
+     * @return an array
+     */
+    public static float[] extract(float[] array, int start, int length) {
+        notNull("array", array);
+        nonNegative("length", length);
+        if (start == 0) {
+            return Arrays.copyOf(array, length);
+        }
+        float[] result = new float[length];
         System.arraycopy(array, start, result, 0, length);
         return result;
     }
@@ -910,7 +1167,6 @@ public class ArrayUtils {
     /**
      * Reverse an array in-place, modifying the passed array.
      *
-     * @param <T> The array type
      * @param array An array
      * @return A reversed copy
      */
@@ -920,6 +1176,42 @@ public class ArrayUtils {
         }
         for (int i = 0; i < array.length / 2; i++) {
             char hold = array[i];
+            array[i] = array[array.length - (i + 1)];
+            array[array.length - (i + 1)] = hold;
+        }
+        return array;
+    }
+
+    /**
+     * Reverse an array in-place, modifying the passed array.
+     *
+     * @param array An array
+     * @return A reversed copy
+     */
+    public static double[] reverseInPlace(double[] array) {
+        if (array.length < 2) {
+            return array;
+        }
+        for (int i = 0; i < array.length / 2; i++) {
+            double hold = array[i];
+            array[i] = array[array.length - (i + 1)];
+            array[array.length - (i + 1)] = hold;
+        }
+        return array;
+    }
+
+    /**
+     * Reverse an array in-place, modifying the passed array.
+     *
+     * @param array An array
+     * @return A reversed copy
+     */
+    public static float[] reverseInPlace(float[] array) {
+        if (array.length < 2) {
+            return array;
+        }
+        for (int i = 0; i < array.length / 2; i++) {
+            float hold = array[i];
             array[i] = array[array.length - (i + 1)];
             array[array.length - (i + 1)] = hold;
         }
@@ -939,7 +1231,6 @@ public class ArrayUtils {
     /**
      * Reverse an array in-place, modifying the passed array.
      *
-     * @param <T> The array type
      * @param array An array
      * @return A reversed copy
      */
@@ -973,6 +1264,26 @@ public class ArrayUtils {
      * @return A copy of the array
      */
     public static int[] copyOf(int[] array) {
+        return Arrays.copyOf(array, array.length);
+    }
+
+    /**
+     * Create a duplicate of an array.
+     *
+     * @param array The array
+     * @return A copy of the array
+     */
+    public static double[] copyOf(double[] array) {
+        return Arrays.copyOf(array, array.length);
+    }
+
+    /**
+     * Create a duplicate of an array.
+     *
+     * @param array The array
+     * @return A copy of the array
+     */
+    public static float[] copyOf(float[] array) {
         return Arrays.copyOf(array, array.length);
     }
 
@@ -1232,6 +1543,116 @@ public class ArrayUtils {
         byte[] result = new byte[more.length + 1];
         System.arraycopy(more, 0, result, 1, more.length);
         result[0] = first;
+        return result;
+    }
+
+    /**
+     * Apply an operation to the contents of an array.
+     *
+     * @param dbls An array
+     * @param op An operation
+     */
+    public static void apply(double[] dbls, DoubleUnaryOperator op) {
+        for (int i = 0; i < dbls.length; i++) {
+            dbls[i] = op.applyAsDouble(dbls[i]);
+        }
+    }
+
+    /**
+     * Apply an operation to the contents of an array.
+     *
+     * @param floats An array
+     * @param op An operation
+     */
+    public static void apply(float[] floats, DoubleUnaryOperator op) {
+        for (int i = 0; i < floats.length; i++) {
+            floats[i] = (float) op.applyAsDouble(floats[i]);
+        }
+    }
+
+    /**
+     * Apply an operation to a copy the contents of an array and return it.
+     *
+     * @param dbls An array
+     * @param op An operation
+     * @return A new array with the operation applied
+     */
+    public static float[] copyAndApply(float[] floats, DoubleUnaryOperator op) {
+        floats = copyOf(floats);
+        apply(floats, op);
+        return floats;
+    }
+
+    /**
+     * Apply an operation to a copy the contents of an array and return it.
+     *
+     * @param dbls An array
+     * @param op An operation
+     * @return A new array with the operation applied
+     */
+    public static void copyAndApply(double[] dbls, DoubleUnaryOperator op) {
+        dbls = copyOf(dbls);
+        apply(dbls, op);
+    }
+
+    /**
+     * Convert an array of floats to ints.
+     *
+     * @param arr an array
+     * @return A new array
+     */
+    public static double[] toDoubleArray(float[] arr) {
+        double[] result = new double[arr.length];
+        for (int i = 0; i < arr.length; i++) {
+            result[i] = arr[i];
+        }
+        return result;
+    }
+
+    /**
+     * Convert an array of ints to doubles.
+     *
+     * @param arr an array
+     * @return A new array
+     */
+    public static double[] toDoubleArray(int[] ints) {
+        double[] result = new double[ints.length];
+        for (int i = 0; i < ints.length; i++) {
+            result[i] = ints[i];
+        }
+        return result;
+    }
+
+    /**
+     * Convert an array of ints to floats.
+     *
+     * @param arr an array
+     * @return A new array
+     */
+    public static float[] toFloatArray(int[] ints) {
+        float[] result = new float[ints.length];
+        for (int i = 0; i < ints.length; i++) {
+            result[i] = ints[i];
+        }
+        return result;
+    }
+
+    /**
+     * Convert an array of doubles to floats, applying the passed operator in
+     * case of overflow.
+     *
+     * @param arr an array
+     * @return A new array
+     */
+    public static float[] toFloatArray(double[] dbls, DoubleUnaryOperator outOfRange) {
+        float[] result = new float[dbls.length];
+        for (int i = 0; i < dbls.length; i++) {
+            double val = dbls[i];
+            if (val < Float.MIN_VALUE || val > Float.MAX_VALUE) {
+                val = outOfRange.applyAsDouble(val);
+            }
+            result[i] = (float) val;
+        }
         return result;
     }
 }

@@ -92,7 +92,5 @@ final class AndedConsumer<T> implements LoggableConsumer<T> {
         public Consumer andThen(Consumer after) {
             return after;
         }
-
-
     }
 }

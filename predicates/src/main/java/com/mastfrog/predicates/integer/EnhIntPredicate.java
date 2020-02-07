@@ -103,7 +103,7 @@ public interface EnhIntPredicate extends IntPredicate {
 
             @Override
             public String toString() {
-                return EnhIntPredicate.this.toString() + " || " + other.toString();
+                return '(' + EnhIntPredicate.this.toString() + " || " + other.toString() + ')';
             }
         };
     }
@@ -118,7 +118,7 @@ public interface EnhIntPredicate extends IntPredicate {
 
             @Override
             public String toString() {
-                return EnhIntPredicate.this.toString() + " & " + other.toString();
+                return '(' + EnhIntPredicate.this.toString() + " & " + other.toString() + ')';
             }
         };
     }

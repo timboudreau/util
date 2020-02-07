@@ -871,6 +871,20 @@ public final class CollectionUtils {
     }
 
     /**
+     * Create a map that, when a call to get() would return null, uses a
+     * supplier to create a new value, adds it and returns that, backed
+     * by a weak-keyed map.
+     *
+     * @param <T> The key type
+     * @param <R> The value type
+     * @param valueSupplier The supplier of values
+     * @return a map
+     */
+    public static <T, R> Map<T,R> linkedSupplierMap(Supplier<R> valueSupplier) {
+        return new SupplierMap<>(notNull("valueSupplier", valueSupplier), new LinkedHashMap<>());
+    }
+
+    /**
      * Invert a map, producing a map of value to set of keys.
      *
      * @param <T> The original key type

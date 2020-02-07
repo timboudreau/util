@@ -32,6 +32,7 @@ import java.util.function.BiFunction;
  * @deprecated Effectively this is a BiPredicate
  */
 @FunctionalInterface
+@Deprecated
 public interface BooleanBiFunction<S, T> extends BiFunction<S, T, Boolean> {
 
     boolean applyAsBoolean(S a, T b);

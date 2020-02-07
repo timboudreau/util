@@ -25,11 +25,11 @@ package com.mastfrog.function;
 
 import java.util.function.IntPredicate;
 import java.util.function.IntSupplier;
+import java.util.function.IntUnaryOperator;
 import java.util.function.Supplier;
 
 /**
- * IntSupplier with composition methods for mathematical and logical
- * operations.
+ * IntSupplier with composition methods for mathematical and logical operations.
  *
  * @author Tim Boudreau
  */
@@ -99,6 +99,62 @@ public interface EnhIntSupplier extends IntSupplier {
             int div = next.getAsInt();
             return result == 0 || div == 0 ? 0 : result / div;
         };
+    }
+    
+    default EnhIntSupplier andThen(IntUnaryOperator op) {
+        return ()-> op.applyAsInt(getAsInt());
+    }
+
+    default EnhIntSupplier abs() {
+        return andThen(Math::abs);
+    }
+
+    default EnhIntSupplier plus(int val) {
+        return () -> getAsInt() + val;
+    }
+
+    default EnhIntSupplier minus(int val) {
+        return () -> getAsInt() - val;
+    }
+
+    default EnhIntSupplier times(int val) {
+        return () -> getAsInt() * val;
+    }
+
+    default EnhIntSupplier mod(int val) {
+        return () -> getAsInt() % val;
+    }
+
+    default EnhIntSupplier dividedBy(int val) {
+        return () -> getAsInt() / val;
+    }
+
+    default EnhIntSupplier dividedInto(int val) {
+        return () -> val / getAsInt();
+    }
+
+    default EnhDoubleSupplier plus(double val) {
+        return () -> getAsInt() + val;
+    }
+
+    default EnhDoubleSupplier minus(double val) {
+        return () -> getAsInt() - val;
+    }
+
+    default EnhDoubleSupplier times(double val) {
+        return () -> getAsInt() * val;
+    }
+
+    default EnhDoubleSupplier mod(double val) {
+        return () -> getAsInt() % val;
+    }
+
+    default EnhDoubleSupplier dividedBy(double val) {
+        return () -> getAsInt() / val;
+    }
+
+    default EnhDoubleSupplier dividedInto(double val) {
+        return () -> val / getAsInt();
     }
 
     public static EnhIntSupplier wrap(IntSupplier supp) {

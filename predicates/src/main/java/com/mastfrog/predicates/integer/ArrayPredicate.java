@@ -24,6 +24,7 @@
 package com.mastfrog.predicates.integer;
 
 import java.util.Arrays;
+import java.util.function.IntPredicate;
 
 /**
  *
@@ -37,6 +38,55 @@ class ArrayPredicate implements EnhIntPredicate {
     ArrayPredicate(int[] vals, boolean negated) {
         this.vals = vals;
         this.negated = negated;
+    }
+
+    @Override
+    public EnhIntPredicate or(IntPredicate other) {
+        if (other instanceof SinglePredicate && !negated) {
+            SinglePredicate sp = (SinglePredicate) other;
+            if (!sp.negated) {
+                if (Arrays.binarySearch(vals, sp.val) >= 0) {
+                    return this;
+                }
+                int[] nue = Arrays.copyOf(vals, vals.length + 1);
+                nue[nue.length - 1] = sp.val;
+                Arrays.sort(nue);
+                return new ArrayPredicate(nue, false);
+            }
+        } else if (other instanceof ArrayPredicate && !negated) {
+            ArrayPredicate ap = (ArrayPredicate) other;
+            if (!ap.negated) {
+                int[] nue = new int[vals.length + ap.vals.length];
+                System.arraycopy(vals, 0, nue, 0, vals.length);
+                System.arraycopy(ap.vals, 0, nue, vals.length, ap.vals.length);
+                Arrays.sort(nue);
+                int last = nue[0];
+                boolean containsMax = false;
+                for (int i = 0; i < nue.length; i++) {
+                    if (nue[i] == Integer.MAX_VALUE) {
+                        containsMax = true;
+                        break;
+                    }
+                }
+                if (!containsMax) {
+                    int elided = 0;
+                    for (int i = 1; i < nue.length; i++) {
+                        int val = nue[i];
+                        if (val == last) {
+                            nue[i] = Integer.MAX_VALUE;
+                            elided++;
+                        }
+                        last = val;
+                    }
+                    if (elided > 0) {
+                        Arrays.sort(nue);
+                        nue = Arrays.copyOf(nue, nue.length - elided);
+                    }
+                    return new ArrayPredicate(nue, negated);
+                }
+            }
+        }
+        return EnhIntPredicate.super.or(other);
     }
 
     @Override
@@ -55,7 +105,7 @@ class ArrayPredicate implements EnhIntPredicate {
         if (vals.length == 1) {
             return (negated ? "!=" : "==") + vals[0];
         } else {
-            return (negated ? "noneOf(" : "anyOf") + Arrays.toString(vals) + ")";
+            return (negated ? "noneOf(" : "anyOf(") + Arrays.toString(vals) + ")";
         }
     }
 

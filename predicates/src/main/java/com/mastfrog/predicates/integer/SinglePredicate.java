@@ -24,6 +24,7 @@
 package com.mastfrog.predicates.integer;
 
 import java.util.Arrays;
+import java.util.function.IntPredicate;
 
 /**
  *
@@ -40,6 +41,34 @@ class SinglePredicate implements EnhIntPredicate {
     }
 
     @Override
+    public EnhIntPredicate or(IntPredicate other) {
+        if (other instanceof SinglePredicate && !negated) {
+            SinglePredicate sp = (SinglePredicate) other;
+            if (!sp.negated) {
+                if (sp.val == val) {
+                    return this;
+                }
+                return IntPredicates.anyOf(val, sp.val);
+            }
+        }
+        return EnhIntPredicate.super.or(other);
+    }
+
+    @Override
+    public EnhIntPredicate and(IntPredicate other) {
+        if (other instanceof SinglePredicate && !negated) {
+            SinglePredicate sp = (SinglePredicate) other;
+            if (!sp.negated) {
+                if (sp.val == val) {
+                    return this;
+                }
+                return FixedIntPredicate.INT_FALSE;
+            }
+        }
+        return EnhIntPredicate.super.or(other);
+    }
+
+    @Override
     public boolean test(int value) {
         return negated ? value != val : value == val;
     }
@@ -51,7 +80,7 @@ class SinglePredicate implements EnhIntPredicate {
 
     @Override
     public String toString() {
-        String pfx = negated ? "not-matching(" : "matching(";
+        String pfx = negated ? "!eq(" : "eq(";
         return pfx + val + ")";
     }
 

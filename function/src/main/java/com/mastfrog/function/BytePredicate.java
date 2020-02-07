@@ -43,6 +43,7 @@ public interface BytePredicate {
                 return pred.test(value & 0xFF);
             }
 
+            @Override
             public String toString() {
                 return "signedInt(" + pred + ")";
             }
@@ -73,6 +74,20 @@ public interface BytePredicate {
             @Override
             public String toString() {
                 return BytePredicate.this.toString() + " | " + other.toString();
+            }
+        };
+    }
+
+    default BytePredicate xor(BytePredicate other) {
+        return new BytePredicate() {
+            @Override
+            public boolean test(byte b) {
+                return BytePredicate.this.test(b) != other.test(b);
+            }
+
+            @Override
+            public String toString() {
+                return BytePredicate.this.toString() + " ~ " + other.toString();
             }
         };
     }

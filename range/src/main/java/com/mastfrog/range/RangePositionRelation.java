@@ -52,6 +52,25 @@ public enum RangePositionRelation implements BoundaryRelation {
      * @param test The value to test
      * @return A relation
      */
+    public static RangePositionRelation get(double start, double end, double test) {
+        if (test < start) {
+            return BEFORE;
+        } else if (test >= end) {
+            return AFTER;
+        } else {
+            return IN;
+        }
+    }
+
+
+    /**
+     * Get the relationship between a position and a range.
+     *
+     * @param start The start of the range
+     * @param end The end of the range
+     * @param test The value to test
+     * @return A relation
+     */
     public static RangePositionRelation get(long start, long end, long test) {
         if (test < start) {
             return BEFORE;

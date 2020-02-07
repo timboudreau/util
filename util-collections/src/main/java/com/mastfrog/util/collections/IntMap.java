@@ -66,7 +66,7 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
     void decrementKeys(int decrement);
 
     public static <T> IntMap<T> of(int[] keys, T[] vals) {
-        return new ArrayIntMap(keys, vals);
+        return new ArrayIntMap<>(keys, vals);
     }
 
     /**

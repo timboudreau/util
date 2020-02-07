@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2019 Tim Boudreau.
+ * Copyright 2020 Mastfrog Technologies.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,35 +23,21 @@
  */
 package com.mastfrog.function;
 
-import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 /**
  *
  * @author Tim Boudreau
  */
 @FunctionalInterface
-public interface ByteSupplier extends EnhIntSupplier {
+public interface DoubleBiFunction<T> {
 
-    byte getAsByte();
+    T apply(double a, double b);
 
-    @Override
-    public default int getAsInt() {
-        return getAsByte();
-    }
-
-    default EnhIntSupplier toUnsignedIntSupplier() {
+    default Supplier<T> toSupplier(DoubleSupplier sa, DoubleSupplier sb) {
         return () -> {
-            return getAsByte() & 0xFF;
+            return apply(sa.getAsDouble(), sb.getAsDouble());
         };
-    }
-
-    default EnhIntSupplier toSignedIntSupplier() {
-        return () -> {
-            return getAsByte();
-        };
-    }
-
-    default BooleanSupplier toBooleanSupplier(BytePredicate pred) {
-        return () -> pred.test(getAsByte());
     }
 }

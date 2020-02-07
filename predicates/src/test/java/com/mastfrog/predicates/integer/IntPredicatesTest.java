@@ -26,6 +26,7 @@ package com.mastfrog.predicates.integer;
 import java.util.Arrays;
 import java.util.function.IntPredicate;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
@@ -62,6 +63,39 @@ public class IntPredicatesTest {
                 assertFalse(lt.test(i));
             }
         }
+    }
+
+    @Test
+    public void testFixed() {
+        IntPredicate p = FixedIntPredicate.INT_FALSE.and(FixedIntPredicate.INT_TRUE);
+        assertFalse(p.test(0));
+
+        p = FixedIntPredicate.INT_FALSE.or(FixedIntPredicate.INT_TRUE);
+        assertTrue(p.test(0));
+    }
+
+    @Test
+    public void testArraysCombine() {
+        ArrayPredicate p1 = new ArrayPredicate(new int[]{1, 2, 3, 4}, false);
+        ArrayPredicate p2 = new ArrayPredicate(new int[]{1, 2, 3, 4, 5}, false);
+        IntPredicate comb = p1.or(p2);
+        assertTrue(comb instanceof ArrayPredicate);
+        for (int i = 1; i < 5; i++) {
+            assertTrue(comb + " returns false for " + i, comb.test(i));
+        }
+        assertFalse(comb.test(6));
+        assertFalse(comb.test(0));
+
+        assertSame(p1, p1.or(new SinglePredicate(false, 3)));
+
+        comb = p1.or(new SinglePredicate(false, 5));
+        assertTrue(comb instanceof ArrayPredicate);
+
+        for (int i = 1; i < 5; i++) {
+            assertTrue(comb.test(i));
+        }
+        assertFalse(comb.test(6));
+        assertFalse(comb.test(0));
     }
 
     @Test

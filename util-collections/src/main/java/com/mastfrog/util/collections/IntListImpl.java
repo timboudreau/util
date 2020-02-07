@@ -411,6 +411,13 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
         }
     }
 
+    @Override
+    public void forEachReversed(IntConsumer c) {
+        for (int i = size - 1; i >= 0; i--) {
+            c.accept(values[i]);
+        }
+    }
+
     private void maybeGrow(int newSize) {
         if (newSize >= values.length) {
             if (newSize % initialCapacity == 0) {
@@ -554,7 +561,7 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
         StringBuilder sb = new StringBuilder(2 + (4 * size)).append('[');
         for (int i = 0; i < size; i++) {
             sb.append(get(i));
-            if (i != size-1) {
+            if (i != size - 1) {
                 sb.append(", ");
             }
         }

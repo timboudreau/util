@@ -409,6 +409,18 @@ public interface Range<R extends Range<R>> extends Comparable<Range<?>> {
     }
 
     /**
+     * Get the relation of the passed position to this range.
+     *
+     * @param position A position
+     * @return A relation
+     */
+    default RangePositionRelation relationTo(double position) {
+        return RangePositionRelation.get(startValue().doubleValue(),
+                startValue().doubleValue() + sizeValue().doubleValue(),
+                position);
+    }
+
+    /**
      * Determine if this range contains the start or end of another.
      *
      * @param range A range
@@ -431,7 +443,7 @@ public interface Range<R extends Range<R>> extends Comparable<Range<?>> {
      * @return True if it is contained
      */
     default boolean contains(Range<?> range) {
-        return Range.this.relationTo(range) == RangeRelation.CONTAINS;
+        return relationTo(range) == RangeRelation.CONTAINS;
     }
 
     /**
@@ -442,7 +454,7 @@ public interface Range<R extends Range<R>> extends Comparable<Range<?>> {
      * @return True if this is contained by the passed range
      */
     default boolean isContainedBy(Range<?> range) {
-        return Range.this.relationTo(range) == RangeRelation.CONTAINED;
+        return relationTo(range) == RangeRelation.CONTAINED;
     }
 
     /**
@@ -454,6 +466,15 @@ public interface Range<R extends Range<R>> extends Comparable<Range<?>> {
     default boolean contains(int position) {
         return relationTo(position) == RangePositionRelation.IN;
     }
+    /**
+     * Determine if this range contains the passed position.
+     *
+     * @param position A position
+     * @return True if the position is &gt;= start and &lt; end.
+     */
+    default boolean contains(double position) {
+        return relationTo(position) == RangePositionRelation.IN;
+    }
 
     /**
      * Determine if this range contains the passed position.
@@ -462,7 +483,7 @@ public interface Range<R extends Range<R>> extends Comparable<Range<?>> {
      * @return True if the position is &gt;= start and &lt; end.
      */
     default boolean contains(long position) {
-        return Range.this.relationTo(position) == RangePositionRelation.IN;
+        return relationTo(position) == RangePositionRelation.IN;
     }
 
     /**

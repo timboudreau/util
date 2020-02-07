@@ -25,6 +25,7 @@ package com.mastfrog.function;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BooleanSupplier;
 
 /**
  *
@@ -34,6 +35,10 @@ import java.util.List;
 public interface BooleanConsumer {
 
     void accept(boolean val);
+
+    default Runnable toRunnable(BooleanSupplier supplier) {
+        return () -> accept(supplier.getAsBoolean());
+    }
 
     default BooleanConsumer andThen(BooleanConsumer other) {
         return new BooleanConsumer() {

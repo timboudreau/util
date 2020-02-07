@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2019 Tim Boudreau.
+ * Copyright 2020 Mastfrog Technologies.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,35 +23,41 @@
  */
 package com.mastfrog.function;
 
-import java.util.function.BooleanSupplier;
-
 /**
+ * Bi-consumer for primitive doubles.
  *
  * @author Tim Boudreau
  */
 @FunctionalInterface
-public interface ByteSupplier extends EnhIntSupplier {
+public interface DoubleBiConsumer {
 
-    byte getAsByte();
+    /**
+     * Accept two double values
+     *
+     * @param a The first value
+     * @param b The second value
+     */
+    void accept(double a, double b);
 
-    @Override
-    public default int getAsInt() {
-        return getAsByte();
-    }
-
-    default EnhIntSupplier toUnsignedIntSupplier() {
-        return () -> {
-            return getAsByte() & 0xFF;
+    /**
+     * Chain another bi consumer to this one.
+     *
+     * @param next
+     * @return
+     */
+    default DoubleBiConsumer andThen(DoubleBiConsumer next) {
+        return (a, b) -> {
+            accept(a, b);
+            next.accept(a, b);
         };
     }
 
-    default EnhIntSupplier toSignedIntSupplier() {
-        return () -> {
-            return getAsByte();
-        };
-    }
-
-    default BooleanSupplier toBooleanSupplier(BytePredicate pred) {
-        return () -> pred.test(getAsByte());
+    /**
+     * Convert this to a bi-consumer of floats.
+     *
+     * @return A float bi-consumer
+     */
+    default FloatBiConsumer toFloatBiConsumer() {
+        return FloatBiConsumer.fromDoubleBiConsumer(this);
     }
 }

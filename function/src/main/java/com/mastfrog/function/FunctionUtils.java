@@ -25,15 +25,17 @@ package com.mastfrog.function;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.function.IntSupplier;
 import java.util.function.IntToLongFunction;
 import java.util.function.IntUnaryOperator;
+import java.util.function.LongSupplier;
 
 /**
  * Miscellaneous convenience methods.
  *
  * @author Tim Boudreau
  */
-public class FunctionUtils {
+public final class FunctionUtils {
 
     /**
      * Wrap an array as an IntUnaryOperator which returns elements for indices.
@@ -59,6 +61,20 @@ public class FunctionUtils {
      */
     public static IntToLongFunction asFunction(long[] arr) {
         return new ArrayIntToLongFunction(arr);
+    }
+
+    public static LongSupplier toLongSupplier(IntSupplier ints) {
+        return ints::getAsInt;
+    }
+
+    public static IntSupplier toIntSupplier(LongSupplier supp) {
+        return () -> {
+            long val = supp.getAsLong();
+            if (val > Integer.MAX_VALUE || val < Integer.MIN_VALUE) {
+                throw new IllegalStateException("Value out of range for int: " + val);
+            }
+            return (int) val;
+        };
     }
 
     private FunctionUtils() {
