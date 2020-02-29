@@ -1449,6 +1449,24 @@ public final class CollectionUtils {
     }
 
     /**
+     * Create a read-only converted view of a list in which allows a
+     * list of one type to be interacted with as if it were a list
+     * of another type via the passed conversion function, without
+     * making a copy of the original list.
+     *
+     * @param <T> The input list type
+     * @param <R> The output list type
+     * @param list The list
+     * @param converter A function which converts input to output type,
+     * can handle nulls if the original list can contain nulls, and can
+     * return a legitimate value for all contents of the original list
+     * @return A list of type R
+     */
+    public static <T, R> List<? extends R> converted(List<? extends T> list, Function<? super T, ? extends R> converter) {
+        return new ConvertedReadOnlyList<T,R>(converter, list);
+    }
+
+    /**
      * Generic munging - treat a List&lt;String&gt; as an unmodifiable
      * List&lt;CharSequence&gt; and so forth.
      *

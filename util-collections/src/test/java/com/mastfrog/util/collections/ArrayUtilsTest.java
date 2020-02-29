@@ -23,13 +23,17 @@
  */
 package com.mastfrog.util.collections;
 
+import static com.mastfrog.util.collections.ArrayUtils.append;
+import static com.mastfrog.util.collections.ArrayUtils.apply;
 import static com.mastfrog.util.collections.ArrayUtils.arrayOf;
 import static com.mastfrog.util.collections.ArrayUtils.concatenate;
 import static com.mastfrog.util.collections.ArrayUtils.concatenateAll;
+import static com.mastfrog.util.collections.ArrayUtils.copyAndApply;
 import static com.mastfrog.util.collections.ArrayUtils.dedup;
 import static com.mastfrog.util.collections.ArrayUtils.dedupByType;
 import static com.mastfrog.util.collections.ArrayUtils.emptyForNull;
 import static com.mastfrog.util.collections.ArrayUtils.flatten;
+import static com.mastfrog.util.collections.ArrayUtils.prepend;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import java.util.Arrays;
 import static org.junit.Assert.assertArrayEquals;
@@ -201,13 +205,129 @@ public class ArrayUtilsTest {
 
     @Test
     public void testJDK8ArraysComplexEquals() {
-        int[] a = new int[] {0, 1, 2, 3, 4, 5};
-        int[] b = new int[] {3, 4, 5, 6, 7, 8};
+        int[] a = new int[]{0, 1, 2, 3, 4, 5};
+        int[] b = new int[]{3, 4, 5, 6, 7, 8};
         assertTrue(ArrayUtils.arraysEquals(a, 3, 6, b, 0, 3));
         assertFalse(ArrayUtils.arraysEquals(a, 0, 3, b, 0, 3));
         a[3] = 1;
         assertFalse(ArrayUtils.arraysEquals(a, 3, 6, b, 0, 3));
         b[0] = 1;
         assertTrue(ArrayUtils.arraysEquals(a, 3, 6, b, 0, 3));
+    }
+
+    @Test
+    public void testAppend() {
+        double[] d = new double[]{10, 20, 30, 40, 50};
+        float[] f = new float[]{10, 20, 30, 40, 50};
+        long[] l = new long[]{10, 20, 30, 40, 50};
+        int[] i = new int[]{10, 20, 30, 40, 50};
+        short[] s = new short[]{10, 20, 30, 40, 50};
+        byte[] b = new byte[]{10, 20, 30, 40, 50};
+
+        double[] ed = new double[]{10, 20, 30, 40, 50, 60};
+        float[] ef = new float[]{10, 20, 30, 40, 50, 60};
+        long[] el = new long[]{10, 20, 30, 40, 50, 60};
+        int[] ei = new int[]{10, 20, 30, 40, 50, 60};
+        short[] es = new short[]{10, 20, 30, 40, 50, 60};
+        byte[] eb = new byte[]{10, 20, 30, 40, 50, 60};
+
+        double[] gd = append(60, d);
+        float[] gf = append(60F, f);
+        long[] gl = append(60L, l);
+        int[] gi = append(60, i);
+        short[] gs = append((short) 60, s);
+        byte[] gb = append((byte) 60, b);
+
+        assertArrayEquals("doubles fail: " + Arrays.toString(gd), ed, gd, 0.00000000001);
+        assertArrayEquals("floats fail: " + Arrays.toString(gf), ef, gf, 0.00000000001F);
+        assertArrayEquals("longs fail: " + Arrays.toString(gl), el, gl);
+        assertArrayEquals("ints fail: " + Arrays.toString(gi), ei, gi);
+        assertArrayEquals("shorts fail: " + Arrays.toString(gs), es, gs);
+        assertArrayEquals("bytes fail: " + Arrays.toString(gb), eb, gb);
+    }
+
+    @Test
+    public void testPrepend() {
+        double[] d = new double[]{10, 20, 30, 40, 50};
+        float[] f = new float[]{10, 20, 30, 40, 50};
+        long[] l = new long[]{10, 20, 30, 40, 50};
+        int[] i = new int[]{10, 20, 30, 40, 50};
+        short[] s = new short[]{10, 20, 30, 40, 50};
+        byte[] b = new byte[]{10, 20, 30, 40, 50};
+
+        double[] ed = new double[]{60, 10, 20, 30, 40, 50};
+        float[] ef = new float[]{60, 10, 20, 30, 40, 50};
+        long[] el = new long[]{60, 10, 20, 30, 40, 50};
+        int[] ei = new int[]{60, 10, 20, 30, 40, 50};
+        short[] es = new short[]{60, 10, 20, 30, 40, 50};
+        byte[] eb = new byte[]{60, 10, 20, 30, 40, 50};
+
+        double[] gd = prepend(60, d);
+        float[] gf = prepend(60F, f);
+        long[] gl = prepend(60L, l);
+        int[] gi = prepend(60, i);
+        short[] gs = prepend((short) 60, s);
+        byte[] gb = prepend((byte) 60, b);
+
+        assertArrayEquals("doubles fail: " + Arrays.toString(gd), ed, gd, 0.00000000001);
+        assertArrayEquals("floats fail: " + Arrays.toString(gf), ef, gf, 0.00000000001F);
+        assertArrayEquals("longs fail: " + Arrays.toString(gl), el, gl);
+        assertArrayEquals("ints fail: " + Arrays.toString(gi), ei, gi);
+        assertArrayEquals("shorts fail: " + Arrays.toString(gs), es, gs);
+        assertArrayEquals("bytes fail: " + Arrays.toString(gb), eb, gb);
+    }
+
+    @Test
+    public void testApply() {
+        int amt = 20;
+        double[] origDoubles = new double[amt];
+        float[] origFloats = new float[amt];
+        double[] expectedDoubles = new double[amt];
+        float[] expectedFloats = new float[amt];
+        for (int i = 0; i < amt; i++) {
+            origDoubles[i] = (double) i + 0.375D;
+            origFloats[i] = (float) i + 0.375F;
+            expectedDoubles[i] = i;
+            expectedFloats[i] = i;
+        }
+        apply(origFloats, Math::floor);
+        apply(origDoubles, Math::floor);
+
+        assertArrayEquals("doubles fail: " + Arrays.toString(origDoubles),
+                expectedDoubles, origDoubles, 0.00000000001);
+        assertArrayEquals("floats fail: " + Arrays.toString(origFloats),
+                expectedFloats, origFloats, 0.00000000001F);
+    }
+
+    @Test
+    public void testApplyAndCopy() {
+        int amt = 20;
+        double[] origDoubles = new double[amt];
+        float[] origFloats = new float[amt];
+        double[] origDoublesSanityCheck = new double[amt];
+        float[] origFloatsSanityCheck = new float[amt];
+        double[] expectedDoubles = new double[amt];
+        float[] expectedFloats = new float[amt];
+        for (int i = 0; i < amt; i++) {
+            origDoubles[i] = (double) i + 0.375D;
+            origFloats[i] = (float) i + 0.375F;
+            origDoublesSanityCheck[i] = (double) i + 0.375D;
+            origFloatsSanityCheck[i] = (float) i + 0.375F;
+            expectedDoubles[i] = i;
+            expectedFloats[i] = i;
+        }
+        float[] gotFloats = copyAndApply(origFloats, Math::floor);
+        double[] gotDoubles = copyAndApply(origDoubles, Math::floor);
+
+        assertArrayEquals("doubles fail: " + Arrays.toString(gotDoubles),
+                expectedDoubles, gotDoubles, 0.00000000001);
+        assertArrayEquals("floats fail: " + Arrays.toString(gotFloats),
+                expectedFloats, gotFloats, 0.00000000001F);
+
+        assertArrayEquals("doubles array was altered" + Arrays.toString(origDoubles),
+                origDoublesSanityCheck, origDoubles, 0.00000000001);
+        assertArrayEquals("floats array was altered" + Arrays.toString(origFloats),
+                origFloatsSanityCheck, origFloats, 0.00000000001F);
+
     }
 }

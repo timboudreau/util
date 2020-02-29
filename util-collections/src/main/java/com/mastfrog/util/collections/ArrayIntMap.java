@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.collections;
 
+import com.mastfrog.util.sort.Sort;
 import com.mastfrog.util.collections.CollectionUtils.ComparableComparator;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -896,95 +897,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
     }
 
     private void sort() {
-        sort1(keys, vals, 0, size());
-    }
-
-    private static void sort(int[] a, Object[] with, int fromIndex, int toIndex) {
-        sort1(a, with, fromIndex, toIndex - fromIndex);
-    }
-
-    private static void sort1(int[] x, Object[] with, int off, int len) {
-        // Insertion sort on smallest arrays
-        if (len < 7) {
-            for (int i = off; i < len + off; i++) {
-                for (int j = i; j > off && x[j - 1] > x[j]; j--) {
-                    swap(x, with, j, j - 1);
-                }
-            }
-            return;
-        }
-
-        // Choose a partition element, v
-        int m = off + (len >> 1);       // Small arrays, middle element
-        if (len > 7) {
-            int l = off;
-            int n = off + len - 1;
-            if (len > 40) {        // Big arrays, pseudomedian of 9
-                int s = len / 8;
-                l = med3(x, with, l, l + s, l + 2 * s);
-                m = med3(x, with, m - s, m, m + s);
-                n = med3(x, with, n - 2 * s, n - s, n);
-            }
-            m = med3(x, with, l, m, n); // Mid-size, med of 3
-        }
-        int v = x[m];
-
-        // Establish Invariant: v* (<v)* (>v)* v*
-        int a = off, b = a, c = off + len - 1, d = c;
-        while (true) {
-            while (b <= c && x[b] <= v) {
-                if (x[b] == v) {
-                    swap(x, with, a++, b);
-                }
-                b++;
-            }
-            while (c >= b && x[c] >= v) {
-                if (x[c] == v) {
-                    swap(x, with, c, d--);
-                }
-                c--;
-            }
-            if (b > c) {
-                break;
-            }
-            swap(x, with, b++, c--);
-        }
-
-        // Swap partition elements back to middle
-        int s, n = off + len;
-        s = Math.min(a - off, b - a);
-        vecswap(x, with, off, b - s, s);
-        s = Math.min(d - c, n - d - 1);
-        vecswap(x, with, b, n - s, s);
-
-        // Recursively sort non-partition-elements
-        if ((s = b - a) > 1) {
-            sort1(x, with, off, s);
-        }
-        if ((s = d - c) > 1) {
-            sort1(x, with, n - s, s);
-        }
-    }
-
-    private static void swap(int[] x, Object[] with, int a, int b) {
-        int t = x[a];
-        x[a] = x[b];
-        x[b] = t;
-        Object w = with[a];
-        with[a] = with[b];
-        with[b] = w;
-    }
-
-    private static void vecswap(int[] x, Object[] with, int a, int b, int n) {
-        for (int i = 0; i < n; i++, a++, b++) {
-            swap(x, with, a, b);
-        }
-    }
-
-    private static int med3(int[] x, Object[] with, int a, int b, int c) {
-        return (x[a] < x[b]
-                ? (x[b] < x[c] ? b : x[a] < x[c] ? c : a)
-                : (x[b] > x[c] ? b : x[a] > x[c] ? c : a));
+        Sort.biSort(keys, vals, size());
     }
 
     private class KeySet implements Set<Integer> {
@@ -1027,6 +940,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
         }
 
         @SuppressWarnings({"unchecked", "element-type-mismatch"})
+        @Override
         public boolean equals(Object o) {
             if (o != null && o.getClass() == getClass()) {
                 return ((KeySet) o).map() == map();
@@ -1044,6 +958,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
             return false;
         }
 
+        @Override
         public int hashCode() {
             int h = 0;
             for (int i = 0; i <= last; i++) {

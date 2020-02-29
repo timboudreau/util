@@ -1547,6 +1547,114 @@ public final class ArrayUtils {
     }
 
     /**
+     * Create a new array with the passed value at position 0 and the remainder
+     * after.
+     *
+     * @param first The element to prepend
+     * @param more The rest of the resulting array
+     * @return An array
+     */
+    public static double[] prepend(double first, double... more) {
+        double[] result = new double[more.length + 1];
+        System.arraycopy(more, 0, result, 1, more.length);
+        result[0] = first;
+        return result;
+    }
+
+    /**
+     * Create a new array with the passed value at position 0 and the remainder
+     * after.
+     *
+     * @param first The element to prepend
+     * @param more The rest of the resulting array
+     * @return An array
+     */
+    public static float[] prepend(float first, float... more) {
+        float[] result = new float[more.length + 1];
+        System.arraycopy(more, 0, result, 1, more.length);
+        result[0] = first;
+        return result;
+    }
+
+    /**
+     * Create a new array with the passed value appended to the passed array.
+     *
+     * @param last The element to append
+     * @param to The preceding array contents
+     * @return An array
+     */
+    public static float[] append(float last, float... to) {
+        float[] result = Arrays.copyOf(to, to.length + 1);
+        result[result.length - 1] = last;
+        return result;
+    }
+
+    /**
+     * Create a new array with the passed value appended to the passed array.
+     *
+     * @param last The element to append
+     * @param to The preceding array contents
+     * @return An array
+     */
+    public static double[] append(double last, double... to) {
+        double[] result = Arrays.copyOf(to, to.length + 1);
+        result[result.length - 1] = last;
+        return result;
+    }
+
+    /**
+     * Create a new array with the passed value appended to the passed array.
+     *
+     * @param last The element to append
+     * @param to The preceding array contents
+     * @return An array
+     */
+    public static int[] append(int last, int... to) {
+        int[] result = Arrays.copyOf(to, to.length + 1);
+        result[result.length - 1] = last;
+        return result;
+    }
+
+    /**
+     * Create a new array with the passed value appended to the passed array.
+     *
+     * @param last The element to append
+     * @param to The preceding array contents
+     * @return An array
+     */
+    public static long[] append(long last, long... to) {
+        long[] result = Arrays.copyOf(to, to.length + 1);
+        result[result.length - 1] = last;
+        return result;
+    }
+
+    /**
+     * Create a new array with the passed value appended to the passed array.
+     *
+     * @param last The element to append
+     * @param to The preceding array contents
+     * @return An array
+     */
+    public static short[] append(short last, short... to) {
+        short[] result = Arrays.copyOf(to, to.length + 1);
+        result[result.length - 1] = last;
+        return result;
+    }
+
+    /**
+     * Create a new array with the passed value appended to the passed array.
+     *
+     * @param last The element to append
+     * @param to The preceding array contents
+     * @return An array
+     */
+    public static byte[] append(byte last, byte... to) {
+        byte[] result = Arrays.copyOf(to, to.length + 1);
+        result[result.length - 1] = last;
+        return result;
+    }
+
+    /**
      * Apply an operation to the contents of an array.
      *
      * @param dbls An array
@@ -1590,9 +1698,10 @@ public final class ArrayUtils {
      * @param op An operation
      * @return A new array with the operation applied
      */
-    public static void copyAndApply(double[] dbls, DoubleUnaryOperator op) {
+    public static double[] copyAndApply(double[] dbls, DoubleUnaryOperator op) {
         dbls = copyOf(dbls);
         apply(dbls, op);
+        return dbls;
     }
 
     /**

@@ -1507,6 +1507,14 @@ public final class Strings {
         return sb.append(sval);
     }
 
+    public static StringBuilder appendPaddedHex(long val, StringBuilder sb) {
+        String sval = Long.toHexString(val);
+        for (int i = 0; i < 16 - sval.length(); i++) {
+            sb.append('0');
+        }
+        return sb.append(sval);
+    }
+
     public static String toPaddedHex(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
         for (byte b : bytes) {
@@ -1569,6 +1577,18 @@ public final class Strings {
             int b = bytes[i];
             appendPaddedHex(b, sb);
             if (i != bytes.length) {
+                sb.append(delimiter);
+            }
+        }
+        return sb.toString();
+    }
+
+    public static String toPaddedHex(long[] longs, String delimiter) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < longs.length; i++) {
+            long b = longs[i];
+            appendPaddedHex(b, sb);
+            if (i != longs.length) {
                 sb.append(delimiter);
             }
         }
@@ -2144,9 +2164,9 @@ public final class Strings {
     }
 
     /**
-     * If a string, trimmed, starts and ends with the same character
-     * and that character is ' or ", returns the subsequence between
-     * the quote characters.
+     * If a string, trimmed, starts and ends with the same character and that
+     * character is ' or ", returns the subsequence between the quote
+     * characters.
      *
      * @param s A string
      * @return The string or the unquoted substring
@@ -2158,7 +2178,7 @@ public final class Strings {
             if (start == '"' || start == '\'') {
                 char end = s.charAt(s.length() - 1);
                 if (end == start) {
-                    return s.substring(1, s.length()-1);
+                    return s.substring(1, s.length() - 1);
                 }
             }
         }
@@ -2166,9 +2186,9 @@ public final class Strings {
     }
 
     /**
-     * If a character sequence starts and ends with the same character
-     * and that character is ' or ", returns the subsequence between
-     * the quote characters.
+     * If a character sequence starts and ends with the same character and that
+     * character is ' or ", returns the subsequence between the quote
+     * characters.
      *
      * @param s A string
      * @return The string or the unquoted substring
@@ -2180,7 +2200,7 @@ public final class Strings {
             if (start == '"' || start == '\'') {
                 char end = s.charAt(len - 1);
                 if (end == start) {
-                    return s.subSequence(1, s.length()-1);
+                    return s.subSequence(1, s.length() - 1);
                 }
             }
         }
