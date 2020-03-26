@@ -53,8 +53,14 @@ public interface Wrapper<W> extends Named {
 
     @SuppressWarnings("unchecked")
     static <F> F find(Object o, Class<? super F> what) {
+        if (o == null) {
+            return null;
+        }
         if (o instanceof Wrapper<?>) {
             return ((Wrapper<?>) o).find(what);
+        }
+        if (what.isInstance(o)) {
+            return (F) what.cast(o);
         }
         return null;
     }

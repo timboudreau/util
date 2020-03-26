@@ -48,6 +48,71 @@ final class IntMapSynchronized<T> implements IntMap<T> {
     }
 
     @Override
+    public synchronized T valueAt(int index) {
+        return delegate.valueAt(index);
+    }
+
+    @Override
+    public synchronized T leastValue() {
+        return delegate.leastValue();
+    }
+
+    @Override
+    public synchronized T greatestValue() {
+        return delegate.greatestValue();
+    }
+
+    @Override
+    public synchronized int indexOf(int key) {
+        return delegate.indexOf(key);
+    }
+
+    @Override
+    public synchronized int valuesBetween(int first, int second,
+            IntMapConsumer<T> c) {
+        return delegate.valuesBetween(first, second, c);
+    }
+
+    @Override
+    public synchronized int keysAndValuesBetween(int first, int second, IntMapBiConsumer<T> c) {
+        return delegate.keysAndValuesBetween(first, second, c);
+    }
+
+    @Override
+    public synchronized void setValueAt(int index, T obj) {
+        delegate.setValueAt(index, obj);
+    }
+
+    @Override
+    public synchronized void removeIndices(IntSet toRemove) {
+        delegate.removeIndices(toRemove);
+    }
+
+    public synchronized int key(int index) {
+        return delegate.key(index);
+    }
+
+    @Override
+    public synchronized T remove(int key) {
+        return delegate.remove(key);
+    }
+
+    @Override
+    public synchronized T removeIndex(int index) {
+        return delegate.removeIndex(index);
+    }
+
+    @Override
+    public synchronized void forEach(IntMapBiConsumer<? super T> c) {
+        delegate.forEach(c);
+    }
+
+    @Override
+    public void forEachReversed(IntMapBiConsumer<? super T> c) {
+        delegate.forEach(c);
+    }
+
+    @Override
     public synchronized boolean containsKey(int key) {
         return delegate.containsKey(key);
     }

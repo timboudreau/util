@@ -105,6 +105,57 @@ class DoubleSetImpl implements DoubleSet {
         return result;
     }
 
+    public void removeIndices(IntSet indices) {
+        if (indices.isEmpty()) {
+            return;
+        }
+        int start = -1;
+        int len = 0;
+        int[] all = indices.toIntArray();
+        for (int i = all.length - 1; i >= 0; i--) {
+            int val = all[i];
+            if (start != -1) {
+                if (val == start - 1) {
+                    start = val;
+                    len++;
+                } else {
+                    removeConsecutiveIndices(start, len);
+                    start = val;
+                    len = 1;
+                }
+            } else {
+                start = val;
+                len = 1;
+            }
+        }
+        if (start != -1) {
+            removeConsecutiveIndices(start, len);
+        }
+    }
+
+    public void removeIndex(int index) {
+        if (isEmpty() || index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException("Attempt to remove item "
+                    + index + " of " + size);
+        }
+        shiftData(index + 1, index, size - index);
+        size--;
+    }
+
+    public void removeConsecutiveIndices(int start, int length) {
+        if (length == 1) {
+            removeIndex(start);
+            return;
+        } else if (length < 1) {
+            return;
+        } else if (start < 0 || start >= size || start + length > size) {
+            throw new IndexOutOfBoundsException("Attempt to remove range "
+                    + start + ":" + (start + length) + " of " + size);
+        }
+        shiftData(start + length, start, size - (start + length));
+        size -= length;
+    }
+
     @Override
     public void clear() {
         size = 0;
@@ -271,12 +322,17 @@ class DoubleSetImpl implements DoubleSet {
             return;
         }
         if (size + sz > data.length) {
-            data = Arrays.copyOf(data, size + sz);
+            grow(size + sz);
         }
         clean &= greatest() < set.least();
-        double[] otherData = set instanceof DoubleSetImpl
-                ? ((DoubleSetImpl) set).data
-                : set.toDoubleArray();
+        double[] otherData;
+        if (set instanceof DoubleSetImpl) {
+            otherData = ((DoubleSetImpl) set).data;
+        } else if (set instanceof ReadOnlyDoubleSet && ((ReadOnlyDoubleSet) set).delegate instanceof DoubleSetImpl) {
+            otherData = ((DoubleSetImpl) ((ReadOnlyDoubleSet) set).delegate).data;
+        } else {
+            otherData = set.toDoubleArray();
+        }
         System.arraycopy(otherData, 0, data, size, sz);
         size += sz;
     }
@@ -367,14 +423,44 @@ class DoubleSetImpl implements DoubleSet {
 
     @Override
     public void removeAll(DoubleSet remove) {
-        ensureClean();
-        remove.forEachReversed(val -> {
-            int ix = indexOf(val);
-            if (ix != -1) {
+        if (remove.isEmpty() || isEmpty()) {
+            return;
+        } else if (remove.size() == 1) {
+            int ix = indexOf(remove.getAsDouble(0));
+            if (ix >= 0) {
                 shiftData(ix + 1, ix, size - (ix + 1));
                 size--;
             }
-        });
+            return;
+        }
+        // triggers a call to ensureClean()
+        if (remove.least() > greatest() || remove.greatest() < least()) {
+            return;
+        }
+        int remStart = -1;
+        int remCount = 0;
+        for (int i = remove.size() - 1; i >= 0; i--) {
+            int ix = indexOf(remove.getAsDouble(i));
+            if (ix >= 0) {
+                if (remStart == ix + remCount) {
+                    remCount++;
+                } else if (remStart == -1) {
+                    remStart = ix;
+                    remCount = 1;
+                } else {
+                    shiftData(remStart + 1, remStart - (remCount - 1),
+                            size - (remStart + 1));
+                    size -= remCount;
+                    remStart = ix;
+                    remCount = 1;
+                }
+            }
+        }
+        if (remCount > 0) {
+            shiftData(remStart + 1, remStart - (remCount - 1),
+                    size - (remStart + 1));
+            size -= remCount;
+        }
     }
 
     void shiftData(int srcIx, int destIx, int len) {
@@ -484,6 +570,9 @@ class DoubleSetImpl implements DoubleSet {
             return true;
         } else if (o instanceof DoubleSet) {
             DoubleSet ds = (DoubleSet) o;
+            if (isEmpty() && ds.isEmpty()) {
+                return true;
+            }
             ensureClean();
             if (size != ds.size()) {
                 return false;
@@ -495,6 +584,7 @@ class DoubleSetImpl implements DoubleSet {
                         return false;
                     }
                 }
+                return true;
             }
         }
         return false;
@@ -932,7 +1022,13 @@ class DoubleSetImpl implements DoubleSet {
         }
 
         @Override
+        @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
         public boolean equals(Object obj) {
+            if (obj == this || obj == delegate) {
+                return true;
+            } else if (obj == null) {
+                return false;
+            }
             return delegate.equals(obj);
         }
 
@@ -1147,8 +1243,9 @@ class DoubleSetImpl implements DoubleSet {
         }
 
         @Override
+        @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
         public boolean equals(Object o) {
-            if (o == this) {
+            if (o == this || o == delegate) {
                 return true;
             } else if (o == null) {
                 return false;

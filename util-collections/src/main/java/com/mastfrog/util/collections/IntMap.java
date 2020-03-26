@@ -65,9 +65,37 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
      */
     void decrementKeys(int decrement);
 
+    /**
+     * Get the value with the least key in this map, or null if empty.
+     *
+     * @return The least value
+     */
+    T leastValue();
+
+    /**
+     * Get the value with the greatest key in this map, or null if empty.
+     *
+     * @return The least value
+     */
+    T greatestValue();
+
     public static <T> IntMap<T> of(int[] keys, T[] vals) {
         return new ArrayIntMap<>(keys, vals);
     }
+
+    /**
+     * Create a read-only, singleton IntMap.
+     *
+     * @param <T> The value type
+     * @param key The key
+     * @param val The value
+     * @return A read only single element map
+     */
+    public static <T> IntMap<T> singleton(int key, T val) {
+        return new SingletonIntMap<>(key, val);
+    }
+
+    T valueAt(int index);
 
     /**
      * Get the keys as an array.
@@ -236,6 +264,16 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
      */
     T put(int key, T val);
 
+    int indexOf(int key);
+
+    int valuesBetween(int first, int second, IntMapConsumer<T> c);
+
+    int keysAndValuesBetween(int first, int second, IntMapBiConsumer<T> c);
+
+    void setValueAt(int index, T obj);
+
+    T removeIndex(int index);
+
     /**
      * Create a synchronized view of this map.
      *
@@ -254,6 +292,11 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
     interface IntMapConsumer<T> {
 
         void accept(int key, T value);
+    }
+
+    interface IntMapBiConsumer<T> {
+
+        void accept(int index, int key, T value);
     }
 
     /**
@@ -292,6 +335,19 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
             cons.accept(k[i], t);
         }
     }
+
+    /**
+     * Iterate key value pairs with indices.
+     *
+     * @param cons A consumer
+     */
+    void forEach(IntMapBiConsumer<? super T> c);
+
+    void forEachReversed(IntMapBiConsumer<? super T> c);
+
+    void removeIndices(IntSet toRemove);
+
+    int key(int index);
 
     /**
      * Iterate key value pairs, stopping if the passed consumer returns false.

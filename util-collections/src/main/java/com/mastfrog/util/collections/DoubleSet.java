@@ -83,6 +83,10 @@ public interface DoubleSet extends Iterable<Double> {
         return new DoubleSetImpl(capacity);
     }
 
+    public static DoubleSet emptyDoubleSet() {
+        return DoubleSetEmpty.INSTANCE;
+    }
+
     /**
      * Create an independent copy of this double set with the same contents.
      *

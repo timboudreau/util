@@ -17,6 +17,171 @@ import org.junit.Test;
 public class DoubleSetTest {
 
     @Test
+    public void testEmptyIdentity() {
+        DoubleSet set = DoubleSet.create(10);
+        assertEquals(set.hashCode(), DoubleSet.emptyDoubleSet().hashCode());
+        assertEquals(DoubleSet.emptyDoubleSet(), set);
+        assertEquals(set, DoubleSet.emptyDoubleSet());
+    }
+
+    @Test
+    public void testWrapperEquality() {
+        double[] vals = new double[]{500, 600, 700, 100, 200, 300, 400};
+        DoubleSetImpl set = DoubleSetImpl.ofDoubles(vals);
+        assertEquals(set.hashCode(), set.toReadOnlyCopy().hashCode());
+        assertEquals(set.hashCode(), set.toSynchronizedSet().hashCode());
+        assertEquals(set, set.toSynchronizedSet());
+        assertEquals(set, set.toReadOnlyCopy());
+        assertEquals(set.copy(), set.toReadOnlyCopy());
+        assertEquals(set.copy(), set.toSynchronizedSet());
+    }
+
+    @Test
+    public void testRemoveRanges() {
+        double[] vals = new double[]{
+            5, 10, 15, 20, 25, 30, 35, 40
+//          0,  1,  2,  3,  4,  5,  6,  7
+        };
+        DoubleSetImpl set = DoubleSetImpl.ofDoubles(vals);
+        IntSet toRemove = IntSet.create(vals.length);
+        toRemove.add(1);
+        toRemove.add(2);
+        toRemove.add(3);
+        set.removeIndices(toRemove);
+        assertEquals("Should have shrunk by 3: " + set, vals.length - 3, set.size());
+
+        for (int i = 0; i < vals.length; i++) {
+            if (toRemove.contains(i)) {
+                assertFalse(set.contains(vals[i]));
+            } else {
+                assertTrue(set.contains(vals[i]));
+            }
+        }
+
+        set = DoubleSetImpl.ofDoubles(vals);
+        toRemove.add(6);
+        set.removeIndices(toRemove);
+
+        for (int i = 0; i < vals.length; i++) {
+            if (toRemove.contains(i)) {
+                assertFalse(set.contains(vals[i]));
+            } else {
+                assertTrue(set.contains(vals[i]));
+            }
+        }
+
+        set = DoubleSetImpl.ofDoubles(vals);
+        toRemove.add(5);
+        set.removeIndices(toRemove);
+
+        for (int i = 0; i < vals.length; i++) {
+            if (toRemove.contains(i)) {
+                assertFalse(set.contains(vals[i]));
+            } else {
+                assertTrue(set.contains(vals[i]));
+            }
+        }
+
+        set = DoubleSetImpl.ofDoubles(vals);
+        toRemove.add(4);
+        set.removeIndices(toRemove);
+
+        for (int i = 0; i < vals.length; i++) {
+            if (toRemove.contains(i)) {
+                assertFalse(set.contains(vals[i]));
+            } else {
+                assertTrue(set.contains(vals[i]));
+            }
+        }
+
+        set = DoubleSetImpl.ofDoubles(vals);
+        toRemove.add(7);
+        set.removeIndices(toRemove);
+
+        for (int i = 0; i < vals.length; i++) {
+            if (toRemove.contains(i)) {
+                assertFalse(set.contains(vals[i]));
+            } else {
+                assertTrue(set.contains(vals[i]));
+            }
+        }
+
+        set = DoubleSetImpl.ofDoubles(vals);
+        toRemove.add(0);
+        set.removeIndices(toRemove);
+
+        for (int i = 0; i < vals.length; i++) {
+            if (toRemove.contains(i)) {
+                assertFalse(set.contains(vals[i]));
+            } else {
+                assertTrue(set.contains(vals[i]));
+            }
+        }
+    }
+
+    @Test
+    public void testRemoveByIndex() {
+        double[] vals = new double[]{
+            5, 10, 15, 20, 25, 30, 35, 40
+//          0,  1,  2,  3,  4,  5,  6,  7
+        };
+        DoubleSetImpl set = DoubleSetImpl.ofDoubles(vals);
+        for (int i = 0; i < vals.length; i++) {
+            assertTrue(set.contains(vals[i]));
+        }
+        set.removeIndex(6);
+        for (int i = 0; i < vals.length; i++) {
+            if (vals[i] != 35) {
+                assertTrue(set.contains(vals[i]));
+            } else {
+                assertFalse(set.contains(vals[i]));
+            }
+        }
+        assertEquals(set.size(), vals.length - 1);
+        set.removeIndex(4);
+
+        for (int i = 0; i < vals.length; i++) {
+            if (vals[i] != 35 && vals[i] != 25) {
+                assertTrue("Set " + set + " should no longer contain " + vals[i] + " but says it does",
+                        set.contains(vals[i]));
+            } else {
+                assertFalse("Set " + set + " should not contain " + vals[i] + " but says it does", set.contains(vals[i]));
+            }
+        }
+        assertEquals(set.size(), vals.length - 2);
+        set.removeIndex(2);
+
+        for (int i = 0; i < vals.length; i++) {
+            if (vals[i] != 35 && vals[i] != 25 && vals[i] != 15) {
+                assertTrue(set.contains(vals[i]));
+            } else {
+                assertFalse(set.contains(vals[i]));
+            }
+        }
+        assertEquals(set.size(), vals.length - 3);
+
+        set.removeIndex(0);
+        for (int i = 0; i < vals.length; i++) {
+            if (vals[i] != 35 && vals[i] != 25 && vals[i] != 15 && vals[i] != 5) {
+                assertTrue(set.contains(vals[i]));
+            } else {
+                assertFalse(set.contains(vals[i]));
+            }
+        }
+        assertEquals(set.size(), vals.length - 4);
+
+        set.removeIndex(0);
+        assertEquals(set.size(), vals.length - 5);
+        assertFalse(set.contains(10));
+        assertEquals(20D, set.getAsDouble(0), 0.00000000000001D);
+
+        double val = set.greatest();
+        assertEquals(40D, val, 0.00001);
+        set.removeIndex(set.size - 1);
+        assertFalse(set.contains(40D));
+    }
+
+    @Test
     public void testSimple() {
         double[] vals = new double[]{500, 600, 700, 100, 200, 300, 400};
         DoubleSetImpl set = DoubleSetImpl.ofDoubles(vals);
@@ -192,10 +357,16 @@ public class DoubleSetTest {
     @Test
     public void testRemove() {
         DoubleSetImpl set = new DoubleSetImpl(3);
+        DoubleSetImpl exp = new DoubleSetImpl(57);
         double[] d = new double[100];
         for (int i = 0; i < 100; i++) {
-            set.add(100 - i);
-            d[i] = 100 - i;
+            int val = 100-i;
+            // Add out of order
+            set.add(val);
+            d[i] = val;
+            if (val < 10 || val > 20) {
+                exp.add(val);
+            }
         }
         Arrays.sort(d);
         DoubleSetImpl toRemove = DoubleSetImpl.ofDoubles(10D,
@@ -211,6 +382,22 @@ public class DoubleSetTest {
                 assertFalse(set.contains(i));
             }
         }
+        assertEquals(exp, set);
+        set = new DoubleSetImpl(3);
+        exp = new DoubleSetImpl(20);
+        toRemove = new DoubleSetImpl(100);
+        for (int i = 0; i <= 100; i++) {
+            set.add(i);
+            int v = i - (10 * (i / 10));
+            if (v > 3 && v < 7) {
+                toRemove.add(i);
+            } else {
+                exp.add(i);
+            }
+        }
+        set.removeAll(toRemove);
+        assertEquals(exp, set);
+
     }
 
     @Test

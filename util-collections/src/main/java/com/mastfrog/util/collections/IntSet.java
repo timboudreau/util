@@ -1,4 +1,4 @@
-/* 
+/*
  * The MIT License
  *
  * Copyright 2016 Tim Boudreau.
@@ -23,17 +23,6 @@
  */
 package com.mastfrog.util.collections;
 
-/**
- * A Java set of integers backed by a BitSet, which can look up random elements.
- * For performance, this is considerably faster than using a standard Java set
- * with a list maintained along side it for random access <i>IF the range from
- * lowest to highest integer in the set is small</i>.
- * <p>
- * Does not support negative integer values.
- * </p>
- *
- * @author Tim Boudreau
- */
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.NoSuchElementException;
@@ -62,8 +51,31 @@ public abstract class IntSet implements Set<Integer>, Cloneable {
     IntSet() {
     }
 
-    public static IntSet create(int capacity) {
+    public static IntSet bitSetBased(int capacity) {
         return new IntSetImpl(capacity);
+    }
+
+    public static IntSet arrayBased(int capacity) {
+        return new IntSetArray(capacity);
+    }
+
+    public static IntSet create(int capacity) {
+        int targetBytes = capacity / Long.BYTES;
+        if (targetBytes > 1073741824) {
+            return new IntSetArray(capacity);
+        }
+        return new IntSetImpl(capacity);
+    }
+
+    public static IntSet create(int minValue, int maxValue) {
+        int len = (maxValue - minValue) + 1;
+        if (len > 1073741824) {
+            return new IntSetArray(len);
+        }
+        if (minValue > 32768) {
+            return new IntSetArray(len / 4);
+        }
+        return new IntSetImpl(len);
     }
 
     public static IntSet create() {
@@ -157,9 +169,6 @@ public abstract class IntSet implements Set<Integer>, Cloneable {
     public abstract BitSet toBits();
 
     public final boolean add(int val) {
-        if (val < 0) {
-            throw new IllegalArgumentException("Negative values not allowed");
-        }
         return _add(val);
     }
 
@@ -255,6 +264,14 @@ public abstract class IntSet implements Set<Integer>, Cloneable {
     public int max() {
         int sz = bitsUnsafe().size();
         return bitsUnsafe().previousSetBit(sz);
+    }
+
+    public boolean removeAll(IntSet ints) {
+        boolean[] result = new boolean[1];
+        ints.forEachReversed(val -> {
+            result[0] |= remove(val);
+        });
+        return result[0];
     }
 
     public abstract boolean remove(int bit);
@@ -423,5 +440,78 @@ public abstract class IntSet implements Set<Integer>, Cloneable {
         public boolean hasNext() {
             return false;
         }
+    }
+
+    public boolean isArrayBased() {
+        return this instanceof IntSetArray;
+    }
+
+    public int visitConsecutiveIndicesReversed(ConsecutiveItemsVisitor v) {
+        int sz = size();
+        if (sz == 0) {
+            return 0;
+        } else if (sz == 1) {
+            v.items(0, 0, 1);
+            return 1;
+        }
+        int[] arr = toIntArray();
+        int total = 0;
+        int endIx = arr.length - 1;
+        int next = arr[arr.length - 1];
+        for (int i = arr.length - 2; i >= 0; i--) {
+            int curr = arr[i];
+            if (next != curr + 1) {
+                v.items(i + 1, endIx, endIx - i);
+                total++;
+                endIx = i;
+            }
+            next = curr;
+            if (i == 0) {
+                v.items(0, endIx, endIx + 1);
+                total++;
+            }
+        }
+        return total;
+    }
+
+    public int visitConsecutiveIndices(ConsecutiveItemsVisitor v) {
+        int sz = size();
+        if (sz == 0) {
+            return 0;
+        } else if (sz == 1) {
+            v.items(0, 0, iterator().nextInt());
+            return 1;
+        }
+        int[] arr = toIntArray();
+        int startIx = 0;
+        int count = 1;
+        int prev = arr[0];
+        int total = 0;
+        for (int i = 1; i < arr.length; i++) {
+            int curr = arr[i];
+            if (curr - prev == 1) {
+                count++;
+            } else {
+                v.items(startIx, startIx + count - 1, count);
+                count = 1;
+                startIx = i;
+                total++;
+            }
+            prev = curr;
+            if (i == arr.length - 1) {
+                v.items(startIx, startIx + count - 1, count);
+                total++;
+            }
+        }
+        return total;
+    }
+
+    public int valueAt(int index) {
+        return toIntArray()[index];
+    }
+
+    public interface ConsecutiveItemsVisitor {
+
+        void items(int first, int last, int count);
     }
 }

@@ -23,8 +23,14 @@
  */
 package com.mastfrog.util.collections;
 
+import java.util.ArrayList;
+import java.util.List;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.junit.Test;
 
 /**
@@ -32,6 +38,114 @@ import org.junit.Test;
  * @author Tim Boudreau
  */
 public class DoubleMapImplTest {
+
+    @Test
+    public void testEmptyEquality() {
+        DoubleMap<Object> dm = new DoubleMapImpl<>(5);
+        assertEquals(DoubleMap.emptyDoubleMap(), dm);
+        assertEquals(dm, DoubleMap.emptyDoubleMap());
+        assertEquals(dm.hashCode(), DoubleMap.emptyDoubleMap().hashCode());
+    }
+
+    @Test
+    public void testNearest() {
+        DoubleMap<String> m = new DoubleMapImpl<>(5);
+        m.put(100, "A");
+        m.put(120, "B");
+        m.put(150, "C");
+        boolean res = m.nearestValueTo(109, (ix, val, str) -> {
+            assertEquals(0, ix);
+            assertEquals(100D, val, 0.0000000001);
+            assertEquals("A", str);
+        });
+        assertTrue(res);
+
+        DoubleMap.Entry<? extends String> e = m.nearestValueTo(109);
+        assertNotNull(e);
+        assertEquals("A", e.value());
+        assertEquals(0, e.index());
+        assertEquals(100D, e.key(), 0.0000000001);
+
+        res = m.nearestValueTo(111, (ix, val, str) -> {
+            assertEquals(1, ix);
+            assertEquals(120d, val, 0.0000000001);
+            assertEquals("B", str);
+        });
+        assertTrue(res);
+
+        e = m.nearestValueTo(111);
+        assertNotNull(e);
+        assertEquals("B", e.value());
+        assertEquals(1, e.index());
+        assertEquals(120D, e.key(), 0.0000000001);
+
+        res = m.nearestValueTo(109, 10, (ix, val, str) -> {
+            assertEquals(0, ix);
+            assertEquals(100D, val, 0.0000000001);
+            assertEquals("A", str);
+        });
+        assertTrue(res);
+
+        e = m.nearestValueTo(109, 10);
+        assertNotNull(e);
+        assertEquals("A", e.value());
+        assertEquals(0, e.index());
+        assertEquals(100D, e.key(), 0.0000000001);
+
+        res = m.nearestValueTo(111, 10, (ix, val, str) -> {
+            assertEquals(1, ix);
+            assertEquals(120d, val, 0.0000000001);
+            assertEquals("B", str);
+        });
+        assertTrue(res);
+
+        e = m.nearestValueTo(111, 10);
+        assertNotNull(e);
+        assertEquals("B", e.value());
+        assertEquals(1, e.index());
+        assertEquals(120D, e.key(), 0.0000000001);
+
+        res = m.nearestValueTo(111, 2, (ix, val, str) -> {
+            fail("Should not find a value");
+        });
+        assertFalse(res);
+        e = m.nearestValueTo(111, 2);
+        assertNull(e);
+
+        res = m.nearestValueTo(109, 2, (ix, val, str) -> {
+            fail("Should not find a value");
+        });
+        assertFalse(res);
+
+        e = m.nearestValueTo(109, 2);
+        assertNull(e);
+
+        res = m.nearestValueExclusive(109, 10, (ix, val, str) -> {
+            assertEquals(0, ix);
+            assertEquals(100D, val, 0.0000000001);
+            assertEquals("A", str);
+        });
+        assertTrue(res);
+
+        e = m.nearestValueExclusive(109, 10);
+        assertNotNull(e);
+        assertEquals("A", e.value());
+        assertEquals(0, e.index());
+        assertEquals(100D, e.key(), 0.0000000001);
+
+        res = m.nearestValueExclusive(111, 10, (ix, val, str) -> {
+            assertEquals(1, ix);
+            assertEquals(120d, val, 0.0000000001);
+            assertEquals("B", str);
+        });
+        assertTrue(res);
+
+        e = m.nearestValueExclusive(111, 10);
+        assertNotNull(e);
+        assertEquals("B", e.value());
+        assertEquals(1, e.index());
+        assertEquals(120D, e.key(), 0.0000000001);
+    }
 
     @Test
     public void testRemove() {
@@ -44,7 +158,17 @@ public class DoubleMapImplTest {
             assertEquals(val, map.get(key));
             assertEquals(i, map.indexOf(key));
         }
-        map.removeRange(10, 20.5);
+        map.removeRange(10, 21);
+        for (int i = 0; i < 100; i++) {
+            if (i < 10 || i >= 21) {
+                assertTrue("Key " + i + " should be present", map.containsKey(i));
+                assertEquals("Value " + i + " should be present for " + i,
+                        Integer.valueOf(i), map.get(i));
+            } else {
+                assertFalse("Key present " + i + " but should not be in " + map, map.containsKey(i));
+                assertNull("Should not get a value for " + i, map.get(i));
+            }
+        }
     }
 
     @Test
@@ -129,5 +253,90 @@ public class DoubleMapImplTest {
                 });
             }
         });
+    }
+
+    @Test
+    public void testValuesBetween() {
+        DoubleMapImpl<Integer> map = new DoubleMapImpl<>(51);
+        List<Double> expKeys = new ArrayList<>();
+        List<Integer> expValues = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            map.put(i, i * 10);
+            if (i >= 30 && i <= 50) {
+                expKeys.add(Double.valueOf(i));
+                expValues.add(Integer.valueOf(i * 10));
+            }
+        }
+        List<Double> foundKeys = new ArrayList<>();
+        List<Integer> foundValues = new ArrayList<>();
+        int count = map.valuesBetween(30, 50, (int index, double value, Integer object) -> {
+            foundKeys.add(value);
+            foundValues.add(object);
+        });
+        assertEquals(21, count);
+        assertEquals(expKeys, foundKeys);
+        assertEquals(expValues, foundValues);
+    }
+
+    @Test
+    public void testPutAll() {
+        DoubleMapImpl<Integer> first = new DoubleMapImpl<>(50);
+        DoubleMapImpl<Integer> second = new DoubleMapImpl<>(50);
+        DoubleMapImpl<Integer> exp = new DoubleMapImpl<>(50);
+        for (int i = 0; i < 100; i++) {
+            int tens = i / 10;
+            if (tens % 2 == 0) {
+                first.put(i, i);
+            } else {
+                second.put(i, i);
+            }
+            exp.put(i, i);
+        }
+        assertEquals(first.toString(), 50, first.size());
+        assertEquals(50, second.size());
+        assertEquals(100, exp.size());
+        for (int i = 0; i < 100; i++) {
+            int tens = i / 10;
+            if (tens % 2 == 0) {
+                assertTrue(first.containsKey(i));
+                assertFalse(second.containsKey(i));
+                assertEquals(Integer.valueOf(i), first.get(i));
+                assertNull(second.get(i));
+            } else {
+                assertFalse(first.containsKey(i));
+                assertTrue(second.containsKey(i));
+                assertEquals(Integer.valueOf(i), second.get(i));
+                assertNull(first.get(i));
+            }
+        }
+
+        first.putAll(second);
+        assertEquals(100, first.size());
+        for (int i = 0; i < 100; i++) {
+            assertTrue(first.containsKey(i));
+            assertEquals(Integer.valueOf(i), first.get(i));
+        }
+        DoubleMap<Integer> more = new DoubleMapImpl<>(30);
+        for (int i = 0; i < 100; i++) {
+            int tens = i / 10;
+            if (tens % 2 == 1) {
+                more.put(i, i * 10);
+            }
+        }
+        first.putAll(more);
+        int foundCount = 0;
+        for (int i = 0; i < 100; i++) {
+            int tens = i / 10;
+            if (tens % 2 == 1) {
+                Integer val = first.get(i);
+                if (i * 10 == val.intValue()) {
+                    foundCount++;
+                }
+            }
+        }
+        // Since duplicate behavior is undefined (however the sort
+        // algorithm chooses to order duplicates), the best we can
+        // test for is that *some* values make it
+        assertTrue(foundCount > 0);
     }
 }

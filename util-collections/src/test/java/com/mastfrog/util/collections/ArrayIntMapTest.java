@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.collections;
 
+import static com.mastfrog.util.collections.CollectionUtils.setOf;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,6 +45,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.junit.Test;
 
 /**
@@ -57,6 +59,7 @@ public class ArrayIntMapTest {
     {
         nf.setMinimumIntegerDigits(4);
     }
+
     public void testEmptyWithSupplierAddingSupplied() {
         ArrayIntMap<Thing> m = new ArrayIntMap<>(10, true, new ThingSupplier());
         assertFalse(m.containsKey(5));
@@ -67,20 +70,20 @@ public class ArrayIntMapTest {
         assertTrue(m.containsValue(t5));
         assertTrue(m.containsKey(5));
         assertTrue(m.keySet().contains(5));
-        assertArrayEquals(new int[] {5}, m.keys());
+        assertArrayEquals(new int[]{5}, m.keys());
         assertFalse(m.containsKey(1000));
         Thing t1000 = m.get(1000);
         assertNotNull(t1000);
         assertTrue(m.containsKey(1000));
         assertEquals(2, m.size());
-        assertArrayEquals(new int[] {5, 1000}, m.keys());
+        assertArrayEquals(new int[]{5, 1000}, m.keys());
         assertSame(t1000, m.get(1000));
         assertEquals(1000, t1000.t);
         Thing t1001 = m.get(1001);
         assertNotNull(t1001);
         assertEquals(1001, t1001.t);
         assertTrue(m.containsKey(1001));
-        assertArrayEquals(new int[] {5, 1000, 1001}, m.keys());
+        assertArrayEquals(new int[]{5, 1000, 1001}, m.keys());
         assertEquals(3, m.size());
         assertFalse(m.isEmpty());
         Thing tRem = m.remove(5);
@@ -89,29 +92,29 @@ public class ArrayIntMapTest {
         assertTrue(m.containsKey(1000));
         assertTrue(m.containsKey(1001));
         assertEquals(2, m.size());
-        assertArrayEquals(new int[] {1000, 1001}, m.keys());
+        assertArrayEquals(new int[]{1000, 1001}, m.keys());
     }
 
     @Test
     public void testArraysConstructor() {
-        IntMap<String> im = IntMap.of(new int[] {1,2,3,4}, new String[] {"one", "two", "three", "four"});
+        IntMap<String> im = IntMap.of(new int[]{1, 2, 3, 4}, new String[]{"one", "two", "three", "four"});
         assertEquals(4, im.size());
         for (int i = 1; i < 5; i++) {
             String exp;
-            switch(i) {
-                case 1 :
+            switch (i) {
+                case 1:
                     exp = "one";
                     break;
-                case 2 :
+                case 2:
                     exp = "two";
                     break;
-                case 3 :
+                case 3:
                     exp = "three";
                     break;
-                case 4 :
+                case 4:
                     exp = "four";
                     break;
-                default :
+                default:
                     throw new AssertionError(i);
             }
             assertEquals(exp, im.get(i));
@@ -121,20 +124,20 @@ public class ArrayIntMapTest {
         assertNull(im.get(3));
         for (int i = 1; i < 5; i++) {
             String exp;
-            switch(i) {
-                case 1 :
+            switch (i) {
+                case 1:
                     exp = "one";
                     break;
-                case 2 :
+                case 2:
                     exp = "two";
                     break;
-                case 3 :
+                case 3:
                     exp = null;
                     break;
-                case 4 :
+                case 4:
                     exp = "four";
                     break;
-                default :
+                default:
                     throw new AssertionError(i);
             }
             assertEquals(exp, im.get(i));
@@ -157,6 +160,7 @@ public class ArrayIntMapTest {
         assertTrue(m.keySet().contains(Integer.valueOf(9)));
         assertTrue(m.keySet().contains(Integer.valueOf(51)));
     }
+
     @Test
     public void testPutInOrder() {
         // .size()
@@ -173,7 +177,6 @@ public class ArrayIntMapTest {
         assertTrue(m.keySet().contains(Integer.valueOf(9)));
         assertTrue(m.keySet().contains(Integer.valueOf(1)));
     }
-
 
     public void testEmptyWithSupplierNotAddingSupplied() {
         ArrayIntMap<Thing> m = new ArrayIntMap<>(10, false, new ThingSupplier());
@@ -197,6 +200,7 @@ public class ArrayIntMapTest {
     }
 
     static final class ThingSupplier implements Supplier<Thing> {
+
         private int counter = 1000;
 
         @Override
@@ -206,6 +210,7 @@ public class ArrayIntMapTest {
     }
 
     private static class Thing {
+
         private final int t;
 
         public Thing(int t) {
@@ -592,5 +597,70 @@ public class ArrayIntMapTest {
         assertEquals(Integer.valueOf(13), m.get(0));
         assertEquals(Integer.valueOf(14), m.get(0));
         assertEquals(Integer.valueOf(15), m.get(0));
+    }
+
+    @Test
+    public void testIndices() {
+        ArrayIntMap<Integer> m = new ArrayIntMap<>(11);
+        for (int i = 0; i <= 10; i++) {
+            m.put(i * 10, Integer.valueOf(i));
+        }
+        System.out.println("MAP " + m);
+        assertEquals(1, m.nearestIndexTo(5, false));
+        assertEquals(0, m.nearestIndexTo(5, true));
+
+        Set<Integer> ks = new HashSet<>();
+        Set<Integer> vs = new HashSet<>();
+        System.out.println("map now " + m);
+        m.valuesBetween(15, 35, (k, v) -> {
+            System.out.println("KEY " + k + " val " + v);
+            ks.add(k);
+            vs.add(v);
+        });
+        assertEquals(setOf(20, 30), ks);
+        assertEquals(setOf(2, 3), vs);
+        ks.clear();
+        vs.clear();
+
+        m.valuesBetween(20, 30, (k, v) -> {
+            ks.add(k);
+            vs.add(v);
+        });
+        assertEquals(setOf(20, 30), ks);
+        assertEquals(setOf(2, 3), vs);
+        ks.clear();
+        vs.clear();
+
+        m.valuesBetween(95, 105, (k, v) -> {
+            ks.add(k);
+            vs.add(v);
+        });
+        assertEquals(setOf(100), ks);
+        assertEquals(setOf(10), vs);
+
+        m.valuesBetween(-100, -10, (k, v) -> {
+            fail("should not be called");
+        });
+
+        m.valuesBetween(101, 110, (k, v) -> {
+            fail("should not be called");
+        });
+        m.valuesBetween(2, 9, (k, v) -> {
+            fail("should not be called");
+        });
+
+        m = new ArrayIntMap<>(23);
+        m.put(37, Integer.valueOf(105));
+        m.valuesBetween(0, 100, (k, v) -> {
+            assertEquals(37, k);
+            assertEquals(Integer.valueOf(105), v);
+        });
+        m.valuesBetween(0, 10, (k, v) -> {
+            fail("should not be called");
+        });
+        m.valuesBetween(38, 39, (k, v) -> {
+            fail("should not be called");
+        });
+
     }
 }

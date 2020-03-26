@@ -50,6 +50,16 @@ final class DoubleMapImpl<T> implements DoubleMap<T> {
     }
 
     @Override
+    public void removeIndex(int index) {
+        keySet.removeIndex(index);
+    }
+
+    @Override
+    public void removeIndices(IntSet indices) {
+        keySet.removeIndices(indices);
+    }
+
+    @Override
     public DoubleSet keySet() {
         return keySet.unmodifiableView();
     }
@@ -70,6 +80,24 @@ final class DoubleMapImpl<T> implements DoubleMap<T> {
             return;
         }
         keySet.removeAll(keys);
+    }
+
+    private static Object[] dataArray(DoubleMap<?> map) {
+        if (map instanceof DoubleMapImpl<?>) {
+            return ((DoubleMapImpl) map).values;
+        } else {
+            return map.values().toArray();
+        }
+    }
+
+    public void putAll(DoubleMap<T> map) {
+        if (map == this || map.isEmpty()) {
+            return;
+        }
+        int end = size();
+        keySet.addAll(map.keySet());
+        Object[] vals = dataArray(map);
+        System.arraycopy(vals, 0, values, end, map.size());
     }
 
     @Override
@@ -142,6 +170,19 @@ final class DoubleMapImpl<T> implements DoubleMap<T> {
             throw new IndexOutOfBoundsException("Index out of range: " + index);
         }
         return (T) values[index];
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public T setValueAt(int index, T value) {
+        keySet.ensureClean();
+        if (index < 0 || index >= size()) {
+            throw new IndexOutOfBoundsException("Index " + index
+                    + " out of range 0 - " + size());
+        }
+        T old = (T) values[index];
+        values[index] = value;
+        return old;
     }
 
     @SuppressWarnings("unchecked")
@@ -291,6 +332,32 @@ final class DoubleMapImpl<T> implements DoubleMap<T> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
+    public int valuesBetween(double a, double b, DoubleMapConsumer<? super T> c) {
+        if (a == b) {
+            int ix = keySet.indexOf(a);
+            if (ix >= 0) {
+                c.accept(ix, a, (T) values[ix]);
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+        int first = keySet.nearestIndexTo(Math.min(a, b), Bias.FORWARD);
+        int last = keySet.nearestIndexTo(Math.max(a, b), Bias.BACKWARD);
+        for (int i = first; i <= last; i++) {
+            c.accept(i, keySet.getAsDouble(i), (T) values[i]);
+        }
+        return (last - first) + 1;
+    }
+
+    public void clear() {
+        keySet.clear();
+        // Avoid leaking
+        Arrays.fill(values, null);
+    }
+
+    @Override
     public int hashCode() {
         long hash = 5;
         for (int i = 0; i < size(); i++) {
@@ -335,7 +402,6 @@ final class DoubleMapImpl<T> implements DoubleMap<T> {
 
         @Override
         void moveItem(int srcIndex, int targetIndex, double v) {
-            System.out.println("move " + srcIndex + " -> " + targetIndex);
             super.moveItem(srcIndex, targetIndex, v);
             values[targetIndex] = values[srcIndex];
         }

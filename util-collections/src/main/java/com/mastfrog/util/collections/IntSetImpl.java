@@ -24,6 +24,7 @@
 package com.mastfrog.util.collections;
 
 import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Iterator;
@@ -177,12 +178,87 @@ final class IntSetImpl extends IntSet {
     }
 
     @Override
+    public int valueAt(int index) {
+        if (index < 0) {
+            throw new IndexOutOfBoundsException("Negative index: " + index);
+        }
+        for (int curr = bits.nextSetBit(0), seen = 0; curr != -1; curr = bits.nextSetBit(curr + 1), seen++) {
+            if (seen == index) {
+                return curr;
+            }
+        }
+        throw new IndexOutOfBoundsException("Index out of bounds: " + index + " of " + size());
+    }
+
+    @Override
     public int[] toIntArray() {
         int[] result = new int[size()];
         for (int curr = bits.nextSetBit(0), i = 0; curr != -1; curr = bits.nextSetBit(curr + 1), i++) {
             result[i] = curr;
         }
         return result;
+    }
+
+    @Override
+    public boolean removeAll(IntSet ints) {
+        if (ints == this) {
+            clear();
+        }
+        if (!ints.isArrayBased()) {
+            BitSet otherBits = ints.bitsUnsafe();
+            int card = bits.cardinality();
+            bits.andNot(otherBits);
+            return card != bits.cardinality();
+        }
+        return super.removeAll(ints);
+    }
+
+    @Override
+    public int visitConsecutiveIndices(ConsecutiveItemsVisitor v) {
+        if (bits.isEmpty()) {
+            return 0;
+        }
+        int first = bits.nextSetBit(0);
+        int count = 0;
+        int index = 0;
+        do {
+            int unset = bits.nextClearBit(first + 1);
+            int distance = unset - first;
+            v.items(index, index + distance - 1, distance);
+            index += distance;
+            count++;
+            first = bits.nextSetBit(unset + 1);
+        } while (first > 0);
+        return count;
+    }
+
+    @Override
+    public int visitConsecutiveIndicesReversed(ConsecutiveItemsVisitor v) {
+        if (bits.isEmpty()) {
+            return 0;
+        }
+        int last = bits.previousSetBit(Integer.MAX_VALUE);
+        int index = bits.cardinality() - 1;
+        int count = 0;
+        do {
+            int unset = bits.previousClearBit(last - 1);
+            if (unset < 0) {
+                v.items(0, last, last + 1);
+                count++;
+                break;
+            }
+            int distance = last - unset;
+            v.items(index - (distance - 1), index, distance);
+            index -= distance;
+            count++;
+            last = bits.previousSetBit(unset - 1);
+            if (last == 0) {
+                count++;
+                v.items(0, 0, 1);
+                break;
+            }
+        } while (last > 0);
+        return count;
     }
 
     public Integer pick(Random r, Set<Integer> notIn) {
@@ -424,6 +500,8 @@ final class IntSetImpl extends IntSet {
             return true;
         } else if (o instanceof IntSetImpl) {
             return ((IntSetImpl) o).bits.equals(bits);
+        } else if (o instanceof IntSet) {
+            return Arrays.equals(((IntSet) o).toIntArray(), toIntArray());
         } else if (o instanceof Iterable) {
             BitSet bs = new BitSet(size());
             Iterable<?> it = (Iterable<?>) o;
@@ -435,6 +513,7 @@ final class IntSetImpl extends IntSet {
                 }
             }
             return bs.equals(bits);
+
         } else {
             return false;
         }
