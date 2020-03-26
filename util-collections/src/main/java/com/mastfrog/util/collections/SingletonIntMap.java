@@ -32,6 +32,7 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.PrimitiveIterator;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  *
@@ -67,7 +68,7 @@ final class SingletonIntMap<T> implements IntMap<T>, Map.Entry<Integer, T> {
     }
 
     @Override
-    public void forEach(IntMapBiConsumer<? super T> c) {
+    public void forEachIndexed(IntMapBiConsumer<? super T> c) {
         c.accept(0, key, value);
     }
 
@@ -127,6 +128,11 @@ final class SingletonIntMap<T> implements IntMap<T>, Map.Entry<Integer, T> {
     @Override
     public boolean containsKey(int key) {
         return this.key == key;
+    }
+
+    @Override
+    public int removeIf(Predicate<T> test) {
+        throw new UnsupportedOperationException("Read only.");
     }
 
     @Override
@@ -274,8 +280,10 @@ final class SingletonIntMap<T> implements IntMap<T>, Map.Entry<Integer, T> {
     }
 
     @Override
-    public Set<Integer> keySet() {
-        return Collections.singleton(key);
+    public IntSet keySet() {
+        IntSetImpl result = new IntSetImpl(1);
+        result.add(key);
+        return result;
     }
 
     @Override

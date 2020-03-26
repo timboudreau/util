@@ -65,23 +65,59 @@ final class IntSetImpl extends IntSet {
         this.bits = bits;
     }
 
+    IntSetImpl(IntSetImpl other) {
+        this.bits = (BitSet) other.bits.clone();
+    }
+
+    @Override
+    public IntSet copy() {
+        return new IntSetImpl(this);
+    }
+
+    @Override
     BitSet bitsUnsafe() {
         return bits;
     }
 
-    public IntSetImpl intersection(IntSetImpl other) {
-        BitSet nue = (BitSet) other.bits;
+    @Override
+    public IntSet intersection(IntSet other) {
+        if (other.isArrayBased()) {
+            BitSet bs = new BitSet(size());
+            other.forEachInt(val -> {
+                if (bits.get(val)) {
+                    bs.set(val);
+                }
+            });
+            return new IntSetImpl(bs);
+        }
+        BitSet nue = (BitSet) other.bitsUnsafe();
         nue.and(this.bits);
         return new IntSetImpl(nue);
     }
 
-    public IntSetImpl or(IntSet other) {
+    private IntSetArray toArrayBased() {
+        IntSetArray arr = new IntSetArray(size());
+        forEachInt(val -> {
+            arr.add(val);
+        });
+        return arr;
+    }
+
+    public IntSet or(IntSet other) {
+        if (other.isArrayBased()) {
+            IntSetArray arr = toArrayBased();
+            return arr.or(other);
+        }
         BitSet nue = (BitSet) other.toBits();
         nue.or(this.bits);
         return new IntSetImpl(nue);
     }
 
     public IntSet xor(IntSet other) {
+        if (other.isArrayBased()) {
+            IntSetArray arr = toArrayBased();
+            return arr.xor(other);
+        }
         BitSet nue = (BitSet) other.toBits();
         nue.xor(this.bits);
         return new IntSetImpl(nue);
@@ -164,6 +200,7 @@ final class IntSetImpl extends IntSet {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void forEach(IntConsumer cons) {
         for (int curr = bits.nextSetBit(0); curr != -1; curr = bits.nextSetBit(curr + 1)) {
             cons.accept(curr);
@@ -416,9 +453,15 @@ final class IntSetImpl extends IntSet {
             Collection<? extends Integer> c) {
         boolean result;
         if (c instanceof IntSet) {
+            IntSet is = (IntSet) c;
             int old = size();
-            bits.or(((IntSet) c).bitsUnsafe());
-            result = size() != old;
+            if (!is.isArrayBased()) {
+                bits.or(((IntSet) c).bitsUnsafe());
+                result = size() != old;
+            } else {
+                is.forEachInt(this::add);
+                result = size() != old;
+            }
         } else {
             BitSet bs = new BitSet();
             for (Integer i : c) {
@@ -438,10 +481,20 @@ final class IntSetImpl extends IntSet {
     @Override
     public boolean retainAll(
             Collection<?> c) {
-        if (c instanceof IntSetImpl) {
+        c = IntSetReadOnly.unwrap(c);
+        if (c instanceof IntSet && !((IntSet) c).isArrayBased()) {
             int old = bits.cardinality();
-            bits.and(((IntSetImpl) c).bits);
+            bits.and(((IntSet) c).bitsUnsafe());
             return bits.cardinality() != old;
+        } else if (c instanceof IntSetArray) {
+            int size = bits.cardinality();
+            IntSetArray other = (IntSetArray) c;
+            forEachInt(val -> {
+                if (!other.contains(val)) {
+                    remove(val);
+                }
+            });
+            return size != bits.cardinality();
         } else {
             BitSet bs = new BitSet();
             for (Object o : c) {
@@ -460,6 +513,7 @@ final class IntSetImpl extends IntSet {
     @Override
     public boolean removeAll(
             Collection<?> c) {
+        c = IntSetReadOnly.unwrap(c);
         if (c instanceof IntSetImpl) {
             int old = bits.cardinality();
             bits.andNot(((IntSetImpl) c).bits);
@@ -498,7 +552,11 @@ final class IntSetImpl extends IntSet {
             return false;
         } else if (o == this) {
             return true;
-        } else if (o instanceof IntSetImpl) {
+        }
+        if (o instanceof Collection<?>) {
+            o = IntSetReadOnly.unwrap((Collection<?>) o);
+        }
+        if (o instanceof IntSetImpl) {
             return ((IntSetImpl) o).bits.equals(bits);
         } else if (o instanceof IntSet) {
             return Arrays.equals(((IntSet) o).toIntArray(), toIntArray());

@@ -187,10 +187,9 @@ public final class CollectionUtils {
     }
 
     /**
-     * Returns a set which is always empty no matter what methods are
-     * called on it, for cases where an API wants to add to a set,
-     * but you would not use the contents and do not want to incur
-     * the memory use.
+     * Returns a set which is always empty no matter what methods are called on
+     * it, for cases where an API wants to add to a set, but you would not use
+     * the contents and do not want to incur the memory use.
      *
      * @param <T> A type
      * @return A set which pretends to allow addition, but in fact it never
@@ -202,10 +201,9 @@ public final class CollectionUtils {
     }
 
     /**
-     * Returns a list which is always empty no matter what methods are
-     * called on it, for cases where an API wants to add to a list,
-     * but you would not use the contents and do not want to incur
-     * the memory use.
+     * Returns a list which is always empty no matter what methods are called on
+     * it, for cases where an API wants to add to a list, but you would not use
+     * the contents and do not want to incur the memory use.
      *
      * @param <T> A type
      * @return A list which pretends to allow addition, but in fact it never
@@ -858,29 +856,29 @@ public final class CollectionUtils {
 
     /**
      * Create a map that, when a call to get() would return null, uses a
-     * supplier to create a new value, adds it and returns that, backed
-     * by a weak-keyed map.
+     * supplier to create a new value, adds it and returns that, backed by a
+     * weak-keyed map.
      *
      * @param <T> The key type
      * @param <R> The value type
      * @param valueSupplier The supplier of values
      * @return a map
      */
-    public static <T, R> Map<T,R> weakSupplierMap(Supplier<R> valueSupplier) {
+    public static <T, R> Map<T, R> weakSupplierMap(Supplier<R> valueSupplier) {
         return new SupplierMap<>(notNull("valueSupplier", valueSupplier), new WeakHashMap<>());
     }
 
     /**
      * Create a map that, when a call to get() would return null, uses a
-     * supplier to create a new value, adds it and returns that, backed
-     * by a weak-keyed map.
+     * supplier to create a new value, adds it and returns that, backed by a
+     * weak-keyed map.
      *
      * @param <T> The key type
      * @param <R> The value type
      * @param valueSupplier The supplier of values
      * @return a map
      */
-    public static <T, R> Map<T,R> linkedSupplierMap(Supplier<R> valueSupplier) {
+    public static <T, R> Map<T, R> linkedSupplierMap(Supplier<R> valueSupplier) {
         return new SupplierMap<>(notNull("valueSupplier", valueSupplier), new LinkedHashMap<>());
     }
 
@@ -1449,21 +1447,20 @@ public final class CollectionUtils {
     }
 
     /**
-     * Create a read-only converted view of a list in which allows a
-     * list of one type to be interacted with as if it were a list
-     * of another type via the passed conversion function, without
-     * making a copy of the original list.
+     * Create a read-only converted view of a list in which allows a list of one
+     * type to be interacted with as if it were a list of another type via the
+     * passed conversion function, without making a copy of the original list.
      *
      * @param <T> The input list type
      * @param <R> The output list type
      * @param list The list
-     * @param converter A function which converts input to output type,
-     * can handle nulls if the original list can contain nulls, and can
-     * return a legitimate value for all contents of the original list
+     * @param converter A function which converts input to output type, can
+     * handle nulls if the original list can contain nulls, and can return a
+     * legitimate value for all contents of the original list
      * @return A list of type R
      */
     public static <T, R> List<? extends R> converted(List<? extends T> list, Function<? super T, ? extends R> converter) {
-        return new ConvertedReadOnlyList<T,R>(converter, list);
+        return new ConvertedReadOnlyList<T, R>(converter, list);
     }
 
     /**
@@ -1729,7 +1726,9 @@ public final class CollectionUtils {
      */
     @SuppressWarnings("unchecked")
     public static <T> Set<T> intersection(Collection<T> a, Collection<T> b) {
-        if (a == b) {
+        if (a == null || b == null) {
+            return Collections.emptySet();
+        } else if (a == b) {
             return a instanceof Set<?> ? (Set<T>) a : new HashSet<>(a);
         }
         if (a instanceof IntSet && b instanceof IntSet) {

@@ -168,27 +168,6 @@ public class IntSetArrayTest {
     }
 
     @Test
-    public void testRandomNonRepeating() {
-        IntSet is = new IntSetArray(10);
-        IntSet used = new IntSetArray(5);
-        Random r = new Random(23239);
-        Set<Integer> seen = new HashSet<>();
-        for (int i = 0; i < 1000; i++) {
-            is.add(i * 5);
-        }
-        for (int i = 0; i < 10000; i++) {
-            Integer val = is.pick(r, used);
-            if (val == null) {
-                break;
-            }
-            seen.add(val);
-        }
-        Set<Integer> unseen = new HashSet<>(is);
-        unseen.removeAll(seen);
-        assertTrue("Did not see: " + unseen, unseen.isEmpty());
-    }
-
-    @Test
     public void testNoDuplicates() {
         IntSetArray is = new IntSetArray(20);
         for (int i = 0; i < 10; i++) {
@@ -458,4 +437,79 @@ public class IntSetArrayTest {
         assertTrue(msgBase, altered);
     }
 
+    @Test
+    public void testAddAll() {
+        Supplier<IntSet> arrSupplier = IntSetArray::new;
+        Supplier<IntSet> bitsSupplier = IntSetImpl::new;
+        testAddAll(arrSupplier, arrSupplier);
+        testAddAll(bitsSupplier, bitsSupplier);
+        testAddAll(arrSupplier, bitsSupplier);
+        testAddAll(bitsSupplier, arrSupplier);
+    }
+
+    private void testAddAll(Supplier<IntSet> aSupp, Supplier<IntSet> bSupp) {
+        IntSet a = aSupp.get();
+        IntSet b = bSupp.get();
+        String msg = a.getClass().getSimpleName() + " / " + b.getClass().getSimpleName() + ": ";
+        IntSet nue = aSupp.get();
+        for (int i = 0; i < 100; i++) {
+            if (i % 2 == 0) {
+                a.add(i);
+            } else {
+                b.add(i);
+            }
+        }
+        boolean added = nue.addAll(a);
+        assertTrue(added);
+        for (int i = 0; i < 100; i++) {
+            if (i % 2 == 0) {
+                assertTrue(msg + i, nue.contains(i));
+            } else {
+                assertFalse(msg + i, nue.contains(i));
+            }
+        }
+
+        added = nue.addAll(b);
+        assertTrue(added);
+        for (int i = 0; i < 100; i++) {
+            assertTrue(msg + i, nue.contains(i));
+        }
+
+        added = a.addAll(b);
+        assertTrue(added);
+        for (int i = 0; i < 100; i++) {
+            assertTrue(msg + i, a.contains(i));
+        }
+        added = b.addAll(a);
+
+        for (int i = 0; i < 100; i++) {
+            assertTrue(msg + i, b.contains(i));
+        }
+        assertTrue(added);
+    }
+
+    @Test
+    public void testRetainAll() {
+        Supplier<IntSet> arrSupplier = IntSetArray::new;
+        Supplier<IntSet> bitsSupplier = IntSetImpl::new;
+        testRetainAll(arrSupplier, arrSupplier);
+        testRetainAll(bitsSupplier, bitsSupplier);
+        testRetainAll(arrSupplier, bitsSupplier);
+        testRetainAll(bitsSupplier, arrSupplier);
+    }
+
+    private void testRetainAll(Supplier<IntSet> aSupp, Supplier<IntSet> bSupp) {
+        IntSet target = aSupp.get();
+        IntSet src = bSupp.get();
+        String msg = target.getClass().getSimpleName() + " / " + src.getClass().getSimpleName() + ": ";
+        for (int i = 0; i < 100; i++) {
+            target.add(i);
+            if (i % 2 == 0 || i % 3 == 0) {
+                src.add(i);
+            }
+        }
+        assertEquals(msg, 100, target.size());
+        target.retainAll(src);
+        assertEquals(msg, src, target);
+    }
 }

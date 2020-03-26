@@ -28,7 +28,9 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.PrimitiveIterator;
 import java.util.PrimitiveIterator.OfInt;
+import java.util.function.BiConsumer;
 import java.util.function.IntConsumer;
+import java.util.function.Predicate;
 
 /**
  * Primitive int to object map; the default implementation uses internal arrays
@@ -264,15 +266,109 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
      */
     T put(int key, T val);
 
+    /**
+     * Array-like access - get the index of a particular key within this map's
+     * internal data structures; needed for bulk operations where many items are
+     * iterated and performing a search for each one is prohibitively expensive.
+     *
+     * @param key A key
+     * @return An index or -1
+     */
     int indexOf(int key);
 
+    /**
+     * Visit values between the two passed values (inclusive if present).
+     *
+     * @param first One value
+     * @param second An another value
+     * @param c A consumer
+     * @return The number of visits performed
+     */
     int valuesBetween(int first, int second, IntMapConsumer<T> c);
 
+    /**
+     * Visit all keys and values between the two passed values (inclusive if
+     * present).
+     *
+     * @param first One value
+     * @param second An another value
+     * @param c A consumer
+     * @return The number of visits performed
+     */
     int keysAndValuesBetween(int first, int second, IntMapBiConsumer<T> c);
 
+    /**
+     * Set the value at a particular index.
+     *
+     * @param index An index
+     * @param obj A value
+     */
     void setValueAt(int index, T obj);
 
+    /**
+     * Remove the key/value pair at a given index.
+     *
+     * @param index The index
+     * @return The item removed
+     */
     T removeIndex(int index);
+
+    int removeIf(Predicate<T> test);
+
+    /**
+     * Move the data at one index to another, optionally retaining or
+     * modifying the old value.
+     *
+     * @param src The first key
+     * @param dest The destination key
+     * @param mover Performs the data modifications
+     * @return The final new value
+     */
+    default T move(int src, int dest, EntryMover<T> mover) {
+        if (src == dest) {
+            return get(src);
+        }
+        int fromIx = indexOf(src);
+        if (fromIx < 0) {
+            throw new IllegalArgumentException("No item at " + src);
+        }
+        T oldValue = valueAt(fromIx);
+        int toIx = indexOf(dest);
+        if (toIx < 0) {
+            return mover.onMove(src, oldValue, dest, null, (newOldValue, newNewValue) -> {
+                if (newOldValue != null) {
+                    setValueAt(fromIx, newOldValue);
+                }
+                if (newNewValue != null) {
+                    put(dest, newNewValue);
+                }
+                if (newOldValue == null) {
+                    removeIndex(toIx);
+                }
+            });
+        } else {
+            T newValue = valueAt(toIx);
+            return mover.onMove(src, oldValue, dest, newValue, (newOldValue, newNewValue) -> {
+                if (newOldValue != null) {
+                    setValueAt(fromIx, newOldValue);
+                }
+                if (newNewValue != null) {
+                    setValueAt(toIx, newNewValue);
+                }
+                if (newOldValue == null) {
+                    removeIndex(fromIx);
+                }
+            });
+        }
+    }
+
+    interface EntryMover<T> {
+
+        T onMove(int oldKey, T oldValue, int newKey, T newValue, BiConsumer<T, T> oldNewReceiver);
+    }
+
+    @Override
+    IntSet keySet();
 
     /**
      * Create a synchronized view of this map.
@@ -294,6 +390,11 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
         void accept(int key, T value);
     }
 
+    /**
+     * A consumer for map elements with indices.
+     *
+     * @param <T> The type
+     */
     interface IntMapBiConsumer<T> {
 
         void accept(int index, int key, T value);
@@ -308,6 +409,13 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
     @FunctionalInterface
     interface IntMapAbortableConsumer<T> {
 
+        /**
+         * Visit a key/value pair
+         *
+         * @param key The key
+         * @param value The value
+         * @return true to continue iterating, false to stop
+         */
         boolean accept(int key, T value);
     }
 
@@ -341,7 +449,7 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
      *
      * @param cons A consumer
      */
-    void forEach(IntMapBiConsumer<? super T> c);
+    void forEachIndexed(IntMapBiConsumer<? super T> c);
 
     void forEachReversed(IntMapBiConsumer<? super T> c);
 

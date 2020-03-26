@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.PrimitiveIterator;
+import java.util.Random;
 import java.util.function.IntConsumer;
 
 /**
@@ -63,6 +64,25 @@ class IntSetArray extends IntSet {
         this.size = other.size;
     }
 
+    IntSetArray(IntSet set) {
+        if (set instanceof IntSetReadOnly) {
+            set = ((IntSetReadOnly) set).delegate;
+        }
+        if (set instanceof IntSetArray) {
+            IntSetArray other = (IntSetArray) set;
+            this.data = Arrays.copyOf(other.data, other.data.length);
+            this.initialCapacity = other.initialCapacity;
+            this.sorted = other.sorted;
+            this.size = other.size;
+        } else {
+            initialCapacity = set.size();
+            data = new int[initialCapacity];
+            size = 0;
+            sorted = false;
+            set.forEachInt(this::add);
+        }
+    }
+
     @Override
     public int valueAt(int index) {
         return data[index];
@@ -71,6 +91,14 @@ class IntSetArray extends IntSet {
     private void maybeGrow() {
         if (size + 1 == data.length) {
             data = Arrays.copyOf(data, data.length + initialCapacity + 1);
+        }
+    }
+
+    private void maybeGrowToAccomodate(int count) {
+        if (data.length <= size + count) {
+            int newSize = Math.max(data.length, size + count)
+                    + initialCapacity + 1;
+            data = Arrays.copyOf(data, newSize);
         }
     }
 
@@ -233,6 +261,17 @@ class IntSetArray extends IntSet {
 
     @Override
     public boolean containsAll(Collection<?> c) {
+        c = IntSetReadOnly.unwrap(c);
+        if (c instanceof IntSet) {
+            IntSet is = (IntSet) c;
+            PrimitiveIterator.OfInt it = is.iterator();
+            while (it.hasNext()) {
+                if (!contains(it.nextInt())) {
+                    return false;
+                }
+            }
+            return true;
+        }
         for (Object o : c) {
             if (!contains(o)) {
                 return false;
@@ -243,6 +282,44 @@ class IntSetArray extends IntSet {
 
     @Override
     public boolean addAll(Collection<? extends Integer> c) {
+        if (c.isEmpty()) {
+            return false;
+        }
+        c = IntSetReadOnly.unwrap(c);
+        if (c instanceof IntSet) {
+            c = (IntSet) IntSetReadOnly.unwrap((Collection<?>) c);
+            if (c instanceof IntSetArray) {
+                IntSetArray isa = (IntSetArray) c;
+                if (isEmpty() || last() < isa.first()) {
+                    maybeGrowToAccomodate(isa.size);
+                    assert data.length > isa.size + size :
+                            "Data array not resized sufficiently for "
+                            + (isa.size + size) + ": " + data.length;
+                    System.arraycopy(isa.data, 0, data, size, isa.size);
+                    size += isa.size;
+                    sorted = false;
+                    return true;
+                }
+            }
+            IntSet arr = (IntSet) c;
+            IntSetArray notPresent = new IntSetArray(arr.size());
+            arr.forEachInt(val -> {
+                if (!contains(val)) {
+                    notPresent.add(val);
+                }
+            });
+            if (notPresent.size == 0) {
+                return false;
+            }
+            maybeGrowToAccomodate(notPresent.size);
+            assert data.length > notPresent.size + size :
+                    "Data array not resized sufficiently for "
+                    + (notPresent.size + size) + ": " + data.length;
+            System.arraycopy(notPresent.data, 0, data, size, notPresent.size);
+            size += notPresent.size;
+            sorted = false;
+            return true;
+        }
         boolean result = false;
         for (Integer value : c) {
             result |= add(value);
@@ -252,6 +329,21 @@ class IntSetArray extends IntSet {
 
     @Override
     public boolean retainAll(Collection<?> c) {
+        c = IntSetReadOnly.unwrap(c);
+        if (c instanceof IntSet) {
+            IntSet other = (IntSet) c;
+            IntSet indices = new IntSetImpl();
+            for (int i = 0; i < size; i++) {
+                if (!other.contains(data[i])) {
+                    indices.add(i);
+                }
+            }
+            if (indices.isEmpty()) {
+                return false;
+            }
+            removeIndices(indices);
+            return true;
+        }
         boolean result = false;
         assert size <= data.length : "Size is > array length";
         for (int ix = size - 1; ix >= 0; ix--) {
@@ -281,7 +373,7 @@ class IntSetArray extends IntSet {
             return false;
         }
         IntSet indices = new IntSetImpl(ints.size());
-        ints.forEach((IntConsumer) val -> {
+        ints.forEachInt(val -> {
             int ix = indexOf(val);
             if (ix >= 0) {
                 indices.add(ix);
@@ -290,6 +382,56 @@ class IntSetArray extends IntSet {
         if (indices.isEmpty()) {
             return false;
         }
+        removeIndices(indices);
+        return true;
+    }
+
+    @Override
+    public IntSet intersection(IntSet other) {
+        IntSetArray nue = new IntSetArray(this);
+        IntSet indices = new IntSetImpl(size);
+        for (int i = 0; i < size; i++) {
+            int val = data[i];
+            if (!other.contains(val)) {
+                indices.add(i);
+            }
+        }
+        nue.removeIndices(indices);
+        return nue;
+    }
+
+    @Override
+    public int pick(Random r) {
+        if (isEmpty()) {
+            throw new IndexOutOfBoundsException();
+        }
+        return data[r.nextInt(size)];
+    }
+
+    @Override
+    public boolean isArrayBased() {
+        return true;
+    }
+
+    @Override
+    public int last() {
+        if (size == 0) {
+            throw new IndexOutOfBoundsException();
+        }
+        checkSort();
+        return data[size - 1];
+    }
+
+    @Override
+    public int first() {
+        if (size == 0) {
+            throw new IndexOutOfBoundsException();
+        }
+        checkSort();
+        return data[0];
+    }
+
+    private void removeIndices(IntSet indices) {
         checkSort();
         indices.visitConsecutiveIndicesReversed((first, last, count) -> {
             first = indices.valueAt(first);
@@ -301,8 +443,6 @@ class IntSetArray extends IntSet {
                 size -= count;
             }
         });
-
-        return true;
     }
 
     void shiftData(int srcIx, int destIx, int len) {
@@ -400,18 +540,16 @@ class IntSetArray extends IntSet {
 
     public IntSetArray or(IntSet other) {
         IntSetArray result = copy();
-        other.forEach((IntConsumer) val -> {
-            result.add(val);
-        });
-        return result;
-    }
-
-    public IntSetArray intersection(IntSet other) {
-        IntSetArray result = new IntSetArray(Math.max(size, other.size()));
-        for (int i = 0; i < size; i++) {
-            if (other.contains(data[i])) {
-                result.add(data[i]);
+        IntSetArray notPresent = new IntSetArray(other.size());
+        other.forEachInt(val -> {
+            if (!contains(val)) {
+                notPresent.add(val);
             }
+        });
+        if (!notPresent.isEmpty()) {
+            maybeGrowToAccomodate(notPresent.size);
+            System.arraycopy(notPresent.data, 0, result.data, size - 1,
+                    notPresent.data.length);
         }
         return result;
     }
@@ -425,7 +563,7 @@ class IntSetArray extends IntSet {
                 result.add(v);
             }
         }
-        other.forEach((IntConsumer) val -> {
+        other.forEachInt((IntConsumer) val -> {
             if (!contains(val)) {
                 result.add(val);
             }
@@ -452,6 +590,7 @@ class IntSetArray extends IntSet {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void forEach(IntConsumer cons) {
         for (int i = 0; i < size; i++) {
             cons.accept(data[i]);
@@ -497,7 +636,11 @@ class IntSetArray extends IntSet {
             return false;
         } else if (o == this) {
             return true;
-        } else if (o instanceof IntSetArray) {
+        }
+        if (o instanceof IntSetReadOnly) {
+            o = IntSetReadOnly.unwrap((Collection<?>) o);
+        }
+        if (o instanceof IntSetArray) {
             IntSetArray isa = (IntSetArray) o;
             if (isa.size != size) {
                 return false;
@@ -512,7 +655,11 @@ class IntSetArray extends IntSet {
             }
             return true;
         } else if (o instanceof IntSet) {
-            return Arrays.equals(((IntSet) o).toIntArray(), toIntArray());
+            IntSet is = (IntSet) o;
+            if (is.size() != size) {
+                return false;
+            }
+            return containsAll(is);
         } else if (o instanceof Iterable) {
             Iterable<?> it = (Iterable<?>) o;
             int count = 0;
@@ -543,12 +690,6 @@ class IntSetArray extends IntSet {
         return sb.append(']').toString();
     }
 
-//    public Integer pick(Random r, Set<Integer> notIn) {
-//        if (notIn.containsAll(this)) {
-//            throw new IllegalArgumentException("Fully populated");
-//        }
-//        return data[r.nextInt(size)];
-//    }
     class PI implements PrimitiveIterator.OfInt {
 
         private int cursor = -1;

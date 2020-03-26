@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -605,15 +606,12 @@ public class ArrayIntMapTest {
         for (int i = 0; i <= 10; i++) {
             m.put(i * 10, Integer.valueOf(i));
         }
-        System.out.println("MAP " + m);
         assertEquals(1, m.nearestIndexTo(5, false));
         assertEquals(0, m.nearestIndexTo(5, true));
 
         Set<Integer> ks = new HashSet<>();
         Set<Integer> vs = new HashSet<>();
-        System.out.println("map now " + m);
         m.valuesBetween(15, 35, (k, v) -> {
-            System.out.println("KEY " + k + " val " + v);
             ks.add(k);
             vs.add(v);
         });
@@ -661,6 +659,46 @@ public class ArrayIntMapTest {
         m.valuesBetween(38, 39, (k, v) -> {
             fail("should not be called");
         });
+    }
 
+    @Test
+    public void testBulkRemove() {
+        ArrayIntMap<Integer> arm = new ArrayIntMap<>(100);
+        Map<Integer, Integer> expected = new HashMap<>();
+        IntSet toRemove = new IntSetImpl();
+        IntSet expectedKeySet = new IntSetImpl();
+        for (int i = 0; i < 100; i++) {
+            arm.put(i, Integer.valueOf(i));
+            int tens = i / 10;
+            if (tens % 2 != 0) {
+                toRemove.add(i);
+            } else {
+                expected.put(i, i);
+                expectedKeySet.add(i);
+            }
+        }
+        assertEquals(100, arm.size());
+        int removed = arm.removeAll(toRemove);
+        assertEquals(expectedKeySet, arm.keySet());
+        assertEquals(removed, toRemove.size());
+        assertEquals(expected, arm);
+    }
+
+    @Test
+    public void testMove() {
+        ArrayIntMap<Integer> arm = new ArrayIntMap<>();
+        for (int i = 0; i < 100; i++) {
+            arm.put(i, Integer.valueOf(i));
+        }
+        arm.move(1, 99, (int oldKey, Integer oldValue, int newKey, Integer newValue, BiConsumer<Integer, Integer> oldNewReceiver) -> {
+            assertEquals(oldKey, 1);
+            assertEquals(newKey, 99);
+            assertEquals(oldKey, oldValue.intValue());
+            assertEquals(newKey, newValue.intValue());
+            oldNewReceiver.accept(-1, 1000);
+            return 1000;
+        });
+        assertEquals(-1, arm.get(1).intValue());
+        assertEquals(1000, arm.get(99).intValue());
     }
 }

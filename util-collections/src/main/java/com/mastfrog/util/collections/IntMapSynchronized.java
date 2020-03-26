@@ -34,6 +34,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntConsumer;
+import java.util.function.Predicate;
 
 /**
  *
@@ -103,13 +104,13 @@ final class IntMapSynchronized<T> implements IntMap<T> {
     }
 
     @Override
-    public synchronized void forEach(IntMapBiConsumer<? super T> c) {
-        delegate.forEach(c);
+    public synchronized void forEachIndexed(IntMapBiConsumer<? super T> c) {
+        delegate.forEachIndexed(c);
     }
 
     @Override
     public void forEachReversed(IntMapBiConsumer<? super T> c) {
-        delegate.forEach(c);
+        delegate.forEachIndexed(c);
     }
 
     @Override
@@ -150,6 +151,11 @@ final class IntMapSynchronized<T> implements IntMap<T> {
     @Override
     public synchronized T getIfPresent(int key, T defaultValue) {
         return delegate.getIfPresent(key, defaultValue);
+    }
+
+    @Override
+    public synchronized int removeIf(Predicate<T> test) {
+        return delegate.removeIf(test);
     }
 
     static final class SyncPrimIterator implements PrimitiveIterator.OfInt {
@@ -273,7 +279,7 @@ final class IntMapSynchronized<T> implements IntMap<T> {
     }
 
     @Override
-    public synchronized Set<Integer> keySet() {
+    public synchronized IntSet keySet() {
         return delegate.keySet();
     }
 

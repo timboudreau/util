@@ -25,6 +25,7 @@ package com.mastfrog.util.collections;
 
 import java.util.BitSet;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator;
 import java.util.Random;
@@ -33,15 +34,20 @@ import java.util.function.IntConsumer;
 //import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
- * A set of primitive integers based on a BitSet, which implements
- * <code>Set&lt;Integer&gt;</code> for convenience. For performance, this is
- * considerably faster than using a standard Java set with a list maintained
- * along side it for random access <i>IF the range from lowest to highest
- * integer in the set is small</i>.
+ * A set of primitive integers, which implements <code>Set&lt;Integer&gt;</code>
+ * for convenience. For performance, these can be considerably faster than
+ * standard collections, since they take advantage of binary search and bulk
+ * array moves or bitset operations. Both BitSet and array-based implementations
+ * are provided, and both also provide index-based array-like lookup (entries
+ * sorted from low to high). The BitSet implementation should be preferred when:
+ * <ul>
+ * <li>No negative values need to be stored</li>
+ * <li>The set is likely to be out-of-order-write intensive</li>
+ * <li>Intersection or other logical operations over the entire set are
+ * needed</li>
+ * </ul>
  * <p>
- * <b>Does not support negative integer values.</b>
  * </p>
- *
  *
  * @author Tim Boudreau
  */
@@ -69,7 +75,7 @@ public abstract class IntSet implements Set<Integer>, Cloneable {
 
     public static IntSet create(int minValue, int maxValue) {
         int len = (maxValue - minValue) + 1;
-        if (len > 1073741824) {
+        if (len > 1073741824 || minValue < 0) {
             return new IntSetArray(len);
         }
         if (minValue > 32768) {
@@ -106,7 +112,24 @@ public abstract class IntSet implements Set<Integer>, Cloneable {
         }
     }
 
+    private static boolean anyArrayBased(Iterable<IntSet> all) {
+        boolean result = false;
+        for (IntSet is : all) {
+            if (is.isArrayBased()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static IntSet merge(Iterable<IntSet> all) {
+        if (anyArrayBased(all)) {
+            IntSetArray arr = new IntSetArray();
+            for (IntSet is : all) {
+                arr.addAll(is);
+            }
+            return arr;
+        }
         BitSet bits = null;
         for (IntSet i : all) {
             if (bits == null) {
@@ -119,6 +142,20 @@ public abstract class IntSet implements Set<Integer>, Cloneable {
     }
 
     public static IntSet intersection(Iterable<IntSet> all) {
+        if (anyArrayBased(all)) {
+            Iterator<IntSet> iter = all.iterator();
+            if (!iter.hasNext()) {
+                return IntSet.EMPTY;
+            }
+            IntSetArray initial = new IntSetArray(iter.next());
+            while (iter.hasNext()) {
+                initial.retainAll(iter.next());
+                if (initial.isEmpty()) {
+                    break;
+                }
+            }
+            return initial;
+        }
         BitSet bits = null;
         for (IntSet i : all) {
             if (bits == null) {
@@ -131,6 +168,10 @@ public abstract class IntSet implements Set<Integer>, Cloneable {
     }
 
     abstract BitSet bitsUnsafe();
+
+    public final void forEachInt(IntConsumer c) {
+        forEach(c);
+    }
 
     public IntSet intersection(IntSet other) {
         BitSet b1 = this.bitsUnsafe();
@@ -162,7 +203,9 @@ public abstract class IntSet implements Set<Integer>, Cloneable {
 
     /**
      * Returns a <i>copy</i> of this IntSet's internal state, modifications to
-     * which shall not affect this set.
+     * which shall not affect this set; when using array-based implementations,
+     * this may throw an exception, or if large values are present, allocate
+     * enormous bit sets.
      *
      * @return A bit set
      */
@@ -203,6 +246,14 @@ public abstract class IntSet implements Set<Integer>, Cloneable {
 
     public abstract int removeLast();
 
+    /**
+     * Visit each integer
+     *
+     * @param cons A consumer
+     * @deprecated collides with the method from Collection - use
+     * <code>forEachInt()</code> instead
+     */
+    @Deprecated
     public abstract void forEach(IntConsumer cons);
 
     public abstract void forEachReversed(IntConsumer cons);
@@ -283,6 +334,17 @@ public abstract class IntSet implements Set<Integer>, Cloneable {
     @Override
     public abstract void clear();
 
+    /**
+     * Create an independent copy of this set.
+     *
+     * @return A new set
+     */
+    public abstract IntSet copy();
+
+    public IntSet readOnlyView() {
+        return new IntSetReadOnly(this);
+    }
+
     @Override
     public abstract PrimitiveIterator.OfInt iterator();
 
@@ -297,7 +359,12 @@ public abstract class IntSet implements Set<Integer>, Cloneable {
 
         @Override
         public IntSet or(IntSet other) {
-            return other;
+            return other.copy();
+        }
+
+        @Override
+        public IntSet copy() {
+            return this;
         }
 
         @Override
@@ -506,12 +573,20 @@ public abstract class IntSet implements Set<Integer>, Cloneable {
         return total;
     }
 
+    public IntList asList() {
+        return new IntListImpl(toIntArray());
+    }
+
+    /**
+     * Array-like access by index; note that for BitSet-based implementations
+     * this is expensive; for array-based implementations it is much cheaper
+     * than performing a search.
+     *
+     * @param index The index of the value
+     * @return The value in the sort order of this set, low to high.
+     */
     public int valueAt(int index) {
         return toIntArray()[index];
     }
 
-    public interface ConsecutiveItemsVisitor {
-
-        void items(int first, int last, int count);
-    }
 }
