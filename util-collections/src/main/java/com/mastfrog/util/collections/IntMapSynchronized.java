@@ -89,6 +89,11 @@ final class IntMapSynchronized<T> implements IntMap<T> {
         delegate.removeIndices(toRemove);
     }
 
+    @Override
+    public synchronized void trim() {
+        delegate.trim();
+    }
+
     public synchronized int key(int index) {
         return delegate.key(index);
     }

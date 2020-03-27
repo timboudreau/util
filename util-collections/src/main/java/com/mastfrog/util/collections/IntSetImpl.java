@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.collections;
 
+import com.mastfrog.util.search.Bias;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -156,7 +157,177 @@ final class IntSetImpl extends IntSet {
         return result;
     }
 
+    @Override
+    public int max() {
+        return last();
+    }
+
+    @Override
+    public int lastContiguous(int startingAt) {
+        if (startingAt < 0) {
+            startingAt = 0;
+        }
+        if (!bits.get(startingAt)) {
+            return startingAt;
+        }
+        int result = bits.nextClearBit(startingAt);
+        if (result >= 0) {
+            return result - 1;
+        }
+        return -1;
+    }
+
+    @Override
+    public int valuesBetween(int start, int end, IntSetValueConsumer bi) {
+        if (start == end) {
+            if (contains(start)) {
+                bi.onValue(indexOf(start), start);
+                return 1;
+            }
+            return 0;
+        }
+        int realStart = bits.nextSetBit(start);
+        int realEnd = bits.previousSetBit(end);
+        if (realStart > realEnd) {
+            return 0;
+        }
+        int index = indexOf(realStart);
+        int curr = realStart;
+        int count = 0;
+        do {
+            int runEnd = bits.nextClearBit(curr);
+            if (runEnd < 0) {
+                break;
+            }
+            for (int i = curr; i < runEnd && i <= realEnd; i++) {
+                bi.onValue(index++, i);
+                count++;
+            }
+            curr = bits.nextSetBit(runEnd);
+        } while (curr > 0 && curr <= realEnd);
+        return count;
+    }
+
+    @Override
+    public int indexOf(int value) {
+        if (value < 0) {
+            return -1;
+        }
+        if (!bits.get(value)) {
+            return -1;
+        }
+        // okay we know the bit will be set
+        if (value == 0) {
+            // it is 0 and it is set so it can only be bit 0
+            return 0;
+        }
+        int result = 0;
+        int prev = value;
+        do {
+            int precedingUnset = bits.previousClearBit(prev - 1);
+            if (precedingUnset < 0) {
+                break;
+            }
+            result += prev - precedingUnset;
+            prev = bits.previousSetBit(precedingUnset);
+        } while (prev >= 0);
+        return result - 1;
+    }
+
+    @Override
+    public int nearestIndexTo(int value, Bias bias) {
+        if (bits.get(value)) {
+            return indexOf(value);
+        }
+        switch (bias) {
+            case NONE:
+                return -1;
+            case BACKWARD:
+                int prev = bits.previousSetBit(value);
+                if (prev < 0) {
+                    return -1;
+                }
+                return indexOf(prev);
+            case FORWARD:
+                int next = bits.nextSetBit(value);
+                if (next < 0) {
+                    return -1;
+                }
+                return indexOf(next);
+            case NEAREST:
+                int prev2 = bits.previousSetBit(value);
+                int next2 = bits.nextSetBit(value);
+                if (prev2 < 0) {
+                    return next2 < 0 ? -1 : indexOf(next2);
+                } else if (next2 < 0) {
+                    return indexOf(prev2);
+                }
+                if (next2 - value < value - prev2) {
+                    return indexOf(next2);
+                } else {
+                    return indexOf(prev2);
+                }
+            default:
+                throw new AssertionError(bias);
+        }
+    }
+
+    @Override
+    public int nearestValueTo(int value, Bias bias) {
+        if (bits.get(value)) {
+            return value;
+        }
+        switch (bias) {
+            case NONE:
+                return -1;
+            case BACKWARD:
+                return bits.previousSetBit(value);
+            case FORWARD:
+                return bits.nextSetBit(value);
+            case NEAREST:
+                int prev = bits.previousSetBit(value);
+                int next = bits.nextSetBit(value);
+                if (prev < 0) {
+                    return next;
+                } else if (next < 0) {
+                    return prev;
+                }
+                if (next - value < value - prev) {
+                    return next;
+                } else {
+                    return prev;
+                }
+            default:
+                throw new AssertionError(bias);
+        }
+    }
+
+    @Override
+    public IntSet inverse(int lowerBound, int upperBound) {
+        if (lowerBound == upperBound) {
+            return create(size());
+        }
+        int min = Math.min(lowerBound, upperBound);
+        int max = Math.max(lowerBound, upperBound);
+        BitSet inverse = new BitSet(Math.max(1, max - min));
+        inverse.set(min, max);
+        inverse.andNot(this.bits);
+        int first = inverse.nextSetBit(0);
+        if (first < min) {
+            inverse.clear(0, min);
+        }
+        int last = inverse.previousSetBit(inverse.size());
+        if (last > max) {
+            inverse.clear(max, inverse.size());
+        }
+        return new IntSetImpl(inverse);
+    }
+
+    @Override
     public int pick(Random r) {
+        if (isEmpty()) {
+            throw new IndexOutOfBoundsException("Empty.");
+        }
         int max = bits.length();
         int pos = r.nextInt(max);
         int result = bits.previousSetBit(pos);
@@ -166,7 +337,7 @@ final class IntSetImpl extends IntSet {
         return result;
     }
 
-    public boolean sameContents(Set<Integer> other) {
+    public boolean sameContents(Set<? extends Integer> other) {
         if (size() != other.size()) {
             return false;
         }

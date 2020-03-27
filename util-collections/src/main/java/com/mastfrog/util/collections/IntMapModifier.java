@@ -25,11 +25,15 @@ package com.mastfrog.util.collections;
 
 import com.mastfrog.util.collections.IntMap.EntryMover;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 /**
  * Allows very efficient bulk operations against a map; it is expected that once
  * you have begun calling methods on an instance, the map will <i>not</i> be
- * modified until the instance has been committed.
+ * modified until the instance has been committed. If you are performing a large
+ * number of add/remove/move/set operations, this class will coalesce those into
+ * the minimal set of array modifications needed and perform all of them when
+ * commit() is called.
  *
  * @author Tim Boudreau
  */
@@ -67,25 +71,45 @@ public final class IntMapModifier<T> {
         return this;
     }
 
+    private void checkConsistency(Supplier<String> op) {
+        if (map instanceof ArrayIntMap<?>) {
+            ArrayIntMap<?> m = (ArrayIntMap<?>) map;
+            try {
+                m.consistent();
+            } catch (AssertionError e) {
+                throw new AssertionError("Inconsistent after " + op.get(), e);
+            }
+        }
+    }
+
     public final void commit() {
-        removals.removeAll(additions.keySet());
         removals.removeAll(changes.keySet());
         changes.forEachIndexed((int index, int key, T value) -> {
-            map.setValueAt(index, value);
+            map.setValueAt(key, value);
         });
+        checkConsistency(() ->  "Applying changes " + changes);
         map.removeIndices(removals);
+        checkConsistency(() ->  "Removing indices " + changes);
         map.putAll(additions);
+        checkConsistency(() ->  "PutAll " + additions.keySet());
         additions.clear();
         removals.clear();
         changes.clear();
     }
 
+    private int checkIndex(int index) {
+        assert index < map.size() : "Invalid index " + index
+                + " >= map size " + map.size() + " returned by "
+                + map;
+        return index;
+    }
+
     public final IntMapModifier move(int from, int to) {
-        int sourceIndex = map.indexOf(from);
+        int sourceIndex = checkIndex(map.indexOf(from));
         if (sourceIndex < 0) {
             throw new IllegalArgumentException("Not present: " + from);
         }
-        int destIndex = map.indexOf(to);
+        int destIndex = checkIndex(map.indexOf(to));
         T old = map.valueAt(sourceIndex);
         T origDestValue = destIndex < 0 ? null : map.valueAt(destIndex);
         mover.onMove(from, old, to, origDestValue, (newOldValue, newNewValue) -> {
@@ -98,7 +122,7 @@ public final class IntMapModifier<T> {
                 if (destIndex < 0) {
                     additions.put(to, newNewValue);
                 } else {
-                    changes.put(to, newNewValue);
+                    changes.put(destIndex, newNewValue);
                 }
             }
         });
@@ -106,7 +130,7 @@ public final class IntMapModifier<T> {
     }
 
     public final IntMapModifier add(int key, T value) {
-        int ix = map.indexOf(key);
+        int ix = checkIndex(map.indexOf(key));
         if (ix < 0) {
             additions.put(key, value);
         } else {
@@ -116,7 +140,7 @@ public final class IntMapModifier<T> {
     }
 
     public final IntMapModifier remove(int key) {
-        int ix = map.indexOf(key);
+        int ix = checkIndex(map.indexOf(key));
         if (ix >= 0) {
             removals.add(ix);
         }
@@ -125,7 +149,7 @@ public final class IntMapModifier<T> {
 
     public final IntMapModifier removeAll(IntSet keys) {
         keys.forEachInt(val -> {
-            int ix = map.indexOf(val);
+            int ix = checkIndex(map.indexOf(val));
             if (ix >= 0) {
                 removals.add(ix);
             }

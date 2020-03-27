@@ -42,6 +42,13 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
     }
 
     @Override
+    public void trim() {
+        if (values.length != size) {
+            values = Arrays.copyOf(values, size);
+        }
+    }
+
+    @Override
     public IntListImpl copy() {
         int[] newValues = Arrays.copyOf(values, size);
         return new IntListImpl(newValues, true);

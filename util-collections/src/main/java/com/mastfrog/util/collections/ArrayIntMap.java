@@ -23,8 +23,9 @@
  */
 package com.mastfrog.util.collections;
 
-import com.mastfrog.util.sort.Sort;
 import com.mastfrog.util.collections.CollectionUtils.ComparableComparator;
+import static com.mastfrog.util.preconditions.Checks.notNull;
+import com.mastfrog.util.sort.Sort;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -56,11 +57,13 @@ import java.util.function.Supplier;
  */
 final class ArrayIntMap<T> implements IntMap<T> {
 
-    private int[] keys;
-
+    private static final boolean DEBUG = Boolean.getBoolean("ArrayIntMap.debug");
+    int[] keys;
     private Object[] vals;
     private int last = -1;
     private final Supplier<T> emptyValue;
+    int nextKey = 0;
+    boolean resort;
     private boolean addSuppliedValues;
 
     private ArrayIntMap(ArrayIntMap<T> other) {
@@ -190,6 +193,86 @@ final class ArrayIntMap<T> implements IntMap<T> {
         return Arrays.binarySearch(keys, 0, last + 1, key);
     }
 
+    boolean consistent() {
+        if (!DEBUG) {
+            return true;
+        }
+        if (last >= 0) {
+            if (last > 1) {
+                if (!resort) {
+                    int prev = keys[0];
+                    for (int i = 1; i <= last; i++) {
+                        int curr = keys[i];
+                        if (curr <= prev) {
+                            throw new AssertionError("Keys state inconsistent at "
+                                    + i + " with " + prev + " and " + curr
+                                    + " in " + Arrays.toString(Arrays.copyOf(keys, last + 1)));
+                        }
+                        prev = curr;
+                    }
+                }
+                int[] snapshot = Arrays.copyOf(keys, last + 1);
+                Arrays.sort(snapshot);
+                int prev = snapshot[0];
+                for (int i = 1; i < snapshot.length; i++) {
+                    if (prev == snapshot[i]) {
+                        throw new AssertionError("Keys contain duplicates at "
+                                + i + " with " + prev + " and " + snapshot[i]
+                                + " in " + Arrays.toString(snapshot));
+                    }
+                    prev = snapshot[i];
+                }
+            }
+            if (!resort) {
+                assert nextKey == keys[last] + 1 : "nextKey inconsistent "
+                        + nextKey + " should be " + (keys[last] + 1)
+                        + " in " + Arrays.toString(Arrays.copyOf(keys, last + 1));
+            } else {
+                int max = Integer.MIN_VALUE;
+                for (int i = 0; i <= last; i++) {
+                    max = Math.max(keys[i], max);
+                }
+                assert nextKey == max + 1 : "nextKey inconsistent "
+                        + nextKey + " should be " + (max + 1)
+                        + " in " + Arrays.toString(Arrays.copyOf(keys, last + 1));
+            }
+        }
+        return true;
+    }
+
+    // A few methods for tests
+    int[] keysUnsafe() {
+        return keys;
+    }
+
+    Object[] valuesUnsafe() {
+        return vals;
+    }
+
+    void setKeyUnsafe(int index, int key) {
+        keys[index] = key;
+    }
+
+    void setResortUnsafe(boolean val) {
+        resort = val;
+    }
+
+    int nextKeyUnsafe() {
+        return nextKey;
+    }
+
+    @Override
+    public void trim() {
+        if (last < 0) {
+            keys = new int[3];
+            vals = new Object[3];
+        } else {
+            int newSize = Math.max(last + 1, 3);
+            keys = Arrays.copyOf(keys, newSize);
+            vals = Arrays.copyOf(vals, newSize);
+        }
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public int valuesBetween(int first, int second, IntMapConsumer<T> c) {
@@ -217,14 +300,14 @@ final class ArrayIntMap<T> implements IntMap<T> {
             }
             return 0;
         } else {
-            int k1 = keys[ix1];
-            int k2 = keys[ix2];
-            if (k1 >= v1 && k2 <= v2) {
-                for (int i = ix1; i <= ix2; i++) {
+            int count = 0;
+            for (int i = Math.min(ix1, ix2); i <= Math.max(ix1, ix2); i++) {
+                if (keys[i] >= v1 && keys[i] <= v2) {
                     c.accept(keys[i], (T) vals[i]);
+                    count++;
                 }
             }
-            return (ix2 - ix1) + 1;
+            return count;
         }
     }
 
@@ -247,6 +330,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
         v2 = Math.min(keys[last], v2);
         int ix1 = nearestIndexTo(v1, false);
         int ix2 = nearestIndexTo(v2, true);
+        assert consistent();
         if (ix1 == ix2) {
             int v = keys[ix1];
             if (v <= v2 && v >= v1) {
@@ -255,14 +339,14 @@ final class ArrayIntMap<T> implements IntMap<T> {
             }
             return 0;
         } else {
-            int k1 = keys[ix1];
-            int k2 = keys[ix2];
-            if (k1 >= v1 && k2 <= v2) {
-                for (int i = ix1; i <= ix2; i++) {
+            int count = 0;
+            for (int i = Math.min(ix2, ix1); i <= Math.max(ix2, ix1); i++) {
+                if (keys[i] >= v1 && keys[i] <= v2) {
+                    count++;
                     c.accept(i, keys[i], (T) vals[i]);
                 }
             }
-            return (ix2 - ix1) + 1;
+            return count;
         }
     }
 
@@ -356,6 +440,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
             throw new IndexOutOfBoundsException("Index " + index
                     + " out of range 0-" + last);
         }
+        checkSort();
         return keys[index];
     }
 
@@ -462,19 +547,6 @@ final class ArrayIntMap<T> implements IntMap<T> {
         }
     }
 
-    private boolean noDuplicates() {
-        if (last < 0) {
-            return true;
-        }
-        checkSort();
-        for (int i = 1; i < last + 1; i++) {
-            if (keys[i] == keys[i - 1]) {
-                throw new AssertionError("Duplicate key " + keys[i] + " at " + (i - 1));
-            }
-        }
-        return true;
-    }
-
     @Override
     public int nearest(int key, boolean backward) {
         checkSort();
@@ -534,17 +606,8 @@ final class ArrayIntMap<T> implements IntMap<T> {
             growArrays();
         }
         int[] result = new int[last + 1];
-        try {
-            System.arraycopy(keys, 0, result, 0, last + 1);
-            return result;
-        } catch (ArrayIndexOutOfBoundsException aioobe) { //XXX temp diagnostics
-            ArrayIndexOutOfBoundsException e = new ArrayIndexOutOfBoundsException(
-                    "AIOOBE in IntMap.getKeys() - last = " + last + " keys: "
-                    + i2s(keys) + " vals: " + Arrays.asList(vals) + " result length "
-                    + result.length);
-            e.initCause(aioobe);
-            throw e;
-        }
+        System.arraycopy(keys, 0, result, 0, last + 1);
+        return result;
     }
 
     /**
@@ -629,9 +692,6 @@ final class ArrayIntMap<T> implements IntMap<T> {
                 ? null : emptyValue.get() : result;
     }
 
-    int nextKey = 0;
-    boolean resort;
-
     public int removeAll(IntSet keys) {
         IntSet contained = keys.intersection(keySet());
         IntSet indices = new IntSetImpl(contained.size());
@@ -654,13 +714,22 @@ final class ArrayIntMap<T> implements IntMap<T> {
         }
         int currentSize = size();
         int ms = map.size();
-        if (currentSize == 0 || map.key(ms - 1) > keys[last]) {
+        checkSort();
+        if (currentSize == 0 || map.key(ms - 1) >= keys[last]) {
+            if (map instanceof ArrayIntMap<?>) {
+                ((ArrayIntMap<?>) map).checkSort();
+                assert ((ArrayIntMap<?>) map).consistent();
+            }
             growFor(currentSize + ms);
             System.arraycopy(map.keysArray(), 0, keys, currentSize, ms);
             System.arraycopy(map.valuesArray(), 0, vals, currentSize, ms);
             nextKey = keys[currentSize + ms - 1] + 1;
             last += ms;
+            resort = true;
         } else {
+            if (map instanceof ArrayIntMap<?>) {
+                ((ArrayIntMap<?>) map).checkSort();
+            }
             IntSet inboundKeys = map.keySet();
             IntSet isect = inboundKeys.intersection(keySet());
             IntSet newItems = inboundKeys.copy();
@@ -681,49 +750,87 @@ final class ArrayIntMap<T> implements IntMap<T> {
                 PrimitiveIterator.OfInt it = newItems.iterator();
                 int cursor = currentSize;
                 while (it.hasNext()) {
-                    vals[cursor++] = map.get(it.next());
+                    int next = it.next();
+                    vals[cursor++] = map.get(next);
+                    nextKey = Math.max(nextKey, next + 1);
                 }
                 last += sz;
+                resort = true;
+                checkSort();
+                // XXX could detect if the least key inbound is
+                // greater than the greatest key current, and if so,
+                // avoid re-sorting, but we will trigger a sort on the
+                // inbound collection, which, if larger, will be
+                // equally expensive
             }
-            resort = true;
         }
+        assert consistent();
+    }
+
+    static boolean isSorted(IntMap<?> map) {
+        if (map instanceof ArrayIntMap<?>) {
+            return !((ArrayIntMap<?>) map).resort;
+        }
+        return false;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public T put(int key, T val) {
-        boolean between = false;
-        if (last >= 0) {
-            if (keys[last] == key && vals[last] == val) {
-                return val;
-            } else if (keys[last] == key) {
-                T old = (T) vals[last];
-                vals[last] = val;
-                return old;
-            }
-            if (key < keys[last]) {
-                resort = true;
-                between = key >= keys[0];
-            } else if (key == keys[last]) {
-                between = true;
-            }
+        if (key < nextKey) {
+            // XXX find a cleaner way to do this
+            checkSort();
         }
-        if (between) {
-            int existingIndex = Arrays.binarySearch(keys, 0, last + 1, key);
-            if (existingIndex >= 0) {
-                T old = (T) vals[existingIndex];
-                vals[existingIndex] = val;
-                return old;
+        try {
+            notNull("val", val);
+            boolean between = false;
+            if (last >= 0) {
+                if (keys[last] == key && vals[last] == val) {
+                    return val;
+                } else if (keys[0] == key && vals[last] == val) {
+                    return val;
+                } else if (keys[last] == key) {
+                    T old = (T) vals[last];
+                    vals[last] = val;
+                    return old;
+                } else if (keys[0] == key) {
+                    T old = (T) vals[0];
+                    vals[0] = val;
+                    return old;
+                }
+                if (key < keys[last]) {
+                    resort = true;
+                    between = key >= keys[0];
+                } else if (key == keys[last]) {
+                    between = true;
+                }
+            } else {
+                last = 0;
+                keys[0] = key;
+                vals[0] = val;
+                nextKey = key + 1;
+                resort = false;
+                return null;
             }
+            if (between) {
+                int existingIndex = Arrays.binarySearch(keys, 0, last + 1, key);
+                if (existingIndex >= 0) {
+                    T old = (T) vals[existingIndex];
+                    vals[existingIndex] = val;
+                    return old;
+                }
+            }
+            if (last == keys.length - 1) {
+                growArrays();
+            }
+            last++;
+            nextKey = Math.max(key + 1, nextKey);
+            keys[last] = key;
+            vals[last] = val;
+            return null;
+        } finally {
+            assert consistent();
         }
-        if (last == keys.length - 1) {
-            growArrays();
-        }
-        last++;
-        nextKey = Math.max(key + 1, nextKey);
-        keys[last] = key;
-        vals[last] = val;
-        return null;
     }
 
     void checkSort() {
@@ -733,6 +840,8 @@ final class ArrayIntMap<T> implements IntMap<T> {
             if (last >= 0) {
                 nextKey = keys[last] + 1;
             }
+        } else {
+            assert consistent();
         }
     }
 
@@ -847,6 +956,9 @@ final class ArrayIntMap<T> implements IntMap<T> {
      */
     @Override
     public void decrementKeys(int decrement) {
+        if (last < 0) {
+            return;
+        }
         checkSort();
 
         if (decrement < 0) {
@@ -862,9 +974,13 @@ final class ArrayIntMap<T> implements IntMap<T> {
             keys[i - shift] = keys[i] - decrement;
             vals[i - shift] = vals[i];
         }
-
-        Arrays.fill(keys, last - shift + 1, last + 1, Integer.MAX_VALUE);
         last = last - shift;
+        if (last >= 0) {
+            nextKey = keys[last] + 1;
+        } else {
+            nextKey = 0;
+            last = -1;
+        }
     }
 
     @Override
@@ -926,18 +1042,21 @@ final class ArrayIntMap<T> implements IntMap<T> {
 
     @Override
     public T put(Integer key, T value) {
-        if (key == null) {
-            throw new IllegalArgumentException("Null not allowed as a key");
-        }
         return this.put(key.intValue(), value);
     }
 
     @SuppressWarnings("unchecked")
+    @Override
     public T remove(int keyVal) {
         if (last >= 0 && keyVal == keys[last]) {
             T old = (T) vals[last];
             vals[last] = null;
             last--;
+            if (last > 0) {
+                nextKey = keys[last] + 1;
+            } else {
+                nextKey = 0;
+            }
             return old;
         }
         int index = Arrays.binarySearch(keys, 0, last + 1, keyVal);
@@ -951,31 +1070,29 @@ final class ArrayIntMap<T> implements IntMap<T> {
     private T removeIndexImpl(int index) {
         T result = (T) vals[index];
         if (index == 0) {
-            int[] newKeys = new int[keys.length];
-            Object[] newVals = new Object[vals.length];
-            System.arraycopy(keys, 1, newKeys, 0, keys.length - 1);
-            System.arraycopy(vals, 1, newVals, 0, vals.length - 1);
-            newKeys[newKeys.length - 1] = Integer.MAX_VALUE;
+            if (last == 0) {
+                last = -1;
+                nextKey = 0;
+                resort = false;
+                return (T) vals[0];
+            }
+            System.arraycopy(keys, 1, keys, 0, last);
+            System.arraycopy(vals, 1, vals, 0, last);
             last--;
-            keys = newKeys;
-            vals = newVals;
         } else if (index == last) {
             keys[last] = Integer.MAX_VALUE;
             vals[last] = null;
             last--;
+            if (last >= 0) {
+                nextKey = keys[last] + 1;
+            } else {
+                nextKey = 0;
+            }
             return result;
         } else {
-            int[] newKeys = new int[keys.length];
-            Object[] newVals = new Object[vals.length];
-            System.arraycopy(keys, 0, newKeys, 0, index);
-            System.arraycopy(vals, 0, newVals, 0, index);
-            System.arraycopy(keys, index + 1, newKeys, index, keys.length - (index + 1));
-            System.arraycopy(vals, index + 1, newVals, index, vals.length - (index + 1));
-            newKeys[newKeys.length - 1] = Integer.MAX_VALUE;
-            newVals[newVals.length - 1] = null;
+            System.arraycopy(keys, index + 1, keys, index, keys.length - (index + 1));
+            System.arraycopy(vals, index + 1, vals, index, vals.length - (index + 1));
             last--;
-            keys = newKeys;
-            vals = newVals;
         }
         return result;
     }

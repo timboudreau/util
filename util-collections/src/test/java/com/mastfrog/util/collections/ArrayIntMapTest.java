@@ -42,6 +42,7 @@ import java.util.function.Supplier;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -54,6 +55,10 @@ import org.junit.Test;
  * @author Tim Boudreau
  */
 public class ArrayIntMapTest {
+
+    static {
+        System.setProperty("ArrayIntMap.debug", "true");
+    }
 
     NumberFormat nf = NumberFormat.getIntegerInstance(Locale.UK);
 
@@ -700,5 +705,137 @@ public class ArrayIntMapTest {
         });
         assertEquals(-1, arm.get(1).intValue());
         assertEquals(1000, arm.get(99).intValue());
+    }
+
+    @Test
+    public void testMoves() {
+        ArrayIntMap<String> arm = new ArrayIntMap<>();
+        // 89767, 104051, 205394, 191110
+        arm.put(89767, "one");
+        arm.put(104051, "two");
+        arm.put(205394, "three");
+        arm.put(1, "four");
+        arm.move(1, 191110, (int oldKey, String oldValue, int newKey, String newValue, BiConsumer<String, String> oldNewReceiver) -> {
+            assertNull(newValue);
+            assertEquals("four", oldValue);
+            assertEquals(1, oldKey);
+            assertEquals(191110, newKey);
+            oldNewReceiver.accept(null, oldValue);
+            return newValue;
+        });
+        assertEquals("four", arm.get(191110));
+    }
+
+    @Test
+    public void testSearchAndSort() {
+        ArrayIntMap<String> arm = new ArrayIntMap<>();
+        // 89767, 104051, 205394, 191110
+        arm.put(89767, "one");
+        arm.put(104051, "two");
+        arm.put(205394, "three");
+//        arm.put(191110, "four");
+        arm.put(1, "four");
+        arm.move(1, 191110, (int oldKey, String oldValue, int newKey, String newValue, BiConsumer<String, String> oldNewReceiver) -> {
+            assertNull(newValue);
+            assertEquals("four", oldValue);
+            assertEquals(1, oldKey);
+            assertEquals(191110, newKey);
+            oldNewReceiver.accept(null, oldValue);
+            return newValue;
+        });
+
+        assertEquals(191110, arm.keys[3]);
+        assertEquals("four", arm.get(191110));
+
+        // Simulate an operation that messes up the sort order,
+        // in order to ensure a resort is performed on the call to valuesBetween()
+        Object[] va  = arm.valuesUnsafe();
+        arm.keys[0] = 104051;
+        va[0] = "two";
+        va[1] = "one";
+        arm.keys[1] = 89767;
+        arm.setResortUnsafe(true);
+
+        Set<String> found = new HashSet<>();
+        int count = arm.valuesBetween(174220, 223468, (int key, String value) -> {
+            found.add(value);
+            assertNotEquals("one", value);
+            assertNotEquals("two", value);
+        });
+        assertFalse("Nothing scanned", found.isEmpty());
+        assertNotEquals(0, count);
+        assertEquals(found.size(), count);
+        assertEquals(setOf("three", "four"), found);
+    }
+
+    @Test
+    public void testSearch2() {
+        /**
+         * Scan address range 145504 to 194752 bound 71.0, 95.0 81.0 x 81.0
+         * ending at 176.0, 95.0 passed bounds 71.0, 95.0 81.0 x 81.0 CMS:
+         * ValuesWith 152.0, 71.0 to 176.0, 95.0 in
+         * java.awt.Rectangle[x=128,y=0,width=128,height=128] tested 0 entries
+         * in [59858, 74142, 175484, 161201]
+         */
+        IntMap<String> m = new ArrayIntMap<String>()
+                .add(59858).apply("one")
+                .add(74142).apply("two")
+                .add(175484).apply("three")
+                .add(161201).apply("four");
+        assertEquals(4, m.size());
+
+        Set<String> res1 = new HashSet<>();
+        int ct1 = m.valuesBetween(145504, 194752, (key, val) -> {
+            res1.add(val);
+        });
+
+        Set<String> res2 = new HashSet<>();
+        int ct2 = m.keysAndValuesBetween(145504, 194752, (index, key, val) -> {
+            res2.add(val);
+        });
+        assertEquals(setOf("three", "four"), res1);
+        assertEquals(setOf("three", "four"), res2);
+        assertEquals(2, ct1);
+        assertEquals(2, ct2);
+    }
+
+    @Test
+    public void testPutAllOutOfOrder() {
+        ArrayIntMap<String> am = new ArrayIntMap<>();
+        am.add(1).apply("a");
+
+        ArrayIntMap<String> ab = new ArrayIntMap<>();
+        ab.put(10, "d");
+        ab.put(5, "c");
+        ab.put(2, "b");
+        am.putAll(ab);
+//        assertEquals("a", am.valueAt(0));
+        am.consistent();
+    }
+
+    @Test
+    public void testPutAllWithDuplicates() {
+        System.out.println("\n\n-------------------------");
+        try {
+            ArrayIntMap<String> am = new ArrayIntMap<>();
+            am.add(1).apply("a");
+            am.add(9).apply("d");
+            am.add(7).apply("c");
+            am.add(3).apply("b");
+
+            ArrayIntMap<String> am2 = new ArrayIntMap<>();
+            am2.add(3).apply("b");
+            am2.add(2).apply("a1");
+            am2.add(4).apply("a2");
+            am2.add(7).apply("c");
+            am2.add(8).apply("a3");
+
+            am.putAll(am2);
+            System.out.println("NOW: " + am);
+
+            am.consistent();
+        } finally {
+            System.out.println("\n\n--------------------------");
+        }
     }
 }

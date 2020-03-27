@@ -42,6 +42,11 @@ final class DoubleSetEmpty implements DoubleSet {
     }
 
     @Override
+    public void trim() {
+        // do nothing
+    }
+
+    @Override
     public DoubleSet copy() {
         return this;
     }

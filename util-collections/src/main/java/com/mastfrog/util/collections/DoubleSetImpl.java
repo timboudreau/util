@@ -74,6 +74,13 @@ class DoubleSetImpl implements DoubleSet {
         this.initialCapacity = data.length;
     }
 
+    @Override
+    public void trim() {
+        if (size != data.length) {
+            data = Arrays.copyOf(data, size);
+        }
+    }
+
     public static DoubleSetImpl of(Collection<? extends Number> c) {
         DoubleSetImpl set = new DoubleSetImpl(c.size());
         for (Number n : c) {
@@ -866,6 +873,10 @@ class DoubleSetImpl implements DoubleSet {
             return this;
         }
 
+        public void trim() {
+            // do nothing
+        }
+
         @Override
         public boolean contains(double d) {
             return delegate.contains(d);
@@ -1049,6 +1060,10 @@ class DoubleSetImpl implements DoubleSet {
 
         public SynchronizedDoubleSet(DoubleSet delegate) {
             this.delegate = delegate;
+        }
+
+        public synchronized void trim() {
+            delegate.trim();
         }
 
         @Override

@@ -37,7 +37,7 @@ import java.util.function.DoubleConsumer;
  *
  * @author Tim Boudreau
  */
-public interface DoubleSet extends Iterable<Double> {
+public interface DoubleSet extends Iterable<Double>, Trimmable {
 
     public static DoubleSet of(Collection<? extends Number> c) {
         Checks.notNull("c", c);

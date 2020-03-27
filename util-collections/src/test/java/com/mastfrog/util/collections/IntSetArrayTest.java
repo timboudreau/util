@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -150,7 +151,7 @@ public class IntSetArrayTest {
 
     @Test
     public void testRandomMore() {
-        IntSet exclude = new IntSetArray().addAll(1, 2, 3, 4);
+        Set<Integer> exclude = new HashSet<>(new IntSetArray().addAll(1, 2, 3, 4));
         IntSet test = new IntSetArray().addAll(1, 2, 3, 4, 11, 12, 13, 14, 21, 22, 23, 24);
         IntSet found = new IntSetImpl();
         Random r = new Random(23239);
@@ -165,6 +166,20 @@ public class IntSetArrayTest {
         }
         assertEquals(new IntSetArray(5).addAll(11, 12, 13, 14, 21, 22, 23, 24), found);
         assertNull(test.pick(r, exclude));
+    }
+
+    @Test
+    public void testPicking() {
+        Random r = new Random(10942042);
+        IntSet exclude = new IntSetImpl().addAll(1, 2, 3, 4);
+        IntSet all = new IntSetArray().addAll(1, 2, 3, 4, 5, 10, 17, 28, 33, 52, 64, 28, 119, 57);
+        IntSet got = new IntSetImpl();
+        for (int i = 0; i < 5; i++) {
+            Integer val = all.pick(r, exclude);
+            assertNotNull(val);
+            got.add(val);
+        }
+        assertEquals(IntSet.of(5, 10, 52, 64, 119), got);
     }
 
     @Test

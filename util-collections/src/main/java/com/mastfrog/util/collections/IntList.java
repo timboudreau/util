@@ -39,7 +39,7 @@ import java.util.function.IntConsumer;
  *
  * @author Tim Boudreau
  */
-public interface IntList extends List<Integer> {
+public interface IntList extends List<Integer>, Trimmable {
 
 
     /**

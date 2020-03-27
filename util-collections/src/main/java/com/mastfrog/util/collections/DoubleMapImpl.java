@@ -50,6 +50,14 @@ final class DoubleMapImpl<T> implements DoubleMap<T> {
     }
 
     @Override
+    public void trim() {
+        keySet.trim();
+        if (values.length != size()) {
+            values = Arrays.copyOf(values, size());
+        }
+    }
+
+    @Override
     public void removeIndex(int index) {
         keySet.removeIndex(index);
     }

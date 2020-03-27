@@ -34,7 +34,7 @@ import java.util.Objects;
  *
  * @author Tim Boudreau
  */
-public interface DoubleMap<T> {
+public interface DoubleMap<T> extends Trimmable {
 
     /**
      * Create a new map with the default capacity of 128.

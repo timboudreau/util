@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.collections;
 
+import com.mastfrog.util.search.Bias;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
@@ -83,9 +84,61 @@ class IntSetArray extends IntSet {
         }
     }
 
+    IntSetArray(int[] data) {
+        initialCapacity = Math.max(8, data.length);
+        data = this.data = Arrays.copyOf(data, data.length);
+        Arrays.sort(data);
+        int last = data[0];
+        size = data.length;
+        for (int i = 1; i < data.length; i++) {
+            int curr = data[i];
+            if (curr == last) {
+                int len = data.length - (i + 1);
+                System.arraycopy(data, i + 1, data, i, len);
+                i--;
+                size--;
+            }
+            last = curr;
+        }
+        sorted = true;
+    }
+
+    @Override
+    public void trim() {
+        data = Arrays.copyOf(data, size);
+    }
+
     @Override
     public int valueAt(int index) {
+        if (index < 0 || index > size) {
+            throw new IndexOutOfBoundsException("Index " + index
+                    + " out of range 0-" + size);
+        }
         return data[index];
+    }
+
+    @Override
+    public int lastContiguous(int val) {
+        if (size == 0) {
+            return -1;
+        } else if (size == 1) {
+            return val;
+        }
+        int ix = indexOf(val);
+        if (ix < 0) {
+            return val;
+        }
+        int prev = val;
+        for (int i = ix + 1; i < size; i++) {
+            int curr = data[i];
+            if (curr != prev + 1) {
+                return prev;
+            } else if (i == size - 1) {
+                return curr;
+            }
+            prev = curr;
+        }
+        return val;
     }
 
     private void maybeGrow() {
@@ -172,7 +225,8 @@ class IntSetArray extends IntSet {
         return true;
     }
 
-    private int indexOf(int value) {
+    @Override
+    public int indexOf(int value) {
         if (size == 0) {
             return -1;
         }
@@ -584,6 +638,9 @@ class IntSetArray extends IntSet {
 
     @Override
     public int removeLast() {
+        if (size == 0) {
+            throw new IndexOutOfBoundsException("Empty");
+        }
         int val = size == 0 ? -1 : data[size - 1];
         size = Math.max(size - 1, 0);
         return val;
@@ -610,12 +667,154 @@ class IntSetArray extends IntSet {
     }
 
     @Override
+    public IntSet inverse(int lowerBound, int upperBound) {
+        int min = Math.min(lowerBound, upperBound);
+        int max = Math.max(lowerBound, upperBound);
+        if (isEmpty() && upperBound >= 0) {
+            return IntSet.allOf(lowerBound, upperBound);
+        }
+        int maxValue = last();
+        int minValue = first();
+        if (minValue > max || maxValue < min) {
+            return IntSet.allOf(lowerBound, upperBound);
+        }
+//        int sz = size();
+//        int targetSize = (maxValue - minValue) - size;
+        IntSet result = IntSet.allOf(min, max);
+
+        valuesBetween(min, max, (index, value) -> {
+            result.remove(value);
+        });
+        return result;
+    }
+
+    @Override
+    public int nearestValueTo(int value, Bias bias) {
+        int ix = nearestIndexTo(value, bias);
+        return ix < 0 ? Integer.MIN_VALUE : data[ix];
+    }
+
+    @Override
+    public int nearestIndexTo(int value, Bias bias) {
+        switch (bias) {
+            case BACKWARD:
+                return nearestIndexTo(value, true);
+            case FORWARD:
+                return nearestIndexTo(value, false);
+            case NONE:
+                return indexOf(value);
+            case NEAREST:
+                int prev = nearestIndexTo(value, true);
+                int next = nearestIndexTo(value, false);
+                if (prev < 0) {
+                    return next;
+                } else if (next < 0) {
+                    return prev;
+                }
+                if (value - data[prev] < data[next] - value) {
+                    return prev;
+                }
+                return value;
+            default:
+                throw new AssertionError(bias);
+        }
+    }
+
+    public int nearest(int key, boolean backward) {
+        checkSort();
+        if (isEmpty()) {
+            return -1;
+        }
+        int last = size - 1;
+        int[] keys = data;
+        if (last == 0) {
+            return keys[last];
+        }
+        if (key < keys[0]) {
+            return backward ? keys[last] : keys[0];
+        }
+        if (key > keys[last]) {
+            return backward ? keys[last] : keys[0];
+        }
+        int idx = Arrays.binarySearch(keys, 0, last + 1, key);
+        if (idx < 0) {
+            idx = -idx + (backward ? -2 : - 1);
+            if (idx > last) {
+                idx = backward ? last : 0;
+            } else if (idx < 0) {
+                idx = backward ? last : 0;
+            }
+        }
+        return keys[idx];
+    }
+
+    public int nearestIndexTo(int key, boolean backward) {
+        int[] keys = data;
+        int last = size() - 1;
+        if (key < keys[0]) {
+            return backward ? last : 0;
+        }
+        if (key > keys[last]) {
+            return backward ? last : 0;
+        }
+        int idx = Arrays.binarySearch(keys, 0, last + 1, key);
+        if (idx < 0) {
+            idx = -idx + (backward ? -2 : - 1);
+            if (idx > last) {
+                idx = backward ? last : 0;
+            } else if (idx < 0) {
+                idx = backward ? last : 0;
+            }
+        }
+        return idx;
+    }
+
+    @Override
+    public int valuesBetween(int first, int second, IntSetValueConsumer c) {
+        int v1 = Math.min(first, second);
+        int v2 = Math.max(first, second);
+        int last = size() - 1;
+        if (last < 0) {
+            return 0;
+        } else if (last == 0) {
+            if (data[0] <= v2 && data[0] >= v1) {
+                c.onValue(0, data[0]);
+                return 1;
+            }
+            return 0;
+        }
+        checkSort();
+        v1 = Math.max(data[0], v1);
+        v2 = Math.min(data[last], v2);
+        int ix1 = nearestIndexTo(v1, false);
+        int ix2 = nearestIndexTo(v2, true);
+        if (ix1 == ix2) {
+            int v = data[ix1];
+            if (v <= v2 && v >= v1) {
+                c.onValue(ix1, v);
+                return 1;
+            }
+            return 0;
+        } else {
+            int count = 0;
+            for (int i = Math.min(ix1, ix2); i <= Math.max(ix1, ix2); i++) {
+                if (data[i] >= v1 && data[i] <= v2) {
+                    c.onValue(i, data[i]);
+                    count++;
+                }
+            }
+            return count;
+        }
+    }
+
+    @Override
     public int removeFirst() {
         if (size == 0) {
-            return -1;
+            throw new IndexOutOfBoundsException("Empty.");
         }
         int result = data[0];
         System.arraycopy(data, 1, data, 0, size - 1);
+        size--;
         return result;
     }
 

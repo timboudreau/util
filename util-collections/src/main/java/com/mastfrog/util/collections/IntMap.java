@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.PrimitiveIterator;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.function.Predicate;
 
@@ -46,10 +47,20 @@ import java.util.function.Predicate;
  * indicate that no value is present, fuzzy search operations for nearest keys
  * should not be used if the map can contain negative numbered keys.
  * </p>
+ * <p>
+ * Specific benefits over a <code>HashSet&lt;Integer&gt;</code>:
+ * <ul>
+ * <li>Fuzzy matching of nearest keys above or below a passed value</li>
+ * <li>Binary-search based key search</li>
+ * <li>Bulk operations with deferred re-sorting</li>
+ * <li>Bulk remove operations that minimize memory copies</li>
+ * <li>The memory footprint is that of two arrays and a couple of fields</li>
+ * </ul>
+ * </p>
  *
  * @author Tim Boudreau
  */
-public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer, T>, Serializable {
+public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer, T>, Serializable, Trimmable {
 
     /**
      * Like Map.containsKey(), determine if a key is present.
@@ -313,11 +324,17 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
      */
     T removeIndex(int index);
 
+    /**
+     * Remove any items that match a predicate.
+     *
+     * @param test The predicate
+     * @return The number of items removed
+     */
     int removeIf(Predicate<T> test);
 
     /**
-     * Move the data at one index to another, optionally retaining or
-     * modifying the old value.
+     * Move the data at one index to another, optionally retaining or modifying
+     * the old value.
      *
      * @param src The first key
      * @param dest The destination key
@@ -338,12 +355,11 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
             return mover.onMove(src, oldValue, dest, null, (newOldValue, newNewValue) -> {
                 if (newOldValue != null) {
                     setValueAt(fromIx, newOldValue);
+                } else {
+                    removeIndex(fromIx);
                 }
                 if (newNewValue != null) {
                     put(dest, newNewValue);
-                }
-                if (newOldValue == null) {
-                    removeIndex(toIx);
                 }
             });
         } else {
@@ -362,11 +378,37 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
         }
     }
 
+    /**
+     * Used for performing complex moves or alteration of data. This is used for
+     * situations where, for example, the map values are instances of Set, which
+     * should have their contents merged with any existing value in the
+     * destination address, rather than simply clobbering it.
+     *
+     * @param <T> The type
+     */
     interface EntryMover<T> {
 
+        /**
+         * Called when a single value is being moved.
+         *
+         * @param oldKey The key whose value is being moved
+         * @param oldValue The value which is being moved
+         * @param newKey The destination index of the existing value
+         * @param newValue The new value
+         * @param oldNewReceiver A consumer which allows onMove() to alter the
+         * objects - pass null as the first argument to remove the original
+         * value; otherwise it will be replaced with the first argument; same
+         * for the second argument at the destination address
+         * @return
+         */
         T onMove(int oldKey, T oldValue, int newKey, T newValue, BiConsumer<T, T> oldNewReceiver);
     }
 
+    /**
+     * Get the key set, which implements IntSet for unboxed access.
+     *
+     * @return The key set
+     */
     @Override
     IntSet keySet();
 
@@ -451,10 +493,26 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
      */
     void forEachIndexed(IntMapBiConsumer<? super T> c);
 
+    /**
+     * Iterate key value pairs with indices in reverse sort order.
+     *
+     * @param c A consumer
+     */
     void forEachReversed(IntMapBiConsumer<? super T> c);
 
+    /**
+     * Bulk remove items by index.
+     *
+     * @param toRemove A set of indices which must be between 0 and size()
+     */
     void removeIndices(IntSet toRemove);
 
+    /**
+     * Get the key at a given index.
+     *
+     * @param index An index between 0 and size()
+     * @return The key at that index
+     */
     int key(int index);
 
     /**
@@ -474,5 +532,19 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
             }
         }
         return true;
+    }
+
+    /**
+     * Fluent interface to <code>put()</code>.
+     *
+     * @param key The key
+     * @return A function for supplying the value, which executes the put and
+     * returns this.
+     */
+    default Function<T, IntMap<T>> add(int key) {
+        return val -> {
+            put(key, val);
+            return this;
+        };
     }
 }

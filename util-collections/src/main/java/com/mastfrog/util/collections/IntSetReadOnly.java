@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.collections;
 
+import com.mastfrog.util.search.Bias;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.PrimitiveIterator;
@@ -51,6 +52,21 @@ final class IntSetReadOnly extends IntSet {
             set = (Collection<T>) ((IntSetReadOnly) set).delegate;
         }
         return set;
+    }
+
+    @Override
+    public int indexOf(int value) {
+        return delegate.indexOf(value);
+    }
+
+    @Override
+    public int nearestIndexTo(int value, Bias bias) {
+        return delegate.nearestIndexTo(value, bias);
+    }
+
+    @Override
+    public int nearestValueTo(int value, Bias bias) {
+        return delegate.nearestValueTo(value, bias);
     }
 
     @Override
@@ -94,7 +110,7 @@ final class IntSetReadOnly extends IntSet {
     }
 
     @Override
-    public boolean sameContents(Set<Integer> other) {
+    public boolean sameContents(Set<? extends Integer> other) {
         return delegate.sameContents(other);
     }
 

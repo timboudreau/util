@@ -49,6 +49,11 @@ final class SingletonIntMap<T> implements IntMap<T>, Map.Entry<Integer, T> {
     }
 
     @Override
+    public void trim() {
+        // do nothing
+    }
+
+    @Override
     public T leastValue() {
         return value;
     }

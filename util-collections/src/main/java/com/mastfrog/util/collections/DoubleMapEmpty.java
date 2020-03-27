@@ -39,6 +39,10 @@ final class DoubleMapEmpty implements DoubleMap<Object> {
         return (DoubleMap<T>) INSTANCE;
     }
 
+    public void trim() {
+        // do nothing
+    }
+
     @Override
     public void put(double key, Object value) {
         throw new UnsupportedOperationException("Empty instance");
@@ -58,7 +62,6 @@ final class DoubleMapEmpty implements DoubleMap<Object> {
     public Object setValueAt(int index, Object value) {
         throw new UnsupportedOperationException("Empty instance");
     }
-
 
     @Override
     public Object get(double key) {
