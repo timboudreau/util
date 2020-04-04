@@ -597,6 +597,11 @@ class DoubleSetImpl implements DoubleSet {
         return false;
     }
 
+    public boolean containsApproximate(double targetValue, double tolerance) {
+        double result = nearestValueTo(targetValue, tolerance);
+        return result != Double.MIN_VALUE;
+    }
+
     /**
      * Get the value closest to the specified value where the distance, positive
      * or negative, to that value is less than or equal to the passed tolerance;

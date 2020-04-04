@@ -132,6 +132,16 @@ public interface DoubleSet extends Iterable<Double>, Trimmable {
         }
     }
 
+    default boolean containsApproximate(double targetValue, double tolerance) {
+        if (targetValue == Double.MIN_VALUE) {
+            throw new IllegalArgumentException("Double.MIN_VALUE is the "
+                    + "null return value for nearest values and cannot"
+                    + "be used here.");
+        }
+        double result = nearestValueTo(targetValue, tolerance);
+        return result != Double.MIN_VALUE;
+    }
+
     /**
      * Clear the contents of this set, setting its size to zero; this operation
      * may not release underlying storage.

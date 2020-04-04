@@ -21,7 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package com.mastfrog.util.collections;
 
 import com.mastfrog.util.strings.Strings;
@@ -41,6 +40,7 @@ import java.util.function.Consumer;
  *
  * @author Tim Boudreau
  */
+@SuppressWarnings("EqualsAndHashcode")
 final class ArraySet<T> extends AbstractSet<T> {
 
     private final T[] objs;
@@ -103,7 +103,14 @@ final class ArraySet<T> extends AbstractSet<T> {
         return h;
     }
 
+    @Override
+    public boolean isEmpty() {
+        return objs.length == 0;
+    }
+
+    @Override
     public String toString() {
-        return Strings.join(',', (Object[]) objs).toString();
+        return '[' + Strings.join(',', (Object[]) objs).toString()
+                + ']';
     }
 }

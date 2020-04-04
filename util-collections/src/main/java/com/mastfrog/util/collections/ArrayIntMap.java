@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.PrimitiveIterator;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -313,7 +314,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
 
     @Override
     @SuppressWarnings("unchecked")
-    public int keysAndValuesBetween(int first, int second, IntMapBiConsumer<T> c) {
+    public int keysAndValuesBetween(int first, int second, IndexedIntMapConsumer<T> c) {
         int v1 = Math.min(first, second);
         int v2 = Math.max(first, second);
         if (last < 0) {
@@ -369,6 +370,10 @@ final class ArrayIntMap<T> implements IntMap<T> {
 
     @Override
     public int[] keysArray() {
+        if (last == -1) {
+            return new int[0];
+        }
+        checkSort();
         return Arrays.copyOf(keys, last + 1);
     }
 
@@ -394,16 +399,17 @@ final class ArrayIntMap<T> implements IntMap<T> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "deprecation"})
     public void forEach(IntMapConsumer<? super T> cons) {
         for (int i = 0; i < size(); i++) {
             cons.accept(keys[i], (T) this.vals[i]);
         }
     }
 
-    public void removeIndices(IntSet indices) {
+    @Override
+    public int removeIndices(IntSet indices) {
         if (indices.isEmpty()) {
-            return;
+            return 0;
         }
         int start = -1;
         int len = 0;
@@ -432,6 +438,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
         } else {
             nextKey = keys[last] + 1;
         }
+        return indices.size();
     }
 
     @Override
@@ -465,7 +472,8 @@ final class ArrayIntMap<T> implements IntMap<T> {
 
     @Override
     @SuppressWarnings("unchecked")
-    public void forEachIndexed(IntMapBiConsumer<? super T> cons) {
+    public void forEachIndexed(IndexedIntMapConsumer<? super T> cons) {
+        checkSort();
         for (int i = 0; i < size(); i++) {
             cons.accept(i, keys[i], (T) this.vals[i]);
         }
@@ -473,7 +481,8 @@ final class ArrayIntMap<T> implements IntMap<T> {
 
     @Override
     @SuppressWarnings("unchecked")
-    public void forEachReversed(IntMapBiConsumer<? super T> cons) {
+    public void forEachReversed(IndexedIntMapConsumer<? super T> cons) {
+        checkSort();
         for (int i = size() - 1; i >= 0; i--) {
             cons.accept(i, keys[i], (T) this.vals[i]);
         }
@@ -487,13 +496,13 @@ final class ArrayIntMap<T> implements IntMap<T> {
     }
 
     @Override
-    public int lowestKey() {
+    public int leastKey() {
         checkSort();
         return isEmpty() ? -1 : keys[0];
     }
 
     @Override
-    public int highestKey() {
+    public int greatestKey() {
         checkSort();
         return isEmpty() ? -1 : keys[last];
     }
@@ -548,7 +557,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
     }
 
     @Override
-    public int nearest(int key, boolean backward) {
+    public int nearestKey(int key, boolean backward) {
         checkSort();
         if (isEmpty()) {
             return -1;
@@ -593,23 +602,6 @@ final class ArrayIntMap<T> implements IntMap<T> {
         return idx;
     }
 
-    @Override
-    public int[] getKeys() {
-        if (last == -1) {
-            return new int[0];
-        }
-        checkSort();
-        if (last == -1) {
-            return new int[0];
-        }
-        if (last == keys.length - 1) {
-            growArrays();
-        }
-        int[] result = new int[last + 1];
-        System.arraycopy(keys, 0, result, 0, last + 1);
-        return result;
-    }
-
     /**
      * Some temporary diagnostics re issue 48608
      */
@@ -627,6 +619,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
     }
 
     @SuppressWarnings("unchecked")
+    @Override
     public T getIfPresent(int key, T defaultValue) {
         if (last < 0) {
             return defaultValue;
@@ -1045,6 +1038,13 @@ final class ArrayIntMap<T> implements IntMap<T> {
         return this.put(key.intValue(), value);
     }
 
+    @Override
+    public void forEachValue(Consumer<T> valueConsumer) {
+        for (int i = 0; i < last + 1; i++) {
+            valueConsumer.accept(valueAt(i));
+        }
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public T remove(int keyVal) {
@@ -1160,6 +1160,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
 
     @Override
     public void forEachKey(IntConsumer cons) {
+        checkSort();
         for (int i = 0; i <= last; i++) {
             cons.accept(keys[i]);
         }
@@ -1469,7 +1470,14 @@ final class ArrayIntMap<T> implements IntMap<T> {
             throw new UnsupportedOperationException();
         }
 
+        @Override
+        @SuppressWarnings("element-type-mismatch")
         public boolean equals(Object o) {
+            if (o == this) {
+                return true;
+            } else if (o == null) {
+                return false;
+            }
             if (o instanceof Collection<?>) {
                 Collection<?> c = (Collection<?>) o;
                 if (c.size() == size()) {

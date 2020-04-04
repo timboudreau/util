@@ -352,16 +352,24 @@ public class IntSetTest {
         }
     }
 
-    private void assertSets(String msg, Set<Integer> expect, Set<Integer> got) {
+    static <T> void assertSets(String msg, Set<T> expect, Set<T> got) {
         if (expect.equals(got)) {
             return;
         }
-        Set<Integer> isect = CollectionUtils.intersection(expect, got);
-        Set<Integer> notPresent = new HashSet<>(expect);
+        Set<T> isect = CollectionUtils.intersection(expect, got);
+        Set<T> notPresent = new HashSet<>(expect);
         notPresent.removeAll(got);
-        Set<Integer> surprises = new HashSet<>(got);
+        Set<T> surprises = new HashSet<>(got);
         surprises.removeAll(expect);
         StringBuilder sb = new StringBuilder(msg).append("Sets do not match. ");
+        if (notPresent.isEmpty() && surprises.isEmpty()) {
+            fail("Sets have the same contents but their equality contract is broken. "
+                    + " Expected " + expect + " and got " + got
+                    + " with hash codes " + expect.hashCode() + " and " + got.hashCode()
+                    + " of types " + expect.getClass().getName() + " and "
+                    + got.getClass().getName()
+            );
+        }
         sb.append("Missing ").append(notPresent.size()).append(" items. ")
                 .append(surprises.size()).append(" unexpected items.  Common items: ")
                 .append(isect.size()).append(" of expected ").append(expect.size())

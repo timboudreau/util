@@ -23,15 +23,16 @@
  */
 package com.mastfrog.util.collections;
 
+import static com.mastfrog.util.collections.CollectionUtils.intMap;
 import com.mastfrog.util.search.Bias;
 import java.io.Serializable;
 import java.util.Map;
-import java.util.PrimitiveIterator;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.IntConsumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * Primitive int to object map; the default implementation uses internal arrays
@@ -44,13 +45,13 @@ import java.util.function.Predicate;
  * always higher than existing ones.
  * <p>
  * <b>Note on negative keys:</b>Since search operations for keys use -1 to
- * indicate that no value is present, fuzzy search operations for nearest keys
- * should not be used if the map can contain negative numbered keys.
+ * indicate that no value is present, fuzzy search operations for nearestKey
+ * keys should not be used if the map can contain negative numbered keys.
  * </p>
  * <p>
  * Specific benefits over a <code>HashSet&lt;Integer&gt;</code>:
  * <ul>
- * <li>Fuzzy matching of nearest keys above or below a passed value</li>
+ * <li>Fuzzy matching of nearestKey keys above or below a passed value</li>
  * <li>Binary-search based key search</li>
  * <li>Bulk operations with deferred re-sorting</li>
  * <li>Bulk remove operations that minimize memory copies</li>
@@ -60,7 +61,7 @@ import java.util.function.Predicate;
  *
  * @author Tim Boudreau
  */
-public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer, T>, Serializable, Trimmable {
+public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer, T>, Serializable, Trimmable, IntegerKeyedMap {
 
     /**
      * Like Map.containsKey(), determine if a key is present.
@@ -108,6 +109,97 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
         return new SingletonIntMap<>(key, val);
     }
 
+    /**
+     * Create a primitive integer map backed by an array and binary search
+     * (removes are expensive).
+     *
+     * @param <T> The value type
+     * @return A map
+     * @deprecated Use IntMap.created()
+     */
+    public static <T> IntMap<T> create() {
+        return new ArrayIntMap<>();
+    }
+
+    /**
+     * Get a primitive integer map backed by an array and binary search (removes
+     * are expensive).
+     *
+     * @param <T> The value type
+     * @param toCopy A map to copy
+     * @return A map
+     * @deprecated Use <code>IntMap.copyOf()</code>
+     */
+    public static <T> IntMap<T> copyOf(Map<Integer, T> toCopy) {
+        return new ArrayIntMap<>(toCopy);
+    }
+
+    /**
+     * Get a primitive integer map backed by an array and binary search (removes
+     * are expensive).
+     *
+     * @param <T> The value type
+     * @param initialCapacity The initial backing array sizes
+     * @return A map
+     * @deprecated Use <code>IntMap.create(int)</code>
+     */
+    public static <T> IntMap<T> create(int initialCapacity) {
+        return new ArrayIntMap<>(initialCapacity);
+    }
+
+    /**
+     * The equivalent of SupplierMap for primitive int keyed maps, with a
+     * supplier for empty values, and the default capacity of 96.
+     *
+     * @param <T> The value type
+     * @param emptyValues Supplies empty values
+     * @return A map
+     */
+    public static <T> IntMap<T> create(Supplier<T> emptyValues) {
+        return create(96, false, emptyValues);
+    }
+
+    /**
+     * The equivalent of SupplierMap for primitive int keyed maps.
+     *
+     * @param <T> The value type
+     * @param initialCapacity The initial array size to allocate for keys and
+     * values
+     * @param emptyValues Supplies empty values
+     * @return A map
+     */
+    @SuppressWarnings("deprecation")
+    public static <T> IntMap<T> create(int initialCapacity, Supplier<T> emptyValues) {
+        return intMap(initialCapacity, false, emptyValues);
+    }
+
+    /**
+     * The equivalent of <code>CollectionUtils.supplierMap()</code> for
+     * primitive int keyed maps.
+     *
+     * @param <T> The value type
+     * @param initialCapacity The initial array size to allocate for keys and
+     * values
+     * @param addSuppliedValues If true, when a non-existent key is requested
+     * and the passed supplier is being used to supply a value, store the new
+     * value in the map; if false, just return it, not altering the state of the
+     * map. Unless the value objects are expensive to create or creating them
+     * alters the state of something else, pass false.
+     * @param emptyValues Supplies empty values
+     * @return A map
+     */
+    public static <T> IntMap<T> create(int initialCapacity, boolean addSuppliedValues, Supplier<T> emptyValues) {
+        return new ArrayIntMap<>(initialCapacity, addSuppliedValues, emptyValues);
+    }
+
+    /**
+     * Get the value at a particular index in this map's iteration order.
+     *
+     * @param index An index
+     * @return A value
+     * @throws IndexOutOfBoundsException if the index is <code>&lt; 0</code> or
+     * <code>&gt; size()</code>
+     */
     T valueAt(int index);
 
     /**
@@ -115,6 +207,7 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
      *
      * @return The keys
      */
+    @Override
     default int[] keysArray() {
         int[] result = new int[size()];
         int ix = 0;
@@ -139,6 +232,9 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
     }
 
     /**
+     * Get an iterable of map entries; note that this is never the preferred way
+     * to iterate such a map, since it requires boxing and instantiating entry
+     * objects which are not used internally.
      *
      * @return
      */
@@ -176,95 +272,20 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
     T getIfPresent(int key, T defaultValue);
 
     /**
-     * Get a copy of the keys array for this map.
-     *
-     * @return An array of keys
-     */
-    int[] getKeys();
-
-    /**
-     * Get the highest key currently present, or -1 if empty.
-     *
-     * @return The highest key
-     */
-    int highestKey();
-
-    /**
-     * Get an iterator over the keys.
-     *
-     * @return An iterator
-     */
-    PrimitiveIterator.OfInt keysIterator();
-
-    /**
-     * Get the lowest key currently present, or -1 if empty.
-     *
-     * @return
-     */
-    int lowestKey();
-
-    /**
-     * Get the key which is present in this map and is closest to the passed
-     * value.
-     *
-     * @param key A key
-     * @param backward If true, look for keys less than the passed value if it
-     * is not present
-     * @return An integer, -1 if not present
-     */
-    int nearest(int key, boolean backward);
-
-    /**
-     * Get a key which is present in this map and is equal to the passed key
-     * value, or of not present, the value which is nearest to the passed one in
-     * the direction specified by the passed bias (NONE = exact, BACKWARD
-     * returns the nearest key less than the passed value, FORWARD returns the
-     * nearest key greater than the passed value, NEAREST searches forward and
-     * backward and returns whichever value is less distant, preferring the
-     * forward value when equidistant).
-     *
-     * @param key The key
-     * @param bias The bias to use if an exact match is not present
-     * @return An key value which is present in this map
-     */
-    default int nearest(int key, Bias bias) {
-        switch (bias) {
-            case NONE:
-                return containsKey(key) ? key : -1;
-            case BACKWARD:
-                return nearest(key, true);
-            case FORWARD:
-                return nearest(key, false);
-            case NEAREST:
-                int back = nearest(key, false);
-                int fwd = nearest(key, true);
-                int distBack = back < 0 ? Integer.MAX_VALUE : Math.abs(key - back);
-                int distFwd = fwd < 0 ? Integer.MAX_VALUE : Math.abs(fwd - key);
-                if (distFwd <= distBack) {
-                    return fwd;
-                } else {
-                    return back;
-                }
-            default:
-                throw new AssertionError(bias);
-        }
-    }
-
-    /**
      * Get a value which is present in this map and is mapped to the passed key
-     * value, or of not present, the key which is nearest to the passed one in
-     * the direction specified by the passed bias (NONE = exact, BACKWARD
-     * returns the nearest key less than the passed value, FORWARD returns the
-     * nearest key greater than the passed value, NEAREST searches forward and
-     * backward and returns whichever value is less distant, preferring the
-     * forward value when equidistant).
+     * value, or of not present, the key which is nearestKey to the passed one
+     * in the direction specified by the passed bias (NONE = exact, BACKWARD
+     * returns the nearestKey key less than the passed value, FORWARD returns
+     * the nearestKey key greater than the passed value, NEAREST searches
+     * forward and backward and returns whichever value is less distant,
+     * preferring the forward value when equidistant).
      *
      * @param key The key
      * @param bias The bias to use if an exact match is not present
      * @return An object or null
      */
     default T nearestValue(int key, Bias bias) {
-        int actualKey = nearest(key, bias);
+        int actualKey = nearestKey(key, bias);
         return actualKey == -1 ? null : get(key);
     }
 
@@ -306,7 +327,7 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
      * @param c A consumer
      * @return The number of visits performed
      */
-    int keysAndValuesBetween(int first, int second, IntMapBiConsumer<T> c);
+    int keysAndValuesBetween(int first, int second, IndexedIntMapConsumer<T> c);
 
     /**
      * Set the value at a particular index.
@@ -437,7 +458,7 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
      *
      * @param <T> The type
      */
-    interface IntMapBiConsumer<T> {
+    interface IndexedIntMapConsumer<T> {
 
         void accept(int index, int key, T value);
     }
@@ -462,14 +483,32 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
     }
 
     /**
-     * Iterate the keys.
+     * Iterate the values.
+     *
+     * @param valueConsumer A consumer
+     */
+    @SuppressWarnings("unchecked")
+    default void forEachValue(Consumer<T> valueConsumer) {
+        Object[] arr = valuesArray();
+        for (int i = 0; i < arr.length; i++) {
+            valueConsumer.accept((T) arr[i]);
+        }
+    }
+
+    /**
+     * Iterate key value pairs.
      *
      * @param cons A consumer
+     * @deprecated Collides with the signature from Iterable, forcing the caller
+     * to cast as BiConsumer or IntMapConsumer - use <code>forEachPair()</code>
+     * instead
      */
-    default void forEachKey(IntConsumer cons) {
-        int[] k = getKeys();
+    @Deprecated
+    default void forEach(IntMapConsumer<? super T> cons) {
+        int[] k = keysArray();
         for (int i = 0; i < k.length; i++) {
-            cons.accept(k[i]);
+            T t = get(k[i]);
+            cons.accept(k[i], t);
         }
     }
 
@@ -478,12 +517,9 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
      *
      * @param cons A consumer
      */
-    default void forEach(IntMapConsumer<? super T> cons) {
-        int[] k = getKeys();
-        for (int i = 0; i < k.length; i++) {
-            T t = get(k[i]);
-            cons.accept(k[i], t);
-        }
+    @SuppressWarnings("deprecation")
+    default void forEachPair(IntMapConsumer<? super T> cons) {
+        forEach(cons);
     }
 
     /**
@@ -491,21 +527,21 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
      *
      * @param cons A consumer
      */
-    void forEachIndexed(IntMapBiConsumer<? super T> c);
+    void forEachIndexed(IndexedIntMapConsumer<? super T> c);
 
     /**
      * Iterate key value pairs with indices in reverse sort order.
      *
      * @param c A consumer
      */
-    void forEachReversed(IntMapBiConsumer<? super T> c);
+    void forEachReversed(IndexedIntMapConsumer<? super T> c);
 
     /**
      * Bulk remove items by index.
      *
      * @param toRemove A set of indices which must be between 0 and size()
      */
-    void removeIndices(IntSet toRemove);
+    int removeIndices(IntSet toRemove);
 
     /**
      * Get the key at a given index.
@@ -523,7 +559,7 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
      * iteration was completed.
      */
     default boolean forSomeKeys(IntMapAbortableConsumer<? super T> cons) {
-        int[] k = getKeys();
+        int[] k = keysArray();
         for (int i = 0; i < k.length; i++) {
             T t = get(k[i]);
             boolean result = cons.accept(k[i], t);

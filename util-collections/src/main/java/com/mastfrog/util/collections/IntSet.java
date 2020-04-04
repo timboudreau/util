@@ -25,6 +25,7 @@ package com.mastfrog.util.collections;
 
 import static com.mastfrog.util.preconditions.Checks.notNull;
 import com.mastfrog.util.search.Bias;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Iterator;
@@ -230,6 +231,55 @@ public abstract class IntSet implements Set<Integer>, Cloneable, Trimmable {
         } else {
             return new IntSetImpl(set);
         }
+    }
+
+    /**
+     * Create an array of booleans for this set, from 0 to the set's size. Note
+     * that if this is an array-based set containing very large values, this
+     * will allocate a <i>huge</i> array and is likely not what you want.
+     *
+     * @return An array of booleans
+     */
+    public boolean[] toBooleanArray(int size) {
+        boolean[] result = new boolean[size];
+        visitConsecutiveIndices((int first, int last, int count) -> {
+            Arrays.fill(result, first, last + 1, true);
+        });
+        return result;
+    }
+
+    /**
+     * Create an array of booleans for the values in this set between the start
+     * and end values.
+     *
+     * @param start The start
+     * @param end The end
+     * @return An array of booleans
+     */
+    public boolean[] toBooleanArray(int start, int end) {
+        boolean[] result = new boolean[end - start];
+        for (int i = start; i < end; i++) {
+            int ix = i - start;
+            if (contains(i)) {
+                int nxt = this.lastContiguous(i);
+                if (nxt == i) {
+                    result[i] = true;
+                } else {
+                    int tail = Math.min(end, nxt);
+                    Arrays.fill(result, ix, tail, true);
+                }
+            }
+        }
+//
+//        int[] cursor = new int[0];
+//        int max = Math.min(end, size());
+//        for (int i = start; i < max; i++) {
+//            if (contains(i)) {
+//                result[cursor[0]] = true;
+//            }
+//            cursor[0]++;
+//        }
+        return result;
     }
 
     @Override

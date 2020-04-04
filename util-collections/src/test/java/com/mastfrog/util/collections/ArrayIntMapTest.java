@@ -314,7 +314,7 @@ public class ArrayIntMapTest {
         assertTrue(map.values().contains("first"));
         assertTrue(map.containsKey(6));
 
-        int last = map.highestKey();
+        int last = map.greatestKey();
         assertTrue(map.containsKey(last));
         old = map.put(last, "last");
         assertNotNull(old);
@@ -356,7 +356,7 @@ public class ArrayIntMapTest {
         assertEquals(100, map.size());
 
         // Remove at head, tail and middle use different code
-        int first = map.lowestKey();
+        int first = map.leastKey();
         assertEquals(6, first);
         assertTrue(map.containsKey(first));
         String old = map.get(first);
@@ -372,7 +372,7 @@ public class ArrayIntMapTest {
         assertCollectionsEquals(keys, map.keySet());
         assertCollectionsEquals(values, map.values());
 
-        int last = map.highestKey();
+        int last = map.greatestKey();
         assertTrue(map.containsKey(last));
         old = map.get(last);
         assertNotNull(old);
@@ -438,7 +438,7 @@ public class ArrayIntMapTest {
             map.put(indices[i], values[i]);
         }
 
-        assertTrue("First entry should be 5", map.lowestKey() == 5);
+        assertTrue("First entry should be 5", map.leastKey() == 5);
     }
 
     @Test
@@ -505,31 +505,31 @@ public class ArrayIntMapTest {
 
         for (int i = 0; i < indices.length - 1; i++) {
             int toTest = indices[i] + ((indices[i + 1] - indices[i]) / 2);
-            int next = map.nearest(toTest, false);
+            int next = map.nearestKey(toTest, false);
             assertTrue("Nearest value to " + toTest + " should be " + indices[i + 1] + ", not " + next, next == indices[i + 1]);
         }
 
-        assertTrue("Value after last entry should be 0th", map.nearest(indices[indices.length - 1] + 1000, false) == indices[0]);
+        assertTrue("Value after last entry should be 0th", map.nearestKey(indices[indices.length - 1] + 1000, false) == indices[0]);
 
-        assertTrue("Value before first entry should be last", map.nearest(-1, true) == indices[indices.length - 1]);
+        assertTrue("Value before first entry should be last", map.nearestKey(-1, true) == indices[indices.length - 1]);
 
-        assertTrue("Value after < first entry should be 0th", map.nearest(-1, false) == indices[0]);
+        assertTrue("Value after < first entry should be 0th", map.nearestKey(-1, false) == indices[0]);
 
         for (int i = indices.length - 1; i > 0; i--) {
 //            int toTest = indices[i] - (indices[i-1] + ((indices[i] - indices[i-1]) / 2));
             int toTest = indices[i - 1] + ((indices[i] - indices[i - 1]) / 2);
-            int prev = map.nearest(toTest, true);
+            int prev = map.nearestKey(toTest, true);
             assertTrue("Nearest value to " + toTest + " should be " + indices[i - 1] + ", not " + prev, prev == indices[i - 1]);
         }
 
         assertTrue("Entry previous to value lower than first entry should be last entry",
-                map.nearest(indices[0] - 1, true) == indices[indices.length - 1]);
+                map.nearestKey(indices[0] - 1, true) == indices[indices.length - 1]);
 
-        assertTrue("Value after > last entry should be last 0th", map.nearest(indices[indices.length - 1] + 100, false) == indices[0]);
+        assertTrue("Value after > last entry should be last 0th", map.nearestKey(indices[indices.length - 1] + 100, false) == indices[0]);
 
-        assertTrue("Value before > last entry should be last entry", map.nearest(indices[indices.length - 1] + 100, true) == indices[indices.length - 1]);
+        assertTrue("Value before > last entry should be last entry", map.nearestKey(indices[indices.length - 1] + 100, true) == indices[indices.length - 1]);
 
-        assertTrue("Value after < first entry should be 0th", map.nearest(-10, false) == indices[0]);
+        assertTrue("Value after < first entry should be 0th", map.nearestKey(-10, false) == indices[0]);
 
     }
 
@@ -558,7 +558,7 @@ public class ArrayIntMapTest {
     }
 
     @Test
-    public void testGetKeys() {
+    public void testKeysArray() {
         ArrayIntMap<Object> map = new ArrayIntMap<>();
 
         int[] indices = new int[]{5, 12, 23, 62, 247, 375, 489, 5255};
@@ -571,7 +571,7 @@ public class ArrayIntMapTest {
             map.put(indices[i], values[i]);
         }
 
-        int[] keys = map.getKeys();
+        int[] keys = map.keysArray();
         assertTrue("Keys returned should match those written.  Expected: " + i2s(indices) + " Got: " + i2s(keys), Arrays.equals(keys, indices));
     }
 
@@ -815,27 +815,20 @@ public class ArrayIntMapTest {
 
     @Test
     public void testPutAllWithDuplicates() {
-        System.out.println("\n\n-------------------------");
-        try {
-            ArrayIntMap<String> am = new ArrayIntMap<>();
-            am.add(1).apply("a");
-            am.add(9).apply("d");
-            am.add(7).apply("c");
-            am.add(3).apply("b");
+        ArrayIntMap<String> am = new ArrayIntMap<>();
+        am.add(1).apply("a");
+        am.add(9).apply("d");
+        am.add(7).apply("c");
+        am.add(3).apply("b");
 
-            ArrayIntMap<String> am2 = new ArrayIntMap<>();
-            am2.add(3).apply("b");
-            am2.add(2).apply("a1");
-            am2.add(4).apply("a2");
-            am2.add(7).apply("c");
-            am2.add(8).apply("a3");
+        ArrayIntMap<String> am2 = new ArrayIntMap<>();
+        am2.add(3).apply("b");
+        am2.add(2).apply("a1");
+        am2.add(4).apply("a2");
+        am2.add(7).apply("c");
+        am2.add(8).apply("a3");
 
-            am.putAll(am2);
-            System.out.println("NOW: " + am);
-
-            am.consistent();
-        } finally {
-            System.out.println("\n\n--------------------------");
-        }
+        am.putAll(am2);
+        am.consistent();
     }
 }

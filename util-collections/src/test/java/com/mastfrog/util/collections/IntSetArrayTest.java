@@ -31,6 +31,7 @@ import java.util.LinkedHashSet;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Supplier;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -235,6 +236,31 @@ public class IntSetArrayTest {
         });
     }
 
+    @Test
+    public void testEqualityBetweenImplementations() {
+        IntSetImpl a = new IntSetImpl().addAll(
+                2, 3,
+                5, 6, 7, 8, 9,
+                20, 21, 22,
+                30,
+                40, 41);
+        IntSetArray b = new IntSetArray().addAll(
+                2, 3,
+                5, 6, 7, 8, 9,
+                20, 21, 22,
+                30,
+                40, 41);
+        assertEquals(a.size(), b.size());
+        assertArrayEquals(a.toIntArray(), b.toIntArray());
+        assertEquals("IntSetImpl's hashCode() implementation does not match "
+                + "that of AbstractSet", new LinkedHashSet<>(a).hashCode(), a.hashCode());
+        assertEquals("IntSetArray's hashCode() implementation does not match "
+                + "that of AbstractSet", new LinkedHashSet<>(b).hashCode(), b.hashCode());
+        assertEquals(a.hashCode(), b.hashCode());
+        IntSetTest.assertSets("Sets seem not to match", a, b);
+        assertEquals("Sets should be equal", a, b);
+    }
+
     public void testConsecutiveItems(Supplier<IntSet> setSupplier) {
         IntSet is = setSupplier.get().addAll(
                 2, 3,
@@ -265,7 +291,9 @@ public class IntSetArrayTest {
             }
             iss.add(curr);
         });
+
         assertEquals(is.getClass().getSimpleName(), 5, groups);
+        IntSetTest.assertSets(is.getClass().getSimpleName(), expected, iss);
         assertEquals(is.getClass().getSimpleName(), expected, iss);
         iss.clear();
         groups = is.visitConsecutiveIndicesReversed((int first, int last, int count) -> {

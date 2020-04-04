@@ -81,6 +81,15 @@ final class IntSetImpl extends IntSet {
     }
 
     @Override
+    public boolean[] toBooleanArray(int size) {
+        boolean[] result = new boolean[size];
+        visitConsecutiveIndices((int first, int last, int count) -> {
+            Arrays.fill(result, first, last + 1, true);
+        });
+        return result;
+    }
+
+    @Override
     public IntSet intersection(IntSet other) {
         if (other.isArrayBased()) {
             BitSet bs = new BitSet(size());

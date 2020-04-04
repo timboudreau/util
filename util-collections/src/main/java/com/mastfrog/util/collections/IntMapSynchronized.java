@@ -49,6 +49,11 @@ final class IntMapSynchronized<T> implements IntMap<T> {
     }
 
     @Override
+    public synchronized int nearestIndexTo(int key, boolean backward) {
+        return delegate.nearestIndexTo(key, backward);
+    }
+
+    @Override
     public synchronized T valueAt(int index) {
         return delegate.valueAt(index);
     }
@@ -75,7 +80,7 @@ final class IntMapSynchronized<T> implements IntMap<T> {
     }
 
     @Override
-    public synchronized int keysAndValuesBetween(int first, int second, IntMapBiConsumer<T> c) {
+    public synchronized int keysAndValuesBetween(int first, int second, IndexedIntMapConsumer<T> c) {
         return delegate.keysAndValuesBetween(first, second, c);
     }
 
@@ -85,8 +90,8 @@ final class IntMapSynchronized<T> implements IntMap<T> {
     }
 
     @Override
-    public synchronized void removeIndices(IntSet toRemove) {
-        delegate.removeIndices(toRemove);
+    public synchronized int removeIndices(IntSet toRemove) {
+        return delegate.removeIndices(toRemove);
     }
 
     @Override
@@ -109,12 +114,12 @@ final class IntMapSynchronized<T> implements IntMap<T> {
     }
 
     @Override
-    public synchronized void forEachIndexed(IntMapBiConsumer<? super T> c) {
+    public synchronized void forEachIndexed(IndexedIntMapConsumer<? super T> c) {
         delegate.forEachIndexed(c);
     }
 
     @Override
-    public void forEachReversed(IntMapBiConsumer<? super T> c) {
+    public void forEachReversed(IndexedIntMapConsumer<? super T> c) {
         delegate.forEachIndexed(c);
     }
 
@@ -139,13 +144,13 @@ final class IntMapSynchronized<T> implements IntMap<T> {
     }
 
     @Override
-    public synchronized int[] getKeys() {
-        return delegate.getKeys();
+    public int[] keysArray() {
+        return delegate.keysArray();
     }
 
     @Override
-    public synchronized int highestKey() {
-        return delegate.highestKey();
+    public synchronized int greatestKey() {
+        return delegate.greatestKey();
     }
 
     @Override
@@ -189,13 +194,13 @@ final class IntMapSynchronized<T> implements IntMap<T> {
     }
 
     @Override
-    public synchronized int lowestKey() {
-        return delegate.lowestKey();
+    public synchronized int leastKey() {
+        return delegate.leastKey();
     }
 
     @Override
-    public synchronized int nearest(int key, boolean backward) {
-        return delegate.nearest(key, backward);
+    public synchronized int nearestKey(int key, boolean backward) {
+        return delegate.nearestKey(key, backward);
     }
 
     @Override
@@ -214,6 +219,7 @@ final class IntMapSynchronized<T> implements IntMap<T> {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public synchronized void forEach(IntMapConsumer<? super T> cons) {
         delegate.forEach(cons);
     }

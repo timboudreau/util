@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2018 tim.
+ * Copyright 2018 Tim Boudreau.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -180,12 +180,38 @@ public class ArrayBinarySetTest {
         for (;;) {
             count++;
             Iterator<Integer> iter = toTest.iterator();
-            while(iter.hasNext()) {
+            while (iter.hasNext()) {
                 iter.next();
             }
             if (System.currentTimeMillis() - start >= limit) {
                 return count;
             }
         }
+    }
+
+    @Test
+    public void testSortedSetFeatures() {
+        String[] alpha = {"a", "b", "c", "d", "e", "f", "g"};
+        ArrayBinarySet<String> set = ArrayBinarySet.of(alpha);
+        assertEquals(alpha.length, set.size());
+        for (int i = 0; i < alpha.length; i++) {
+            assertTrue(set.contains(alpha[i]));
+        }
+        SortedSet<String> exp = stringSet(alpha);
+        assertEquals(exp, set);
+
+        assertEquals(exp.headSet("d"), set.headSet("d"));
+        assertEquals(exp.tailSet("d"), set.tailSet("d"));
+        assertEquals(exp.subSet("b", "f"), set.subSet("b", "f"));
+
+        assertEquals(exp.subSet("a", "g"), set.subSet("a", "g"));
+        assertEquals(exp.subSet("a", "h"), set.subSet("a", "h"));
+
+        assertEquals(exp.headSet("`"), set.headSet("`"));
+        assertEquals(exp.tailSet("i"), set.tailSet("i"));
+    }
+
+    private SortedSet<String> stringSet(String... strs) {
+        return new TreeSet<>(Arrays.asList(strs));
     }
 }

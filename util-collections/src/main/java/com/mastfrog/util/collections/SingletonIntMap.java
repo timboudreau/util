@@ -73,12 +73,12 @@ final class SingletonIntMap<T> implements IntMap<T>, Map.Entry<Integer, T> {
     }
 
     @Override
-    public void forEachIndexed(IntMapBiConsumer<? super T> c) {
+    public void forEachIndexed(IndexedIntMapConsumer<? super T> c) {
         c.accept(0, key, value);
     }
 
     @Override
-    public void forEachReversed(IntMapBiConsumer<? super T> c) {
+    public void forEachReversed(IndexedIntMapConsumer<? super T> c) {
         c.accept(0, key, value);
     }
 
@@ -91,8 +91,21 @@ final class SingletonIntMap<T> implements IntMap<T>, Map.Entry<Integer, T> {
     }
 
     @Override
-    public void removeIndices(IntSet toRemove) {
+    public int removeIndices(IntSet toRemove) {
+        if (toRemove.isEmpty()) {
+            return 0;
+        }
         throw new UnsupportedOperationException("Singleton map");
+    }
+
+    @Override
+    public int nearestIndexTo(int key, boolean backward) {
+        if (backward && key >= this.key) {
+            return 0;
+        } else if (!backward && key <= this.key) {
+            return 0;
+        }
+        return -1;
     }
 
     @Override
@@ -107,7 +120,7 @@ final class SingletonIntMap<T> implements IntMap<T>, Map.Entry<Integer, T> {
     }
 
     @Override
-    public int keysAndValuesBetween(int first, int second, IntMapBiConsumer<T> c) {
+    public int keysAndValuesBetween(int first, int second, IndexedIntMapConsumer<T> c) {
         int a = Math.min(first, second);
         int b = Math.max(first, second);
         if (key <= b || key >= a) {
@@ -161,12 +174,12 @@ final class SingletonIntMap<T> implements IntMap<T>, Map.Entry<Integer, T> {
     }
 
     @Override
-    public int[] getKeys() {
+    public int[] keysArray() {
         return new int[]{key};
     }
 
     @Override
-    public int highestKey() {
+    public int greatestKey() {
         return key;
     }
 
@@ -192,12 +205,12 @@ final class SingletonIntMap<T> implements IntMap<T>, Map.Entry<Integer, T> {
     }
 
     @Override
-    public int lowestKey() {
+    public int leastKey() {
         return key;
     }
 
     @Override
-    public int nearest(int key, boolean backward) {
+    public int nearestKey(int key, boolean backward) {
         return key;
     }
 

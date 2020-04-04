@@ -67,6 +67,11 @@ final class DoubleSetEmpty implements DoubleSet {
     }
 
     @Override
+    public boolean containsApproximate(double targetValue, double tolerance) {
+        return false;
+    }
+
+    @Override
     public boolean contains(double d) {
         return false;
     }

@@ -27,17 +27,19 @@ import com.mastfrog.util.strings.Strings;
 import java.lang.reflect.Array;
 import java.util.AbstractSet;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.SortedSet;
 import java.util.function.Consumer;
 
 /**
  * A lighter-weight set which uses a comparator to establish membership.
  *
- *
  * @author Tim Boudreau
  */
-final class ArrayBinarySet<T> extends AbstractSet<T> {
+final class ArrayBinarySet<T> extends AbstractSet<T> implements SortedSet<T> {
 
     final boolean comparatorEquality;
 
@@ -50,6 +52,106 @@ final class ArrayBinarySet<T> extends AbstractSet<T> {
         this.comp = comp;
         this.objs = check ? ArrayUtils.dedup(objs) : objs;
         Arrays.sort(this.objs, comp);
+    }
+
+    ArrayBinarySet(Comparator<? super T> comp, T[] objs, boolean comparatorEquality) {
+        this.comparatorEquality = comparatorEquality;
+        this.objs = objs;
+        this.comp = comp;
+    }
+
+    @SafeVarargs
+    static <T extends Comparable<? super T>> ArrayBinarySet<T> of(T... objs) {
+        return new ArrayBinarySet<>(true, true, Comparator.naturalOrder(), objs);
+    }
+
+    Class<?> type() {
+        return objs.getClass().getComponentType();
+    }
+
+    @Override
+    public Comparator<? super T> comparator() {
+        return comp;
+    }
+
+    private void checkType(Object obj) {
+        if (obj == null) {
+            throw new NullPointerException("Passed object is null");
+        }
+        if (!type().isInstance(obj)) {
+            throw new ClassCastException(obj + " is not a " + type().getName());
+        }
+    }
+
+    @Override
+    public SortedSet<T> subSet(T fromElement, T toElement) {
+        checkType(fromElement);
+        checkType(toElement);
+        int a = indexOf(fromElement);
+        if (a < 0) {
+            if (comp.compare(fromElement, first()) < 0) {
+                a = 0;
+            } else {
+                return Collections.emptySortedSet();
+            }
+        }
+        int b = indexOf(toElement);
+        if (b < 0) {
+            if (comp.compare(toElement, last()) > 0) {
+                b = objs.length;
+            } else {
+                return Collections.emptySortedSet();
+            }
+        }
+        int start = a;
+        int stop = b;
+        if (a > b) {
+            throw new IllegalArgumentException("to < from");
+        }
+        T[] sub = ArrayUtils.extract(objs, start, stop - start);
+        return new ArrayBinarySet<>(comp, sub, comparatorEquality);
+    }
+
+    @Override
+    public SortedSet<T> headSet(T toElement) {
+        checkType(toElement);
+        int ix = indexOf(toElement);
+        if (ix < 0) {
+            if (comp.compare(toElement, first()) < 0) {
+                ix = 0;
+            } else {
+                return Collections.emptySortedSet();
+            }
+        }
+        T[] sub = Arrays.copyOf(objs, ix);
+        return new ArrayBinarySet<>(comp, sub, comparatorEquality);
+    }
+
+    @Override
+    public SortedSet<T> tailSet(T fromElement) {
+        checkType(fromElement);
+        int ix = indexOf(fromElement);
+        if (ix < 0) {
+            return Collections.emptySortedSet();
+        }
+        T[] sub = ArrayUtils.extract(objs, ix, objs.length - ix);
+        return new ArrayBinarySet<>(comp, sub, comparatorEquality);
+    }
+
+    @Override
+    public T first() {
+        if (isEmpty()) {
+            throw new NoSuchElementException();
+        }
+        return objs[0];
+    }
+
+    @Override
+    public T last() {
+        if (isEmpty()) {
+            throw new NoSuchElementException();
+        }
+        return objs[objs.length - 1];
     }
 
     @Override
@@ -92,6 +194,15 @@ final class ArrayBinarySet<T> extends AbstractSet<T> {
         int start = 0;
         int end = objs.length - 1;
         return binaryComparatorSearch(comparatorEquality, o, objs, start, end, comp) >= 0;
+    }
+
+    private int indexOf(T obj) {
+        if (isEmpty()) {
+            return -1;
+        }
+        int start = 0;
+        int end = objs.length - 1;
+        return binaryComparatorSearch(comparatorEquality, obj, objs, start, end, comp);
     }
 
     static <T> int binaryComparatorSearch(boolean comparatorEquality, T o, T[] objs, int start, int end, Comparator<? super T> comp) {
@@ -154,7 +265,25 @@ final class ArrayBinarySet<T> extends AbstractSet<T> {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        } else if (o == null) {
+            return false;
+        } else if (o instanceof ArrayBinarySet<?>) {
+            ArrayBinarySet<?> abs = (ArrayBinarySet<?>) o;
+            return Arrays.equals(objs, abs.objs);
+        }
+        return super.equals(o);
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return objs.length == 0;
+    }
+
+    @Override
     public String toString() {
-        return Strings.join(',', (Object[]) objs).toString();
+        return '[' + Strings.join(',', (Object[]) objs).toString() + ']';
     }
 }

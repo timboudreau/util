@@ -35,7 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import static java.util.Collections.emptySet;
+import static java.util.Collections.emptySortedSet;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.Enumeration;
@@ -52,6 +52,7 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -666,6 +667,8 @@ public final class CollectionUtils {
 
     static final class IdentityComparator implements Comparator<Object> {
 
+        static final IdentityComparator INSTANCE = new IdentityComparator();
+
         @Override
         public int compare(Object o1, Object o2) {
             int a = System.identityHashCode(o1);
@@ -684,7 +687,7 @@ public final class CollectionUtils {
      */
     @SafeVarargs
     public static <T> Set<T> identitySet(T... objs) {
-        return new ArrayBinarySet<>(false, true, new IdentityComparator(), objs);
+        return new ArrayBinarySet<>(false, true, IdentityComparator.INSTANCE, objs);
     }
 
     /**
@@ -702,9 +705,9 @@ public final class CollectionUtils {
      * @return
      */
     @SafeVarargs
-    public static <T> Set<T> arraySetOf(Comparator<T> comp, boolean useComparatorForMembershipTest, T... objs) {
+    private static <T> SortedSet<T> arraySetOf(Comparator<T> comp, boolean useComparatorForMembershipTest, T... objs) {
         if (objs.length == 0) {
-            return emptySet();
+            return emptySortedSet();
         }
         return new ArrayBinarySet<>(true, useComparatorForMembershipTest, comp, objs);
     }
@@ -719,8 +722,8 @@ public final class CollectionUtils {
      * @return A set
      */
     @SafeVarargs
-    public static <T> Set<T> arraySetOf(Comparator<T> comp, T... objs) {
-        return arraySetOf(comp, false, objs);
+    public static <T> SortedSet<T> arraySetOf(Comparator<T> comp, T... objs) {
+        return arraySetOf(comp, true, objs);
     }
 
     /**
@@ -731,11 +734,11 @@ public final class CollectionUtils {
      * @return A set
      */
     @SafeVarargs
-    public static <T extends Comparable<T>> Set<T> arraySetOf(T... objs) {
+    public static <T extends Comparable<T>> SortedSet<T> arraySetOf(T... objs) {
         if (objs.length == 0) {
-            return emptySet();
+            return emptySortedSet();
         }
-        return new ArrayBinarySet<>(true, false, new ComparableComparator<>(), objs);
+        return new ArrayBinarySet<>(true, false, Comparator.naturalOrder(), objs);
     }
 
     /**
@@ -744,9 +747,9 @@ public final class CollectionUtils {
      * @param str An array of CharSequences
      * @return A set
      */
-    public static Set<CharSequence> charSequenceSetOf(CharSequence... objs) {
+    public static SortedSet<CharSequence> charSequenceSetOf(CharSequence... objs) {
         if (objs.length == 0) {
-            return emptySet();
+            return emptySortedSet();
         }
         return new ArrayBinarySet<>(true, false, Strings.charSequenceComparator(false), objs);
     }
@@ -758,11 +761,11 @@ public final class CollectionUtils {
      * @param str An array of Strings
      * @return A set
      */
-    public static Set<String> caseInsensitiveStringSet(String... str) {
+    public static SortedSet<String> caseInsensitiveStringSet(String... str) {
         if (str.length == 0) {
-            return emptySet();
+            return emptySortedSet();
         }
-        return new ArrayBinarySet<>(true, true, new StringComparator(), str);
+        return new ArrayBinarySet<>(true, true, StringComparator.INSTANCE, str);
     }
 
     /**
@@ -772,14 +775,15 @@ public final class CollectionUtils {
      * @param str An array of CharSequences
      * @return A set
      */
-    public static Set<CharSequence> caseInsensitiveCharSequenceSet(CharSequence... str) {
+    public static SortedSet<CharSequence> caseInsensitiveCharSequenceSet(CharSequence... str) {
         if (str.length == 0) {
-            return emptySet();
+            return emptySortedSet();
         }
         return new ArrayBinarySet<>(true, true, Strings.charSequenceComparator(true), str);
     }
 
     static final class StringComparator implements Comparator<String> {
+        static final StringComparator INSTANCE = new StringComparator();
 
         @Override
         public int compare(String o1, String o2) {
@@ -1300,12 +1304,14 @@ public final class CollectionUtils {
     }
 
     /**
-     * Get a primitive integer map backed by an array and binary search (removes
+     * Create a primitive integer map backed by an array and binary search (removes
      * are expensive).
      *
      * @param <T> The value type
      * @return A map
+     * @deprecated Use IntMap.created()
      */
+    @Deprecated
     public static <T> IntMap<T> intMap() {
         return new ArrayIntMap<>();
     }
@@ -1317,7 +1323,9 @@ public final class CollectionUtils {
      * @param <T> The value type
      * @param toCopy A map to copy
      * @return A map
+     * @deprecated Use <code>IntMap.copyOf()</code>
      */
+    @Deprecated
     public static <T> IntMap<T> intMap(Map<Integer, T> toCopy) {
         return new ArrayIntMap<>(toCopy);
     }
@@ -1329,7 +1337,9 @@ public final class CollectionUtils {
      * @param <T> The value type
      * @param initialCapacity The initial backing array sizes
      * @return A map
+     * @deprecated Use <code>IntMap.create(int)</code>
      */
+    @Deprecated
     public static <T> IntMap<T> intMap(int initialCapacity) {
         return new ArrayIntMap<>(initialCapacity);
     }
@@ -1341,6 +1351,7 @@ public final class CollectionUtils {
      * @param <T> The value type
      * @param emptyValues Supplies empty values
      * @return A map
+     * @deprecated Use <code>IntMap.create(Supplier&lt;T&gt;)</code>
      */
     public static <T> IntMap<T> intMap(Supplier<T> emptyValues) {
         return intMap(96, false, emptyValues);
@@ -1354,7 +1365,9 @@ public final class CollectionUtils {
      * values
      * @param emptyValues Supplies empty values
      * @return A map
+     * @deprecated Use <code>IntMap.create(int, Supplier&lt;T&gt;)</code>
      */
+    @Deprecated
     public static <T> IntMap<T> intMap(int initialCapacity, Supplier<T> emptyValues) {
         return intMap(initialCapacity, false, emptyValues);
     }
@@ -1372,7 +1385,9 @@ public final class CollectionUtils {
      * alters the state of something else, pass false.
      * @param emptyValues Supplies empty values
      * @return A map
+     * @deprecated Use <code>IntMap.create(int, boolean, Supplier&lt;T&gt;)</code>
      */
+    @Deprecated
     public static <T> IntMap<T> intMap(int initialCapacity, boolean addSuppliedValues, Supplier<T> emptyValues) {
         return new ArrayIntMap<>(initialCapacity, addSuppliedValues, emptyValues);
     }
