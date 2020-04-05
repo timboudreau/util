@@ -353,6 +353,17 @@ final class DoubleMapImpl<T> implements DoubleMap<T> {
         }
         int first = keySet.nearestIndexTo(Math.min(a, b), Bias.FORWARD);
         int last = keySet.nearestIndexTo(Math.max(a, b), Bias.BACKWARD);
+        if (first < 0 && last < 0) {
+            return 0;
+        }
+        if (first < 0) {
+            first = 0;
+        }
+        if (last < 0) {
+            c.accept(first, keySet.getAsDouble(first), (T) values[first]);
+            return 1;
+        }
+
         for (int i = first; i <= last; i++) {
             c.accept(i, keySet.getAsDouble(i), (T) values[i]);
         }

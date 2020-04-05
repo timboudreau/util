@@ -115,7 +115,6 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
      *
      * @param <T> The value type
      * @return A map
-     * @deprecated Use IntMap.created()
      */
     public static <T> IntMap<T> create() {
         return new ArrayIntMap<>();
@@ -128,7 +127,6 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
      * @param <T> The value type
      * @param toCopy A map to copy
      * @return A map
-     * @deprecated Use <code>IntMap.copyOf()</code>
      */
     public static <T> IntMap<T> copyOf(Map<Integer, T> toCopy) {
         return new ArrayIntMap<>(toCopy);
@@ -141,7 +139,6 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
      * @param <T> The value type
      * @param initialCapacity The initial backing array sizes
      * @return A map
-     * @deprecated Use <code>IntMap.create(int)</code>
      */
     public static <T> IntMap<T> create(int initialCapacity) {
         return new ArrayIntMap<>(initialCapacity);
