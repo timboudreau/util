@@ -44,6 +44,11 @@ final class DoubleMapEmpty implements DoubleMap<Object> {
     }
 
     @Override
+    public boolean visitMiddleOut(double min, double max, DoubleMapPredicate<Object> c) {
+        return false;
+    }
+
+    @Override
     public void put(double key, Object value) {
         throw new UnsupportedOperationException("Empty instance");
     }

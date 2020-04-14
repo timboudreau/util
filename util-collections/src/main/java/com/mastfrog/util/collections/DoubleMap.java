@@ -25,6 +25,7 @@ package com.mastfrog.util.collections;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * An array-backed map of primitive doubles to values of some type. Note that,
@@ -193,12 +194,46 @@ public interface DoubleMap<T> extends Trimmable {
      */
     boolean nearestValueExclusive(double approximate, double tolerance, DoubleMapConsumer<? super T> c);
 
+    default int nearestIndexExclusive(double approximate, double tolerance) {
+        // XXX implement efficiently on implementation class
+        Entry<? extends T> e = nearestValueExclusive(approximate, tolerance);
+        return e == null ? -1 : e.index;
+    }
+
     default Entry<? extends T> nearestValueExclusive(double approximate, double tolerance) {
         Entry<T> result = new Entry<>();
         if (nearestValueExclusive(approximate, tolerance, result::setParams)) {
             return result;
         }
         return null;
+    }
+
+    /**
+     * Visit a range of indexed key/value pairs in this map where the keys lie
+     * between the passed minimum and maximum values, starting with the value
+     * that is most centered between the minimum and maximum, and working
+     * outward, continuing as long as the predicate returns
+     * <i>false</i> and there are more values.
+     *
+     * @param min The minimum key
+     * @param max The maximum key
+     * @param c A predicate
+     * @return The last return value of the predicate, or false if nothing to
+     * test
+     */
+    boolean visitMiddleOut(double min, double max, DoubleMapPredicate<T> c);
+
+    /**
+     * Fluent interface for populating a map.
+     *
+     * @param key A key
+     * @return A function that takes the value for the key.
+     */
+    default Function<T, DoubleMap<T>> add(double key) {
+        return val -> {
+            put(key, val);
+            return this;
+        };
     }
 
     /**

@@ -24,6 +24,7 @@
 package com.mastfrog.util.collections;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -338,5 +339,34 @@ public class DoubleMapImplTest {
         // algorithm chooses to order duplicates), the best we can
         // test for is that *some* values make it
         assertTrue(foundCount > 0);
+    }
+
+    @Test
+    public void testVisitMiddleOut() {
+        DoubleMapImpl<String> m = new DoubleMapImpl<>(30);
+        char c = 'a';
+        for (int i = 40; i < 60; i++, c++) {
+            String s = new String(new char[]{c});
+            m.put(i, s);
+        }
+        System.out.println("MAP: " + m);
+        List<String> found = new ArrayList<>();
+        boolean res = m.visitMiddleOut(48, 52, (ix, key, val) -> {
+//            System.out.println("VISIT " + key + " at " + ix + " with " + val);
+            found.add(val);
+            return false;
+        });
+        assertFalse(res);
+
+        assertEquals(Arrays.asList("k", "j", "l", "i", "m"), found);
+
+        found.clear();
+        res = m.visitMiddleOut(47, 53, (ix, key, val) -> {
+            System.out.println("V2 " + val + " " + key);
+            found.add(val);
+            return "i".equals(val);
+        });
+        assertTrue(res);
+        assertEquals(Arrays.asList("k", "j", "l", "i"), found);
     }
 }

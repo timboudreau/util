@@ -339,6 +339,51 @@ final class DoubleMapImpl<T> implements DoubleMap<T> {
         return keySet.getAsDouble(index);
     }
 
+    public final boolean visitMiddleOut(double min, double max, DoubleMapPredicate<T> c) {
+        IntMap<T> targets = IntMap.create(20);
+        int count = valuesBetween(min, max, (int index, double value, T object) -> {
+            targets.put(index, object);
+        });
+        if (count > 0) {
+            return visitMiddleOut(targets, c);
+        }
+        return false;
+    }
+
+    private <T> boolean visitMiddleOut(IntMap<T> indices, DoubleMapPredicate<T> c) {
+        switch (indices.size()) {
+            case 0:
+                return false;
+            case 1:
+                return c.test(indices.key(0), key(indices.key(0)), indices.valueAt(0));
+            case 2:
+                if (!c.test(indices.key(0), key(indices.key(0)), indices.valueAt(0))) {
+                    return c.test(indices.key(1), key(indices.key(1)), indices.valueAt(1));
+                } else {
+                    return true;
+                }
+            default:
+                int mid = indices.size() / 2;
+                int curUp = mid;
+                int curDown = mid - 1;
+                while (curUp < indices.size() || curDown >= 0) {
+                    if (curUp < indices.size()) {
+                        if (c.test(indices.key(curUp), key(indices.key(curUp)), indices.valueAt(curUp))) {
+                            return true;
+                        }
+                    }
+                    if (curDown >= 0) {
+                        if (c.test(indices.key(curDown), key(indices.key(curDown)), indices.valueAt(curDown))) {
+                            return true;
+                        }
+                    }
+                    curUp++;
+                    curDown--;
+                }
+        }
+        return false;
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public int valuesBetween(double a, double b, DoubleMapConsumer<? super T> c) {
