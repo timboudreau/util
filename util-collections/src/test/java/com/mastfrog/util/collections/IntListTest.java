@@ -12,6 +12,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.junit.Test;
 
 /**
@@ -485,5 +486,104 @@ public class IntListTest {
 //            assertEquals("" + val, -1, il.nearestIndexToPresumingSorted((val) + 1, Bias.NONE));
             assertTrue("" + val, il.nearestIndexToPresumingSorted((val) + 1, Bias.NONE) < 0);
         }
+    }
+
+    @Test
+    public void testSwap() {
+        IntListImpl ili = new IntListImpl(new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+        assertTrue(ili.swap(9, 1));
+        assertEquals(9, ili.getAsInt(1));
+        assertEquals(1, ili.getAsInt(9));
+        assertTrue(ili.swap(0, 10));
+        assertEquals(10, ili.getAsInt(0));
+        assertEquals(0, ili.getAsInt(10));
+        assertFalse(ili.swap(1, 1));
+        assertEquals(9, ili.getAsInt(1));
+        assertArrayEquals(new int[]{10, 9, 2, 3, 4, 5, 6, 7, 8, 1, 0}, ili.toIntArray());
+        assertFalse(ili.swap(1, 13));
+        assertFalse(ili.swap(13, 13));
+        assertFalse(ili.swap(14, 13));
+    }
+
+    @Test
+    public void testSwapIndices() {
+        IntListImpl ili = new IntListImpl(new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+        assertEquals(11, ili.size());
+        assertTrue(ili.swapIndices(9, 1));
+        assertEquals(9, ili.getAsInt(1));
+        assertEquals(1, ili.getAsInt(9));
+        assertEquals(11, ili.size());
+        assertTrue(ili.swapIndices(0, 10));
+        assertEquals(10, ili.getAsInt(0));
+        assertEquals(0, ili.getAsInt(10));
+        assertFalse(ili.swapIndices(1, 1));
+        assertEquals(11, ili.size());
+        assertEquals(9, ili.getAsInt(1));
+        assertArrayEquals(new int[]{10, 9, 2, 3, 4, 5, 6, 7, 8, 1, 0}, ili.toIntArray());
+        assertEquals(0, ili.indexOf(10));
+        assertEquals(1, ili.indexOf(9));
+        assertEquals(10, ili.indexOf(0));
+        assertEquals(9, ili.indexOf(1));
+        try {
+            ili.swapIndices(-1, 5);
+            fail("Exception should have been thrown");
+        } catch (IllegalArgumentException e) {
+            // ok
+        }
+        try {
+            ili.swapIndices(15, 72);
+            fail("Exception should have been thrown");
+        } catch (IllegalArgumentException e) {
+            // ok
+        }
+    }
+
+    @Test
+    public void testToBack() {
+        IntListImpl ili = new IntListImpl(new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+        assertEquals(11, ili.size());
+        assertTrue(ili.toBack(11));
+        assertEquals(12, ili.size());
+        assertEquals(11, ili.getAsInt(11));
+        assertTrue(ili.toBack(0));
+        assertEquals(12, ili.size());
+        assertEquals(0, ili.getAsInt(11));
+        assertEquals(11, ili.getAsInt(10));
+        assertEquals(1, ili.getAsInt(0));
+        assertTrue(ili.toBack(5));
+        assertEquals(12, ili.size());
+        assertEquals(5, ili.getAsInt(11));
+        assertEquals(0, ili.getAsInt(10));
+        assertEquals(11, ili.getAsInt(9));
+        assertEquals(1, ili.getAsInt(0));
+        assertEquals(11, ili.indexOf(5));
+        assertFalse(ili.toBack(5));
+        assertArrayEquals(new int[]{1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 0, 5}, ili.toIntArray());
+    }
+
+    @Test
+    public void testToFront() {
+        IntListImpl ili = new IntListImpl(new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+        assertTrue(ili.toFront(10));
+        assertEquals(ili.toString(), 10, ili.getAsInt(0));
+        assertEquals(ili.toString(), 9, ili.getAsInt(10));
+        assertEquals(ili.toString(), 0, ili.indexOf(10));
+        assertEquals(ili.toString(), 10, ili.indexOf(9));
+        assertArrayEquals(ili.toString(), new int[]{10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, ili.toIntArray());
+        assertFalse(ili.toString(), ili.toFront(10));
+        assertArrayEquals(ili.toString(), new int[]{10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, ili.toIntArray());
+        assertFalse(ili.toFront(11, false));
+        assertTrue(ili.toFront(11, true));
+        assertEquals(ili.toString(), 12, ili.size());
+        assertEquals(ili.toString(), 11, ili.getAsInt(0));
+        assertEquals(ili.toString(), 0, ili.indexOf(11));
+        assertArrayEquals(ili.toString(), new int[]{11, 10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, ili.toIntArray());
+        assertFalse(ili.toString(), ili.toFront(11));
+        assertTrue(ili.toString(), ili.toFront(5));
+        assertArrayEquals(ili.toString(), new int[]{5, 11, 10, 0, 1, 2, 3, 4, 6, 7, 8, 9}, ili.toIntArray());
+        assertTrue(ili.toFront(6));
+        assertArrayEquals(ili.toString(), new int[]{6, 5, 11, 10, 0, 1, 2, 3, 4, 7, 8, 9}, ili.toIntArray());
+        assertTrue(ili.toFront(0));
+        assertArrayEquals(ili.toString(), new int[]{0, 6, 5, 11, 10, 1, 2, 3, 4, 7, 8, 9}, ili.toIntArray());
     }
 }

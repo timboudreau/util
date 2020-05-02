@@ -33,18 +33,17 @@ import java.util.PrimitiveIterator;
 import java.util.function.IntConsumer;
 
 /**
- * Optimized primitive-int-array based list of integers, with
- * optimized operations and nearest-value search for sorted lists
- * of non-negative integers.
+ * Optimized primitive-int-array based list of integers, with optimized
+ * operations and nearest-value search for sorted lists of non-negative
+ * integers.
  *
  * @author Tim Boudreau
  */
 public interface IntList extends List<Integer>, Trimmable {
 
-
     /**
-     * Create an IntList with the default capacity (currently 96
-     * for historical reasons).
+     * Create an IntList with the default capacity (currently 96 for historical
+     * reasons).
      *
      * @return An IntList
      */
@@ -53,8 +52,8 @@ public interface IntList extends List<Integer>, Trimmable {
     }
 
     /**
-     * Create an IntList with the passed capacity which must be
-     * greater than one.
+     * Create an IntList with the passed capacity which must be greater than
+     * one.
      *
      * @param initialCapacity The initial capaacity
      * @return
@@ -80,6 +79,106 @@ public interface IntList extends List<Integer>, Trimmable {
 
     static IntList createFrom(int... vals) {
         return new IntListImpl(vals);
+    }
+
+    /**
+     * Swap the values at two indices in the list.
+     *
+     * @param ix1 The first index
+     * @param ix2 The second index
+     * @throws IllegalArgumentException if the size is &lt; 2, or if either
+     * index is &lt;0 or &gt;= size().
+     * @return True if the indices are not the same
+     */
+    default boolean swapIndices(int ix1, int ix2) {
+        int sz = size();
+        if (sz < 2) {
+            throw new IllegalArgumentException("Cannot swap on an "
+                    + "empty or single item list, and have " + sz + " items");
+        }
+        if (ix1 < 0) {
+            throw new IllegalArgumentException("Negative first index " + ix1);
+        }
+        if (ix2 < 0) {
+            throw new IllegalArgumentException("Negative second index " + ix2);
+        }
+        if (ix1 >= sz) {
+            throw new IllegalArgumentException("First index >= size " + ix1 + " vs " + sz);
+        }
+        if (ix2 >= sz) {
+            throw new IllegalArgumentException("First index >= size " + ix1 + " vs " + sz);
+        }
+        if (ix1 == ix2) {
+            return false;
+        }
+        int at1 = get(ix1);
+        int at2 = get(ix2);
+        set(ix1, at2);
+        set(ix2, at1);
+        return true;
+    }
+
+    /**
+     * Swap the position of two values in this list. If either value is present
+     * multiple times, it is not specified which instance will be swapped.
+     *
+     * @param v1 The first value
+     * @param v2 The second value
+     * @return true if both values are present, they are not the same value, and
+     * the list was altered as a result of this call.
+     */
+    default boolean swap(int v1, int v2) {
+        int ix1 = indexOf(v1);
+        int ix2 = indexOf(v2);
+        if (ix1 == ix2) {
+            return false;
+        }
+        if (ix1 < 0 || ix2 < 0) {
+            return false;
+        }
+        return swapIndices(ix1, ix2);
+    }
+
+    default boolean toFront(int value) {
+        return toFront(value, true);
+    }
+
+    default boolean toFront(int value, boolean addIfNotPresent) {
+        int ix = indexOf(value);
+        if (ix < 0 && !addIfNotPresent) {
+            return false;
+        } else if (ix == 0) {
+            return false;
+        }
+        // XXX the array implementation could do this in a single
+        // array operation, rather than two memory-copies
+        if (ix > 0) {
+            removeAt(ix);
+        }
+        add(0, value);
+        return true;
+    }
+
+    default boolean toBack(int value) {
+        return toBack(value, true);
+    }
+
+    default boolean toBack(int value, boolean addIfNotPresent) {
+        int ix = indexOf(value);
+        if (ix < 0 && addIfNotPresent) {
+            add(value);
+            return true;
+        }
+        int sz = size();
+        if (ix == 0 && sz == 1) {
+            return false;
+        }
+        if (ix == sz - 1) {
+            return false;
+        }
+        removeAt(ix);
+        add(value);
+        return true;
     }
 
     /**
@@ -258,9 +357,9 @@ public interface IntList extends List<Integer>, Trimmable {
      * closest to the passed one, according to the passed Bias argument.
      * </p><p>
      * <i>If this list is not actually sorted, this method may do anything at
-     * all, including go into an endless loop.  It is up to the caller to
-     * guarantee that the list entries are sorted (duplicate entries are
-     * allowed - see implementation note before)</i> either by calling the
+     * all, including go into an endless loop. It is up to the caller to
+     * guarantee that the list entries are sorted (duplicate entries are allowed
+     * - see implementation note before)</i> either by calling the
      * <code>sort()</code> method or by having added entries in order.
      * <p>
      * The Bias parameter works as follows: Say we have a list of
@@ -282,16 +381,15 @@ public interface IntList extends List<Integer>, Trimmable {
      * Bias.NEAREST), Bias.FORWARD is preferred.
      * </p>
      * <p>
-     * Since -1 is used to indicate no such value is present, this method
-     * should not be used for lists which may contain negative numbers.
+     * Since -1 is used to indicate no such value is present, this method should
+     * not be used for lists which may contain negative numbers.
      * </p>
      * <p>
      * <b>Implementation note:</b> The default implementation is
      * <i>duplicate tolerant</i>, meaning that sorted lists which contain
-     * duplicate entries will not confuse the binary search implementation,
-     * and will always return the <u>greatest</u> index when duplicate
-     * values are present - so a list of
-     * <code>10, 20, 30, 30, 30, 40</code> will return <code> 4 when
+     * duplicate entries will not confuse the binary search implementation, and
+     * will always return the <u>greatest</u> index when duplicate values are
+     * present - so a list of <code>10, 20, 30, 30, 30, 40</code> will return <code> 4 when
      * queried either for the nearest index to 27 searching forward or
      * to 35 searching backward.
      * </p>
