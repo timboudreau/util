@@ -506,8 +506,8 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
     @Override
     public void add(int index, int element) {
         int sz = size();
-        if (index < 0 || index >= sz) {
-            throw new IllegalArgumentException("Index out of "
+        if ((index < 0 || index >= sz) && !(index == 0 && sz == 0)) {
+            throw new IndexOutOfBoundsException("Index out of "
                     + "range - size " + size() + " but passed " + index);
         }
         maybeGrow(sz + 1);

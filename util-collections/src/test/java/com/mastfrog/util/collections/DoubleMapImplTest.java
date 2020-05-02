@@ -349,7 +349,6 @@ public class DoubleMapImplTest {
             String s = new String(new char[]{c});
             m.put(i, s);
         }
-        System.out.println("MAP: " + m);
         List<String> found = new ArrayList<>();
         boolean res = m.visitMiddleOut(48, 52, (ix, key, val) -> {
 //            System.out.println("VISIT " + key + " at " + ix + " with " + val);
@@ -362,7 +361,6 @@ public class DoubleMapImplTest {
 
         found.clear();
         res = m.visitMiddleOut(47, 53, (ix, key, val) -> {
-            System.out.println("V2 " + val + " " + key);
             found.add(val);
             return "i".equals(val);
         });

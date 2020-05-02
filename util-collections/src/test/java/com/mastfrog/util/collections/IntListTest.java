@@ -586,4 +586,19 @@ public class IntListTest {
         assertTrue(ili.toFront(0));
         assertArrayEquals(ili.toString(), new int[]{0, 6, 5, 11, 10, 1, 2, 3, 4, 7, 8, 9}, ili.toIntArray());
     }
+
+    @Test
+    public void testAddEmptyAtZero() {
+        IntListImpl ili = new IntListImpl(5);
+        assertEquals(0, ili.size());
+        ili.add(0, 23);
+        assertEquals(1, ili.size());
+        ili.clear();
+        try {
+            ili.add(23, 23);
+            fail("Exception should have been thrown");
+        } catch (IndexOutOfBoundsException ex) {
+
+        }
+    }
 }
