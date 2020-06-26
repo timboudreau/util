@@ -51,3 +51,4 @@ nb-configuration.xml
 /log-structured-storage/target/
 /converters/nbproject/
 /converters/target/
+/util-strings/nbproject/

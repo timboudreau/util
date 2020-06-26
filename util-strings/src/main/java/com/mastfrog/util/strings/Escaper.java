@@ -38,24 +38,41 @@ import java.nio.charset.CharsetEncoder;
 public interface Escaper {
 
     /**
-     * Escape one character, returning an escaped version of it if
-     * one is needed, and otherwise returning null.
+     * Escape one character, returning an escaped version of it if one is
+     * needed, and otherwise returning null.
      *
      * @param c A character
-     * @return A character sequence to replace the character with, or
-     * null if no escaping is needed
+     * @return A character sequence to replace the character with, or null if no
+     * escaping is needed
      */
     CharSequence escape(char c);
 
     /**
-     * Returns an escaped version of the input character sequence
-     * using this Escaper.
+     * Returns an escaped version of the input character sequence using this
+     * Escaper.
      *
      * @param input The input
      * @return The escaped version of it
      */
     default String escape(CharSequence input) {
         return Strings.escape(input, this);
+    }
+
+    /**
+     * Escape a character with contextual information about the current position
+     * and the preceding character (will be 0 on the first character); a few
+     * escapers that respond to things like delimiters and camel casing make use
+     * of this; the default is simply to call <code>escape(c)</code>
+     *
+     * @param c The character to escape
+     * @param index The index of the character within the string
+     * @param of The total number of characters in this string
+     * @param prev The preceding character
+     * @return A CharSequence if the character cannot be used as-is, or null if
+     * it can
+     */
+    default CharSequence escape(char c, int index, int of, char prev) {
+        return escape(c);
     }
 
     /**
@@ -110,9 +127,18 @@ public interface Escaper {
      * @return A new escaper
      */
     default Escaper and(Escaper other) {
-        return c -> {
-            CharSequence result = escape(c);
-            return result == null ? other.escape(c) : result;
+        return new Escaper() {
+            @Override
+            public CharSequence escape(char c) {
+                CharSequence result = Escaper.this.escape(c);
+                return result == null ? other.escape(c) : result;
+            }
+
+            @Override
+            public CharSequence escape(char c, int index, int of, char prev) {
+                CharSequence result = Escaper.this.escape(c, index, of, prev);
+                return result == null ? other.escape(c, index, of, prev) : result;
+            }
         };
     }
 
@@ -161,11 +187,32 @@ public interface Escaper {
     }
 
     /**
-     * Escapes double quotes, ampersands, less-than and greater-than
-     * to their SGML entities.
+     * Converts some text incorporating symbols into a legal Java identifier,
+     * separating symbol names and spaces in unicode character names with
+     * underscores. Uses programmer-friendly character names for commonly used
+     * characters (e.g. \ is "Backslash" instead of the unicode name "reverse
+     * solidus" (!). Useful when you have some text that needs to be converted
+     * into a variable name in generated code and be recognizable as what it
+     * refers to.
+     */
+    public static Escaper JAVA_IDENTIFIER_DELIMITED = new SymbolEscaper(true);
+
+    /**
+     * Converts some text incorporating symbols into a legal Java identifier,
+     * separating symbol names and spaces using casing. Uses programmer-friendly
+     * character names for commonly used characters (e.g. \ is "Backslash"
+     * instead of the unicode name "reverse solidus" (!). Useful when you have
+     * some text that needs to be converted into a variable name in generated
+     * code and be recognizable as what it refers to.
+     */
+    public static Escaper JAVA_IDENTIFIER_CAMEL_CASE = new SymbolEscaper(false);
+
+    /**
+     * Escapes double quotes, ampersands, less-than and greater-than to their
+     * SGML entities.
      */
     public static Escaper BASIC_HTML = c -> {
-        switch(c) {
+        switch (c) {
             case '"':
                 return "&quot;";
             case '&':
@@ -174,19 +221,19 @@ public interface Escaper {
                 return "&lt;";
             case '>':
                 return "&gt;";
-            default :
+            default:
                 return null;
         }
     };
 
     /**
-     * Escapes double quotes, ampersands, less-than and greater-than
-     * to their SGML entities, and replaces \n with &lt;br&gt;.
+     * Escapes double quotes, ampersands, less-than and greater-than to their
+     * SGML entities, and replaces \n with &lt;br&gt;.
      */
     public static Escaper HTML_WITH_LINE_BREAKS = c -> {
         CharSequence result = BASIC_HTML.escape(c);
         if (result == null) {
-            switch(c) {
+            switch (c) {
                 case '\r':
                     result = "";
                     break;
@@ -198,8 +245,7 @@ public interface Escaper {
     };
 
     /**
-     * Replaces \n, \r, \t and \b with literal strings starting
-     * with \.
+     * Replaces \n, \r, \t and \b with literal strings starting with \.
      */
     public static Escaper NEWLINES_AND_OTHER_WHITESPACE = c -> {
         switch (c) {

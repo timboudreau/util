@@ -2056,20 +2056,22 @@ public final class Strings {
     }
 
     public static String escape(CharSequence seq, Escaper escaper) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(seq.length() + 5);
         escape(seq, seq.length(), escaper, sb);
         return sb.toString();
     }
 
     public static void escape(CharSequence seq, int len, Escaper escaper, StringBuilder into) {
+        char prev = 0;
         for (int i = 0; i < len; i++) {
             char c = seq.charAt(i);
-            CharSequence escaped = escaper.escape(c);
+            CharSequence escaped = escaper.escape(c, i, len, prev);
             if (escaped != null) {
                 into.append(escaped);
             } else {
                 into.append(c);
             }
+            prev = c;
         }
     }
 
