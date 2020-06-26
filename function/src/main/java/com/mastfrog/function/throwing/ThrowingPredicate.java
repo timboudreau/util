@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2018 Tim Boudreau.
+ * Copyright 2020 Mastfrog Technologies.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,23 +21,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.function;
 
-import java.util.Objects;
-import java.util.function.Function;
+package com.mastfrog.function.throwing;
 
 /**
- * Like a BiFunction, but taking five arguments.
+ * A predicate that throws an exception.
  *
  * @author Tim Boudreau
  */
 @FunctionalInterface
-public interface PetaFunction<T, U, V, W, X, R> {
+public interface ThrowingPredicate<R> {
 
-    R apply(T t, U u, V v, W w, X x);
-
-    default <M> PetaFunction<T, U, V, W, X, M> andThen(Function<? super R, ? extends M> after) {
-        Objects.requireNonNull(after);
-        return (T t, U u, V v, W w, X x) -> after.apply(apply(t, u, v, w, x));
-    }
+    boolean test(R val) throws Exception;
 }

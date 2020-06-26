@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2018 Tim Boudreau.
+ * Copyright 2019 Mastfrog Technologies.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,21 +23,31 @@
  */
 package com.mastfrog.function;
 
-import java.util.Objects;
-import java.util.function.Function;
-
 /**
- * Like a BiFunction, but taking five arguments.
+ * Eight argument predicate.
  *
  * @author Tim Boudreau
  */
 @FunctionalInterface
-public interface PetaFunction<T, U, V, W, X, R> {
+public interface OctoPredicate<A, B, C, D, E, F, G, H> {
 
-    R apply(T t, U u, V v, W w, X x);
+    boolean test(A a, B b, C c, D d, E e, F f, G g, H h);
 
-    default <M> PetaFunction<T, U, V, W, X, M> andThen(Function<? super R, ? extends M> after) {
-        Objects.requireNonNull(after);
-        return (T t, U u, V v, W w, X x) -> after.apply(apply(t, u, v, w, x));
+    default OctoPredicate<A, B, C, D, E, F, G, H> and(OctoPredicate<? super A, ? super B, ? super C, ? super D, ? super E, ? super F, ? super G, ? super H> other) {
+        return (a, b, c, d, e, f, g, h) -> {
+            return test(a, b, c, d, e, f, g, h) && other.test(a, b, c, d, e, f, g, h);
+        };
+    }
+
+    default OctoPredicate<A, B, C, D, E, F, G, H> or(OctoPredicate<? super A, ? super B, ? super C, ? super D, ? super E, ? super F, ? super G, ? super H> other) {
+        return (a, b, c, d, e, f, g, h) -> {
+            return test(a, b, c, d, e, f, g, h) || other.test(a, b, c, d, e, f, g, h);
+        };
+    }
+
+    default OctoPredicate<A, B, C, D, E, F, G, H> xor(OctoPredicate<? super A, ? super B, ? super C, ? super D, ? super E, ? super F, ? super G, ? super H> other) {
+        return (a, b, c, d, e, f, g, h) -> {
+            return test(a, b, c, d, e, f, g, h) != other.test(a, b, c, d, e, f, g, h);
+        };
     }
 }

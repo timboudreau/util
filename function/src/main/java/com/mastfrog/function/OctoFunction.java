@@ -27,17 +27,17 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * Like a BiFunction, but taking five arguments.
+ * Like a BiFunction, but taking eight arguments.
  *
  * @author Tim Boudreau
  */
 @FunctionalInterface
-public interface PetaFunction<T, U, V, W, X, R> {
+public interface OctoFunction<A, B, C, D, E, F, G, H, R> {
 
-    R apply(T t, U u, V v, W w, X x);
+    R apply(A a, B b, C c, D d, E e, F f, G g, H h);
 
-    default <M> PetaFunction<T, U, V, W, X, M> andThen(Function<? super R, ? extends M> after) {
+    default <M> OctoFunction<A, B, C, D, E, F, G, H, M> andThen(Function<? super R, ? extends M> after) {
         Objects.requireNonNull(after);
-        return (T t, U u, V v, W w, X x) -> after.apply(apply(t, u, v, w, x));
+        return (A a, B b, C c, D d, E e, F f, G g, H h) -> after.apply(apply(a, b, c, d, e, f, g, h));
     }
 }

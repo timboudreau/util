@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2018 Tim Boudreau.
+ * Copyright 2019 Mastfrog Technologies.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,21 +23,31 @@
  */
 package com.mastfrog.function;
 
-import java.util.Objects;
-import java.util.function.Function;
-
 /**
- * Like a BiFunction, but taking five arguments.
+ * Six argument predicate.
  *
  * @author Tim Boudreau
  */
 @FunctionalInterface
-public interface PetaFunction<T, U, V, W, X, R> {
+public interface SextaPredicate<A, B, C, D, E, F> {
 
-    R apply(T t, U u, V v, W w, X x);
+    boolean test(A a, B b, C c, D d, E e, F f);
 
-    default <M> PetaFunction<T, U, V, W, X, M> andThen(Function<? super R, ? extends M> after) {
-        Objects.requireNonNull(after);
-        return (T t, U u, V v, W w, X x) -> after.apply(apply(t, u, v, w, x));
+    default SextaPredicate<A, B, C, D, E, F> and(SextaPredicate<? super A, ? super B, ? super C, ? super D, ? super E, ? super F> other) {
+        return (a, b, c, d, e, f) -> {
+            return test(a, b, c, d, e, f) && other.test(a, b, c, d, e, f);
+        };
+    }
+
+    default SextaPredicate<A, B, C, D, E, F> or(SextaPredicate<? super A, ? super B, ? super C, ? super D, ? super E, ? super F> other) {
+        return (a, b, c, d, e, f) -> {
+            return test(a, b, c, d, e, f) || other.test(a, b, c, d, e, f);
+        };
+    }
+
+    default SextaPredicate<A, B, C, D, E, F> xor(SextaPredicate<? super A, ? super B, ? super C, ? super D, ? super E, ? super F> other) {
+        return (a, b, c, d, e, f) -> {
+            return test(a, b, c, d, e, f) != other.test(a, b, c, d, e, f);
+        };
     }
 }

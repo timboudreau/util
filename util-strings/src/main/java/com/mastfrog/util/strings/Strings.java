@@ -85,6 +85,108 @@ public final class Strings {
     }
 
     /**
+     * Determine if a string has no contents other than whitespace more cheaply
+     * than <code>String.trim().isEmpty()</code> - superseded by JDK 14's
+     * <code>String.isBlank()</code> but useful when that cannot be depended on.
+     *
+     * @param s A string
+     * @return true if only whitespace is encountered, the length is zero or the
+     * string is null
+     */
+    public static boolean isBlank(String s) {
+        if (s == null || s.isEmpty()) {
+            return true;
+        }
+        int len = s.length();
+        if (Character.isWhitespace(s.charAt(len - 1))) {
+            return false;
+        }
+        for (int i = 0; i < len - 1; i++) {
+            if (!Character.isWhitespace(s.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Determine if a string has no contents other than whitespace more cheaply
+     * than <code>String.trim().isEmpty()</code> - superseded by JDK 14's
+     * <code>String.isBlank()</code> but useful when that cannot be depended on.
+     *
+     * @param seq A string
+     * @return true if only whitespace is encountered, the length is zero or the
+     * string is null
+     */
+    public static boolean isBlank(CharSequence seq) {
+        if (seq == null || seq.length() == 0) {
+            return true;
+        }
+        int len = seq.length();
+        if (Character.isWhitespace(seq.charAt(len - 1))) {
+            return false;
+        }
+        for (int i = 0; i < len - 1; i++) {
+            if (!Character.isWhitespace(seq.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Remove leading and trailing quote characters from a string if both are
+     * present.
+     *
+     * @param text The text
+     * @param quote The quote character
+     * @return A string with quotes stripped if present, the original if not
+     */
+    public static String dequote(String text, char quote) {
+        return dequote(text, quote, quote);
+    }
+
+    /**
+     * Remove leading and trailing quote characters from a string if both are
+     * present.
+     *
+     * @param text The text
+     * @param opening The opening quote character
+     * @param closing The closing quote character
+     * @return A string with quotes stripped if present, the original if not
+     */
+    public static String dequote(String text, char opening, char closing) {
+        if (text.length() > 1) {
+            if (text.charAt(0) == opening && text.charAt(1) == closing) {
+                text = text.substring(1, text.length() - 1);
+            }
+        }
+        return text;
+    }
+
+    /**
+     * If the passed string is bracketed by " characters, remove them.
+     *
+     * @param text The text
+     * @return The text with leading and trailing quotes stripped if both were
+     * present
+     */
+    public static String dequote(String text) {
+        return dequote(text, '"');
+    }
+
+    /**
+     * If the passed string is bracketed by ' characters, remove them.
+     *
+     * @param text The text
+     * @return The text with leading and trailing quotes stripped if both were
+     * present
+     */
+    public static String deSingleQuote(String text) {
+        return dequote(text, '\'');
+    }
+
+    /**
      * Trim a CharSequence returning a susbsequence.
      *
      * @param seq The string
@@ -1351,13 +1453,26 @@ public final class Strings {
      * @return A hyphenated sequence
      */
     public static String camelCaseToDashes(CharSequence s) {
+        return camelCaseToDelimited(s, '-');
+    }
+
+    /**
+     * Convert a camel-case sequence to hyphenated or otherwise delimited, e.g.
+     * thisThingIsWeird -&gt; this_thing_is_weird.
+     *
+     * @param s A camel case sequence
+     * @param delimiter the character to insert between the cirst capital letter
+     * of one or more and the preceding character
+     * @return A hyphenated sequence
+     */
+    public static String camelCaseToDelimited(CharSequence s, char delimiter) {
         StringBuilder sb = new StringBuilder();
         int max = s.length();
         for (int i = 0; i < max; i++) {
             char c = s.charAt(i);
             if (Character.isUpperCase(c)) {
                 if (sb.length() > 0) {
-                    sb.append("-");
+                    sb.append(delimiter);
                 }
             }
             sb.append(Character.toLowerCase(c));
@@ -1373,12 +1488,23 @@ public final class Strings {
      * @return A camel case string
      */
     public static String dashesToCamelCase(CharSequence s) {
+        return delimitedToCamelCase(s, '-');
+    }
+
+    /**
+     * Convert delimited words to camel case, e.g. this_thing_is_weird -&gt;
+     * thisThingIsWeird.
+     *
+     * @param s A hyphenated sequence
+     * @return A camel case string
+     */
+    public static String delimitedToCamelCase(CharSequence s, char delimiter) {
         StringBuilder sb = new StringBuilder();
         boolean upcase = true;
         int max = s.length();
         for (int i = 0; i < max; i++) {
             char c = s.charAt(i);
-            if (c == '-') {
+            if (c == delimiter) {
                 upcase = true;
                 continue;
             }
@@ -2222,6 +2348,30 @@ public final class Strings {
 
     public static Object wrappedSupplier(Supplier<String> s) {
         return new LazySupplierToString(s);
+    }
+
+    /**
+     * Capitalize a string.
+     *
+     * @param orig The original
+     * @return The original if already capitalized, or a capitalized copy.
+     */
+    public static String capitalize(CharSequence orig) {
+        if (orig.length() == 0 || Character.isUpperCase(orig.charAt(0))) {
+            return orig instanceof String ? (String) orig : orig.toString();
+        }
+        StringBuilder sb = new StringBuilder(orig.length());
+        for (int i = 0; i < orig.length(); i++) {
+            switch (i) {
+                case 0:
+                    sb.append(Character.toUpperCase(orig.charAt(i)));
+                    break;
+                default:
+                    sb.append(orig.charAt(i));
+                    break;
+            }
+        }
+        return sb.toString();
     }
 
     static final class LazyToString {

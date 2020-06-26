@@ -23,21 +23,20 @@
  */
 package com.mastfrog.function;
 
-import java.util.Objects;
-import java.util.function.Function;
-
 /**
- * Like a BiFunction, but taking five arguments.
+ * Like a BiConsumer but with eight arguments.
  *
  * @author Tim Boudreau
  */
 @FunctionalInterface
-public interface PetaFunction<T, U, V, W, X, R> {
+public interface OctoConsumer<A, B, C, D, E, F, G, H> {
 
-    R apply(T t, U u, V v, W w, X x);
+    void accept(A a, B b, C c, D d, E e, F f, G g, H h);
 
-    default <M> PetaFunction<T, U, V, W, X, M> andThen(Function<? super R, ? extends M> after) {
-        Objects.requireNonNull(after);
-        return (T t, U u, V v, W w, X x) -> after.apply(apply(t, u, v, w, x));
+    default OctoConsumer<A, B, C, D, E, F, G, H> andThen(OctoConsumer<? super A, ? super B, ? super C, ? super D, ? super E, ? super F, ? super G, ? super H> other) {
+        return (a, b, c, d, e, f, g, h) -> {
+            this.accept(a, b, c, d, e, f, g, h);
+            other.accept(a, b, c, d, e, f, g, h);
+        };
     }
 }

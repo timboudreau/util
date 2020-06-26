@@ -27,17 +27,17 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * Like a BiFunction, but taking five arguments.
+ * Like a BiFunction, but taking seven arguments.
  *
  * @author Tim Boudreau
  */
 @FunctionalInterface
-public interface PetaFunction<T, U, V, W, X, R> {
+public interface SeptaFunction<T, U, V, W, X, Y, Z, R> {
 
-    R apply(T t, U u, V v, W w, X x);
+    R apply(T t, U u, V v, W w, X x, Y y, Z z);
 
-    default <M> PetaFunction<T, U, V, W, X, M> andThen(Function<? super R, ? extends M> after) {
+    default <M> SeptaFunction<T, U, V, W, X, Y, Z, M> andThen(Function<? super R, ? extends M> after) {
         Objects.requireNonNull(after);
-        return (T t, U u, V v, W w, X x) -> after.apply(apply(t, u, v, w, x));
+        return (T t, U u, V v, W w, X x, Y y, Z z) -> after.apply(apply(t, u, v, w, x, y, z));
     }
 }
