@@ -98,7 +98,10 @@ public final class Strings {
             return true;
         }
         int len = s.length();
-        if (Character.isWhitespace(s.charAt(len - 1))) {
+        if (len == 1) {
+            return Character.isWhitespace(s.charAt(0));
+        }
+        if (!Character.isWhitespace(s.charAt(len - 1))) {
             return false;
         }
         for (int i = 0; i < len - 1; i++) {

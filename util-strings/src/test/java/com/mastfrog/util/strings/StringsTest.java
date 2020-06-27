@@ -51,6 +51,37 @@ import org.junit.Test;
 public class StringsTest {
 
     @Test
+    public void testIsBlank() {
+        assertBlankConsistent("");
+        assertBlankConsistent("a");
+        assertBlankConsistent(" ");
+        assertBlankConsistent("   ");
+        assertBlankConsistent("    b");
+        assertBlankConsistent("     c");
+        assertBlankConsistent("a     ");
+        assertBlankConsistent("a    ");
+        assertBlankConsistent("\r\n");
+        assertBlankConsistent(" \r\n");
+        assertBlankConsistent(" \r\nx");
+        assertBlankConsistent(" x\r\n");
+        assertBlankConsistent(" x \r\n");
+        assertBlankConsistent(" x  \r\n");
+        assertBlankConsistent(" \r\n\r\t");
+        assertBlankConsistent("\t");
+        assertBlankConsistent("wookie");
+        assertBlankConsistent("wookie ");
+        assertBlankConsistent(" wookie");
+        assertBlankConsistent(" wookie ");
+        assertBlankConsistent(" 6 ");
+        assertBlankConsistent(" 6  ");
+        assertBlankConsistent("  6  ");
+    }
+
+    private void assertBlankConsistent(String s) {
+        assertEquals(s.trim().isEmpty(), Strings.isBlank(s));
+    }
+
+    @Test
     public void testSha1() {
         String a = "abcdefghij";
         String b = "abcdefghijklmn";
