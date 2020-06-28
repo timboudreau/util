@@ -160,7 +160,7 @@ public final class Strings {
      */
     public static String dequote(String text, char opening, char closing) {
         if (text.length() > 1) {
-            if (text.charAt(0) == opening && text.charAt(1) == closing) {
+            if (text.charAt(0) == opening && text.charAt(text.length() - 1) == closing) {
                 text = text.substring(1, text.length() - 1);
             }
         }
