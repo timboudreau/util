@@ -74,6 +74,25 @@ public interface IntIntMap extends Map<Integer, Integer>, IntegerKeyedMap {
     }
 
     /**
+     * Create a new IntIntMap from an array of keys and array of values with
+     * <i>no length or sorting or sanity checks</i> &emdash; use only if you can
+     * <b>guarantee</b> that the arrays are the same length and the keys array
+     * is already sorted; if you issue a put to the resulting map, it may
+     * <i>modify the original arrays</i>. Use with caution when you can
+     * guarantee that the invariants (pre-sorted keys array, no duplicate keys,
+     * keys and values arrays the same length) will hold. Note that if they
+     * don't, in particular in the case of duplicate or unsorted keys, it is
+     * possible for a call to <code>get()</code> to enter an endless loop.
+     *
+     * @param keys The keys array
+     * @param values The values array
+     * @return an IntIntMap
+     */
+    static IntIntMap createUnsafe(int[] keys, int[] values) {
+        return new IntIntMapImpl(keys, values);
+    }
+
+    /**
      * Put a key/value pair into the map.
      *
      * @param key A key

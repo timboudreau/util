@@ -136,6 +136,12 @@ class ArrayPredicate implements EnhIntPredicate {
                 return false;
             }
             return Arrays.equals(this.vals, other.vals);
+        } else if (obj instanceof BitSetIntPredicate && !negated) {
+            BitSetIntPredicate pred = (BitSetIntPredicate) obj;
+            return pred.bitsEqual(vals);
+        } else if (obj instanceof BitSetIntPredicate.Negated && negated) {
+            BitSetIntPredicate.Negated neg = (BitSetIntPredicate.Negated) obj;
+            return neg.orig.bitsEqual(vals);
         } else if (obj instanceof SinglePredicate && vals.length == 1) {
             SinglePredicate sp = (SinglePredicate) obj;
             return sp.val == vals[0] && sp.negated == negated;

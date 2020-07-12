@@ -8,7 +8,6 @@
         <version>2.6.11</version>
         <relativePath/>
     </parent>
-    <version>2.6.11.2</version>
     <artifactId>util-strings</artifactId>
     <url>https://github.com/timboudreau/util</url>
     <dependencies>

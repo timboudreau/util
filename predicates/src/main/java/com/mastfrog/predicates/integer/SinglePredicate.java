@@ -104,6 +104,12 @@ class SinglePredicate implements EnhIntPredicate {
         } else if (o instanceof ArrayPredicate || o instanceof ArrayPredicateWithNames) {
             ArrayPredicate p = (ArrayPredicate) o;
             return p.vals.length == 1 && p.vals[0] == val && p.negated == negated;
+        } else if (o instanceof BitSetIntPredicate && !negated) {
+            BitSetIntPredicate bsip = (BitSetIntPredicate) o;
+            return bsip.test(val);
+        } else if (o instanceof BitSetIntPredicate.Negated && negated) {
+            BitSetIntPredicate.Negated neg = (BitSetIntPredicate.Negated) o;
+            return neg.orig.test(val);
         }
         return false;
     }

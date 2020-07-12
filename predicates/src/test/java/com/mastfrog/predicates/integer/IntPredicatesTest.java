@@ -25,6 +25,7 @@ package com.mastfrog.predicates.integer;
 
 import java.util.Arrays;
 import java.util.function.IntPredicate;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -35,6 +36,34 @@ import org.junit.Test;
  * @author Tim Boudreau
  */
 public class IntPredicatesTest {
+
+    @Test
+    public void testEquality() {
+        int[] ints = new int[]{5, 10, 15, 20, 25, 30};
+        EnhIntPredicate eh = new BitSetIntPredicate(ints);
+        EnhIntPredicate arr = new ArrayPredicate(ints, false);
+        for (int i = 0; i < ints.length; i++) {
+            int val = ints[i];
+            assertTrue(eh.test(val));
+            assertFalse(eh.test(val + 1));
+            assertFalse(eh.test(val - 1));
+        }
+        assertFalse(eh.test(-5));
+        assertEquals(eh, arr);
+        assertEquals(arr, eh);
+        assertEquals(eh.hashCode(), arr.hashCode());
+        for (int i = 0; i < 35; i++) {
+            assertEquals(Integer.toString(i), eh.test(i), arr.test(i));
+        }
+        EnhIntPredicate eNeg = eh.negate();
+        EnhIntPredicate aNeg = arr.negate();
+        for (int i = 0; i < 35; i++) {
+            assertEquals(Integer.toString(i), eNeg.test(i), aNeg.test(i));
+        }
+        assertEquals(eNeg, aNeg);
+        assertEquals(aNeg, eNeg);
+        assertEquals(eNeg.hashCode(), aNeg.hashCode());
+    }
 
     @Test
     public void testConstants() {

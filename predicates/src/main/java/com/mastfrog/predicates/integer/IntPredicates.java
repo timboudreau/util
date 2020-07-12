@@ -25,12 +25,20 @@ package com.mastfrog.predicates.integer;
 
 import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
 
 /**
+ * Factory for integer predicates which are fast, consistently implement
+ * <code>equals()</code> and <code>hashCode()</code>, are not lambdas, and have
+ * <code>toString()</code> implementations that can be meaningfully logged.
+ * <p>
+ * Array-based implementations should preferably be initialized from sorted,
+ * duplicate-free arrays, but some checking is provided.
+ * </p>
  *
  * @author Tim Boudreau
  */
@@ -80,7 +88,7 @@ public final class IntPredicates {
     }
 
     /**
-     * Create a anyOf which matches any of the passed integers.
+     * Create a predicate which matches any of the passed integers.
      *
      * @param first The first integer
      * @param more Additional integers
@@ -97,17 +105,110 @@ public final class IntPredicates {
         return new ArrayPredicate(vals, false);
     }
 
+    /**
+     * Get a predicate which matches exactly one values.
+     *
+     * @param val The value
+     * @return A predicate
+     */
     public static EnhIntPredicate matching(int val) {
         return new SinglePredicate(false, val);
     }
 
+    /**
+     * Get a predicate which matches any value but the passed one.
+     *
+     * @param val The value
+     * @return A predicate
+     */
     public static EnhIntPredicate notMatching(int val) {
         return new SinglePredicate(true, val);
     }
 
-    public static EnhIntPredicate anyOf(int[] all) {
+    /**
+     * Get a predicate which matches the passed array of values, and is based on
+     * a BitSet rather than arrays and binary search. These may be preferable
+     * for cases where:
+     * <ul>
+     * <li>There may be a large number of values</li>
+     * <li>Values are positive integers only</li>
+     * <li>The maximum value is relatively close to zero (BitSet will allocate
+     * as many <code>long</code>s as it takes to have
+     * <i>max value</i> bits, even when this value is insanely large</li>
+     * </ul>
+     *
+     * @param val The value
+     * @return A predicate
+     */
+    public static EnhIntPredicate bitSetBased(int[] all) {
         if (all.length == 0) {
             return FixedIntPredicate.INT_FALSE;
+        }
+        return new BitSetIntPredicate(all);
+    }
+
+    /**
+     * Get a predicate which matches the passed array of values, and is based on
+     * a BitSet rather than arrays and binary search. These may be preferable
+     * for cases where:
+     * <ul>
+     * <li>There may be a large number of values</li>
+     * <li>Values are positive integers only</li>
+     * <li>The maximum value is relatively close to zero (BitSet will allocate
+     * as many <code>long</code>s as it takes to have
+     * <i>max value</i> bits, even when this value is insanely large</li>
+     * </ul>
+     *
+     * @param first the value
+     * @param more more values
+     * @return A predicate
+     */
+    public static EnhIntPredicate bitSetBased(int first, int... more) {
+        if (more.length == 0) {
+            return new SinglePredicate(false, first);
+        }
+        return new BitSetIntPredicate(first, more);
+    }
+
+    /**
+     * Get a predicate which matches against a copy of the passed bitset; the
+     * only advantage of this over using a member reference to
+     * <code>bitSet::get</code> is loggability, and the fact that this method
+     * makes a defensive copy of the bitset.
+     *
+     * @param bitSet A bitset
+     * @return a predicate
+     */
+    public static EnhIntPredicate bitSetBased(BitSet bitSet) {
+        return new BitSetIntPredicate(bitSet, true);
+    }
+
+    /**
+     * Get a predicate which matches against a copy of the passed bitset; the
+     * only advantage of this over using a member reference to
+     * <code>bitSet::get</code> is loggability, and the fact that this method
+     * makes a defensive copy of the bitset.
+     *
+     * @param bitSet A bitset
+     * @param copy If true, make a defensive copy of the bit set
+     * @return a predicate
+     */
+    public static EnhIntPredicate bitSetBased(BitSet bitSet, boolean copy) {
+        return new BitSetIntPredicate(bitSet, copy);
+    }
+
+    /**
+     * Crete a predicate matching any of the passed ints.
+     *
+     * @param all An array of ints
+     * @return A predicate
+     */
+    public static EnhIntPredicate anyOf(int[] all) {
+        if (all == null || all.length == 0) {
+            return FixedIntPredicate.INT_FALSE;
+        }
+        if (all.length == 1) {
+            return new SinglePredicate(false, all[0]);
         }
         Arrays.sort(notNull("all", all));
         return new ArrayPredicate(all, false);
@@ -130,10 +231,20 @@ public final class IntPredicates {
         return new ArrayPredicateWithNames(namer, vals, false);
     }
 
+    /**
+     * An int predicate that always returns true.
+     *
+     * @return An int predicate
+     */
     public static EnhIntPredicate alwaysTrue() {
         return FixedIntPredicate.INT_TRUE;
     }
 
+    /**
+     * An int predicate that always returns false.
+     *
+     * @return An int predicate
+     */
     public static IntPredicate alwaysFalse() {
         return FixedIntPredicate.INT_FALSE;
     }

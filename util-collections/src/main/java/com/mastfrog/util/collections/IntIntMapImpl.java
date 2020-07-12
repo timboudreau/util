@@ -59,6 +59,14 @@ final class IntIntMapImpl implements IntIntMap, Iterable<Integer> {
         sorted = true;
     }
 
+    IntIntMapImpl(int[] keys, int[] values) {
+        this.keys = keys;
+        this.values = values;
+        this.sorted = true;
+        this.size = keys.length;
+        this.initialCapacity = Math.max(16, size);
+    }
+
     IntIntMapImpl(int[] keys, int[] values, boolean checkDuplicates, boolean sorted) {
         if (keys.length != values.length) {
             throw new IllegalArgumentException("Keys and values arrays do "
@@ -481,7 +489,9 @@ final class IntIntMapImpl implements IntIntMap, Iterable<Integer> {
 
     @Override
     public void putAll(Map<? extends Integer, ? extends Integer> m) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        m.forEach((key, val) -> {
+            put(key, val);
+        });
     }
 
     @Override
