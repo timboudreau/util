@@ -229,4 +229,38 @@ public interface UnixPath extends Path {
                 return false;
         }
     }
+
+    /**
+     * Provides consistent, platform-indepenedent ordering: absolute is greater
+     * than non-absolute; greater name count is greater than lesser name count;
+     * if same name count, name elements are compared as case-sensitive strings.
+     *
+     * @param other The other path
+     * @return
+     */
+    @Override
+    default int compareTo(Path other) {
+        if (other == this) {
+            return 0;
+        } else if (other == null) {
+            return -1;
+        } else if (other.isAbsolute() && !isAbsolute()) {
+            return 1;
+        } else if (isAbsolute() && !other.isAbsolute()) {
+            return -1;
+        }
+        int nc = getNameCount();
+        int result = Integer.compare(nc, other.getNameCount());
+        if (result == 0) {
+            for (int i = 0; i < nc; i++) {
+                UnixPath a = getName(i);
+                Path b = other.getName(i);
+                result = a.toString().compareTo(b.toString());
+                if (result != 0) {
+                    break;
+                }
+            }
+        }
+        return result;
+    }
 }

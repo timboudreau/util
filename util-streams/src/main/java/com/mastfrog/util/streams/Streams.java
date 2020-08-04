@@ -24,6 +24,7 @@
 package com.mastfrog.util.streams;
 
 import com.mastfrog.util.preconditions.Checks;
+import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -35,6 +36,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Reader;
+import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -61,6 +63,17 @@ import java.util.regex.Pattern;
  * Utilities methods for working with input and output streams.
  */
 public final class Streams {
+
+    /**
+     * Create a ReadableByteChannel over an array of bytes, for impedance
+     * matching array-oriented APIs to NIO channels.
+     *
+     * @param bytes An array of bytes
+     * @return A channel
+     */
+    public GeneralByteChannel channel(byte[] bytes) {
+        return new ByteArrayChannel(notNull("bytes", bytes));
+    }
 
     /**
      * Writes the input stream to the output stream. Input is done without a
@@ -101,7 +114,7 @@ public final class Streams {
      */
     public static int copy(final InputStream in, final OutputStream out)
             throws IOException {
-        final byte[] buffer = new byte[4_096];
+        final byte[] buffer = new byte[bufferSize(in)];
         int bytesCopied = 0;
         for (;;) {
             int byteCount = in.read(buffer, 0, buffer.length);
@@ -115,6 +128,21 @@ public final class Streams {
         return bytesCopied;
     }
 
+    private static final int DEFAULT_BUFFER_SIZE = 4096;
+
+    private static int bufferSize(InputStream in) {
+        int bufferSize = DEFAULT_BUFFER_SIZE;
+        try {
+            int avail = in.available();
+            if (avail > 0) {
+                bufferSize = Math.min(bufferSize, avail);
+            }
+        } catch (IOException ioe) {
+            // do nothing
+        }
+        return bufferSize;
+    }
+
     /**
      * Writes the input stream to <i>two</i> output streams.
      *
@@ -126,7 +154,7 @@ public final class Streams {
      */
     public static int copy(final InputStream in, final OutputStream out, final OutputStream otherOut)
             throws IOException {
-        final byte[] buffer = new byte[4_096];
+        final byte[] buffer = new byte[bufferSize(in)];
         int bytesCopied = 0;
         while (true) {
             int byteCount = in.read(buffer, 0, buffer.length);
@@ -218,7 +246,23 @@ public final class Streams {
      */
     public static String readString(final InputStream in, String charset, int bufferSize) throws IOException {
         Checks.nonNegative("bufferSize", bufferSize);
-        try (Reader r = bufferSize == 0 ? new InputStreamReader(in) : new BufferedReader(new InputStreamReader(in), bufferSize)) {
+        try (Reader r = bufferSize == 0 ? new InputStreamReader(in, charset) : new BufferedReader(new InputStreamReader(in, charset), bufferSize)) {
+            return readString(r);
+        }
+    }
+
+    /**
+     * Read a string with a specified charset and a fixed buffer size
+     *
+     * @param in An input stream
+     * @param charset A character set
+     * @param bufferSize A buffer size, non-negative; if zero, no buffering
+     * @return A string
+     * @throws IOException if something goes wrong
+     */
+    public static String readString(final InputStream in, Charset charset, int bufferSize) throws IOException {
+        Checks.nonNegative("bufferSize", bufferSize);
+        try (Reader r = bufferSize == 0 ? new InputStreamReader(in, charset) : new BufferedReader(new InputStreamReader(in, charset), bufferSize)) {
             return readString(r);
         }
     }
@@ -262,9 +306,10 @@ public final class Streams {
     public static String[] readSql(InputStream is) {
         Checks.notNull("input stream is", is);
         StringBuilder bldr = new StringBuilder();
+        int bufferSize = bufferSize(is);
         try {
             BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(is));
+                    new InputStreamReader(is), bufferSize);
             try {
                 String line;
                 while ((line = reader.readLine()) != null) {
@@ -300,7 +345,7 @@ public final class Streams {
      */
     public static String readString(final InputStream in,
             final CharSequence encoding) throws IOException {
-        try (Reader r = new BufferedReader(new InputStreamReader(in, encoding.toString()))) {
+        try (Reader r = new BufferedReader(new InputStreamReader(in, encoding.toString()), bufferSize(in))) {
             return readString(r);
         }
     }
@@ -472,10 +517,12 @@ public final class Streams {
     }
 
     public static OutputStream nullOutputStream() {
-        return new NullOutputStream();
+        return NullOutputStream.INSTANCE;
     }
 
     private static final class NullOutputStream extends OutputStream {
+
+        private static final NullOutputStream INSTANCE = new NullOutputStream();
 
         @Override
         public void write(int b) throws IOException {
@@ -500,6 +547,291 @@ public final class Streams {
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
             //do nothing
+        }
+
+        @Override
+        public int hashCode() {
+            return 0;
+        }
+
+        @Override
+        public String toString() {
+            return "/dev/null";
+        }
+    }
+
+    /**
+     * Get a writer that black-holes anything printed to it.
+     *
+     * @return A writer
+     */
+    public static Writer nullWriter() {
+        return NullWriter.INSTANCE;
+    }
+
+    static final class NullWriter extends Writer {
+
+        private static final NullWriter INSTANCE = new NullWriter();
+
+        @Override
+        public void write(char[] cbuf, int off, int len) throws IOException {
+            // do nothing
+        }
+
+        @Override
+        public void flush() throws IOException {
+            // do nothing
+        }
+
+        @Override
+        public void close() throws IOException {
+            // do nothing
+        }
+
+        @Override
+        public Writer append(char c) throws IOException {
+            return this;
+        }
+
+        @Override
+        public Writer append(CharSequence csq, int start, int end) throws IOException {
+            return this;
+        }
+
+        @Override
+        public Writer append(CharSequence csq) throws IOException {
+            return this;
+        }
+
+        @Override
+        public void write(String str, int off, int len) throws IOException {
+            // do noting
+        }
+
+        @Override
+        public void write(String str) throws IOException {
+            // do nothing
+        }
+
+        @Override
+        public void write(char[] cbuf) throws IOException {
+            // do nothing
+        }
+
+        @Override
+        public void write(int c) throws IOException {
+            // do nothing
+        }
+
+        public String toString() {
+            return "/dev/null";
+        }
+
+        @Override
+        public int hashCode() {
+            return 0;
+        }
+    }
+
+    /**
+     * Get a print-stream that black-holes anything printed to it.
+     *
+     * @return A print stream
+     */
+    public static PrintStream nullPrintStream() {
+        return NullPrintStream.INSTANCE;
+    }
+
+    static final class NullPrintStream extends PrintStream {
+
+        private static final NullPrintStream INSTANCE = new NullPrintStream();
+
+        public NullPrintStream() {
+            super(NullOutputStream.INSTANCE);
+        }
+
+        @Override
+        public PrintStream append(char c) {
+            return this;
+        }
+
+        @Override
+        public PrintStream append(CharSequence csq, int start, int end) {
+            return this;
+        }
+
+        @Override
+        public PrintStream append(CharSequence csq) {
+            return this;
+        }
+
+        @Override
+        public PrintStream format(Locale l, String format, Object... args) {
+            return this;
+        }
+
+        @Override
+        public PrintStream format(String format, Object... args) {
+            return this;
+        }
+
+        @Override
+        public PrintStream printf(Locale l, String format, Object... args) {
+            return this;
+        }
+
+        @Override
+        public PrintStream printf(String format, Object... args) {
+            return this;
+        }
+
+        @Override
+        public void println(Object x) {
+            // do nothing
+        }
+
+        @Override
+        public void println(String x) {
+            // do nothing
+        }
+
+        @Override
+        public void println(char[] x) {
+            // do nothing
+        }
+
+        @Override
+        public void println(double x) {
+            // do nothing
+        }
+
+        @Override
+        public void println(float x) {
+            // do nothing
+        }
+
+        @Override
+        public void println(long x) {
+            // do nothing
+        }
+
+        @Override
+        public void println(int x) {
+            // do nothing
+        }
+
+        @Override
+        public void println(char x) {
+            // do nothing
+        }
+
+        @Override
+        public void println(boolean x) {
+            // do nothing
+        }
+
+        @Override
+        public void println() {
+            // do nothing
+        }
+
+        @Override
+        public void print(Object obj) {
+            // do nothing
+        }
+
+        @Override
+        public void print(String s) {
+            // do nothing
+        }
+
+        @Override
+        public void print(char[] s) {
+            // do nothing
+        }
+
+        @Override
+        public void print(double d) {
+            // do nothing
+        }
+
+        @Override
+        public void print(float f) {
+            // do nothing
+        }
+
+        @Override
+        public void print(long l) {
+            // do nothing
+        }
+
+        @Override
+        public void print(int i) {
+            // do nothing
+        }
+
+        @Override
+        public void print(char c) {
+            // do nothing
+        }
+
+        @Override
+        public void print(boolean b) {
+            // do nothing
+        }
+
+        @Override
+        public void write(byte[] buf, int off, int len) {
+            // do nothing
+        }
+
+        @Override
+        public void write(int b) {
+            // do nothing
+        }
+
+        @Override
+        protected void clearError() {
+            // do nothing
+        }
+
+        @Override
+        protected void setError() {
+            // do nothing
+        }
+
+        @Override
+        public boolean checkError() {
+            return false;
+        }
+
+        @Override
+        public void close() {
+            // do nothing
+        }
+
+        @Override
+        public void flush() {
+            // do nothing
+        }
+
+        @Override
+        public void write(byte[] b) throws IOException {
+            // do nothing
+        }
+
+        public String toString() {
+            return "/dev/null";
+        }
+
+        //@Override // XXX JDK-14
+        public void writeBytes(byte[] buf) {
+            // do nothing
+        }
+
+        @Override
+        public int hashCode() {
+            return 0;
         }
     }
 

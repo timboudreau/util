@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 import org.junit.Assert;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -456,6 +457,65 @@ public class UnixPathTest {
             assertEquals(msgBase + " normalizes differently", bnorm.toString(), anorm.toString());
             comparePaths(anorm, bnorm);
         }
+    }
+
+    @Test
+    public void testSorting() throws Exception {
+        UnixPath[] paths = new UnixPath[]{
+            UnixPath.get("com", "foo", "bar", "blah"),
+            UnixPath.get("com", "foo", "bar", "baz", "omega", "poozlehoozle", "C"),
+            UnixPath.get("com", "foo", "bar", "baz"),
+            UnixPath.get("com", "foo", "bar", "baz", "alpha"),
+            UnixPath.get("com", "foo", "bar", "baz", "omega", "poozlehoozle", "c"),
+            UnixPath.get("com", "foo", "bar", "baz", "omega"),
+            UnixPath.get("com", "foo", "bar", "baz", "omega", "poozlehoozle", "b"),
+            UnixPath.get("com", "foo", "bar", "baz", "omega", "poozlehoozle", "B"),
+            UnixPath.get("com", "foo", "bar", "baz", "omega", "boozlehoozle"),
+            UnixPath.get("com", "foo", "bar", "baz", "omega", "poozlehoozle"),
+            UnixPath.get("com", "foo", "bar", "baz", "omega", "poozlehoozle", "A"),
+            UnixPath.get("com", "foo", "bar", "baz", "omega", "poozlehoozle", "a"),
+            UnixPath.get("org", "wug", "wuzzle"),
+            UnixPath.get("org", "wug", "wuzzle", "q"),
+            UnixPath.get("org", "wug", "wuzzle", "a"),
+            UnixPath.get("org", "wug", "wuzzle", "z"),
+            UnixPath.get("org", "wug", "wuzzle", "z", "z1"),
+            UnixPath.get("org", "wug", "wuzzle", "z", "z2"),
+            UnixPath.get("org", "wug", "wuzzle", "z", "z22"),
+            UnixPath.get("org", "aaa"),
+            UnixPath.get("org", "bbb"),
+            UnixPath.get("org", "bbc"),
+            UnixPath.get("org", "aaa", "aaa"),
+            UnixPath.get("org", "aaa", "bbb"),
+            UnixPath.get("org", "aaa", "aaa", "aaa"),};
+        Arrays.sort(paths);
+        UnixPath[] expect = new UnixPath[]{
+            UnixPath.get("com/foo/bar/baz"),
+            UnixPath.get("com/foo/bar/baz/alpha"),
+            UnixPath.get("com/foo/bar/baz/omega"),
+            UnixPath.get("com/foo/bar/baz/omega/boozlehoozle"),
+            UnixPath.get("com/foo/bar/baz/omega/poozlehoozle"),
+            UnixPath.get("com/foo/bar/baz/omega/poozlehoozle/A"),
+            UnixPath.get("com/foo/bar/baz/omega/poozlehoozle/B"),
+            UnixPath.get("com/foo/bar/baz/omega/poozlehoozle/C"),
+            UnixPath.get("com/foo/bar/baz/omega/poozlehoozle/a"),
+            UnixPath.get("com/foo/bar/baz/omega/poozlehoozle/b"),
+            UnixPath.get("com/foo/bar/baz/omega/poozlehoozle/c"),
+            UnixPath.get("com/foo/bar/blah"),
+            UnixPath.get("org/aaa"),
+            UnixPath.get("org/aaa/aaa"),
+            UnixPath.get("org/aaa/aaa/aaa"),
+            UnixPath.get("org/aaa/bbb"),
+            UnixPath.get("org/bbb"),
+            UnixPath.get("org/bbc"),
+            UnixPath.get("org/wug/wuzzle"),
+            UnixPath.get("org/wug/wuzzle/a"),
+            UnixPath.get("org/wug/wuzzle/q"),
+            UnixPath.get("org/wug/wuzzle/z"),
+            UnixPath.get("org/wug/wuzzle/z/z1"),
+            UnixPath.get("org/wug/wuzzle/z/z2"),
+            UnixPath.get("org/wug/wuzzle/z/z22")
+        };
+        assertArrayEquals(expect, paths);
     }
 
     interface UPathFactory {

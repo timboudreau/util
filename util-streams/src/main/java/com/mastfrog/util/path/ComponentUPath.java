@@ -128,9 +128,10 @@ public class ComponentUPath implements UnixPath {
         absolute = a.isAbsolute();
     }
 
+    @SuppressWarnings("AssertWithSideEffects")
     static void sanityCheck(String[] s) {
-        boolean asserts = true;
-//        assert asserts = true;
+        boolean asserts = false;
+        assert asserts = true;
         if (asserts) {
             for (int i = 0; i < s.length; i++) {
                 if (s[i] == null) {
@@ -143,7 +144,7 @@ public class ComponentUPath implements UnixPath {
                         throw new IllegalArgumentException("Component at " + i + " contains " + File.separatorChar + ": " + s[i]);
                     }
                     if (c == 0) {
-                        throw new IllegalArgumentException("Component at " + i + " is nul (0) char");
+                        throw new IllegalArgumentException("Component at " + i + " is null (0) char");
                     }
                 }
             }
