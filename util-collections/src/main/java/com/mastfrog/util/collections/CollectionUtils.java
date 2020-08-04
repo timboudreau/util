@@ -1805,8 +1805,9 @@ public final class CollectionUtils {
      * @param referenceFactory The function which creates reference objects
      * @param initialSize THe initial size of the collection
      * @return A supplier of sets that creates a new set each time it is called
+     * @since 2.6.13.2
      */
-    public <T> TrimmableSet<T> referenceFactory(ToIntFunction<Object> hasher, Function<? super T, ? extends Reference<T>> referenceFactory, int initialSize) {
+    public static <T> TrimmableSet<T> referenceFactorySet(ToIntFunction<Object> hasher, Function<? super T, ? extends Reference<T>> referenceFactory, int initialSize) {
         return new ReferenceFactorySet<>(hasher, referenceFactory, initialSize);
     }
 
@@ -1821,8 +1822,9 @@ public final class CollectionUtils {
      * @param referenceFactory The function which creates reference objects
      * @param initialSize THe initial size of the collection
      * @return A supplier of sets that creates a new set each time it is called
+     * @since 2.6.13.2
      */
-    public <T> TrimmableSet<T> referenceFactory(Function<? super T, ? extends Reference<T>> referenceFactory, int initialSize) {
+    public static <T> TrimmableSet<T> referenceFactorySet(Function<? super T, ? extends Reference<T>> referenceFactory, int initialSize) {
         return new ReferenceFactorySet<>(ReferenceFactorySet.IDENTITY_HASH_CODE, referenceFactory, initialSize);
     }
 
@@ -1836,8 +1838,9 @@ public final class CollectionUtils {
      * @param <T> The type
      * @param referenceFactory The function which creates reference objects
      * @return A supplier of sets that creates a new set each time it is called
+     * @since 2.6.13.2
      */
-    public <T> TrimmableSet<T> referenceFactory(Function<? super T, ? extends Reference<T>> referenceFactory) {
+    public static <T> TrimmableSet<T> referenceFactorySet(Function<? super T, ? extends Reference<T>> referenceFactory) {
         return new ReferenceFactorySet<>(ReferenceFactorySet.IDENTITY_HASH_CODE, referenceFactory, 20);
     }
 
@@ -1848,6 +1851,7 @@ public final class CollectionUtils {
      * @param <V> The value type
      * @param initialSize The initial size
      * @return a map
+     * @since 2.6.13.1
      */
     public static <K, V> Map<K, V> weakValueMap(int initialSize) {
         return new WeakValueMap<>(initialSize);
@@ -1861,7 +1865,8 @@ public final class CollectionUtils {
      * @param factory A factory for the under
      * @param initialSize
      * @param referenceFactory
-     * @return
+     * @return a map
+     * @since 2.6.13.1
      */
     public static <K, V> Map<K, V> weakValueMap(MapFactory factory, int initialSize, Function<V, Reference<V>> referenceFactory) {
         return new WeakValueMap<>(factory, initialSize, referenceFactory);
