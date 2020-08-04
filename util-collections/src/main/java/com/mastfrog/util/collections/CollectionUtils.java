@@ -1849,7 +1849,7 @@ public final class CollectionUtils {
      * @param initialSize The initial size
      * @return a map
      */
-    public <K, V> Map<K, V> weakValueMap(int initialSize) {
+    public static <K, V> Map<K, V> weakValueMap(int initialSize) {
         return new WeakValueMap<>(initialSize);
     }
 
@@ -1863,7 +1863,7 @@ public final class CollectionUtils {
      * @param referenceFactory
      * @return
      */
-    public <K, V> Map<K, V> weakValueMap(MapFactory factory, int initialSize, Function<V, Reference<V>> referenceFactory) {
+    public static <K, V> Map<K, V> weakValueMap(MapFactory factory, int initialSize, Function<V, Reference<V>> referenceFactory) {
         return new WeakValueMap<>(factory, initialSize, referenceFactory);
     }
 
