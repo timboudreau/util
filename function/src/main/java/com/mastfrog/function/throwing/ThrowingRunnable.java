@@ -396,6 +396,27 @@ public interface ThrowingRunnable {
         };
     }
 
+    /**
+     * To use a ThrowingRunnable in an api that calls for a supplier (frequently
+     * one wants a single call that can sometimes needs a return value, and
+     * sometimes doesn't.
+     *
+     * @return A ThrowingSupplier that runs this ThrowingRunnable and returns null
+     */
+    default ThrowingSupplier<Void> toThrowingSupplier() {
+        return () -> {
+            this.run();
+            return null;
+        };
+    }
+
+    default <T> ThrowingSupplier<T> toThrowingSupplier(T obj) {
+        return () -> {
+            this.run();
+            return obj;
+        };
+    }
+
     default void addAsShutdownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread(toRunnable()));
     }
