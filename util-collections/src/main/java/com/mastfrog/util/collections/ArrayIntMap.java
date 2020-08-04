@@ -191,6 +191,17 @@ final class ArrayIntMap<T> implements IntMap<T> {
     @Override
     public int indexOf(int key) {
         checkSort();
+        if (last < 0) {
+            return -1;
+        } else if (key == keys[0]) {
+            return 0;
+        } else if (key < keys[0]) {
+            return -1;
+        } else if (key == keys[last]) {
+            return last;
+        } else if (key > keys[last]){
+            return -1;
+        }
         return Arrays.binarySearch(keys, 0, last + 1, key);
     }
 
@@ -413,6 +424,13 @@ final class ArrayIntMap<T> implements IntMap<T> {
         }
         int start = -1;
         int len = 0;
+        if (indices instanceof IntSetArray) {
+            IntSetArray arr = (IntSetArray) indices;
+            arr.checkSort();
+        } else if ((indices instanceof IntSetReadOnly && ((IntSetReadOnly) indices).delegate instanceof IntSetArray)) {
+            IntSetArray arr = (IntSetArray) ((IntSetReadOnly) indices).delegate;
+            arr.checkSort();
+        }
         int[] all = indices.toIntArray();
         for (int i = all.length - 1; i >= 0; i--) {
             int val = all[i];

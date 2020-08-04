@@ -103,6 +103,10 @@ class IntSetArray extends IntSet {
         sorted = true;
     }
 
+    boolean currentlySorted() { // for tests
+        return sorted;
+    }
+
     @Override
     public void trim() {
         data = Arrays.copyOf(data, size);
@@ -235,7 +239,7 @@ class IntSetArray extends IntSet {
         return result < 0 ? -1 : result;
     }
 
-    private void checkSort() {
+    void checkSort() {
         if (!sorted) {
             Arrays.sort(data, 0, size);
             sorted = true;

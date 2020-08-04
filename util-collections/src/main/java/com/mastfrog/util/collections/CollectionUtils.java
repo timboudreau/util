@@ -28,6 +28,8 @@ import com.mastfrog.util.preconditions.Checks;
 import static com.mastfrog.util.preconditions.Checks.notNull;
 import com.mastfrog.util.strings.Strings;
 import com.mastfrog.util.collections.MapBuilder2.HashingMapBuilder;
+import com.mastfrog.util.collections.Trimmable.TrimmableSet;
+import java.lang.ref.Reference;
 //import com.mastfrog.util.tree.BitSetSet;
 //import com.mastfrog.util.tree.Indexed;
 import java.lang.reflect.Array;
@@ -60,6 +62,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.ToIntFunction;
 
 /**
  * Handles a few collections omissions
@@ -783,6 +786,7 @@ public final class CollectionUtils {
     }
 
     static final class StringComparator implements Comparator<String> {
+
         static final StringComparator INSTANCE = new StringComparator();
 
         @Override
@@ -1304,8 +1308,8 @@ public final class CollectionUtils {
     }
 
     /**
-     * Create a primitive integer map backed by an array and binary search (removes
-     * are expensive).
+     * Create a primitive integer map backed by an array and binary search
+     * (removes are expensive).
      *
      * @param <T> The value type
      * @return A map
@@ -1385,7 +1389,8 @@ public final class CollectionUtils {
      * alters the state of something else, pass false.
      * @param emptyValues Supplies empty values
      * @return A map
-     * @deprecated Use <code>IntMap.create(int, boolean, Supplier&lt;T&gt;)</code>
+     * @deprecated Use
+     * <code>IntMap.create(int, boolean, Supplier&lt;T&gt;)</code>
      */
     @Deprecated
     public static <T> IntMap<T> intMap(int initialCapacity, boolean addSuppliedValues, Supplier<T> emptyValues) {
@@ -1782,6 +1787,84 @@ public final class CollectionUtils {
      */
     public static <T> boolean intersects(Collection<T> a, Collection<T> b) {
         return !intersection(a, b).isEmpty();
+    }
+
+    /**
+     * Create a weak (or soft, or something else) hash set with full control
+     * over the creation and handling of the references used (for example
+     * SoftReferences, or WeakReferences that remain strongly referenced until a
+     * timeout, or references attached to your own reference queue. If you do
+     * not need any of these features, use an ordinary weak set.
+     *
+     * @param <T> The type
+     * @param hasher A hashing function (such as <code>Object::hashCode</code>
+     * or <code>System::identityHashCode</code>) - it needs to handle null
+     * values and values of unexpected types, since the contract of Set allows
+     * these to be passed to methods such as <code>contains()</code> - by
+     * default, return 0 for null)
+     * @param referenceFactory The function which creates reference objects
+     * @param initialSize THe initial size of the collection
+     * @return A supplier of sets that creates a new set each time it is called
+     */
+    public <T> TrimmableSet<T> referenceFactory(ToIntFunction<Object> hasher, Function<? super T, ? extends Reference<T>> referenceFactory, int initialSize) {
+        return new ReferenceFactorySet<>(hasher, referenceFactory, initialSize);
+    }
+
+    /**
+     * Create a weak (or soft, or something else) hash set with full control
+     * over the creation and handling of the references used (for example
+     * SoftReferences, or WeakReferences that remain strongly referenced until a
+     * timeout, or references attached to your own reference queue. If you do
+     * not need any of these features, use an ordinary weak set.
+     *
+     * @param <T> The type
+     * @param referenceFactory The function which creates reference objects
+     * @param initialSize THe initial size of the collection
+     * @return A supplier of sets that creates a new set each time it is called
+     */
+    public <T> TrimmableSet<T> referenceFactory(Function<? super T, ? extends Reference<T>> referenceFactory, int initialSize) {
+        return new ReferenceFactorySet<>(ReferenceFactorySet.IDENTITY_HASH_CODE, referenceFactory, initialSize);
+    }
+
+    /**
+     * Create a weak (or soft, or something else) hash set with full control
+     * over the creation and handling of the references used (for example
+     * SoftReferences, or WeakReferences that remain strongly referenced until a
+     * timeout, or references attached to your own reference queue. If you do
+     * not need any of these features, use an ordinary weak set.
+     *
+     * @param <T> The type
+     * @param referenceFactory The function which creates reference objects
+     * @return A supplier of sets that creates a new set each time it is called
+     */
+    public <T> TrimmableSet<T> referenceFactory(Function<? super T, ? extends Reference<T>> referenceFactory) {
+        return new ReferenceFactorySet<>(ReferenceFactorySet.IDENTITY_HASH_CODE, referenceFactory, 20);
+    }
+
+    /**
+     * Create a map with weak values.
+     *
+     * @param <K> The key type
+     * @param <V> The value type
+     * @param initialSize The initial size
+     * @return a map
+     */
+    public <K, V> Map<K, V> weakValueMap(int initialSize) {
+        return new WeakValueMap<>(initialSize);
+    }
+
+    /**
+     * Create a map with weak values.
+     *
+     * @param <K> The key type
+     * @param <V> The value type
+     * @param factory A factory for the under
+     * @param initialSize
+     * @param referenceFactory
+     * @return
+     */
+    public <K, V> Map<K, V> weakValueMap(MapFactory factory, int initialSize, Function<V, Reference<V>> referenceFactory) {
+        return new WeakValueMap<>(factory, initialSize, referenceFactory);
     }
 
     /**

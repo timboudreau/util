@@ -831,4 +831,46 @@ public class ArrayIntMapTest {
         am.putAll(am2);
         am.consistent();
     }
+
+    @Test
+    public void testIndexBug() {
+        int[] keys = new int[]{188576144, 266437232, 282432134, 1608230649, 1843289228, 187385956};
+        int[] other = Arrays.copyOf(keys, keys.length);
+        Arrays.sort(other);
+        String[] vals = new String[]{"a", "b", "c", "d", "e", "f"};
+        ArrayIntMap im = new ArrayIntMap(keys, vals);
+        assertTrue("Should need a re-sort", im.resort);
+        for (int i = 0; i < keys.length; i++) {
+            int realIx = Arrays.binarySearch(other, keys[i]);
+            assertEquals(realIx, im.indexOf(keys[i]));
+            assertTrue(im.containsKey(keys[i]));
+            assertNotNull(im.get(keys[i]));
+        }
+        assertFalse("Should need a re-sort", im.resort);
+    }
+
+    @Test
+    public void testAddSeq() {
+        int[] keys = new int[]{188576144, 266437232, 282432134, 1608230649, 1843289228, 187385956};
+        int[] keysSorted = Arrays.copyOf(keys, keys.length);
+        Arrays.sort(keysSorted);
+
+        String[] vals = new String[]{"a", "b", "c", "d", "e", "f"};
+        ArrayIntMap im = new ArrayIntMap(keysSorted, vals);
+
+        IntSet is = IntSet.arrayBased(3);
+        is.add(0);
+        is.add(3);
+        is.add(2);
+        assertFalse("Set should not have sorted itself until a call required it",
+                ((IntSetArray) is).currentlySorted());
+        im.removeIndices(is);
+        assertTrue("Remove indices should have forced a sort",
+                ((IntSetArray) is).currentlySorted());
+        assertFalse("Wrong items removed when removing " + is + " - got " + im, im.containsKey(keysSorted[0]));
+        assertFalse("Wrong items removed when removing " + is + " - got " + im, im.containsKey(keysSorted[2]));
+        assertFalse("Wrong items removed when removing " + is + " - got " + im, im.containsKey(keysSorted[3]));
+        assertTrue("Wrong items removed when removing " + is + " - got " + im, im.containsKey(keysSorted[1]));
+        assertTrue("Wrong items removed when removing " + is + " - got " + im, im.containsKey(keysSorted[4]));
+    }
 }

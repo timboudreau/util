@@ -23,9 +23,13 @@
  */
 package com.mastfrog.util.collections;
 
+import java.util.Map;
+import java.util.Set;
+
 /**
  * Interface for array-based collections which may over-allocate memory for
- * performance.
+ * performance, or which are treated as immutable once populated and will
+ * not need any additional preallocated slots for items.
  *
  * @author Tim Boudreau
  */
@@ -38,4 +42,17 @@ public interface Trimmable {
      * future modifications are unlikely or far in the future.
      */
     void trim();
+
+    /**
+     * Subinterface that implements Set.
+     *
+     * @param <T> The type
+     */
+    public interface TrimmableSet<T> extends Set<T>, Trimmable {
+
+    }
+
+    public interface TrimmableMap<K,V> extends Map<K, V>, Trimmable {
+
+    }
 }
