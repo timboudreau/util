@@ -75,8 +75,75 @@ import java.util.function.Supplier;
  */
 public final class Strings {
 
+    private static final boolean[] PUNC = new boolean[128];
+
+    static {
+        for (int i = 0; i < PUNC.length; i++) {
+            PUNC[i] = isPunctuation((char) i);
+        }
+    }
+
+    /**
+     * Determine if an entier character sequence is punctuation by process of
+     * elimination - not a letter, digit, whitespace, iso control, or unicode
+     * "letter-like symbol".
+     *
+     * @param c A character
+     * @return true if the character fits no other category.
+     * @since 2.6.13
+     */
+    public static boolean isPunctuation(CharSequence name) {
+        int len = name.length();
+        if (len == 0) {
+            return false;
+        }
+        if (len == 1) {
+            return isPunctuation(name.charAt(0));
+        }
+        boolean result = name.length() > 0;
+        if (result) {
+            for (int i = 0; i < name.length(); i++) {
+                char c = name.charAt(i);
+                if (!isPunctuation(c)) {
+                    result = false;
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Determine if a character is punctuation by process of elimination - not a
+     * letter, digit, whitespace, iso control, or unicode "letter-like symbol".
+     *
+     * @param c A character
+     * @return true if the character fits no other category.
+     * @since 2.6.13
+     */
+    public static boolean isPunctuation(char c) {
+        if (c < 128) {
+            return PUNC[(int) c];
+        }
+        if (Character.isLetter(c) || Character.isDigit(c)
+                || Character.isWhitespace(c) || Character.isISOControl(c)
+                || Character.UnicodeBlock.of(c) == Character.UnicodeBlock.LETTERLIKE_SYMBOLS) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Reverse a string.
+     *
+     * @param s A string
+     * @return The string wtth its characters reversed
+     */
     public static String reverse(String s) {
         int max = s.length() - 1;
+        if (max < 0) {
+            return s;
+        }
         char[] c = new char[max + 1];
         for (int i = 0; i <= max; i++) {
             c[i] = s.charAt(max - i);
@@ -92,6 +159,7 @@ public final class Strings {
      * @param s A string
      * @return true if only whitespace is encountered, the length is zero or the
      * string is null
+     * @since 2.6.11
      */
     public static boolean isBlank(String s) {
         if (s == null || s.isEmpty()) {
@@ -120,6 +188,7 @@ public final class Strings {
      * @param seq A string
      * @return true if only whitespace is encountered, the length is zero or the
      * string is null
+     * @since 2.6.11
      */
     public static boolean isBlank(CharSequence seq) {
         if (seq == null || seq.length() == 0) {
@@ -144,6 +213,7 @@ public final class Strings {
      * @param text The text
      * @param quote The quote character
      * @return A string with quotes stripped if present, the original if not
+     * @since 2.6.10
      */
     public static String dequote(String text, char quote) {
         return dequote(text, quote, quote);
@@ -157,6 +227,7 @@ public final class Strings {
      * @param opening The opening quote character
      * @param closing The closing quote character
      * @return A string with quotes stripped if present, the original if not
+     * @since 2.6.10
      */
     public static String dequote(String text, char opening, char closing) {
         if (text.length() > 1) {
@@ -173,6 +244,7 @@ public final class Strings {
      * @param text The text
      * @return The text with leading and trailing quotes stripped if both were
      * present
+     * @since 2.6.10
      */
     public static String dequote(String text) {
         return dequote(text, '"');
@@ -184,6 +256,7 @@ public final class Strings {
      * @param text The text
      * @return The text with leading and trailing quotes stripped if both were
      * present
+     * @since 2.6.10
      */
     public static String deSingleQuote(String text) {
         return dequote(text, '\'');
@@ -417,6 +490,7 @@ public final class Strings {
      * have one
      * @deprecated Use joinPath
      */
+    @Deprecated
     public static String join(String... parts) {
         return joinPath(parts);
     }
@@ -2353,6 +2427,34 @@ public final class Strings {
 
     public static Object wrappedSupplier(Supplier<String> s) {
         return new LazySupplierToString(s);
+    }
+
+    /**
+     * Create a CharSequence which delegates to a string supplier for its
+     * contents, for cases where a CharSequence is required but it is desirable
+     * to defer computation of the contents until they are required.
+     *
+     * @param s A supplier of a string
+     * @return A character sequence
+     * @since 2.6.13
+     */
+    public static CharSequence lazyCharSequence(Supplier<String> s) {
+        return new LazyCharSequence(s, true);
+    }
+
+    /**
+     * Create a CharSequence which delegates to a string supplier for its
+     * contents, for cases where a CharSequence is required but it is desirable
+     * to defer computation of the contents until they are required.
+     *
+     * @param s A supplier of a string
+     * @param cache If the value, once computed, will not change, pass true for
+     * this so it is not recomputed on every character request
+     * @return A character sequence
+     * @since 2.6.13
+     */
+    public static CharSequence lazyCharSequence(Supplier<String> s, boolean cache) {
+        return new LazyCharSequence(s, cache);
     }
 
     /**
