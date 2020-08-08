@@ -1,11 +1,13 @@
 package com.mastfrog.util.collections;
 
+import static com.mastfrog.util.preconditions.Checks.notNull;
 import com.mastfrog.util.search.Bias;
 import java.io.Serializable;
 import java.util.AbstractList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator;
 import java.util.function.Consumer;
@@ -262,6 +264,54 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
             throw new NoSuchElementException("Empty");
         }
         return values[0];
+    }
+
+    @Override
+    public boolean startsWith(List<Integer> others) {
+        if (notNull("others", others) instanceof IntList) {
+            return startsWithIntList((IntList) others);
+        }
+        for (int i = 0; i < others.size(); i++) {
+            if (getAsInt(i) != others.get(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean startsWithIntList(IntList other) {
+        if (isEmpty() || other.isEmpty() || other.size() >= size || other == this) {
+            return false;
+        }
+        if (other instanceof IntListImpl) {
+            return _startsWith((IntListImpl) other);
+        }
+        for (int i = 0; i < other.size(); i++) {
+            if (other.getAsInt(i) != values[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean _startsWith(IntListImpl other) {
+        int last = other.size - 1;
+        if (values[0] != other.values[0]) {
+            return false;
+        }
+        if (values[last] != other.values[last]) {
+            return false;
+        }
+        if (last == 1) {
+            return true;
+        }
+//        return Arrays.equals(values, 1, last-1, other.values, 1, last-1); // XXX JDK9
+        for (int i = 1; i < last - 1; i++) {
+            if (values[last] != other.values[last]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private int nearestIndexToPresumingSorted(int start, int end, Bias bias, int value) {

@@ -432,4 +432,24 @@ public interface IntList extends List<Integer>, Trimmable {
      * @return The number of items affected
      */
     int adjustValues(int fromIndex, int by);
+
+    /**
+     * Determine if this list <i>starts with</i> but is <i>not the same as</i>
+     * this list; returns false for the empty list, itself and an equal list,
+     * and true for lists whose lengths are less than this one and whose
+     * contents up to the end of the passed list are the same.
+     *
+     * @param others
+     * @return True if this list starts with the values in the passed list
+     * @since 2.6.13.3
+     */
+    default boolean startsWith(List<Integer> others) {
+        for (int i = 0; i < others.size(); i++) {
+            if (getAsInt(i) != others.get(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 }

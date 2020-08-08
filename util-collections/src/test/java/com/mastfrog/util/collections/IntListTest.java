@@ -11,6 +11,7 @@ import java.util.function.Predicate;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Test;
@@ -599,6 +600,36 @@ public class IntListTest {
             fail("Exception should have been thrown");
         } catch (IndexOutOfBoundsException ex) {
 
+        }
+    }
+
+    @Test
+    public void testStartsWith() {
+        Random rnd = new Random(2309);
+        for (int i = 0; i < 100; i++) {
+            int sz = rnd.nextInt(20) + 10;
+            IntList a = IntList.create(sz);
+            for (int j = 0; j < sz; j++) {
+                a.add(rnd.nextInt());
+            }
+            for (int j = 1; j < sz - 1; j++) {
+                IntList sub = a.subList(0, j);
+                List<Integer> reg = new ArrayList<>(sub);
+                assertEquals(reg, sub);
+                assertEquals(sub, reg);
+                assertEquals(reg.hashCode(), sub.hashCode());
+                assertNotEquals(a, sub);
+                assertTrue(a.startsWith(sub));
+                assertFalse(sub.startsWith(a));
+                assertTrue(sub instanceof IntListImpl);
+                IntListImpl iil = (IntListImpl) sub;
+                for (int k = 0; k < j; k++) {
+                    iil.set(k, iil.get(k) + 1);
+                    assertFalse(a.startsWith(sub));
+                }
+                assertTrue(a.startsWith(reg));
+            }
+            assertFalse(a.startsWith(IntList.create(1)));
         }
     }
 }
