@@ -34,12 +34,12 @@ import com.mastfrog.util.preconditions.Exceptions;
 @FunctionalInterface
 public interface ThrowingQuadConsumer<A, B, C, D> {
 
-    void apply(A a, B b, C s, D u) throws Exception;
+    void accept(A a, B b, C s, D u) throws Exception;
 
     default ThrowingQuadConsumer<A, B, C, D> andThen(ThrowingQuadConsumer<? super A, ? super B, ? super C, ? super D> other) {
         return (a, b, c, d) -> {
-            this.apply(a, b, c, d);
-            other.apply(a, b, c, d);
+            this.accept(a, b, c, d);
+            other.accept(a, b, c, d);
         };
     }
 
@@ -54,7 +54,7 @@ public interface ThrowingQuadConsumer<A, B, C, D> {
     default QuadConsumer<A, B, C, D> toQuadConsumer() {
         return (a, b, c, d) -> {
             try {
-                apply(a, b, c, d);
+                accept(a, b, c, d);
             } catch (Exception ex) {
                 Exceptions.chuck(ex);
             }

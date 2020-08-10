@@ -25,6 +25,8 @@ package com.mastfrog.util.collections;
 
 import com.mastfrog.util.collections.ArraysManager.SortChecker;
 import static com.mastfrog.util.preconditions.Checks.notNull;
+import com.mastfrog.util.search.Bias;
+import com.mastfrog.util.sort.Sort;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,7 +57,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
         this.size = copy.size;
     }
 
-    public LongListImpl() {
+    LongListImpl() {
         this(64); // default to 512 byte arrays
     }
 
@@ -91,7 +93,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
         size = longs.length;
     }
 
-    public LongListImpl(long[][] longs, int batchSize) {
+    LongListImpl(long[][] longs, int batchSize) {
         this(longs, new boolean[1], batchSize);
     }
 
@@ -111,7 +113,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
         this.sorted = sorted;
     }
 
-    public LongListImpl duplicate() {
+    public LongListImpl copy() {
         return new LongListImpl(this);
     }
 
@@ -131,7 +133,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
     @Override
     public boolean add(long l) {
         if (size > 0 && sorted) {
-            sorted = l > getLong(size - 1);
+            sorted = l > getAsLong(size - 1);
         }
         @SuppressWarnings("MismatchedReadAndWriteOfArray")
         long[] arr = arrayForIndex(size, true);
@@ -155,12 +157,13 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
         add(index, element.longValue());
     }
 
+    @Override
     public boolean addAll(Collection<? extends Long> c) {
         if (c.isEmpty()) {
             return false;
         }
         boolean first = true;
-        long last = Long.MIN_VALUE;
+        long last = isEmpty() ? Long.MIN_VALUE : last();
         for (Long l : c) {
             if (l == null) {
                 throw new IllegalArgumentException("Null element in array");
@@ -189,7 +192,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
         if (sorted) {
             sorted = arrays.isSorted(longs);
             if (sorted && size > 0) {
-                long val = getLong(size - 1);
+                long val = getAsLong(size - 1);
                 if (val >= longs[0]) {
                     sorted = false;
                 }
@@ -214,13 +217,13 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
         if (c instanceof LongListImpl) {
             LongListImpl ll = (LongListImpl) c;
             for (int i = 0; i < ll.size; i++) {
-                set(index + i, ll.getLong(i));
+                set(index + i, ll.getAsLong(i));
             }
             return;
         }
         Iterator<? extends Long> it = c.iterator();
         int ix = index;
-        long prev = ix == 0 ? Long.MIN_VALUE : getLong(ix - 1);
+        long prev = ix == 0 ? Long.MIN_VALUE : getAsLong(ix - 1);
         long l;
         boolean first = true;
         while (it.hasNext()) {
@@ -232,7 +235,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
             prev = l;
             first = false;
         }
-        if (ix < size && getLong(ix) <= prev) {
+        if (ix < size && getAsLong(ix) <= prev) {
             sorted = false;
         }
     }
@@ -260,7 +263,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
                 } else {
                     boolean hasPrevious = index > 0;
                     if (hasPrevious) {
-                        long prev = getLong(index - 1);
+                        long prev = getAsLong(index - 1);
                         if (prev >= c[0]) {
                             sorted = false;
                         }
@@ -268,7 +271,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
                     if (sorted) {
                         boolean hasNext = index < size;
                         if (hasNext) {
-                            long next = getLong(index);
+                            long next = getAsLong(index);
                             if (c[c.length - 1] >= next) {
                                 sorted = false;
                             }
@@ -304,6 +307,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
         return true;
     }
 
+    @Override
     public boolean addAll(int index, Collection<? extends Long> c) {
         if (notNull("c", c).isEmpty()) {
             return false;
@@ -319,7 +323,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
         int offset = index % batchSize;
         if (offset % batchSize == 0 && c.size() % batchSize == 0) {
             Iterator<? extends Long> iter = c.iterator();
-            long last = size > 0 && index > 0 ? getLong(index - 1) : Long.MIN_VALUE;
+            long last = size > 0 && index > 0 ? getAsLong(index - 1) : Long.MIN_VALUE;
             while (iter.hasNext()) {
                 long[] batch = arrays.addOne(firstArray);
                 firstArray++;
@@ -370,10 +374,10 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
             boolean hasPreceding = index > 0;
             boolean hasSubsequent = index < size - 1;
             if (hasPreceding) {
-                preceding = getLong(index - 1);
+                preceding = getAsLong(index - 1);
             }
             if (hasSubsequent) {
-                next = getLong(index + 1);
+                next = getAsLong(index + 1);
             }
             if ((next <= element && hasSubsequent) || (preceding >= element && hasPreceding)) {
                 sorted = false;
@@ -395,7 +399,6 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
     }
 
     @Override
-    @SuppressWarnings("UnnecessaryReturnStatement")
     public void removeRange(int fromIndex, int toIndex) {
         if (fromIndex < 0) {
             throw new IndexOutOfBoundsException("Negative from index " + fromIndex);
@@ -418,16 +421,16 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
             arrays.removeRange(fromIndex, toIndex);
             size -= (toIndex - fromIndex);
             arrays.pruneTo(size);
-            return;
         }
     }
 
+    @Override
     public long removeAt(int index) {
         if (index >= size || index < 0) {
             throw new IndexOutOfBoundsException("Invalid index " + index + " in list of " + size);
         }
         if (index == size - 1) {
-            long val = getLong(size - 1);
+            long val = getAsLong(size - 1);
             size--;
             arrays.pruneTo(size);
             if (size == 0) {
@@ -435,7 +438,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
             }
             return val;
         }
-        long val = getLong(index);
+        long val = getAsLong(index);
         arrays.removeAt(index);
         size--;
         arrays.pruneTo(size);
@@ -446,7 +449,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
     }
 
     @Override
-    public int removeLong(long val) {
+    public int removeValue(long val) {
         int ix = indexOf(val);
         if (ix < 0) {
             return -1;
@@ -458,7 +461,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
     @Override
     public boolean remove(Object o) {
         if (o instanceof Long) {
-            return removeLong((Long) o) >= 0;
+            return removeValue((Long) o) >= 0;
         }
         return false;
     }
@@ -469,9 +472,13 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
     }
 
     @SuppressWarnings("deprecation")
+    @Override
     public boolean sort() {
         if (!sorted) {
-            Collections.sort(this);
+            Sort.multiSort(toLongArray(), 0, size, (ixa, ixb) -> {
+                swapIndices(ixa, ixb);
+            });
+//            Collections.sort(this);
             Longerator lngs = longerator();
             boolean first = true;
             long last = Long.MIN_VALUE;
@@ -491,6 +498,15 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
         return sorted;
     }
 
+    @Override
+    public boolean removeLast() {
+        if (size > 0) {
+            size--;
+            return true;
+        }
+        return false;
+    }
+
     @SuppressWarnings("deprecation")
     public Longerator longerator() {
         return new Longerator() {
@@ -498,7 +514,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
 
             @Override
             public long next() {
-                return getLong(++ix);
+                return LongListImpl.this.getAsLong(++ix);
             }
 
             @Override
@@ -517,8 +533,8 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
         long[] arr = arrayForIndex(index, false);
         int offset = index % arrays.batchSize();
         arr[offset] = element;
-        long preceding = index == 0 ? -1 : getLong(index - 1);
-        long subsequent = index != size - 1 ? getLong(index + 1) : -1;
+        long preceding = index == 0 ? -1 : getAsLong(index - 1);
+        long subsequent = index != size - 1 ? getAsLong(index + 1) : -1;
         if (preceding != -1 && preceding >= element) {
             sorted = false;
         }
@@ -546,7 +562,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
             return -1;
         }
         for (int i = first + 1; i < first + val.length; i++) {
-            if (val[i - first] != getLong(i)) {
+            if (val[i - first] != getAsLong(i)) {
                 break;
             }
             if (i == first + val.length - 1) {
@@ -557,7 +573,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
         loop:
         for (i = first + 1; i < (size - 1) - val.length; i++) {
             for (j = 0; j < val.length; j++) {
-                if (val[j] != getLong(i + j)) {
+                if (val[j] != getAsLong(i + j)) {
                     continue loop;
                 }
                 if (j == val.length - 1) {
@@ -577,7 +593,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
         int ct = Math.min(arrays.size(), (size / batchSize) + 1);
         if (sorted) {
             if (size > 0) {
-                if (getLong(0) > test || getLong(size - 1) < test) {
+                if (getAsLong(0) > test || getAsLong(size - 1) < test) {
                     return -1;
                 }
             }
@@ -647,6 +663,265 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
     }
 
     @Override
+    public int indexOfPresumingSorted(long value) {
+        if (size == 0) {
+            return -1;
+        } else if (size == 1) {
+            return value == get(0) ? 0 : -1;
+        }
+        return indexOfPresumingSorted(value, 0, arrays.size() - 1);
+    }
+
+    private int indexOfPresumingSorted(long value, int startArray, int stopArray) {
+        long[] start = arrays.get(startArray);
+        int startOffset = startArray * arrays.batchSize();
+        int lastElementInStartArray = size - startOffset;
+        if (lastElementInStartArray < 0) {
+            return -1;
+        }
+//        System.out.println("Search for " + value + " in array " + startArray + " thru " + stopArray + " last element " + lastElementInStartArray
+//                + " offset " + startOffset);
+//        System.out.println("  Array " + Arrays.toString(Arrays.copyOf(start, lastElementInStartArray))
+//                + " ");
+        if (startArray == stopArray) {
+            int lastIx = Math.min(start.length - 1, lastElementInStartArray - 1);
+            if (start.length == 0 || value < start[0] || value > start[lastIx]) {
+                System.out.println("  Bail 1 last " + lastIx + " / " + start.length);
+                return -1;
+            }
+            if (lastElementInStartArray == start.length) {
+                int localResult = Arrays.binarySearch(start, value);
+//                System.out.println("  Bail 2 " + localResult + " last " + lastIx + " / " + start.length);
+                return localResult < 0 ? -1 : startOffset + localResult;
+            } else {
+                int localResult = Arrays.binarySearch(start, 0, lastElementInStartArray, value);
+//                System.out.println("  Bail 3 " + localResult + " last " + lastIx + " / " + start.length);
+                return localResult < 0 ? -1 : startOffset + localResult;
+            }
+        }
+        if (value == start[0]) {
+            return startOffset;
+        } else if (value > start[0]) {
+            int lastIx = Math.min(lastElementInStartArray, start.length - 1);
+            if (start[lastIx] == value) {
+                return startOffset + lastIx;
+            } else if (value < start[lastIx]) {
+                if (lastElementInStartArray == start.length) {
+                    int localResult = Arrays.binarySearch(start, value);
+                    return localResult < 0 ? -1 : startOffset + localResult;
+                } else {
+                    int localResult = Arrays.binarySearch(start, 0, lastElementInStartArray, value);
+                    return localResult < 0 ? -1 : startOffset + localResult;
+                }
+            }
+        } else {
+            // value less than start of array?  done
+            return -1;
+        }
+        int stopOffset = stopArray * arrays.batchSize();
+        int lastElementInStopArray = size - stopOffset;
+        // in case we have shrunk
+        while (lastElementInStopArray < 0 && stopArray > startArray) {
+            stopArray--;
+            stopOffset = stopArray * arrays.batchSize();
+            lastElementInStopArray = size - stopOffset;
+        }
+        if (stopArray == startArray) {
+            return -1;
+        }
+        long[] end = arrays.get(stopArray);
+        if (value > end[lastElementInStopArray]) {
+            return -1;
+        } else if (value == end[0]) {
+            return stopOffset + lastElementInStopArray;
+        } else if (value > end[0]) {
+            if (lastElementInStopArray == end.length) {
+                int localResult = Arrays.binarySearch(end, value);
+                return localResult < 0 ? -1 : localResult + stopOffset;
+            } else {
+                int localResult = Arrays.binarySearch(end, 0, lastElementInStopArray, value);
+                return localResult < 0 ? -1 : startOffset + localResult;
+            }
+        }
+        if (stopArray == startArray + 1) {
+            return -1;
+        }
+        int mid = startArray + (stopArray - startArray / 2);
+        return indexOfPresumingSorted(value, mid, stopArray - 1);
+    }
+
+    @Override
+    public int nearestIndexToPresumingSorted(long value, Bias bias) {
+        if (size == 0) {
+            return -1;
+        } else if (size == 1) {
+            long val = getAsLong(0);
+            switch (bias) {
+                case BACKWARD:
+                    if (val <= value) {
+                        return 0;
+                    } else {
+                        return -1;
+                    }
+                case FORWARD:
+                case NEAREST:
+                    if (val >= value) {
+                        return 0;
+                    } else {
+                        return -1;
+                    }
+            }
+        }
+        switch (bias) {
+            case NONE:
+                int result = indexOfPresumingSorted(value);
+//                if (result < -1) {
+//                    new IllegalStateException("Weird answer for indexOfPresumingSorted with bias none "
+//                        + " " + result + " for value " + value + " in " + this).printStackTrace();
+//                }
+                if (result >= 0) {
+                    while (result < size - 1 && getAsLong(result + 1) == getAsLong(result)) {
+                        result++;
+                    }
+                }
+                return result;
+            case FORWARD:
+            case BACKWARD:
+                int res2 = nearestIndexToPresumingSorted(0, size - 1, bias, value);
+                if (res2 != -1) {
+                    while (res2 < size - 1 && getAsLong(res2 + 1) == getAsLong(res2)) {
+                        res2++;
+                    }
+                }
+                return res2;
+            case NEAREST:
+                int fwd = nearestIndexToPresumingSorted(0, size - 1, Bias.FORWARD, value);
+                int bwd = nearestIndexToPresumingSorted(0, size - 1, Bias.BACKWARD, value);
+                if (fwd == -1) {
+                    return bwd;
+                } else if (bwd == -1) {
+                    return fwd;
+                } else if (fwd == bwd) {
+                    return fwd;
+                } else {
+                    long fwdDiff = Math.abs(getAsLong(fwd) - value);
+                    long bwdDiff = Math.abs(getAsLong(bwd) - value);
+                    if (fwdDiff == bwdDiff) {
+                        return fwd;
+                    } else if (fwdDiff < bwdDiff) {
+                        return fwd;
+                    } else {
+                        return bwd;
+                    }
+                }
+            default:
+                throw new AssertionError(bias);
+        }
+    }
+
+    private int nearestIndexToPresumingSorted(int start, int end, Bias bias, long value) {
+        // duplicate tolerance
+//        while (end > 0 && values[end - 1] == values[end]) {
+//            end--;
+//            System.out.println("adj end to " + end + " looking for " +value);
+//        }
+//        while (start < size - 1 && values[start + 1] == values[start]) {
+//            start++;
+//            System.out.println("adj start to " + start + " looking for " + value);
+//        }
+
+        // XXX rewrite this to narrow down the target array and just search that
+        // - will be faster
+        if (start == end) {
+            long currentVal = getAsLong(start);
+            if (currentVal == value) {
+                return start;
+            }
+            switch (bias) {
+                case BACKWARD:
+                    if (currentVal <= value) {
+                        return start;
+                    } else {
+                        return -1;
+                    }
+                case FORWARD:
+                    if (currentVal >= value) {
+                        return start;
+                    } else {
+                        return -1;
+                    }
+            }
+        }
+        long startVal = getAsLong(start);
+        if (startVal == value) {
+            return start;
+        }
+        if (startVal > value) {
+            switch (bias) {
+                case BACKWARD:
+                    if (startVal > value) {
+                        return -1;
+                    }
+                    return start - 1;
+                case FORWARD:
+                    return start;
+                default:
+                    return -1;
+            }
+        }
+        long endVal = getAsLong(end);
+        if (endVal == value) {
+            return end;
+        }
+        if (endVal < value) {
+            switch (bias) {
+                case BACKWARD:
+                    return end;
+                case FORWARD:
+                    int result = end + 1;
+                    return result < size ? result : -1;
+                default:
+                    return -1;
+            }
+        }
+        int mid = start + ((end - start) / 2);
+        long midVal = getAsLong(mid);
+//        while (mid < size-1 && values[mid+1] == midVal) {
+//            mid++;
+//        }
+        if (midVal == value) {
+            return mid;
+        }
+        // If we have an odd number of slots, we can get into trouble here:
+        if (midVal < value && endVal > value) {
+            int newStart = mid + 1;
+            int newEnd = end - 1;
+            long nextStartValue = getAsLong(newStart);
+            if (nextStartValue > value && bias == Bias.BACKWARD && (newEnd - newStart <= 1 || midVal < value)) {
+                return mid;
+            }
+            long nextEndValue = getAsLong(newEnd);
+            if (nextEndValue < value && bias == Bias.FORWARD && newEnd - newStart <= 1) {
+                return end;
+            }
+            return nearestIndexToPresumingSorted(newStart, newEnd, bias, value);
+        } else if (midVal > value && startVal < value) {
+            int nextEnd = mid - 1;
+            int nextStart = start + 1;
+            long nextEndValue = getAsLong(nextEnd);
+            if (nextEndValue < value && bias == Bias.FORWARD && nextEnd - nextStart <= 1) {
+                return mid;
+            }
+            long newStartValue = getAsLong(nextStart);
+            if (bias == Bias.BACKWARD && newStartValue > value && (startVal < value || nextEnd - nextStart <= 1)) {
+                return start;
+            }
+            return nearestIndexToPresumingSorted(nextStart, nextEnd, bias, value);
+        }
+        return -1;
+    }
+
+    @Override
     public int indexOf(Object o) {
         if (o instanceof Number) {
             long test = ((Number) o).longValue();
@@ -690,11 +965,11 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
 
     @Override
     public Long get(int index) {
-        return getLong(index);
+        return getAsLong(index);
     }
 
     @Override
-    public long getLong(int index) {
+    public long getAsLong(int index) {
         long[] arr = arrayForIndex(index, false);
         if (arr == null) {
             throw new IndexOutOfBoundsException("No array for index " + index
@@ -786,8 +1061,8 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
                 return true;
             } else {
                 for (int i = 0; i < size; i++) {
-                    long a = getLong(i);
-                    long b = ll.getLong(i);
+                    long a = getAsLong(i);
+                    long b = ll.getAsLong(i);
                     if (a != b) {
                         return false;
                     }
@@ -799,6 +1074,17 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
             if (ll.size() != size) {
                 return false;
             }
+            for (int i = 0; i < size; i++) {
+                Object item = ll.get(i);
+                if (!(item instanceof Long)) {
+                    return false;
+                }
+                Long l = (Long) item;
+                if (getAsLong(i) != l.longValue()) {
+                    return false;
+                }
+            }
+            /*
             outer:
             for (int i = 0; i < arrays.size(); i++) {
                 long[] els = arrays.get(i);
@@ -819,6 +1105,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
                     }
                 }
             }
+             */
             return true;
         }
         return false;
@@ -831,6 +1118,9 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
 
     @Override
     public boolean containsAll(Collection<?> c) {
+        if (c == this) {
+            return true;
+        }
         for (Object o : c) {
             if (o instanceof Long) {
                 long val = ((Long) o);
@@ -872,7 +1162,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
         } else {
             LongListImpl nue = new LongListImpl(arrays.batchSize());
             for (int i = fromIndex; i < toIndex; i++) {
-                nue.add(getLong(i));
+                nue.add(getAsLong(i));
             }
             return nue;
         }
@@ -913,25 +1203,24 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
     }
 
     @Override
-    public Iterator<Long> iterator() {
-        return new PrimitiveIterator.OfLong() {
-            int ix = -1;
+    public PrimitiveIterator.OfLong iterator() {
+        return new PI();
+    }
 
-            @Override
-            public boolean hasNext() {
-                return ix < size - 1;
-            }
+    final class PI implements PrimitiveIterator.OfLong {
 
-            @Override
-            public Long next() {
-                return nextLong();
-            }
+        int ix = -1;
 
-            @Override
-            public long nextLong() {
-                return getLong(++ix);
-            }
-        };
+        @Override
+        public boolean hasNext() {
+            return ix < size - 1;
+        }
+
+        @Override
+        public long nextLong() {
+            return getAsLong(++ix);
+        }
+
     }
 
     @Override

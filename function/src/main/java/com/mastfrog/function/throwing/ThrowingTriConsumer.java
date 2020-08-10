@@ -34,12 +34,12 @@ import com.mastfrog.util.preconditions.Exceptions;
 @FunctionalInterface
 public interface ThrowingTriConsumer<T, R, S> {
 
-    void apply(T a, R b, S s) throws Exception;
+    void accept(T a, R b, S s) throws Exception;
 
     default ThrowingTriConsumer<T, R, S> andThen(ThrowingTriConsumer<T, R, S> next) {
         return (a, b, s) -> {
-            apply(a, b, s);
-            next.apply(a, b, s);
+            accept(a, b, s);
+            next.accept(a, b, s);
         };
     }
 
@@ -53,7 +53,7 @@ public interface ThrowingTriConsumer<T, R, S> {
     default TriConsumer<T, R, S> toNonThrowing() {
         return (t, r, s) -> {
             try {
-                apply(t, r, s);
+                accept(t, r, s);
             } catch (Exception ex) {
                 Exceptions.chuck(ex);
             }

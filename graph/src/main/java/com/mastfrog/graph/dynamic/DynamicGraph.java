@@ -150,7 +150,7 @@ public class DynamicGraph<T> implements ObjectGraph<T> {
         } finally {
             lock.readLock().unlock();
         }
-        c.apply(copy, outbound, inbound);
+        c.accept(copy, outbound, inbound);
     }
 
     void contentsChanged() {

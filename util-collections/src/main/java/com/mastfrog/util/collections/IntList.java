@@ -113,6 +113,9 @@ public interface IntList extends List<Integer>, Trimmable {
         }
         int at1 = get(ix1);
         int at2 = get(ix2);
+        if (at1 == at2) {
+            return false;
+        }
         set(ix1, at2);
         set(ix2, at1);
         return true;
@@ -136,7 +139,11 @@ public interface IntList extends List<Integer>, Trimmable {
         if (ix1 < 0 || ix2 < 0) {
             return false;
         }
-        return swapIndices(ix1, ix2);
+        int at1 = get(ix1);
+        int at2 = get(ix2);
+        set(ix1, at2);
+        set(ix2, at1);
+        return true;
     }
 
     default boolean toFront(int value) {
@@ -180,6 +187,14 @@ public interface IntList extends List<Integer>, Trimmable {
         add(value);
         return true;
     }
+    
+    default IntSet toSet() {
+        IntSet result = IntSet.arrayBased(size());
+        result.addAll(toIntArray());
+        return result;
+    }
+    
+    void removeRange(int fromIndex, int toIndex);
 
     /**
      * Add a primitive int.
@@ -245,6 +260,7 @@ public interface IntList extends List<Integer>, Trimmable {
      * @param index The index
      * @return
      */
+    @Override
     Integer get(int index);
 
     /**
@@ -276,8 +292,23 @@ public interface IntList extends List<Integer>, Trimmable {
      *
      * @param index An index
      * @return An integer if one was present
+     * @deprecated In a list of integers, remove(Integer) is dangerously
+     * ambiguous, since it can either invoke the value-removing remove(Integer),
+     * or the index-removing remove(int) depending on whether the value is
+     * boxed or not.  Use <code>removeAt(int)</code> or <code>removeValue(int)</code>
+     * which cannot have unexpected results.
      */
+    @Deprecated
+    @Override
     Integer remove(int index);
+    
+    default int removeValue(int value) {
+        int ix = indexOf(value);
+        if (ix >= 0) {
+            removeAt(ix);
+        }
+        return ix;
+    }
 
     /**
      * Remove an element at the specified index.
@@ -436,8 +467,8 @@ public interface IntList extends List<Integer>, Trimmable {
     /**
      * Determine if this list <i>starts with</i> but is <i>not the same as</i>
      * this list; returns false for the empty list, itself and an equal list,
-     * and true for lists whose lengths are less than this one and whose
-     * contents up to the end of the passed list are the same.
+     * and true for lists whose length is less than this one and whose contents
+     * up to the end of the passed list are the same.
      *
      * @param others
      * @return True if this list starts with the values in the passed list
@@ -452,4 +483,25 @@ public interface IntList extends List<Integer>, Trimmable {
         return true;
     }
 
+    /**
+     * Determine if this list <i>ends with</i> but is <i>not the same as</i>
+     * this list; returns false for the empty list, itself and an equal list,
+     * and true for lists whose length is less than this one and whose contents
+     * up to the end of the passed list are the same.
+     *
+     * @param others
+     * @return True if this list ends with the values in the passed list
+     * @since 2.6.13.4
+     */
+    default boolean endsWith(List<Integer> others) {
+        if (others.size() >= size() || others.isEmpty() || isEmpty()) {
+            return false;
+        }
+        for (int i = size() - 1, j = others.size() - 1; i > 0 && j >= 0; j--, i--) {
+            if (getAsInt(i) != others.get(j).intValue()) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

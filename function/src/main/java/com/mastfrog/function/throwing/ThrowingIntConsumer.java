@@ -11,12 +11,12 @@ import java.util.function.IntConsumer;
 @FunctionalInterface
 public interface ThrowingIntConsumer {
 
-    void consume(int val) throws Exception;
+    void accept(int val) throws Exception;
 
     default ThrowingIntConsumer andThen(IntConsumer after) {
         Objects.requireNonNull(after);
         return (int t) -> {
-            consume(t);
+            accept(t);
             after.accept(t);
         };
     }
@@ -24,8 +24,8 @@ public interface ThrowingIntConsumer {
     default ThrowingIntConsumer andThen(ThrowingIntConsumer after) {
         Objects.requireNonNull(after);
         return (int t) -> {
-            consume(t);
-            after.consume(t);
+            accept(t);
+            after.accept(t);
         };
     }
 

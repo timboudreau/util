@@ -52,6 +52,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.PrimitiveIterator;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -2136,11 +2137,11 @@ public final class CollectionUtils {
         }
     }
 
-    public static Iterator<Integer> toIterator(final int[] vals) {
+    public static PrimitiveIterator.OfInt toIterator(final int[] vals) {
         return new IntArrayIterator(vals);
     }
 
-    public static Iterator<Long> toIterator(final long[] vals) {
+    public static PrimitiveIterator.OfLong toIterator(final long[] vals) {
         return new LongArrayIterator(vals);
     }
 
@@ -2154,7 +2155,7 @@ public final class CollectionUtils {
         return new ArrayLongerator(vals);
     }
 
-    private static final class IntArrayIterator implements Iterator<Integer> {
+    private static final class IntArrayIterator implements PrimitiveIterator.OfInt {
 
         private final int[] vals;
 
@@ -2174,6 +2175,11 @@ public final class CollectionUtils {
         }
 
         @Override
+        public int nextInt() {
+            return vals[ix++];
+        }
+
+        @Override
         public void forEachRemaining(Consumer<? super Integer> action) {
             for (int i = 0; i < vals.length; i++) {
                 action.accept(vals[i]);
@@ -2181,14 +2187,14 @@ public final class CollectionUtils {
         }
     }
 
-    private static final class LongArrayIterator implements Iterator<Long> {
+    private static final class LongArrayIterator implements PrimitiveIterator.OfLong {
 
         private final long[] vals;
+        private int ix = 0;
 
         public LongArrayIterator(long[] vals) {
             this.vals = vals;
         }
-        int ix = 0;
 
         @Override
         public boolean hasNext() {
@@ -2205,6 +2211,11 @@ public final class CollectionUtils {
             for (int i = 0; i < vals.length; i++) {
                 action.accept(vals[i]);
             }
+        }
+
+        @Override
+        public long nextLong() {
+            return vals[ix++];
         }
     }
 

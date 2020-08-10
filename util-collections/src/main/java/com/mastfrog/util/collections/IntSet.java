@@ -901,6 +901,10 @@ public abstract class IntSet implements Set<Integer>, Cloneable, Trimmable {
      */
     @Override
     public abstract PrimitiveIterator.OfInt iterator();
+    
+    public IntList toList() {
+        return IntList.createFrom(toIntArray());
+    }
 
     /**
      * An immutable empty IntSet instance.

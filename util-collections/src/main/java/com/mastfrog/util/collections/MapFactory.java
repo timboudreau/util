@@ -39,10 +39,27 @@ public interface MapFactory {
      */
     <T, R> Map<T, R> createMap(int size, boolean threadSafe);
 
+    /**
+     * Some cache-like implementations may not actually be backed by a Map,
+     * which may change assumptions.
+     *
+     * @return Whether or not the underlying implementation is map-based
+     */
     default boolean isMapBased() {
         return true;
     }
 
+    /**
+     * Make a copy of a map that uses the underlying storage of this map
+     * factory - for example, implementations that retain only the identity
+     * hash code of the keys without a reference to the original object, and
+     * whose key sets do not obey the contract of java.util.Map.
+     *
+     * @param <T> The key type
+     * @param <R> The value type
+     * @param orig The original map
+     * @return A map
+     */
     default <T, R> Map<T, R> copyOf(Map<? extends T, ? extends R> orig) {
         boolean concur = orig instanceof ConcurrentHashMap<?, ?>
                 || orig instanceof ConcurrentSkipListMap<?, ?>
@@ -50,6 +67,19 @@ public interface MapFactory {
         return copyOf(orig, concur);
     }
 
+    /**
+     * Make a copy of a map that uses the underlying storage of this map
+     * factory, optionally choosing a concurrent or synchronized implementation
+     * if <code>threadSafe</code> is specified.
+     *
+     * @param <T> The key type
+     * @param <R> The value type
+     * @param orig The original map
+     * @param threadSafe If true, attempt to provide a concurrent or synchronized
+     * implementation, or throw an UnsupportedOperationException if that is not
+     * psossible.
+     * @return A copy of the passed map
+     */
     default <T, R> Map<T, R> copyOf(Map<? extends T, ? extends R> orig, boolean threadSafe) {
         Map<T, R> result = createMap(orig.size(), threadSafe);
         result.putAll(orig);

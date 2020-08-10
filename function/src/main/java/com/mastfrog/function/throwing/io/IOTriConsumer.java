@@ -35,12 +35,12 @@ import java.io.IOException;
 public interface IOTriConsumer<T, R, S> extends ThrowingTriConsumer<T, R, S> {
 
     @Override
-    void apply(T a, R b, S s) throws IOException;
+    void accept(T a, R b, S s) throws IOException;
 
     default IOTriConsumer<T, R, S> andThen(IOTriConsumer<T, R, S> next) {
         return (a, b, s) -> {
-            apply(a, b, s);
-            next.apply(a, b, s);
+            accept(a, b, s);
+            next.accept(a, b, s);
         };
     }
 }

@@ -30,12 +30,12 @@ package com.mastfrog.function;
 @FunctionalInterface
 public interface TriConsumer<T, R, S> {
 
-    void apply(T a, R b, S s);
+    void accept(T a, R b, S s);
 
     default TriConsumer<T, R, S> andThen(TriConsumer<T, R, S> next) {
         return (a, b, s) -> {
-            apply(a, b, s);
-            next.apply(a, b, s);
+            accept(a, b, s);
+            next.accept(a, b, s);
         };
     }
 }

@@ -57,6 +57,33 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
     }
 
     @Override
+    public void removeRange(int fromIndex, int toIndex) {
+        if (toIndex > size) {
+            throw new IndexOutOfBoundsException("toIndex > size " + toIndex
+                    + " vs " + size);
+        } else if (fromIndex < 0) {
+            throw new IllegalArgumentException("Start index < 0: "
+                    + fromIndex);
+        } else if (fromIndex > toIndex) {
+            throw new IllegalArgumentException("Start index > end index: "
+                    + fromIndex + " > " + toIndex);
+        } else if (fromIndex == toIndex) {
+            return;
+        } else if (fromIndex == 0 && toIndex == size) {
+            clear();
+            return;
+        }
+        if (toIndex == size) {
+            size = fromIndex;
+        } else {
+            int len = toIndex - fromIndex;
+            System.arraycopy(values, toIndex, values, fromIndex,
+                    size - toIndex);
+            size -= len;
+        }
+    }
+
+    @Override
     public boolean addAll(Collection<? extends Integer> c) {
         if (c.isEmpty()) {
             return false;
@@ -88,8 +115,14 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
 
     @Override
     public IntListImpl subList(int fromIndex, int toIndex) {
+        if (fromIndex == toIndex) {
+            return new IntListImpl(new int[0], true);
+        }
+        if (fromIndex == 0 && toIndex == size) {
+            return copy();
+        }
         checkIndex(fromIndex);
-        checkIndex(toIndex);
+        checkIndex(toIndex - 1);
         int[] nue = new int[toIndex - fromIndex];
         System.arraycopy(values, fromIndex, nue, 0, nue.length);
         return new IntListImpl(nue, true);
@@ -102,6 +135,9 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
 
     @Override
     public int getAsInt(int index) {
+        if (size == 0) {
+            throw new IndexOutOfBoundsException(index + " of " + size);
+        }
         checkIndex(index);
         return values[index];
     }
@@ -143,12 +179,14 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
         return -1;
     }
 
+    @Override
     public void sort() {
         if (size > 0) {
             Arrays.sort(values, 0, size);
         }
     }
 
+    @Override
     public int indexOfPresumingSorted(int value) {
         if (size == 0) {
             return -1;
@@ -158,6 +196,7 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
         return Arrays.binarySearch(values, 0, size, value);
     }
 
+    @Override
     public int adjustValues(int fromIndex, int toIndex, int by) {
         if (toIndex <= fromIndex) {
             throw new IllegalArgumentException("toIndex must be > fromIndex, "
@@ -173,6 +212,7 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
         return result;
     }
 
+    @Override
     public int adjustValues(int aboveIndex, int by) {
         int result = 0;
         if (by != 0) {
@@ -184,6 +224,7 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
         return result;
     }
 
+    @Override
     public int nearestIndexToPresumingSorted(int value, Bias bias) {
         if (size == 0) {
             return -1;
@@ -268,11 +309,33 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
 
     @Override
     public boolean startsWith(List<Integer> others) {
+        if (isEmpty()) {
+            return false;
+        }
         if (notNull("others", others) instanceof IntList) {
             return startsWithIntList((IntList) others);
         }
         for (int i = 0; i < others.size(); i++) {
             if (getAsInt(i) != others.get(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public boolean endsWith(List<Integer> others) {
+        if (isEmpty() || others.isEmpty()) {
+            return false;
+        }
+        if (notNull("others", others) instanceof IntList) {
+            return endsWithIntList((IntList) others);
+        }
+        if (others.size() == size()) {
+            return false;
+        }
+        for (int i = size - 1, j = others.size() - 1; i > 0 && j >= 0; j--, i--) {
+            if (getAsInt(i) != others.get(j)) {
                 return false;
             }
         }
@@ -308,6 +371,31 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
 //        return Arrays.equals(values, 1, last-1, other.values, 1, last-1); // XXX JDK9
         for (int i = 1; i < last - 1; i++) {
             if (values[last] != other.values[last]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean endsWithIntList(IntList other) {
+        if (other.size() >= size()) {
+            return false;
+        }
+        if (other instanceof IntListImpl) {
+            return _endsWith((IntListImpl) other);
+        }
+        for (int i = size - 1, j = other.size() - 1; i > 0 && j >= 0; j--, i--) {
+            if (values[i] != other.get(j)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean _endsWith(IntListImpl other) {
+//        return Arrays.equals(values, size-other.size(), size, other.values, 0, other.size(); // XXX JDK9        
+        for (int i = size - 1, j = other.size() - 1; i > 0 && j >= 0; j--, i--) {
+            if (values[i] != other.values[j]) {
                 return false;
             }
         }
@@ -426,8 +514,10 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
     @Override
     public void addAll(int... values) {
         maybeGrow(size + values.length);
+        System.out.println("WAS " + this);
         System.arraycopy(values, 0, this.values, size, values.length);
         size += values.length;
+        System.out.println("NOW " + this);
     }
 
     @Override
@@ -451,6 +541,7 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public Integer remove(int index) {
         checkIndex(index);
         int old = values[index];
@@ -501,11 +592,28 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
 
     @Override
     public void addAll(int index, int... nue) {
-        checkIndex(index);
-        maybeGrow(size + values.length);
+        if (index < 0 || index > size) {
+            throw new IndexOutOfBoundsException("Index out of range 0-" + size + ": " + index);
+        }
+        if (nue.length == 0) {
+            return;
+        }
+        if (isEmpty()) {
+            if (index == 0) {
+                System.out.println("0-add " + Arrays.toString(nue));
+                addAll(nue);
+                return;
+            } else {
+                throw new IndexOutOfBoundsException("Add at " + index + " in empty list");
+            }
+        } else if (index == size) {
+            addAll(nue);
+            return;
+        }
+        maybeGrow(size + nue.length + 1);
         System.arraycopy(values, index, values, index + nue.length, size - index);
-        System.arraycopy(nue, 0, values, index, values.length);
-        size += values.length;
+        System.arraycopy(nue, 0, values, index, nue.length);
+        size += nue.length;
     }
 
     @Override
@@ -514,7 +622,11 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
             return false;
         }
         if (c.size() == 1) {
-            return add(c.iterator().next());
+            add(index, c.iterator().next().intValue());
+            return true;
+        }
+        if (isEmpty()) {
+            return addAll(c);
         }
         int[] all = new int[c.size()];
         int i = 0;
@@ -556,6 +668,10 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
     @Override
     public void add(int index, int element) {
         int sz = size();
+        if (index == sz) {
+            add(element);
+            return;
+        }
         if ((index < 0 || index >= sz) && !(index == 0 && sz == 0)) {
             throw new IndexOutOfBoundsException("Index out of "
                     + "range - size " + size() + " but passed " + index);
@@ -617,7 +733,7 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
     public String toString() {
         StringBuilder sb = new StringBuilder(2 + (4 * size)).append('[');
         for (int i = 0; i < size; i++) {
-            sb.append(get(i));
+            sb.append(getAsInt(i));
             if (i != size - 1) {
                 sb.append(", ");
             }

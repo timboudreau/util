@@ -23,6 +23,7 @@
  */
 package com.mastfrog.function.throwing.io;
 
+import com.mastfrog.function.throwing.ThrowingQuadConsumer;
 import java.io.IOException;
 
 /**
@@ -31,14 +32,14 @@ import java.io.IOException;
  * @author Tim Boudreau
  */
 @FunctionalInterface
-public interface IOQuadConsumer<A, B, C, D> {
+public interface IOQuadConsumer<A, B, C, D> extends ThrowingQuadConsumer<A, B, C, D> {
 
-    void apply(A a, B b, C s, D u) throws IOException;
+    void accept(A a, B b, C s, D u) throws IOException;
 
     default IOQuadConsumer<A, B, C, D> andThen(IOQuadConsumer<? super A, ? super B, ? super C, ? super D> other) {
         return (a, b, c, d) -> {
-            this.apply(a, b, c, d);
-            other.apply(a, b, c, d);
+            this.accept(a, b, c, d);
+            other.accept(a, b, c, d);
         };
     }
 }

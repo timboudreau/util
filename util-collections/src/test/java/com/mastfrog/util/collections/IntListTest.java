@@ -3,6 +3,7 @@ package com.mastfrog.util.collections;
 import com.mastfrog.util.search.Bias;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.function.BiConsumer;
@@ -12,6 +13,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Test;
@@ -262,11 +264,7 @@ public class IntListTest {
 
     @Test
     public void testBug2() {
-        if (true) {
-            return;
-        }
         IntListImpl il = new IntListImpl(new int[]{1, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 47, 49, 51, 53, 55});
-        //                                         0  1  2  3  4   5   6   7
         int first = il.nearestIndexToPresumingSorted(11, Bias.FORWARD);
         assertEquals(5, first);
 
@@ -371,7 +369,6 @@ public class IntListTest {
 
         ix = il.nearestIndexToPresumingSorted(23, Bias.NONE);
         assertEquals(1, ix);
-
     }
 
     @Test
@@ -630,6 +627,167 @@ public class IntListTest {
                 assertTrue(a.startsWith(reg));
             }
             assertFalse(a.startsWith(IntList.create(1)));
+        }
+    }
+
+    @Test
+    public void testEndsWith() {
+        Random rnd = new Random(2309);
+        for (int i = 0; i < 100; i++) {
+            int sz = rnd.nextInt(20) + 10;
+            IntList a = IntList.create(sz);
+            for (int j = 0; j < sz; j++) {
+                a.add(rnd.nextInt());
+            }
+            for (int j = 1; j < sz - 1; j++) {
+                IntList sub = a.subList(a.size() - j, a.size());
+                assertEquals("subList(" + (a.size() - j)
+                        + "," + a.size() + " should return a list of size "
+                        + j + " but got size " + sub.size() + ".\nOrig list: "
+                        + a + "\nSub list:" + sub, j, sub.size());
+                List<Integer> reg = new ArrayList<>(sub);
+                assertEquals(reg, sub);
+                assertEquals(sub, reg);
+                assertEquals(reg.hashCode(), sub.hashCode());
+                assertNotEquals(a, sub);
+                assertTrue(a.endsWith(sub));
+                assertFalse(sub.endsWith(a));
+                assertTrue(sub instanceof IntListImpl);
+                IntListImpl iil = (IntListImpl) sub;
+                for (int k = 0; k < j; k++) {
+                    iil.set(k, iil.get(k) + 1);
+                    assertFalse(a.endsWith(sub));
+                }
+                assertTrue(a.endsWith(reg));
+                IntList sub2 = a.subList(0, j);
+                if (!sub.equals(sub2)) { // can happen if all one value
+                    assertFalse(a + " should not also end with " + sub2,
+                            a.endsWith(sub2));
+                }
+            }
+            assertFalse("endsWith(List) should return false for the empty list",
+                    a.endsWith(Collections.emptyList()));
+            assertFalse("endsWith(IntList) should return false for the empty list.",
+                    a.endsWith(IntList.create(1)));
+        }
+    }
+
+    @Test
+    public void testRemoveRange() {
+        Random rnd = new Random(613451);
+        for (int i = 0; i < 100; i++) {
+            int sz = rnd.nextInt(20) + 10;
+            IntList a = IntList.create(sz);
+            for (int j = 0; j < sz; j++) {
+                a.add(rnd.nextInt());
+            }
+            for (int start = 0; start < sz - 1; start++) {
+                for (int end = start; end <= sz; end++) {
+                    IntListImpl copy = (IntListImpl) a.copy();
+                    assertEquals(a, copy);
+                    assertNotSame(a, copy);
+                    II comparison = new II(copy);
+                    assertEquals(comparison, copy);
+                    assertEquals(copy, comparison);
+                    comparison.removeRange(start, end);
+                    copy.removeRange(start, end);
+                    assertEquals("After removing " + start + ":" + end
+                            + " of " + a.size()
+                            + " from " + a + "\nshould have\n" + comparison
+                            + "\nnot\n" + copy + "\n" + "Lengths: "
+                            + comparison.size() + " vs " + copy.size() + "\n", comparison, copy);
+                    assertArrayEquals("Array values do not match but equality does.",
+                            copy.toIntArray(), comparison.toIntArray());
+
+                    IntListImpl copy2 = (IntListImpl) a.copy();
+                    int sz2 = copy2.size();
+                    for (int j = end - 1; j >= start; j--) {
+                        copy2.removeAt(j);
+                        assertEquals(sz2 - 1, copy2.size());
+                        sz2--;
+                    }
+                    assertEquals(copy, copy2);
+                    assertEquals(comparison, copy2);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testRemoveValue() {
+        Random rnd = new Random(613451);
+        for (int i = 0; i < 100; i++) {
+            int sz = rnd.nextInt(20) + 10;
+            IntList a = IntList.create(sz);
+            int base = 0;
+            for (int j = 0; j < sz; j++) {
+                int val = base + rnd.nextInt(10000);
+                a.add(val);
+            }
+            for (int j = 0; j < a.size(); j++) {
+                IntList copy = a.copy();
+                List<Integer> comparison = new ArrayList<>(copy);
+                assertEquals(comparison, copy);
+                int toRemove = a.get(j);
+                copy.removeValue(toRemove);
+                comparison.remove(Integer.valueOf(toRemove));
+                assertEquals("Remove of " + toRemove + " from " + a
+                        + " got different results", comparison, copy);
+
+                assertEquals("Removing a value not present should return -1",
+                        -1, copy.removeValue(-1));
+            }
+        }
+    }
+
+    @Test
+    public void testAddCornerCase() {
+        int[] arr = new int[]{-5, 0, 2, 5, 10, 12, 15, 20, 25, 30, 35, 40, 45,
+            50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105};
+
+        IntListImpl ll = new IntListImpl(arr);
+        List<Integer> al = new ArrayList<>(ArrayUtils.toBoxedList(arr));
+        assertArrayEquals(arr, ll.toIntArray());
+        ll.add(8, 23);
+        al.add(8, 23);
+        assertEquals(23L, ll.getAsInt(8));
+        assertEquals(ll, al);
+        assertEquals(al, ll);
+    }
+
+    @Test
+    public void testAddAllCornerCase1() throws Exception {
+        // inserting [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] at 1 in [0, 1, 2, 3, 4]
+        IntListImpl ll = new IntListImpl(5);
+        ll.addAll(Arrays.asList(1, 2, 3, 4));
+        ll.addAll(0, Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11));
+        List<Integer> exp = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 1, 2, 3, 4);
+        assertEquals(exp, ll);
+        ll.sort();
+        assertEquals(ArrayUtils.toBoxedList(new int[]{1, 1, 2, 2, 3, 3, 4, 4, 5, 6, 7, 8, 9, 10, 11}), ll);
+        ll.toString();
+        IntSet set = ll.toSet();
+        assertTrue(set.containsAll(ll));
+        assertTrue(ll.containsAll(set));
+    }
+
+    static class II extends ArrayList<Integer> {
+
+        II(IntList il) {
+            super(il);
+        }
+
+        @Override
+        public void removeRange(int fromIndex, int toIndex) {
+            super.removeRange(fromIndex, toIndex);
+        }
+
+        public int[] toIntArray() {
+            int[] result = new int[size()];
+            for (int i = 0; i < size(); i++) {
+                result[i] = get(i);
+            }
+            return result;
         }
     }
 }

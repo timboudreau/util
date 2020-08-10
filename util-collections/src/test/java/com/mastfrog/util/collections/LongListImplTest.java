@@ -23,17 +23,20 @@
  */
 package com.mastfrog.util.collections;
 
+import com.mastfrog.util.search.Bias;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.junit.Test;
 
 /**
@@ -54,7 +57,7 @@ public class LongListImplTest {
         assertEquals(SORTED.length, a.size());
         for (int i = 0; i < SORTED.length; i++) {
             long l = SORTED[i];
-            assertEquals(l, a.getLong(i));
+            assertEquals(l, a.getAsLong(i));
             assertNotNull(a.get(i));
             assertEquals(l, a.get(i).longValue());
             assertEquals("Wrong index for " + l + " in " + a, i, a.indexOf(l));
@@ -65,7 +68,7 @@ public class LongListImplTest {
         assertEquals(SORTED.length, b.size());
         for (int i = 0; i < SORTED.length; i++) {
             long l = SORTED[i];
-            assertEquals(l, b.getLong(i));
+            assertEquals(l, b.getAsLong(i));
             assertNotNull(b.get(i));
             assertEquals(l, b.get(i).longValue());
             assertEquals("Wrong index for " + l + " in " + b, i, b.indexOf(l));
@@ -79,15 +82,15 @@ public class LongListImplTest {
         LongListImpl a = new LongListImpl(SORTED);
         assertTrue(a.isSorted());
         List<Long> vals = new ArrayList<>();
-        assertEquals(-1, a.removeLong(-3));
-        assertEquals(-1, a.removeLong(21));
-        assertEquals(-1, a.removeLong(105));
+        assertEquals(-1, a.removeValue(-3));
+        assertEquals(-1, a.removeValue(21));
+        assertEquals(-1, a.removeValue(105));
         assertEquals(SORTED.length, a.size());
         for (int i = SORTED.length - 1; i >= 0; i--) {
             long l = SORTED[i];
             if ((l / 5) % 2 != 0) {
                 long sz = a.size();
-                int ix = a.removeLong(l);
+                int ix = a.removeValue(l);
                 assertEquals("Wrong answer for remove " + l + " at " + i, i, ix);
                 assertEquals(sz - 1, a.size());
                 assertFalse(a.contains(l));
@@ -156,9 +159,9 @@ public class LongListImplTest {
         LongListImpl a = new LongListImpl(unsorted);
         assertFalse(a.isSorted());
         List<Long> vals = new ArrayList<>();
-        assertEquals(-1, a.removeLong(-3));
-        assertEquals(-1, a.removeLong(21));
-        assertEquals(-1, a.removeLong(105));
+        assertEquals(-1, a.removeValue(-3));
+        assertEquals(-1, a.removeValue(21));
+        assertEquals(-1, a.removeValue(105));
         assertEquals(unsorted.length, a.size());
         for (int i = unsorted.length - 1; i >= 0; i--) {
             long l = unsorted[i];
@@ -166,7 +169,7 @@ public class LongListImplTest {
                 long sz = a.size();
                 assertNotEquals(-1, a.indexOf(l));
                 assertTrue(a.contains(l));
-                int ix = a.removeLong(l);
+                int ix = a.removeValue(l);
 //                assertEquals("Wrong answer for remove " + l + " at " + i, 500 - i, ix);
                 assertEquals(sz - 1, a.size());
                 assertFalse(a.contains(l));
@@ -198,7 +201,7 @@ public class LongListImplTest {
                 int index = i + j;
                 long value = index;
                 assertEquals(i + "," + (129 - j) + " bs " + batchSize + " in " + l, index, l.indexOf(value));
-                int removed = l.removeLong(value);
+                int removed = l.removeValue(value);
                 assertEquals(index, removed);
                 assertFalse("At " + i + "," + j + " list still contains " + value
                         + " with batch size " + batchSize + " - " + l, l.contains(value));
@@ -437,13 +440,13 @@ public class LongListImplTest {
         assertArrayEquals(SORTED, ll.toLongArray());
         assertEquals(CollectionUtils.toList(SORTED), ll);
         ll.add(1, 2);
-        assertEquals(0L, ll.getLong(0));
-        assertEquals(ll.toString(), 2L, ll.getLong(1));
-        assertEquals(ll.toString(), 5L, ll.getLong(2));
+        assertEquals(0L, ll.getAsLong(0));
+        assertEquals(ll.toString(), 2L, ll.getAsLong(1));
+        assertEquals(ll.toString(), 5L, ll.getAsLong(2));
         assertEquals(SORTED.length + 1, ll.size());
         long[] exp = {0, 2, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100};
         for (int i = 0; i < exp.length; i++) {
-            long val = ll.getLong(i);
+            long val = ll.getAsLong(i);
             assertEquals("Mismatch at " + i + " in " + ll, exp[i], val);
         }
         // {0, 2, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100}
@@ -460,7 +463,7 @@ public class LongListImplTest {
         assertArrayEquals(new long[]{-5, 0, 2, 5, 10, 12, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105}, ll.toLongArray());
 
         ll.add(8, 23L);
-        assertEquals(23L, ll.getLong(8));
+        assertEquals(23L, ll.getAsLong(8));
         assertTrue(ll.isSorted());
         assertTrue(ll.contains(23L));
         assertEquals(26, ll.size());
@@ -479,7 +482,7 @@ public class LongListImplTest {
         assertArrayEquals(arr, ll.toLongArray());
         ll.add(8, 23L);
         al.add(8, 23L);
-        assertEquals(23L, ll.getLong(8));
+        assertEquals(23L, ll.getAsLong(8));
         check(al, ll);
     }
 
@@ -546,7 +549,7 @@ public class LongListImplTest {
 
         ll.sort();
         assertEquals("After sort, highest entry should be last", 302,
-                ll.getLong(ll.size() - 1));
+                ll.getAsLong(ll.size() - 1));
         assertTrue("After sort w/o duplicates list should think it's sorted: " + ll, ll.isSorted());
 
         ll = new LongListImpl(SORTED, 7);
@@ -582,7 +585,7 @@ public class LongListImplTest {
         ll.add(10, 3L);
         assertFalse("List with unsorted insertion should not think it's sorted",
                 ll.isSorted());
-        assertEquals(3L, ll.getLong(10));
+        assertEquals(3L, ll.getAsLong(10));
         ll.sort();
         assertTrue("After sort, list should think it's sorted", ll.isSorted());
 
@@ -722,6 +725,357 @@ public class LongListImplTest {
         assertEquals(0, ll.size());
     }
 
+    @Test
+    public void testStartsWith() {
+        Random rnd = new Random(2309);
+        for (int i = 0; i < 100; i++) {
+            int sz = rnd.nextInt(20) + 10;
+            LongListImpl a = new LongListImpl(sz / 2);
+            for (int j = 0; j < sz; j++) {
+                a.add(rnd.nextLong());
+            }
+            for (int j = 1; j < sz - 1; j++) {
+                LongList sub = a.subList(0, j);
+                List<Long> reg = new ArrayList<>(sub);
+                assertEquals(reg, sub);
+                assertEquals(sub, reg);
+                assertEquals(reg.hashCode(), sub.hashCode());
+                assertNotEquals(a, sub);
+                assertTrue(a.startsWith(sub));
+                assertFalse(sub.startsWith(a));
+                assertTrue(sub instanceof LongListImpl);
+                LongListImpl iil = (LongListImpl) sub;
+                for (int k = 0; k < j; k++) {
+                    iil.set(k, iil.get(k) + 1);
+                    assertFalse(a.startsWith(sub));
+                }
+                assertTrue(a.startsWith(reg));
+            }
+            assertFalse(a.startsWith(new LongListImpl(1)));
+            assertFalse(a.startsWith(Collections.emptyList()));
+        }
+    }
+
+    @Test
+    public void testEndsWith() {
+        Random rnd = new Random(2309);
+        for (int i = 0; i < 100; i++) {
+            int sz = rnd.nextInt(20) + 10;
+            LongListImpl a = new LongListImpl(sz / 2);
+            for (int j = 0; j < sz; j++) {
+                a.add(rnd.nextLong());
+            }
+            for (int j = 1; j < sz - 1; j++) {
+                LongList sub = a.subList(a.size() - j, a.size());
+                assertEquals("subList(" + (a.size() - j)
+                        + "," + a.size() + " should return a list of size "
+                        + j + " but got size " + sub.size() + ".\nOrig list: "
+                        + a + "\nSub list:" + sub, j, sub.size());
+                List<Long> reg = new ArrayList<>(sub);
+                assertEquals(reg, sub);
+                assertEquals(sub, reg);
+                assertEquals(reg.hashCode(), sub.hashCode());
+                assertNotEquals(a, sub);
+                assertTrue(a.endsWith(sub));
+                assertFalse(sub + " does not end with " + a, sub.endsWith(a));
+                assertTrue(sub instanceof LongListImpl);
+                LongListImpl iil = (LongListImpl) sub;
+                for (int k = 0; k < j; k++) {
+                    iil.set(k, iil.get(k) + 1);
+                    assertFalse(a.endsWith(sub));
+                }
+                assertTrue(a.endsWith(reg));
+                LongList sub2 = a.subList(0, j);
+                if (!sub.equals(sub2)) { // can happen if all one value
+                    assertFalse(a + " should not also end with " + sub2,
+                            a.endsWith(sub2));
+                }
+            }
+            assertFalse("endsWith(List) should return false for the empty list",
+                    a.endsWith(Collections.emptyList()));
+            assertFalse("endsWith(IntList) should return false for the empty list.",
+                    a.endsWith(new LongListImpl(5)));
+        }
+    }
+
+    @Test
+    public void testSwap() {
+        LongListImpl ili = new LongListImpl(new long[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+        assertTrue(ili.swap(9, 1));
+        assertEquals(9, ili.getAsLong(1));
+        assertEquals(1, ili.getAsLong(9));
+        assertTrue(ili.swap(0, 10));
+        assertEquals(10, ili.getAsLong(0));
+        assertEquals(0, ili.getAsLong(10));
+        assertFalse(ili.swap(1, 1));
+        assertEquals(9, ili.getAsLong(1));
+        assertArrayEquals(new long[]{10, 9, 2, 3, 4, 5, 6, 7, 8, 1, 0}, ili.toLongArray());
+        assertFalse(ili.swap(1, 13));
+        assertFalse(ili.swap(13, 13));
+        assertFalse(ili.swap(14, 13));
+    }
+
+    @Test
+    public void testSwapIndices() {
+        LongListImpl ili = new LongListImpl(new long[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+        assertEquals(11, ili.size());
+        assertTrue(ili.swapIndices(9, 1));
+        assertEquals(9, ili.getAsLong(1));
+        assertEquals(1, ili.getAsLong(9));
+        assertEquals(11, ili.size());
+        assertTrue(ili.swapIndices(0, 10));
+        assertEquals(10, ili.getAsLong(0));
+        assertEquals(0, ili.getAsLong(10));
+        assertFalse(ili.swapIndices(1, 1));
+        assertEquals(11, ili.size());
+        assertEquals(9, ili.getAsLong(1));
+        assertArrayEquals(new long[]{10, 9, 2, 3, 4, 5, 6, 7, 8, 1, 0}, ili.toLongArray());
+        assertEquals(0, ili.indexOf(10));
+        assertEquals(1, ili.indexOf(9));
+        assertEquals(10, ili.indexOf(0));
+        assertEquals(9, ili.indexOf(1));
+        try {
+            ili.swapIndices(-1, 5);
+            fail("Exception should have been thrown");
+        } catch (IllegalArgumentException e) {
+            // ok
+        }
+        try {
+            ili.swapIndices(15, 72);
+            fail("Exception should have been thrown");
+        } catch (IllegalArgumentException e) {
+            // ok
+        }
+    }
+
+    @Test
+    public void testSort() {
+        long[] exp = new long[]{1, 2, 3, 4, 5, 6, 7, 8, 9};
+        long[] toUse = ArrayUtils.copyOf(exp);
+        ArrayUtils.shuffle(new Random(130290329), toUse);
+        assertFalse(Arrays.equals(exp, toUse));
+        LongListImpl impl = new LongListImpl(toUse);
+        impl.sort();
+        long[] got = impl.toLongArray();
+        assertArrayEquals(exp, got);
+    }
+
+    @Test
+    public void testFuzzySearch() {
+        long[] vals = new long[20];
+        for (int i = 0; i < vals.length; i++) {
+            vals[i] = i * 10;
+        }
+        LongListImpl impl = new LongListImpl(vals);
+        for (int i = 0; i < vals.length; i++) {
+            int exp = i * 10;
+            assertEquals(i, impl.indexOf(exp));
+            assertEquals(i, impl.indexOfPresumingSorted(exp));
+            assertEquals(i, impl.nearestIndexToPresumingSorted(exp, Bias.NONE));
+        }
+        for (int i = 0; i < vals.length; i++) {
+            int expectedValue = i * 10;
+            for (int j = 1; j < 10; j++) {
+                int fwdTarget = expectedValue - j;
+                int fwdIndex = impl.nearestIndexToPresumingSorted(fwdTarget, Bias.BACKWARD);
+                assertTrue("Returned an index >= size " + fwdIndex, fwdIndex < impl.size());
+                assertFalse("Returned an index < -1" + fwdIndex, fwdIndex < -1);
+                assertEquals("Wrong index with Bias.BACKWARD searching for " + fwdTarget + " in " + impl, i - 1, fwdIndex);
+            }
+
+            for (int j = 1; j < 10; j++) {
+                int bwdTarget = expectedValue + j;
+                int bwdIndex = impl.nearestIndexToPresumingSorted(bwdTarget, Bias.FORWARD);
+                assertTrue("Returned an index >= size " + bwdIndex, bwdIndex < impl.size());
+                assertFalse("Returned an index < -1" + bwdIndex, bwdIndex < -1);
+                assertEquals(i + ". Wrong index with Bias.FORWARD searching for " + bwdTarget + " in " + impl, i + 1, i + 1, bwdIndex);
+            }
+            for (int j = 1; j < 10; j++) {
+                int fwdTarget = expectedValue - j;
+                int fwdIndex = impl.nearestIndexToPresumingSorted(fwdTarget, Bias.FORWARD);
+                assertTrue("Returned an index >= size " + fwdIndex, fwdIndex < impl.size());
+                assertFalse("Returned an index < -1" + fwdIndex, fwdIndex < -1);
+                assertEquals("Wrong index with Bias.FORWARD searching for " + fwdTarget + " in " + impl, i, fwdIndex);
+            }
+            for (int j = 1; j < 10; j++) {
+                int bwdTarget = expectedValue + j;
+                int bwdIndex = impl.nearestIndexToPresumingSorted(bwdTarget, Bias.BACKWARD);
+                assertTrue("Returned an index >= size " + bwdIndex, bwdIndex < impl.size());
+                assertFalse("Returned an index < -1" + bwdIndex, bwdIndex < -1);
+                assertEquals("Wrong index with Bias.FORWARD searching for " + bwdTarget + " in " + impl, i, bwdIndex);
+            }
+            for (int j = 1; j < 10; j++) {
+                if (j == 5) {
+                    continue;
+                }
+                long bwdTarget = expectedValue + j;
+                if (bwdTarget > impl.last()) {
+                    bwdTarget = impl.last();
+                    continue;
+                }
+                int bwdIndex = impl.nearestIndexToPresumingSorted(bwdTarget, Bias.NEAREST);
+                int expIndex = j >= 5 ? i + 1 : i;
+                if (bwdTarget > impl.last()) {
+                    expIndex = impl.size() - 1;
+                }
+                assertTrue("Returned an index >= size " + bwdIndex, bwdIndex < impl.size());
+                assertFalse("Returned an index < -1" + bwdIndex, bwdIndex < -1);
+                assertEquals(i + "/" + j + ". Wrong index with Bias.NEAREST searching for " + bwdTarget + " in " + impl, expIndex, bwdIndex);
+            }
+        }
+    }
+
+    @Test
+    public void testFuzzySearchWithAdjacentPairs() {
+        LongListImpl il = new LongListImpl(new long[]{0, 1, 10, 11, 20, 21, 30, 31, 40, 41});
+        //                                         0   1   2  3   4   5   6   7   8   9
+        assertEquals(1, il.nearestIndexToPresumingSorted(3, Bias.BACKWARD));
+        assertEquals(2, il.nearestIndexToPresumingSorted(3, Bias.FORWARD));
+
+        assertEquals(1, il.nearestIndexToPresumingSorted(1, Bias.BACKWARD));
+        assertEquals(1, il.nearestIndexToPresumingSorted(1, Bias.FORWARD));
+
+        assertEquals(0, il.nearestIndexToPresumingSorted(0, Bias.BACKWARD));
+        assertEquals(0, il.nearestIndexToPresumingSorted(0, Bias.FORWARD));
+
+        assertEquals(4, il.nearestIndexToPresumingSorted(13, Bias.FORWARD));
+        assertEquals(3, il.nearestIndexToPresumingSorted(13, Bias.BACKWARD));
+    }
+
+    @Test
+    public void testSearchCornerCases() {
+        LongListImpl il2 = new LongListImpl(new long[]{22});
+        assertEquals(0, il2.nearestIndexToPresumingSorted(25, Bias.BACKWARD));
+        assertEquals(-1, il2.nearestIndexToPresumingSorted(3, Bias.BACKWARD));
+        assertEquals(-1, il2.nearestIndexToPresumingSorted(25, Bias.FORWARD));
+        assertEquals(0, il2.nearestIndexToPresumingSorted(3, Bias.FORWARD));
+
+        LongListImpl il = new LongListImpl();
+        assertEquals(-1, il.nearestIndexToPresumingSorted(25, Bias.FORWARD));
+        assertEquals(-1, il.nearestIndexToPresumingSorted(25, Bias.BACKWARD));
+
+        LongListImpl il3 = new LongListImpl(new long[]{10, 20});
+        assertEquals(0, il3.nearestIndexToPresumingSorted(15, Bias.BACKWARD));
+        assertEquals(1, il3.nearestIndexToPresumingSorted(15, Bias.FORWARD));
+
+        assertEquals(0, il3.nearestIndexToPresumingSorted(3, Bias.FORWARD));
+        assertEquals(-1, il3.nearestIndexToPresumingSorted(3, Bias.BACKWARD));
+
+        assertEquals(1, il3.nearestIndexToPresumingSorted(27, Bias.BACKWARD));
+        assertEquals(-1, il3.nearestIndexToPresumingSorted(27, Bias.FORWARD));
+
+        LongListImpl il4 = new LongListImpl(new long[]{
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+        });
+        for (int i = 0; i < 10; i++) {
+            assertEquals(i, il4.nearestIndexToPresumingSorted(i, Bias.NONE));
+            assertEquals(i, il4.nearestIndexToPresumingSorted(i, Bias.FORWARD));
+            assertEquals(i, il4.nearestIndexToPresumingSorted(i, Bias.BACKWARD));
+            assertEquals(i, il4.nearestIndexToPresumingSorted(i, Bias.NEAREST));
+        }
+    }
+
+    @Test
+    public void testLargeList() {
+        LongListImpl il = new LongListImpl(new long[]{1, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 47, 49, 51, 53, 55});
+        //                                         0  1  2  3  4   5   6   7
+        Random rnd = new Random(23901309);
+        for (int x = 0; x < 7; x++) {
+            for (int i = 1; i < il.size() - 2; i++) {
+                long val = il.get(i);
+                long prev = il.get(i - 1);
+                long next = il.get(i + 1);
+                for (long j = prev + 1; j <= val; j++) {
+                    assertEquals("Wrong index seeking " + j + " in " + il + " FORWARD", i, il.nearestIndexToPresumingSorted(j, Bias.FORWARD));
+                    if (j < val) {
+                        assertEquals("Wrong index seeking " + j + " in " + il + " BACKWARD", i - 1, il.nearestIndexToPresumingSorted(j, Bias.BACKWARD));
+                    } else {
+                        assertEquals("Wrong index seeking " + j + " in " + il + " BACKWARD", i, il.nearestIndexToPresumingSorted(j, Bias.BACKWARD));
+                    }
+                }
+            }
+            long f = il.first();
+            for (int i = 0; i < f - 1; i++) {
+                assertEquals(0, il.nearestIndexToPresumingSorted(i, Bias.FORWARD));
+                assertEquals(-1, il.nearestIndexToPresumingSorted(i, Bias.BACKWARD));
+            }
+            long l = il.last();
+            assertEquals(il.size() - 1, il.nearestIndexToPresumingSorted(l, Bias.FORWARD));
+            assertEquals(il.size() - 1, il.nearestIndexToPresumingSorted(l, Bias.BACKWARD));
+            assertEquals(il.size() - 1, il.nearestIndexToPresumingSorted(l, Bias.NEAREST));
+            assertEquals(il.size() - 1, il.nearestIndexToPresumingSorted(l, Bias.NONE));
+            for (long i = l + 1; i < l + 10; i++) {
+                assertEquals(il.size() - 1, il.nearestIndexToPresumingSorted(i, Bias.BACKWARD));
+                assertEquals(-1, il.nearestIndexToPresumingSorted(i, Bias.FORWARD));
+            }
+
+            il.clear();
+            int sz = 20 + rnd.nextInt(30);
+            int val = rnd.nextInt(20);
+            for (int i = 0; i < sz; i++) {
+                val += rnd.nextInt(13) + 1;
+                il.add(val);
+            }
+        }
+    }
+
+    @Test
+    public void testBoundaries() {
+        LongListImpl il = new LongListImpl(new long[]{2, 5, 13, 21, 29, 37});
+        //                                         0  1   2   3   4   5
+        int ix = il.nearestIndexToPresumingSorted(48, Bias.BACKWARD);
+        assertEquals(5, ix);
+
+        ix = il.nearestIndexToPresumingSorted(0, Bias.FORWARD);
+        assertEquals(0, ix);
+    }
+
+    @Test
+    public void testSortedIndex() {
+        LongListImpl il = new LongListImpl(new long[]{20});
+        assertEquals(-1, il.indexOfPresumingSorted(0));
+        assertEquals(0, il.indexOfPresumingSorted(20));
+    }
+
+    @Test
+    public void testTwoItem() {
+        LongListImpl il = new LongListImpl(new long[]{3, 46});
+        assertEquals(0, il.nearestIndexToPresumingSorted(1, Bias.FORWARD));
+        assertEquals(0, il.nearestIndexToPresumingSorted(2, Bias.FORWARD));
+        assertEquals(0, il.nearestIndexToPresumingSorted(3, Bias.FORWARD));
+        assertEquals(1, il.nearestIndexToPresumingSorted(4, Bias.FORWARD));
+        assertEquals(1, il.nearestIndexToPresumingSorted(5, Bias.FORWARD));
+        assertEquals(1, il.nearestIndexToPresumingSorted(44, Bias.FORWARD));
+        assertEquals(1, il.nearestIndexToPresumingSorted(45, Bias.FORWARD));
+        assertEquals(1, il.nearestIndexToPresumingSorted(46, Bias.FORWARD));
+        assertEquals(-1, il.nearestIndexToPresumingSorted(47, Bias.FORWARD));
+
+        assertEquals(1, il.nearestIndexToPresumingSorted(47, Bias.BACKWARD));
+        assertEquals(1, il.nearestIndexToPresumingSorted(48, Bias.BACKWARD));
+    }
+
+    @Test
+    public void testEndBoundary() {
+        LongListImpl il = new LongListImpl(new long[]{10, 23, 70});
+        int ix = il.nearestIndexToPresumingSorted(10, Bias.FORWARD);
+        assertEquals(0, ix);
+
+        ix = il.nearestIndexToPresumingSorted(30, Bias.FORWARD);
+        assertEquals(2, ix);
+
+        ix = il.nearestIndexToPresumingSorted(30, Bias.BACKWARD);
+        assertEquals(1, ix);
+
+        ix = il.nearestIndexToPresumingSorted(23, Bias.FORWARD);
+        assertEquals(1, ix);
+
+        ix = il.nearestIndexToPresumingSorted(23, Bias.BACKWARD);
+        assertEquals(1, ix);
+
+        ix = il.nearestIndexToPresumingSorted(23, Bias.NONE);
+        assertEquals(1, ix);
+    }
+
 //    @Test
     public void testBenchmark() {
         System.out.println("begin benchmarks");
@@ -811,30 +1165,30 @@ public class LongListImplTest {
             if (ll.size() > 128) {
                 ll.removeRange(64, 128);
             }
-//            ll.indexOf(BMK_ADD_ALL[i][1]);
-//            ll.contains(BMK_ADD_ALL[i][2]);
-//            ll.contains(-1L);
+            ll.indexOf(BMK_ADD_ALL[i][1]);
+            ll.contains(BMK_ADD_ALL[i][2]);
+            ll.contains(-1L);
         }
         for (int i = 0; i < AMT; i++) {
             ll.addAll(64, BMK_ADD_ALL[i]);
             if (ll.size() > 128) {
                 ll.removeRange(64, 128);
             }
-//            ll.indexOf(BMK_ADD_ALL[i][1]);
-//            ll.contains(BMK_ADD_ALL[i][2]);
-//            ll.contains(-1L);
+            ll.indexOf(BMK_ADD_ALL[i][1]);
+            ll.contains(BMK_ADD_ALL[i][2]);
+            ll.contains(-1L);
         }
-//        for (int i = 0; i < AMT; i++) {
-//            int[] rng = RANGES[i];
-//            ll.removeRange(rng[0], rng[1]);
-//        }
+        for (int i = 0; i < AMT; i++) {
+            int[] rng = RANGES[i];
+            ll.removeRange(rng[0], rng[1]);
+        }
         int sz = ll.size();
         for (int i = 0; i < sz; i++) {
-            long l = ll.getLong(i);
+            long l = ll.getAsLong(i);
         }
-//        for (int i = 0; i < sz; i++) {
-//            ll.removeAt(0);
-//        }
+        for (int i = 0; i < sz; i++) {
+            ll.removeAt(0);
+        }
         return System.currentTimeMillis() - now;
     }
 
@@ -846,30 +1200,30 @@ public class LongListImplTest {
             if (ll.size() > 128) {
                 ll.removeRange(64, 128);
             }
-//            ll.indexOf(BMK_ADD_ALL[i][1]);
-//            ll.contains(BMK_ADD_ALL[i][2]);
-//            ll.contains(-1L);
+            ll.indexOf(BMK_ADD_ALL[i][1]);
+            ll.contains(BMK_ADD_ALL[i][2]);
+            ll.contains(-1L);
         }
         for (int i = 0; i < AMT; i++) {
             ll.addAll(64, BMK_COLL_ADD_ALL.get(i));
             if (ll.size() > 128) {
                 ll.removeRange(64, 128);
             }
-//            ll.indexOf(BMK_ADD_ALL[i][1]);
-//            ll.contains(BMK_ADD_ALL[i][2]);
-//            ll.contains(-1L);
+            ll.indexOf(BMK_ADD_ALL[i][1]);
+            ll.contains(BMK_ADD_ALL[i][2]);
+            ll.contains(-1L);
         }
-//        for (int i = 0; i < AMT; i++) {
-//            int[] rng = RANGES[i];
-//            ll.removeRange(rng[0], rng[1]);
-//        }
+        for (int i = 0; i < AMT; i++) {
+            int[] rng = RANGES[i];
+            ll.removeRange(rng[0], rng[1]);
+        }
         int sz = ll.size();
         for (int i = 0; i < sz; i++) {
             long x = ll.get(i);
         }
-//        for (int i = 0; i < sz; i++) {
-//            ll.remove(0);
-//        }
+        for (int i = 0; i < sz; i++) {
+            ll.remove(0);
+        }
         return System.currentTimeMillis() - now;
     }
 

@@ -243,6 +243,7 @@ final class ConvertList<T, R> implements List<T> {
      *
      * @return the hash code value for this list
      */
+    @Override
     public int hashCode() {
         int hashCode = 1;
         for (T e : this) {
@@ -251,6 +252,7 @@ final class ConvertList<T, R> implements List<T> {
         return hashCode;
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for (T obj : this) {

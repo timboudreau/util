@@ -33,7 +33,9 @@ import java.util.Collection;
  * can be switched to use assertions for production.
  *
  * @author Tim Boudreau
+ * @deprecated Split into its own library - us com.mastfrog.util.preconditions.Checks instead
  */
+@Deprecated
 public final class Checks {
 
     static boolean disabled = Boolean.getBoolean("checksDisabled");
