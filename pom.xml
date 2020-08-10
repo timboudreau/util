@@ -14,7 +14,6 @@
     <description>BOM POM for Mastfrog Utilities libraries</description>
     <packaging>pom</packaging>
     <modules>
-        <module>util</module>
         <module>annotation-processors</module>
         <module>util-time</module>
         <module>util-strings</module>
@@ -34,6 +33,7 @@
         <module>file-channel-pool</module>
         <module>log-structured-storage</module>
         <module>converters</module>
+        <module>subscriptions</module>
     </modules>
     <issueManagement>
         <system>Github</system>
