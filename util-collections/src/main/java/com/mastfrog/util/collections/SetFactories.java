@@ -144,6 +144,9 @@ public enum SetFactories implements SetFactory<Object> {
                 // no need to wrap in synchronized set
                 return new ConcurrentSkipListSet<>(SetFactories::hashCodeCompare);
             case UNORDERED_HASH:
+                if (threadsafe) {
+                    return ConcurrentHashMap.newKeySet(targetSize);
+                }
                 result = new HashSet<>(targetSize);
                 break;
             case IDENTITY:
