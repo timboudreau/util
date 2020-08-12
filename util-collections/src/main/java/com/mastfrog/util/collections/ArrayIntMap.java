@@ -24,7 +24,6 @@
 package com.mastfrog.util.collections;
 
 import com.mastfrog.util.collections.CollectionUtils.ComparableComparator;
-import static com.mastfrog.util.preconditions.Checks.notNull;
 import com.mastfrog.util.sort.Sort;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -793,7 +792,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
             checkSort();
         }
         try {
-            notNull("val", val);
+//            notNull("val", val);
             boolean between = false;
             if (last >= 0) {
                 if (keys[last] == key && vals[last] == val) {

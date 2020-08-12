@@ -29,6 +29,7 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.PrimitiveIterator;
 import java.util.Random;
+import java.util.Spliterator;
 import java.util.function.IntConsumer;
 
 /**
@@ -891,6 +892,11 @@ class IntSetArray extends IntSet {
             }
         }
         return sb.append(']').toString();
+    }
+
+    @Override
+    public Spliterator.OfInt spliterator() {
+        return new ArrayIntSpliterator(data, 0, size);
     }
 
     class PI implements PrimitiveIterator.OfInt {

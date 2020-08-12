@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.Spliterator;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
 
@@ -68,7 +69,7 @@ class SimpleWeakSet<T> extends AbstractSet<T> {
         return backingStore.keySet().toArray();
     }
 
-    @SuppressWarnings("SuspiciousMethodCalls")
+    @SuppressWarnings({"SuspiciousMethodCalls", "element-type-mismatch"})
     @Override
     public boolean contains(Object o) {
         return backingStore.containsKey(o);
@@ -147,5 +148,12 @@ class SimpleWeakSet<T> extends AbstractSet<T> {
              return backingStore.remove(o) != null;
         }
         return false;
+    }
+
+    @Override
+    public Spliterator<T> spliterator() {
+        return new LateBindingSpliterator<>(() -> {
+            return backingStore.keySet().spliterator();
+        });
     }
 }

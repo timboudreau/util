@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2018 tim.
+ * Copyright 2020 Tim Boudreau.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

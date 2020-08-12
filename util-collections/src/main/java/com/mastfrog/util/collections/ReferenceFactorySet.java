@@ -20,15 +20,18 @@ import java.lang.ref.Reference;
 import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
 /**
- * A weak (or something) set where the Reference objects used can be provided by a function,
- * and the hashing function that determines set membership can also be provided.
+ * A weak (or something) set where the Reference objects used can be provided by
+ * a function, and the hashing function that determines set membership can also
+ * be provided.
  *
  * @author Tim Boudreau
  */
@@ -131,7 +134,7 @@ final class ReferenceFactorySet<T> extends AbstractSet<T> implements TrimmableSe
         // Deleteme - fixed bug in 2.6.12 - toIntArray does not force sorting
         // if the set is unsorted - this call ensures the IntSet's contents are
         // sorted, so the right items are removed
-        is.indexOf(100000);
+//        is.indexOf(100000);
         if (is.isEmpty()) {
             return false;
         }
@@ -181,7 +184,7 @@ final class ReferenceFactorySet<T> extends AbstractSet<T> implements TrimmableSe
     @Override
     public int size() {
         int sz = im.size();
-        int[] result = new int[] {0};
+        int[] result = new int[]{0};
         im.forEachValue(ref -> {
             if (ref.get() != null) {
                 result[0]++;
@@ -191,5 +194,24 @@ final class ReferenceFactorySet<T> extends AbstractSet<T> implements TrimmableSe
             im.clear();
         }
         return result[0];
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Spliterator<T> spliterator() {
+        return new LateBindingSpliterator<>(() -> {
+            List<Object> l = new ArrayList<>(im.size());
+            im.forEachValue(ref -> {
+                T obj = ref.get();
+                if (obj != null) {
+                    l.add(obj);
+                }
+            });
+            if (l.isEmpty()) {
+                return Collections.<T>emptySet().spliterator();
+            }
+            Object[] arr = l.toArray();
+            return (Spliterator<T>) new ArraySpliterator<Object>(arr);
+        });
     }
 }

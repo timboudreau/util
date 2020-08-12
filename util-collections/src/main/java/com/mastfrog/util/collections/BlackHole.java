@@ -30,8 +30,12 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.Spliterator;
 
 /**
+ * Set/List implementation which silently discards all additions - for use with
+ * APIs which take a set or a list and add to it, but whose contents will never
+ * actually be used by the caller.
  *
  * @author Tim Boudreau
  */
@@ -142,4 +146,27 @@ abstract class BlackHole<T> {
         return Collections.emptyList();
     }
 
+    public Spliterator<T> spliterator() {
+        return Collections.<T>emptySet().spliterator();
+    }
+
+    @Override
+    public int hashCode() {
+        return 0;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        } else if (o == null || !(o instanceof Collection<?>)) {
+            return false;
+        }
+        return ((Collection<?>) ((Collection<?>) o)).isEmpty();
+    }
+
+    @Override
+    public String toString() {
+        return "[]";
+    }
 }

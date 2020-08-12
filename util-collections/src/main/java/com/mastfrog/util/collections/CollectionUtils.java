@@ -814,7 +814,7 @@ public final class CollectionUtils {
      * @return A set
      */
     @SafeVarargs
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "ManualArrayToCollectionCopy"})
     public static <T> Set<T> setOf(T... args) {
         if (args.length == 0) {
             return Collections.emptySet();
@@ -1871,6 +1871,79 @@ public final class CollectionUtils {
      */
     public static <K, V> Map<K, V> weakValueMap(MapFactory factory, int initialSize, Function<V, Reference<V>> referenceFactory) {
         return new WeakValueMap<>(factory, initialSize, referenceFactory);
+    }
+
+    /**
+     * Create an immutable set with extremely fast membership/non-membership
+     * tests using the hash code of the members for lookup; has two caveats:
+     * <ul>
+     * <li> If two passed objects have the same hash code but do not
+     * <code>equals()</code> each other, an IllegalArgument will be thrown.</li>
+     * <li> If one passed object has a hash code of 0 and another passed object
+     * is <code>null</code>, which object is present in the resulting set is not
+     * defined, but either the null or the object will be.</li>
+     * </ul>
+     *
+     * @param <T> The set type
+     * @param c A collection
+     * @return A set
+     */
+    public static <T> Set<T> immutableSet(Collection<? extends T> c) {
+        return ImmutableSet.of(false, c);
+    }
+
+    /**
+     * Create an immutable set with extremely fast membership/non-membership
+     * tests, using the <i>identity hash code</i> of the members for lookup.
+     * Only objects which are the same instance in <code>==</code> terms will be
+     * present.
+     *
+     * @param <T> The set type
+     * @param c The original collection
+     * @return A set
+     */
+    public static <T> Set<T> immutableIdentitySet(Collection<? extends T> c) {
+        return ImmutableSet.of(false, c);
+    }
+
+    /**
+     * Create an immutable set with extremely fast membership/non-membership
+     * tests using the hash code of the members for lookup; has two caveats:
+     * <ul>
+     * <li> If two passed objects have the same hash code but do not
+     * <code>equals()</code> each other, an IllegalArgument will be thrown.</li>
+     * <li> If one passed object has a hash code of 0 and another passed object
+     * is <code>null</code>, which object is present in the resulting set is not
+     * defined, but either the null or the object will be.</li>
+     * </ul>
+     *
+     * @param <T> The set type
+     * @param objects The set members
+     * @return A set
+     * @throws IllegalArgumentException if
+     */
+    @SafeVarargs
+    public static <T> Set<T> immutableSetOf(T... objects) {
+        // Verargs here are not so much safe as, will be passed through with
+        // no effect on anything but the caller
+        return ImmutableSet.of(false, objects);
+    }
+
+    /**
+     * Create an immutable set with extremely fast membership/non-membership
+     * tests, using the <i>identity hash code</i> of the members for lookup.
+     * Only objects which are the same instance in <code>==</code> terms will be
+     * present.
+     *
+     * @param <T> The set type
+     * @param objects The set members
+     * @return A set
+     */
+    @SafeVarargs
+    public static <T> Set<T> immutableIdentitySetOf(T... objects) {
+        // Verargs here are not so much safe as, will be passed through with
+        // no effect on anything but the caller
+        return ImmutableSet.of(false, objects);
     }
 
     /**

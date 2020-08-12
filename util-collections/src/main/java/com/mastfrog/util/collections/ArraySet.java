@@ -26,9 +26,13 @@ package com.mastfrog.util.collections;
 import com.mastfrog.util.strings.Strings;
 import java.lang.reflect.Array;
 import java.util.AbstractSet;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Objects;
+import java.util.Spliterator;
 import java.util.function.Consumer;
+import java.util.function.IntFunction;
+import java.util.function.Predicate;
 
 /**
  * A lighter-weight set class for small sets, where the cost of iterating an
@@ -112,5 +116,39 @@ final class ArraySet<T> extends AbstractSet<T> {
     public String toString() {
         return '[' + Strings.join(',', (Object[]) objs).toString()
                 + ']';
+    }
+
+    @Override
+    public boolean removeIf(Predicate<? super T> filter) {
+        throw new UnsupportedOperationException("Read-only");
+    }
+
+    @Override
+    public boolean removeAll(Collection<?> c) {
+        throw new UnsupportedOperationException("Read-only");
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        } else if (o == null || !(o instanceof Collection<?>)) {
+            return false;
+        }
+        Collection<?> c = (Collection<?>) o;
+        if (c.size() != objs.length) {
+            return false;
+        }
+        return containsAll(c);
+    }
+
+    @Override
+    public Spliterator<T> spliterator() {
+        return new ArraySpliterator<>(objs);
+    }
+
+    @Override
+    public <T> T[] toArray(IntFunction<T[]> generator) {
+        return toArray(generator.apply(objs.length));
     }
 }

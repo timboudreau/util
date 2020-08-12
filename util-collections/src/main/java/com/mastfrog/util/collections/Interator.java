@@ -28,13 +28,14 @@ import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
 
 /**
- * Like an iterator, but without boxing/unboxing.
+ * Like an iterator, but without boxing/unboxing; this interface is deprecated
+ * since PrimitiveIterator.OfInt was introduced in JDK 8.
  *
  * @author Tim Boudreau
  * @deprecated Implementations should use PrimitiveIterator.OfInt
  */
 @Deprecated
-public interface Interator extends IntSupplier{
+public interface Interator extends IntSupplier {
 
     boolean hasNext();
 

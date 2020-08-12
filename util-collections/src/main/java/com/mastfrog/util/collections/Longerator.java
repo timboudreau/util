@@ -30,7 +30,8 @@ import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
 
 /**
- * A primitive long iterator for high performance uses.
+ * A primitive long iterator for high performance uses; this interface has been
+ * deprecated since PrimitiveIterator.OfLong was introduced in JDK 8.
  *
  * @author Tim Boudreau
  * @deprecated Implementations should use PrimitiveIterator.OfLong

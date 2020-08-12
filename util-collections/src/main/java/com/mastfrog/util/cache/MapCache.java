@@ -34,8 +34,8 @@ public final class MapCache<K, V> implements Cache<K, V, RuntimeException> {
         this.func = func;
     }
 
-    public static <K,V> MapCache<K,V> imperative(Map<K,V> map) {
-        return new MapCache(map, ignored -> null);
+    public static <K, V> MapCache<K, V> imperative(Map<K, V> map) {
+        return new MapCache<>(map, ignored -> null);
     }
 
     public MapCache<K, V> remove(K key) {

@@ -21,7 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package com.mastfrog.util.collections;
 
 import static com.mastfrog.util.preconditions.Checks.notNull;
@@ -29,6 +28,8 @@ import java.lang.reflect.Array;
 import java.util.AbstractList;
 
 /**
+ * Reflection based list over any type <code>Class.isArray()</code> reports true
+ * for.
  *
  * @author Tim Boudreau
  */

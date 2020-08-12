@@ -206,7 +206,7 @@ final class IntSetReadOnly extends IntSet {
     }
 
     @Override
-    public Spliterator<Integer> spliterator() {
+    public Spliterator.OfInt spliterator() {
         return delegate.spliterator();
     }
 

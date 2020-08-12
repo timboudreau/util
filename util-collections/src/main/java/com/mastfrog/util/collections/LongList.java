@@ -28,6 +28,7 @@ import static com.mastfrog.util.preconditions.Checks.notNull;
 import com.mastfrog.util.search.Bias;
 import java.util.List;
 import java.util.PrimitiveIterator;
+import java.util.Spliterator;
 import java.util.function.LongConsumer;
 
 /**
@@ -430,7 +431,7 @@ public interface LongList extends List<Long> {
      * @return The index of that value
      */
     int nearestIndexToPresumingSorted(long value, Bias bias);
-    
+
     /**
      * Swap the values at two indices in the list.
      *
@@ -441,6 +442,9 @@ public interface LongList extends List<Long> {
      * @return True if the indices are not the same
      */
     default boolean swapIndices(int ix1, int ix2) {
+        if (ix1 == ix2) {
+            return false;
+        }
         int sz = size();
         if (sz < 2) {
             throw new IllegalArgumentException("Cannot swap on an "
@@ -456,10 +460,7 @@ public interface LongList extends List<Long> {
             throw new IllegalArgumentException("First index >= size " + ix1 + " vs " + sz);
         }
         if (ix2 >= sz) {
-            throw new IllegalArgumentException("First index >= size " + ix1 + " vs " + sz);
-        }
-        if (ix1 == ix2) {
-            return false;
+            throw new IllegalArgumentException("Second index >= size " + ix1 + " vs " + sz);
         }
         long at1 = get(ix1);
         long at2 = get(ix2);
@@ -494,5 +495,10 @@ public interface LongList extends List<Long> {
         set(ix1, at2);
         set(ix2, at1);
         return true;
+    }
+
+    @Override
+    default Spliterator.OfLong spliterator() {
+        return new ArrayLongSpliterator(toLongArray());
     }
 }

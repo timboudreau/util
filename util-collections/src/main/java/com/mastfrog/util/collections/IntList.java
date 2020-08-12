@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator;
+import java.util.Spliterator;
 import java.util.function.IntConsumer;
 
 /**
@@ -504,4 +505,14 @@ public interface IntList extends List<Integer>, Trimmable {
         }
         return true;
     }
+
+    /**
+     * {@inheritDoc }
+     *
+     * Overridden to return Spliterator.OfInt.
+     *
+     * @return A spliterator
+     */
+    @Override
+    public Spliterator.OfInt spliterator();
 }

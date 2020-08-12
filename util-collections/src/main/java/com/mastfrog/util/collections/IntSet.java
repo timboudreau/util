@@ -33,6 +33,7 @@ import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator;
 import java.util.Random;
 import java.util.Set;
+import java.util.Spliterator;
 import java.util.function.IntConsumer;
 
 /**
@@ -1220,5 +1221,17 @@ public abstract class IntSet implements Set<Integer>, Cloneable, Trimmable {
      */
     public int valueAt(int index) {
         return toIntArray()[index];
+    }
+
+    /**
+     * {@inheritDoc }
+     *
+     * Overridden to return Spliterator.OfInt.
+     *
+     * @return A spliterator
+     */
+    @Override
+    public Spliterator.OfInt spliterator() {
+        return new ArrayIntSpliterator(toIntArray());
     }
 }

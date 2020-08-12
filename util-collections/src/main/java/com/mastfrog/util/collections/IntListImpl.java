@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator;
+import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
@@ -293,6 +294,7 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
         }
     }
 
+    @Override
     public int last() {
         if (size == 0) {
             throw new NoSuchElementException("Empty");
@@ -300,6 +302,7 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
         return values[size - 1];
     }
 
+    @Override
     public int first() {
         if (size == 0) {
             throw new NoSuchElementException("Empty");
@@ -775,4 +778,8 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
         }
     }
 
+    @Override
+    public Spliterator.OfInt spliterator() {
+        return new ArrayIntSpliterator(values, 0, size);
+    }
 }

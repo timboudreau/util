@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2017 Tim Boudreau.
+ * Copyright 2020 Mastfrog Technologies.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,41 +24,12 @@
 
 package com.mastfrog.util.collections;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * A pointless subclass of LinkedHashMap, entirely so that assorted libraries
- * that want a Java <i>type</i> have something to use without resorting
- * to TypeLiterals and TypeReferences and such - both Guice and Jackson
- * bindings are much simplified by having a concrete type for this common
- * map type.
  *
  * @author Tim Boudreau
  */
-public class StringObjectMap extends LinkedHashMap<String,Object> implements StringKeyedMap<Object> {
+public interface StringKeyedMap<V> extends Map<String, V> {
 
-    public StringObjectMap(int initialCapacity, float loadFactor) {
-        super(initialCapacity, loadFactor);
-    }
-
-    public StringObjectMap(int initialCapacity) {
-        super(initialCapacity);
-    }
-
-    public StringObjectMap() {
-    }
-
-    public StringObjectMap(Map<? extends String, ?> m) {
-        super(m);
-    }
-
-    public StringObjectMap(int initialCapacity, float loadFactor, boolean accessOrder) {
-        super(initialCapacity, loadFactor, accessOrder);
-    }
-
-    public StringObjectMap add(String key, Object o) {
-        put(key, o);
-        return this;
-    }
 }
