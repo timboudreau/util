@@ -253,7 +253,7 @@ final class ImmutableSet<T> implements Set<T> {
         }
     }
 
-    @Override
+//    @Override
     @SuppressWarnings("SuspiciousToArrayCall")
     public <T> T[] toArray(IntFunction<T[]> generator) {
         return toArray(generator.apply(size()));

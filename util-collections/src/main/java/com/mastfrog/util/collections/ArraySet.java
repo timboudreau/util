@@ -147,7 +147,6 @@ final class ArraySet<T> extends AbstractSet<T> {
         return new ArraySpliterator<>(objs);
     }
 
-    @Override
     public <T> T[] toArray(IntFunction<T[]> generator) {
         return toArray(generator.apply(objs.length));
     }
