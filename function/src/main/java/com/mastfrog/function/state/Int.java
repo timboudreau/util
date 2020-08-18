@@ -167,4 +167,8 @@ public interface Int extends IntConsumer, IntSupplier, Supplier<Integer>, Compar
     default boolean equals(int val) {
         return val == getAsInt();
     }
+
+    default int setFrom(IntSupplier supp) {
+        return set(supp.getAsInt());
+    }
 }

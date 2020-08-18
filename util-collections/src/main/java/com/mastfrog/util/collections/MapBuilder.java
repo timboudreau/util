@@ -1,7 +1,5 @@
 package com.mastfrog.util.collections;
 
-import com.mastfrog.util.preconditions.Exceptions;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Base64;

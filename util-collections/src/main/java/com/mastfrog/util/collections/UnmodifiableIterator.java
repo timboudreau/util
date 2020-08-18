@@ -34,7 +34,7 @@ final class UnmodifiableIterator<T> implements Iterator<T> {
 
     private final Iterator<T> iter;
 
-    public UnmodifiableIterator(Iterator<T> iter) {
+    UnmodifiableIterator(Iterator<T> iter) {
         this.iter = iter;
     }
 

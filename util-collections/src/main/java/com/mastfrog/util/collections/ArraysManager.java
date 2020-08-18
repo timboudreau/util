@@ -56,6 +56,7 @@ abstract class ArraysManager<T> implements Iterable<T> {
         return batchSize;
     }
 
+    @Override
     public Iterator<T> iterator() {
         return arrays.iterator();
     }
@@ -405,23 +406,23 @@ abstract class ArraysManager<T> implements Iterable<T> {
 
     static final class Longs extends ArraysManager<long[]> {
 
-        public Longs(int batchSize, ArraysPool<long[]> pool) {
+        Longs(int batchSize, ArraysPool<long[]> pool) {
             super(batchSize, pool);
         }
 
-        public Longs(int batchSize) {
+        Longs(int batchSize) {
             super(batchSize, ArraysPool.cachingPool(batchSize, 3, 7));
         }
 
-        public Longs(ArraysManager<long[]> other) {
+        Longs(ArraysManager<long[]> other) {
             super(other, other.pool);
         }
 
-        public Longs(int batchSize, SortChecker checker, long[][] contents) {
+        Longs(int batchSize, SortChecker checker, long[][] contents) {
             this(batchSize, checker, contents, ArraysPool.cachingPool(batchSize, 3, 7));
         }
 
-        public Longs(int batchSize, SortChecker checker, long[][] contents, ArraysPool<long[]> pool) {
+        Longs(int batchSize, SortChecker checker, long[][] contents, ArraysPool<long[]> pool) {
             super(batchSize, pool);
             long[] curr = newArray();
             arrays.add(curr);
@@ -455,6 +456,7 @@ abstract class ArraysManager<T> implements Iterable<T> {
             return Arrays.copyOf(val, val.length);
         }
 
+        @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append(size()).append(" arrays batchSize ").append(batchSize).append(":\n[");
@@ -478,6 +480,7 @@ abstract class ArraysManager<T> implements Iterable<T> {
             return sb.append(']').toString();
         }
 
+        @Override
         void copy(long[] src, int srcPos, long[] dest, int destPos, int count) {
             if (count == 0) {
                 String intra = src == dest ? "intra-" : "extra-";
@@ -497,6 +500,7 @@ abstract class ArraysManager<T> implements Iterable<T> {
             }
         }
 
+        @Override
         void doBlank(long[] arr, int from, int to) {
             Arrays.fill(arr, from, to, -1L);
         }
@@ -575,15 +579,15 @@ abstract class ArraysManager<T> implements Iterable<T> {
 
     static final class Bytes extends ArraysManager<byte[]> {
 
-        public Bytes(int batchSize, ArraysPool<byte[]> pool) {
+        Bytes(int batchSize, ArraysPool<byte[]> pool) {
             super(batchSize, pool);
         }
 
-        public Bytes(ArraysManager<byte[]> other, ArraysPool<byte[]> pool) {
+        Bytes(ArraysManager<byte[]> other, ArraysPool<byte[]> pool) {
             super(other, pool);
         }
 
-        public Bytes(int batchSize, SortChecker checker, byte[][] contents, ArraysPool<byte[]> pool) {
+        Bytes(int batchSize, SortChecker checker, byte[][] contents, ArraysPool<byte[]> pool) {
             super(batchSize, pool);
             byte[] curr = newArray();
             arrays.add(curr);
@@ -612,10 +616,12 @@ abstract class ArraysManager<T> implements Iterable<T> {
             }
         }
 
+        @Override
         byte[] duplicate(byte[] val) {
             return Arrays.copyOf(val, val.length);
         }
 
+        @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append(size()).append(" arrays batchSize ").append(batchSize).append(":\n[");

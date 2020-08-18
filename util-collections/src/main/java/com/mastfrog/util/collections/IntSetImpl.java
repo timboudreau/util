@@ -113,6 +113,7 @@ final class IntSetImpl extends IntSet {
         return arr;
     }
 
+    @Override
     public IntSet or(IntSet other) {
         if (other.isArrayBased()) {
             IntSetArray arr = toArrayBased();
@@ -123,6 +124,7 @@ final class IntSetImpl extends IntSet {
         return new IntSetImpl(nue);
     }
 
+    @Override
     public IntSet xor(IntSet other) {
         if (other.isArrayBased()) {
             IntSetArray arr = toArrayBased();
@@ -346,6 +348,7 @@ final class IntSetImpl extends IntSet {
         return result;
     }
 
+    @Override
     public boolean sameContents(Set<? extends Integer> other) {
         if (size() != other.size()) {
             return false;
@@ -357,6 +360,7 @@ final class IntSetImpl extends IntSet {
         return matched.cardinality() == 0;
     }
 
+    @Override
     public int first() {
         return bits.nextSetBit(0);
     }
@@ -478,6 +482,7 @@ final class IntSetImpl extends IntSet {
         return count;
     }
 
+    @Override
     public Integer pick(Random r, Set<Integer> notIn) {
         if (notIn.size() >= size()) {
             return null;
@@ -537,6 +542,7 @@ final class IntSetImpl extends IntSet {
         return size() == 0;
     }
 
+    @Override
     public boolean contains(int val) {
         return bits.get(val);
     }
@@ -556,7 +562,7 @@ final class IntSetImpl extends IntSet {
         int pos = 0;
         private final BitSet bits;
 
-        public BitSetIterator(BitSet bits) {
+        BitSetIterator(BitSet bits) {
             this.bits = bits;
         }
 

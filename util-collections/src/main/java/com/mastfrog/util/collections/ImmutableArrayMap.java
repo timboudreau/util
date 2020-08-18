@@ -171,7 +171,7 @@ class ImmutableArrayMap<T, R> implements Map<T, R>, LongFunction<T> {
 
         private final int index;
 
-        public E(int index) {
+        E(int index) {
             this.index = index;
         }
 

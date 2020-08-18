@@ -74,4 +74,8 @@ public interface Obj<T> extends Supplier<T>, Consumer<T> {
     default T apply(T other, BinaryOperator<T> op) {
         return set(op.apply(get(), other));
     }
+
+    default T setFrom(Supplier<T> supp) {
+        return set(supp.get());
+    }
 }

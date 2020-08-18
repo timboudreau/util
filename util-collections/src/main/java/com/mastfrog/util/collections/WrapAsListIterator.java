@@ -33,7 +33,7 @@ import java.util.ListIterator;
 final class WrapAsListIterator<T> implements ListIterator<T>{
     private final Iterator<T> iter;
 
-    public WrapAsListIterator(Iterator<T> iter) {
+    WrapAsListIterator(Iterator<T> iter) {
         this.iter = iter;
     }
 

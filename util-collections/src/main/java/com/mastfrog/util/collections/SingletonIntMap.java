@@ -43,7 +43,7 @@ final class SingletonIntMap<T> implements IntMap<T>, Map.Entry<Integer, T> {
     private final int key;
     private T value;
 
-    public SingletonIntMap(int key, T value) {
+    SingletonIntMap(int key, T value) {
         this.key = key;
         this.value = value;
     }

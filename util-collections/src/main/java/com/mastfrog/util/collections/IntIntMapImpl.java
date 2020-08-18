@@ -142,10 +142,7 @@ final class IntIntMapImpl implements IntIntMap, Iterable<Integer> {
                     return false;
                 }
                 int vi = ((Integer) v).intValue();
-                if (values[ix] != vi) {
-                    return false;
-                }
-                return true;
+                return values[ix] == vi;
             }
         }
         return false;
@@ -225,6 +222,7 @@ final class IntIntMapImpl implements IntIntMap, Iterable<Integer> {
         size = 0;
     }
 
+    @Override
     public int greatestKey() {
         if (size == 0) {
             throw new IndexOutOfBoundsException("Empty");
@@ -233,6 +231,7 @@ final class IntIntMapImpl implements IntIntMap, Iterable<Integer> {
         return keys[size - 1];
     }
 
+    @Override
     public int leastKey() {
         if (size == 0) {
             throw new IndexOutOfBoundsException("Empty");
@@ -251,6 +250,7 @@ final class IntIntMapImpl implements IntIntMap, Iterable<Integer> {
         }
     }
 
+    @Override
     public int indexOf(int key) {
         checkSort();
         return Arrays.binarySearch(keys, 0, size, key);
@@ -396,6 +396,7 @@ final class IntIntMapImpl implements IntIntMap, Iterable<Integer> {
         return result;
     }
 
+    @Override
     public int removeIndices(IntSet indices) {
         if (indices.isEmpty()) {
             return 0;
@@ -508,6 +509,7 @@ final class IntIntMapImpl implements IntIntMap, Iterable<Integer> {
         return result;
     }
 
+    @Override
     public int[] keysArray() {
         return Arrays.copyOf(keys, size);
     }
@@ -570,6 +572,7 @@ final class IntIntMapImpl implements IntIntMap, Iterable<Integer> {
         return keys[idx];
     }
 
+    @Override
     public int nearestIndexTo(int key, boolean backward) {
         int last = size - 1;
         if (key < keys[0]) {
@@ -599,7 +602,7 @@ final class IntIntMapImpl implements IntIntMap, Iterable<Integer> {
 
         private final int index;
 
-        public IntEntry(int index) {
+        IntEntry(int index) {
             this.index = index;
         }
 

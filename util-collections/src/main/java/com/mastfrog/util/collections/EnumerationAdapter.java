@@ -34,7 +34,7 @@ import java.util.Iterator;
 final class EnumerationAdapter<T> implements Enumeration<T> {
     private final Iterator<T> iterator;
 
-    public EnumerationAdapter(Iterator<T> iterator) {
+    EnumerationAdapter(Iterator<T> iterator) {
         this.iterator = iterator;
     }
 

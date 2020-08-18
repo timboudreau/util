@@ -177,6 +177,7 @@ class IntSetArray extends IntSet {
         return data[size - 1];
     }
 
+    @Override
     public boolean contains(int value) {
         if (size == 0) {
             return false;
@@ -581,6 +582,7 @@ class IntSetArray extends IntSet {
         size = 0;
     }
 
+    @Override
     public IntSetArray addAll(int... items) {
         for (int i = 0; i < items.length; i++) {
             add(items[i]);
@@ -593,10 +595,12 @@ class IntSetArray extends IntSet {
         return toBits();
     }
 
+    @Override
     public IntSetArray copy() {
         return new IntSetArray(this);
     }
 
+    @Override
     public IntSetArray or(IntSet other) {
         IntSetArray result = copy();
         IntSetArray notPresent = new IntSetArray(other.size());

@@ -51,11 +51,11 @@ class DoubleSetImpl implements DoubleSet {
     private final int initialCapacity;
     int size;
 
-    public DoubleSetImpl() {
+    DoubleSetImpl() {
         this(128);
     }
 
-    public DoubleSetImpl(int capacity) {
+    DoubleSetImpl(int capacity) {
         data = new double[capacity];
         initialCapacity = capacity;
     }
@@ -597,6 +597,7 @@ class DoubleSetImpl implements DoubleSet {
         return false;
     }
 
+    @Override
     public boolean containsApproximate(double targetValue, double tolerance) {
         double result = nearestValueTo(targetValue, tolerance);
         return result != Double.MIN_VALUE;
@@ -637,6 +638,7 @@ class DoubleSetImpl implements DoubleSet {
         return data[ix];
     }
 
+    @Override
     public double nearestValueExclusive(double val, double tolerance) {
         double result = nearestValueExclusive(val);
         if (Math.abs(val - result) <= tolerance) {
@@ -645,6 +647,7 @@ class DoubleSetImpl implements DoubleSet {
         return Double.MIN_VALUE;
     }
 
+    @Override
     public double nearestValueExclusive(double val) {
         if (size == 0) {
             return Double.MIN_VALUE;
@@ -869,7 +872,7 @@ class DoubleSetImpl implements DoubleSet {
 
         private final DoubleSet delegate;
 
-        public ReadOnlyDoubleSet(DoubleSet delegate) {
+        ReadOnlyDoubleSet(DoubleSet delegate) {
             this.delegate = delegate;
         }
 
@@ -878,6 +881,7 @@ class DoubleSetImpl implements DoubleSet {
             return this;
         }
 
+        @Override
         public void trim() {
             // do nothing
         }
@@ -1063,10 +1067,11 @@ class DoubleSetImpl implements DoubleSet {
 
         private final DoubleSet delegate;
 
-        public SynchronizedDoubleSet(DoubleSet delegate) {
+        SynchronizedDoubleSet(DoubleSet delegate) {
             this.delegate = delegate;
         }
 
+        @Override
         public synchronized void trim() {
             delegate.trim();
         }
@@ -1146,7 +1151,7 @@ class DoubleSetImpl implements DoubleSet {
             private final Object lock;
             private final PrimitiveIterator.OfDouble it;
 
-            public SyIt(Object lock, OfDouble it) {
+            SyIt(Object lock, OfDouble it) {
                 this.lock = lock;
                 this.it = it;
             }

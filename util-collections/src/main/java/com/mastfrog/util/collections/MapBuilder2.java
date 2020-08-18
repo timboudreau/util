@@ -211,6 +211,7 @@ public interface MapBuilder2<T, R> {
 
         interface HashingValueBuilder<T, R> extends ValueBuilder<T, R> {
 
+            @Override
             HashingMapBuilder<T, R> to(R obj);
 
             Pair<Map<T, R>, byte[]> toAndBuild(R val);

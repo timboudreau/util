@@ -78,18 +78,18 @@ final class ArrayIntMap<T> implements IntMap<T> {
     /**
      * Creates a new instance of ArrayIntMap
      */
-    public ArrayIntMap() {
+    ArrayIntMap() {
         keys = new int[]{Integer.MAX_VALUE, Integer.MAX_VALUE,
             Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE};
         vals = new Object[5];
         emptyValue = null;
     }
 
-    public ArrayIntMap(int minCapacity) {
+    ArrayIntMap(int minCapacity) {
         this(minCapacity, true, null);
     }
 
-    public ArrayIntMap(int minCapacity, boolean addSuppliedValues, Supplier<T> emptyValue) {
+    ArrayIntMap(int minCapacity, boolean addSuppliedValues, Supplier<T> emptyValue) {
         if (minCapacity <= 0) {
             throw new IllegalArgumentException("Must be > 0");
         }
@@ -100,7 +100,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
         Arrays.fill(keys, Integer.MAX_VALUE);
     }
 
-    public ArrayIntMap(Map<Integer, T> from) {
+    ArrayIntMap(Map<Integer, T> from) {
         this.emptyValue = null;
         int max = from.size();
         keys = new int[max];
@@ -600,6 +600,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
         return keys[idx];
     }
 
+    @Override
     public int nearestIndexTo(int key, boolean backward) {
         if (key < keys[0]) {
             return backward ? last : 0;
@@ -984,7 +985,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
             keys[i - shift] = keys[i] - decrement;
             vals[i - shift] = vals[i];
         }
-        last = last - shift;
+        last -= shift;
         if (last >= 0) {
             nextKey = keys[last] + 1;
         } else {
@@ -998,6 +999,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
         return this;
     }
 
+    @Override
     public Iterator<Map.Entry<Integer, T>> iterator() {
         if (isEmpty()) {
             return Collections.emptyIterator();
@@ -1313,7 +1315,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
 
         private final int ix;
 
-        public ME(int ix) {
+        ME(int ix) {
             this.ix = ix;
         }
 

@@ -309,7 +309,7 @@ final class IntSetReadOnly extends IntSet {
 
         private final PrimitiveIterator.OfInt delegate;
 
-        public RoPI(OfInt delegate) {
+        RoPI(OfInt delegate) {
             this.delegate = delegate;
         }
 

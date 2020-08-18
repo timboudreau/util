@@ -1,26 +1,4 @@
-/*
- * The MIT License
- *
- * Copyright 2018 Tim Boudreau.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+
 package com.mastfrog.util.collections;
 
 import com.mastfrog.util.collections.ArraysManager.SortChecker;
@@ -31,7 +9,6 @@ import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.PrimitiveIterator;
@@ -65,21 +42,21 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
         this.arrays = arrays;
     }
 
-    public LongListImpl(int batchSize) {
+    LongListImpl(int batchSize) {
         this(new ArraysManager.Longs(batchSize));
     }
 
-    public LongListImpl(int batchSize, int initialPoolSize, int maxPoolSize) {
+    LongListImpl(int batchSize, int initialPoolSize, int maxPoolSize) {
         this(new ArraysManager.Longs(batchSize, maxPoolSize == 0
                 ? ArraysPool.uncachedPool(batchSize)
                 : ArraysPool.cachingPool(batchSize, initialPoolSize, maxPoolSize)));
     }
 
-    public LongListImpl(long[] longs) {
+    LongListImpl(long[] longs) {
         this(longs, Math.max(64, longs.length));
     }
 
-    public LongListImpl(long[] longs, int batchSize) {
+    LongListImpl(long[] longs, int batchSize) {
         this(longs, new boolean[1], batchSize);
     }
 
@@ -107,12 +84,13 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
         size = longs.length;
     }
 
-    public LongListImpl(List<long[]> nue, int size, int batchSize, boolean sorted) {
+    LongListImpl(List<long[]> nue, int size, int batchSize, boolean sorted) {
         this(listToArray(nue), new boolean[1], batchSize);
         this.size = size;
         this.sorted = sorted;
     }
 
+    @Override
     public LongListImpl copy() {
         return new LongListImpl(this);
     }
@@ -409,7 +387,6 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
         } else if (fromIndex > toIndex) {
             throw new IndexOutOfBoundsException("From index < toIndex " + fromIndex + " is < " + toIndex);
         } else if (fromIndex == toIndex) {
-            return;
         } else if (toIndex == size) {
             size = fromIndex;
             arrays.pruneTo(size);
@@ -508,6 +485,7 @@ final class LongListImpl extends AbstractList<Long> implements LongList {
     }
 
     @SuppressWarnings("deprecation")
+    @Override
     public Longerator longerator() {
         return new Longerator() {
             int ix = -1;

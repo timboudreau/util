@@ -34,7 +34,7 @@ final class ConvertIterator<T, R> implements ListIterator<R> {
     private final ListIterator<T> orig;
     private final Converter<R,T> converter;
  
-    public ConvertIterator(ListIterator<T> orig, Converter<R,T> converter) {
+    ConvertIterator(ListIterator<T> orig, Converter<R,T> converter) {
         this.orig = orig;
         this.converter = converter;
     }
@@ -84,6 +84,7 @@ final class ConvertIterator<T, R> implements ListIterator<R> {
         orig.add(converter.unconvert(e));
     }
 
+    @Override
     public String toString() {
         return "ConvertIterator with " + converter + " over " + orig;
     }

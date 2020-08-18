@@ -5,7 +5,6 @@
  */
 package com.mastfrog.util.collections;
 
-import com.mastfrog.util.collections.CollectionUtils;
 import java.lang.ref.Reference;
 import java.util.Collections;
 import java.util.HashSet;

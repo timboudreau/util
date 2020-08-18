@@ -336,7 +336,7 @@ public interface DoubleMap<T> extends Trimmable {
     boolean least(DoubleMapConsumer<? super T> c);
 
     default Entry<? extends T> least() {
-        Entry<T> result = new Entry<T>();
+        Entry<T> result = new Entry<>();
         if (least(result::setParams)) {
             return result;
         }
@@ -428,10 +428,7 @@ public interface DoubleMap<T> extends Trimmable {
             if (Double.doubleToLongBits(this.key) != Double.doubleToLongBits(other.key)) {
                 return false;
             }
-            if (!Objects.equals(this.value, other.value)) {
-                return false;
-            }
-            return true;
+            return Objects.equals(this.value, other.value);
         }
 
     }

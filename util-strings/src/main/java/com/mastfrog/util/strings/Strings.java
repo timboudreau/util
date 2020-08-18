@@ -1704,16 +1704,22 @@ public final class Strings {
 
     public static StringBuilder appendPaddedHex(int val, StringBuilder sb) {
         String sval = Integer.toHexString(val & 0xFFFFFFFF);
-        for (int i = 0; i < 8 - sval.length(); i++) {
-            sb.append('0');
+        if (sval.length() != 8) {
+            char[] c = new char[8-sval.length()];
+            Arrays.fill(c, '0');
+            sb.append(c);
+            sb.append(sval);
         }
         return sb.append(sval);
     }
 
     public static StringBuilder appendPaddedHex(long val, StringBuilder sb) {
         String sval = Long.toHexString(val);
-        for (int i = 0; i < 16 - sval.length(); i++) {
-            sb.append('0');
+        if (sval.length() != 16) {
+            char[] c = new char[16 - sval.length()];
+            Arrays.fill(c, '0');
+            sb.append(c);
+            sb.append(sval);
         }
         return sb.append(sval);
     }
@@ -1804,7 +1810,8 @@ public final class Strings {
 
     public static String toNonPaddedBase36(byte[] bytes) {
         if (bytes.length % 8 != 0) {
-            throw new IllegalArgumentException("Byte count must be divisible by 8");
+            throw new IllegalArgumentException("Byte count must be divisible "
+                    + "by 8, but is " + bytes.length);
         }
         LongBuffer buf = ByteBuffer.wrap(bytes).asLongBuffer();
         StringBuilder sb = new StringBuilder();
@@ -1816,7 +1823,8 @@ public final class Strings {
 
     public static String toDelimitedPaddedBase36(byte[] bytes) {
         if (bytes.length % 8 != 0) {
-            throw new IllegalArgumentException("Byte count must be divisible by 8");
+            throw new IllegalArgumentException("Byte count must be divisible "
+                    + "by 8, but is " + bytes.length);
         }
         LongBuffer buf = ByteBuffer.wrap(bytes).asLongBuffer();
         StringBuilder sb = new StringBuilder();

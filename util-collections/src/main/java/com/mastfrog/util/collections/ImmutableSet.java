@@ -57,7 +57,7 @@ final class ImmutableSet<T> implements Set<T> {
             T oldDup = im.put(key, obj);
             if (oldDup == null) {
                 hc += key;
-                mask = mask | key;
+                mask |= key;
             } else if (!identity && oldDup != null && !oldDup.equals(obj)) {
                 throw new IllegalArgumentException("Both " + oldDup + " and "
                         + obj + " have the hash code " + key + " but they are "
@@ -83,7 +83,7 @@ final class ImmutableSet<T> implements Set<T> {
             T oldDup = im.put(key, obj);
             if (oldDup == null) {
                 hc += key;
-                mask = mask | key;
+                mask |= key;
             } else if (!identity && oldDup != null && !oldDup.equals(obj)) {
                 throw new IllegalArgumentException("Both " + oldDup + " and "
                         + obj + " have the hash code " + key + " but they are "

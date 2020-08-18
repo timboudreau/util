@@ -44,7 +44,7 @@ final class IntMapSynchronized<T> implements IntMap<T> {
 
     private final IntMap<T> delegate;
 
-    public IntMapSynchronized(IntMap<T> delegate) {
+    IntMapSynchronized(IntMap<T> delegate) {
         this.delegate = delegate;
     }
 
@@ -99,6 +99,7 @@ final class IntMapSynchronized<T> implements IntMap<T> {
         delegate.trim();
     }
 
+    @Override
     public synchronized int key(int index) {
         return delegate.key(index);
     }
@@ -173,7 +174,7 @@ final class IntMapSynchronized<T> implements IntMap<T> {
         private final PrimitiveIterator.OfInt delegate;
         private final Object lock;
 
-        public SyncPrimIterator(IntMapSynchronized<?> map) {
+        SyncPrimIterator(IntMapSynchronized<?> map) {
             this.lock = map;
             delegate = map.delegate.keysIterator();
         }

@@ -39,6 +39,7 @@ final class DoubleMapEmpty implements DoubleMap<Object> {
         return (DoubleMap<T>) INSTANCE;
     }
 
+    @Override
     public void trim() {
         // do nothing
     }
@@ -200,6 +201,7 @@ final class DoubleMapEmpty implements DoubleMap<Object> {
         return 5;
     }
 
+    @Override
     public String toString() {
         return "{}";
     }

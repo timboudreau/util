@@ -267,6 +267,7 @@ final class LongListSimple extends AbstractList<Long> implements LongList, Seria
         return -1;
     }
 
+    @Override
     public boolean sort() {
         if (size > 0) {
             Arrays.sort(values, 0, size);
@@ -276,6 +277,7 @@ final class LongListSimple extends AbstractList<Long> implements LongList, Seria
     }
 
 //    @Override
+    @Override
     public int indexOfPresumingSorted(long value) {
         if (size == 0) {
             return -1;
@@ -311,6 +313,7 @@ final class LongListSimple extends AbstractList<Long> implements LongList, Seria
         return result;
     }
 
+    @Override
     public int nearestIndexToPresumingSorted(long value, Bias bias) {
         if (size == 0) {
             return -1;
@@ -379,6 +382,7 @@ final class LongListSimple extends AbstractList<Long> implements LongList, Seria
         }
     }
 
+    @Override
     public long last() {
         if (size == 0) {
             throw new NoSuchElementException("Empty");
@@ -386,6 +390,7 @@ final class LongListSimple extends AbstractList<Long> implements LongList, Seria
         return values[size - 1];
     }
 
+    @Override
     public long first() {
         if (size == 0) {
             throw new NoSuchElementException("Empty");

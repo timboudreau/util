@@ -210,6 +210,7 @@ final class ConvertList<T, R> implements List<T> {
         return listIterator(0);
     }
 
+    @Override
     public boolean equals(Object o) {
         if (o == this) {
             return true;

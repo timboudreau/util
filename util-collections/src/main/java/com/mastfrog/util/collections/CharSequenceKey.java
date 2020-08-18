@@ -77,14 +77,17 @@ final class CharSequenceKey<T extends CharSequence> implements CharSequence {
         return value.codePoints();
     }
 
+    @Override
     public int hashCode() {
         return Strings.charSequenceHashCode(value, true);
     }
 
+    @Override
     public boolean equals(Object o) {
         return o instanceof CharSequence && Strings.charSequencesEqual(value, (CharSequence) o, true);
     }
 
+    @Override
     public String toString() {
         return value.toString();
     }

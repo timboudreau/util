@@ -23,10 +23,9 @@
  */
 package com.mastfrog.util.collections;
 
+import com.mastfrog.util.collections.HeteroMap.Key;
 import com.mastfrog.util.preconditions.Checks;
 import com.mastfrog.util.strings.Strings;
-import com.mastfrog.util.collections.HeteroMap.Key;
-
 import java.util.*;
 
 /**
@@ -69,6 +68,7 @@ public final class HeteroMap implements Iterable<Map.Entry<Key<?>, Object>> {
         return map.isEmpty();
     }
 
+    @Override
     public String toString() {
         return '{' + Strings.join(',', map.entrySet()) + '}';
     }

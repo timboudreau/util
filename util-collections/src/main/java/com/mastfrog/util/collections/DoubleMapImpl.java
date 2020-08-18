@@ -98,6 +98,7 @@ final class DoubleMapImpl<T> implements DoubleMap<T> {
         }
     }
 
+    @Override
     public void putAll(DoubleMap<T> map) {
         if (map == this || map.isEmpty()) {
             return;
@@ -339,6 +340,7 @@ final class DoubleMapImpl<T> implements DoubleMap<T> {
         return keySet.getAsDouble(index);
     }
 
+    @Override
     public final boolean visitMiddleOut(double min, double max, DoubleMapPredicate<T> c) {
         IntMap<T> targets = IntMap.create(20);
         int count = valuesBetween(min, max, (int index, double value, T object) -> {
@@ -415,6 +417,7 @@ final class DoubleMapImpl<T> implements DoubleMap<T> {
         return (last - first) + 1;
     }
 
+    @Override
     public void clear() {
         keySet.clear();
         // Avoid leaking

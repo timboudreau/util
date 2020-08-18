@@ -543,6 +543,7 @@ class ArrayBinarySetMutable<T> extends AbstractSet<T> {
             return objs[++ix];
         }
 
+        @Override
         public String toString() {
             return "It over " + ArrayBinarySetMutable.this + " at " + ix + " hasNext()? " + hasNext();
         }

@@ -1,13 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package com.mastfrog.util.collections;
 
 import com.mastfrog.util.cache.MapSupplier;
-import com.mastfrog.util.collections.CollectionUtils;
-import com.mastfrog.util.collections.MapFactory;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.HashMap;
@@ -80,6 +74,7 @@ public enum MapFactories implements MapFactory {
      * similar
      * @return A map
      */
+    @Override
     public <T, R> Map<T, R> createMap(int initialSize, boolean threadSafe) {
         Map<T, R> result;
         switch (this) {
@@ -126,6 +121,7 @@ public enum MapFactories implements MapFactory {
         }
     }
 
+    @Override
     public boolean isMapBased() {
         return hasKeyReference();
     }

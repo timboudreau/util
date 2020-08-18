@@ -23,8 +23,8 @@
  */
 package com.mastfrog.util.collections;
 
-import com.mastfrog.util.strings.Strings;
 import static com.mastfrog.util.collections.CollectionUtils.toList;
+import com.mastfrog.util.strings.Strings;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Collection;
@@ -53,7 +53,7 @@ class ArrayBinaryMap<T, R> implements Map<T, R> {
 
     class Keys extends ArrayBinarySetMutable<T> {
 
-        public Keys(Comparator<? super T> comp, int initialCapacity, Class<T> type) {
+        Keys(Comparator<? super T> comp, int initialCapacity, Class<T> type) {
             super(true, comp, initialCapacity, type);
         }
 
@@ -170,6 +170,7 @@ class ArrayBinaryMap<T, R> implements Map<T, R> {
         return keys;
     }
 
+    @Override
     public String toString() {
         StringBuilder result = new StringBuilder(getClass().getSimpleName()).append('@').append(
                 Integer.toHexString(System.identityHashCode(this)))
@@ -205,7 +206,7 @@ class ArrayBinaryMap<T, R> implements Map<T, R> {
 
         private final int index;
 
-        public En(int index) {
+        En(int index) {
             this.index = index;
         }
 
@@ -250,6 +251,7 @@ class ArrayBinaryMap<T, R> implements Map<T, R> {
             return index + ": " + getKey() + " = " + getValue();
         }
 
+        @Override
         public boolean equals(Object o) {
             if (o == this) {
                 return true;
@@ -263,6 +265,7 @@ class ArrayBinaryMap<T, R> implements Map<T, R> {
             return false;
         }
 
+        @Override
         public int hashCode() {
             return getKey().hashCode() + 23 * getValue().hashCode();
         }

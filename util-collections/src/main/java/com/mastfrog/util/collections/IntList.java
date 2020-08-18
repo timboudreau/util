@@ -341,6 +341,7 @@ public interface IntList extends List<Integer>, Trimmable {
      * @param toIndex Another index >= the first
      * @return A list
      */
+    @Override
     IntList subList(int fromIndex, int toIndex);
 
     /**
@@ -443,6 +444,7 @@ public interface IntList extends List<Integer>, Trimmable {
      *
      * @return An iterator
      */
+    @Override
     PrimitiveIterator.OfInt iterator();
 
     /**

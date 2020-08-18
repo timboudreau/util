@@ -34,6 +34,7 @@ import java.util.function.Supplier;
  */
 abstract class ArraysPool<T> implements Supplier<T> {
 
+    @Override
     public abstract T get();
 
     public abstract void dispose(T arr);
@@ -50,7 +51,7 @@ abstract class ArraysPool<T> implements Supplier<T> {
 
         private final int length;
 
-        public LongArraySupplier(int length) {
+        LongArraySupplier(int length) {
             this.length = length;
         }
 

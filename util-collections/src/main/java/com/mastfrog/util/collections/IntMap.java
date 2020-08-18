@@ -69,6 +69,7 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
      * @param key The key
      * @return Whether it is present or not
      */
+    @Override
     boolean containsKey(int key);
 
     /**
@@ -303,6 +304,7 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
      * @param key A key
      * @return An index or -1
      */
+    @Override
     int indexOf(int key);
 
     /**
@@ -538,6 +540,7 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
      *
      * @param toRemove A set of indices which must be between 0 and size()
      */
+    @Override
     int removeIndices(IntSet toRemove);
 
     /**
@@ -546,6 +549,7 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
      * @param index An index between 0 and size()
      * @return The key at that index
      */
+    @Override
     int key(int index);
 
     /**

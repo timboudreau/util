@@ -41,7 +41,7 @@ class ConvertedMap<From, T, R, F2 extends From> implements Map<From, R> {
     private final Map<T, R> delegate;
     private final Converter<T, F2> converter;
 
-    public ConvertedMap(Class<F2> from, Map<T, R> delegate, Converter<T, F2> converter) {
+    ConvertedMap(Class<F2> from, Map<T, R> delegate, Converter<T, F2> converter) {
         this.from = from;
         this.delegate = delegate;
         this.converter = converter;
@@ -175,6 +175,7 @@ class ConvertedMap<From, T, R, F2 extends From> implements Map<From, R> {
         return h;
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(getClass().getName()).append(System.identityHashCode(this)).append("from=")
                 .append(from.getName()).append(", converter=").append(converter).append(",entries={");
@@ -188,7 +189,7 @@ class ConvertedMap<From, T, R, F2 extends From> implements Map<From, R> {
 
         private final Map.Entry<T, R> real;
 
-        public En(Entry<T, R> real) {
+        En(Entry<T, R> real) {
             this.real = real;
         }
 

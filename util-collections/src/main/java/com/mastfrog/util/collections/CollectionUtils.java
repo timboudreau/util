@@ -24,14 +24,12 @@
 package com.mastfrog.util.collections;
 
 import com.mastfrog.abstractions.list.LongResolvable;
+import com.mastfrog.util.collections.MapBuilder2.HashingMapBuilder;
+import com.mastfrog.util.collections.Trimmable.TrimmableSet;
 import com.mastfrog.util.preconditions.Checks;
 import static com.mastfrog.util.preconditions.Checks.notNull;
 import com.mastfrog.util.strings.Strings;
-import com.mastfrog.util.collections.MapBuilder2.HashingMapBuilder;
-import com.mastfrog.util.collections.Trimmable.TrimmableSet;
 import java.lang.ref.Reference;
-//import com.mastfrog.util.tree.BitSetSet;
-//import com.mastfrog.util.tree.Indexed;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -629,9 +627,7 @@ public final class CollectionUtils {
     @SafeVarargs
     public static <T> Set<T> mutableSetOf(T... args) {
         Set<T> result = new LinkedHashSet<>();
-        for (T t : args) {
-            result.add(t);
-        }
+        result.addAll(Arrays.asList(args));
         return result;
     }
 
@@ -1099,7 +1095,7 @@ public final class CollectionUtils {
         private final Class<R> type;
 
         @SuppressWarnings("unchecked")
-        public ReifyingConverter(Class<? super T> type) {
+         ReifyingConverter(Class<? super T> type) {
             this.type = (Class<R>) type;
         }
 
@@ -1989,6 +1985,7 @@ public final class CollectionUtils {
             }
         }
 
+        @Override
         public T getIfHasNext() {
             synchronized (this) {
                 if (iter.hasNext()) {
@@ -2012,7 +2009,7 @@ public final class CollectionUtils {
         private final T[] items;
         private int ix = 0;
 
-        public ArrayIterator(T[] items) {
+        ArrayIterator(T[] items) {
             this.items = items;
         }
 
@@ -2037,7 +2034,7 @@ public final class CollectionUtils {
         private final T[] items;
         private int ix;
 
-        public ReverseArrayIterator(T[] items) {
+        ReverseArrayIterator(T[] items) {
             this.items = items;
             ix = items.length - 1;
         }
@@ -2107,7 +2104,7 @@ public final class CollectionUtils {
 
         private final Iterator<T> iter;
 
-        public IteratorIterable(Iterator<T> iter) {
+        IteratorIterable(Iterator<T> iter) {
             this.iter = iter;
         }
 
@@ -2130,7 +2127,7 @@ public final class CollectionUtils {
 
         private final Enumeration<T> en;
 
-        public EnumIterable(Enumeration<T> en) {
+        EnumIterable(Enumeration<T> en) {
             this.en = en;
         }
 
@@ -2148,7 +2145,7 @@ public final class CollectionUtils {
 
         private final Enumeration<T> enumeration;
 
-        public EnumIterator(Enumeration<T> enumeration) {
+        EnumIterator(Enumeration<T> enumeration) {
             this.enumeration = enumeration;
         }
 
@@ -2178,7 +2175,7 @@ public final class CollectionUtils {
         private final T object;
         private boolean done;
 
-        public SingletonIterator(T object) {
+        SingletonIterator(T object) {
             this.object = object;
         }
 
@@ -2232,7 +2229,7 @@ public final class CollectionUtils {
 
         private final int[] vals;
 
-        public IntArrayIterator(int[] vals) {
+        IntArrayIterator(int[] vals) {
             this.vals = vals;
         }
         int ix = 0;
@@ -2265,7 +2262,7 @@ public final class CollectionUtils {
         private final long[] vals;
         private int ix = 0;
 
-        public LongArrayIterator(long[] vals) {
+        LongArrayIterator(long[] vals) {
             this.vals = vals;
         }
 
@@ -2297,7 +2294,7 @@ public final class CollectionUtils {
 
         private final int[] vals;
 
-        public ArrayInterator(int[] vals) {
+        ArrayInterator(int[] vals) {
             this.vals = vals;
         }
         int ix = 0;
@@ -2318,7 +2315,7 @@ public final class CollectionUtils {
 
         private final long[] vals;
 
-        public ArrayLongerator(long[] vals) {
+        ArrayLongerator(long[] vals) {
             this.vals = vals;
         }
         int ix = 0;
@@ -2334,3 +2331,5 @@ public final class CollectionUtils {
         }
     }
 }
+//import com.mastfrog.util.tree.BitSetSet;
+//import com.mastfrog.util.tree.Indexed;

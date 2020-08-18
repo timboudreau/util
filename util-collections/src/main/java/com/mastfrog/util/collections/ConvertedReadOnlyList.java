@@ -41,7 +41,7 @@ final class ConvertedReadOnlyList<T, R> implements List<R> {
     private final Function<? super T, ? extends R> converter;
     private final List<? extends T> list;
 
-    public ConvertedReadOnlyList(Function<? super T, ? extends R> converter, List<? extends T> list) {
+    ConvertedReadOnlyList(Function<? super T, ? extends R> converter, List<? extends T> list) {
         this.converter = converter;
         this.list = list;
     }
@@ -76,7 +76,7 @@ final class ConvertedReadOnlyList<T, R> implements List<R> {
 
         private final Iterator<? extends T> it;
 
-        public CVIT(Iterator<? extends T> it) {
+        CVIT(Iterator<? extends T> it) {
             this.it = it;
         }
 
@@ -264,7 +264,7 @@ final class ConvertedReadOnlyList<T, R> implements List<R> {
 
         private final ListIterator<? extends T> it;
 
-        public CVLI(ListIterator<? extends T> it) {
+        CVLI(ListIterator<? extends T> it) {
             this.it = it;
         }
 

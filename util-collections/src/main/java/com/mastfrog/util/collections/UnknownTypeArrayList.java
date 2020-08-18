@@ -37,7 +37,7 @@ class UnknownTypeArrayList extends AbstractList<Object> {
 
     private final Object array;
 
-    public UnknownTypeArrayList(Object array) {
+    UnknownTypeArrayList(Object array) {
         this.array = notNull("array", array);
         if (!array.getClass().isArray()) {
             throw new IllegalArgumentException("Not an array: " + array);

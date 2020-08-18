@@ -23,8 +23,8 @@
  */
 package com.mastfrog.util.collections;
 
-import static com.mastfrog.util.preconditions.Checks.notNull;
 import static com.mastfrog.util.collections.CollectionUtils.transform;
+import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.lang.reflect.Array;
 import java.util.*;
 
@@ -127,6 +127,7 @@ final class MultiList<T> extends AbstractList<T> {
         return result;
     }
 
+    @Override
     public boolean equals(Object o) {
         if (o == this) {
             return true;

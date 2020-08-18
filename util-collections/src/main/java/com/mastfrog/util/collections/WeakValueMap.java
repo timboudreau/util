@@ -309,7 +309,7 @@ final class WeakValueMap<K, V> extends AbstractMap<K, V> implements TrimmableMap
         private final K key;
         private final V value;
 
-        public E(K key, V value) {
+        E(K key, V value) {
             this.key = key;
             this.value = value;
         }
@@ -332,6 +332,7 @@ final class WeakValueMap<K, V> extends AbstractMap<K, V> implements TrimmableMap
             return this.value;
         }
 
+        @Override
         public final String toString() {
             return key + "=" + value;
         }

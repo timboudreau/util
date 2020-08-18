@@ -36,7 +36,7 @@ final class Pair<A, B> {
     public final A a;
     public final B b;
 
-    public Pair(A a, B b) {
+    Pair(A a, B b) {
         this.a = a;
         this.b = b;
     }
@@ -67,6 +67,7 @@ final class Pair<A, B> {
         return Objects.equals(this.b, other.b);
     }
 
+    @Override
     public String toString() {
         return a + "," + b;
     }

@@ -44,7 +44,7 @@ final class IdentityList<T> implements List<T> {
 
     private final List<Identity<T>> l = new ArrayList<>();
 
-    public IdentityList() {
+    IdentityList() {
     }
 
     private IdentityList(boolean ignored, List<Identity<T>> l) {
@@ -53,7 +53,7 @@ final class IdentityList<T> implements List<T> {
         this.l.addAll(l);
     }
 
-    public IdentityList(Collection<? extends T> c) {
+    IdentityList(Collection<? extends T> c) {
         for (T t : c) {
             add(t);
         }

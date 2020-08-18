@@ -16,7 +16,7 @@ final class ReversedList<T> implements List<T> {
 
     private final List<T> del;
 
-    public ReversedList(List<T> del) {
+    ReversedList(List<T> del) {
         Checks.notNull("del", del);
         this.del = del;
     }
@@ -197,11 +197,11 @@ final class ReversedList<T> implements List<T> {
         private int ix;
         private final int size;
 
-        public ReversedIterator(List<T> l) {
+        ReversedIterator(List<T> l) {
             this(l, l.size());
         }
 
-        public ReversedIterator(List<T> l, int ix) {
+        ReversedIterator(List<T> l, int ix) {
             this.l = l;
             this.ix = ix;
             this.size = l.size();

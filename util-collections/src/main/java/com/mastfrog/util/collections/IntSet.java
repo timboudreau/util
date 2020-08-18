@@ -128,7 +128,7 @@ public abstract class IntSet implements Set<Integer>, Cloneable, Trimmable {
      */
     public static IntSet create(int capacity) {
         int targetBytes = capacity / Long.BYTES;
-        if (targetBytes > 1073741824) {
+        if (targetBytes > 1_073_741_824) {
             return new IntSetArray(capacity / 20);
         }
         return new IntSetImpl(capacity);
@@ -144,13 +144,13 @@ public abstract class IntSet implements Set<Integer>, Cloneable, Trimmable {
      */
     public static IntSet create(int minValue, int maxValue) {
         int len = Math.abs(maxValue - minValue) + 1;
-        if (len > 1073741824) {
+        if (len > 1_073_741_824) {
             return new IntSetArray(len / 20);
         }
         if (minValue < 0) {
             return new IntSetArray(len);
         }
-        if (minValue > 32768) {
+        if (minValue > 32_768) {
             return new IntSetArray(len / 4);
         }
         return new IntSetImpl(len);
