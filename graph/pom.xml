@@ -8,8 +8,8 @@
         <version>2.7.0</version>
         <relativePath/>
     </parent>
+    <version>2.7.0.1</version>
     <artifactId>graph</artifactId>
-    <!--<packaging>nbm</packaging>-->
     <url>https://github.com/timboudreau/util</url>
     <scm>
         <url>https://github.com/timboudreau/util</url>
@@ -31,24 +31,6 @@
         <name>Mastfrog Technologies</name>
         <url>https://mastfrog.com</url>
     </organization>
-    <build>
-        <plugins>
-            <!--            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>nbm-maven-plugin</artifactId>
-                <extensions>true</extensions>
-                <configuration>
-                    <cluster>antlr</cluster>
-                    <moduleType>autoload</moduleType>
-                    <useOSGiDependencies>false</useOSGiDependencies>
-                    <publicPackages>
-                        <publicPackage>com.mastfrog.graph</publicPackage>
-                        <publicPackage>com.mastfrog.graph.algorithm</publicPackage>
-                    </publicPackages>
-                </configuration>
-            </plugin>-->
-        </plugins>
-    </build>
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>

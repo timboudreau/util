@@ -985,6 +985,7 @@ final class BitSetGraph implements IntGraph {
         Iterator<IntPath> iter = pathsBetween(src, target).iterator();
         return iter.hasNext() ? Optional.of(iter.next()) : Optional.empty();
     }
+
     /**
      * Get the shortest path between two nodes in the graph. If multiple paths
      * of the shortest length exist, one will be returned, but which is
@@ -1019,15 +1020,18 @@ final class BitSetGraph implements IntGraph {
             seenPairs.add(src, target);
             paths.add(new IntPath().add(src).add(target));
         }
-        pathsTo(src, target, base, paths, seenPairs);
+        pathsTo(true, src, target, base, paths, seenPairs);
         Collections.sort(paths);
         return paths;
     }
 
-    private void pathsTo(int src, int target, IntPath base, List<? super IntPath> paths, PairSet seenPairs) {
+    private void pathsTo(boolean bottom, int src, int target, IntPath base, List<? super IntPath> paths, PairSet seenPairs) {
         if (src == target) {
-            paths.add(base.copy().add(target));
-            return;
+            if (!bottom) {
+                return;
+            } else {
+                paths.add(base.copy().add(target));
+            }
         }
         outboundEdges[src].forEachSetBitAscending(bit -> {
             if (seenPairs.contains(src, bit)) {
@@ -1039,7 +1043,7 @@ final class BitSetGraph implements IntGraph {
                 paths.add(found);
             } else {
                 if (!base.contains(bit)) {
-                    pathsTo(bit, target, base.copy().add(bit), paths, seenPairs);
+                    pathsTo(false, bit, target, base.copy().add(bit), paths, seenPairs);
                 }
             }
         });
@@ -1074,7 +1078,7 @@ final class BitSetGraph implements IntGraph {
                 paths.add(found);
             } else {
                 if (!base.contains(bit)) {
-                    pathsTo(bit, target, base.copy().add(bit), paths, seenPairs);
+                    pathsTo(false, bit, target, base.copy().add(bit), paths, seenPairs);
                 }
             }
         });
@@ -1206,8 +1210,8 @@ final class BitSetGraph implements IntGraph {
             Bits oldInbound = inboundEdges[i];
             BitSet newOut = new BitSet(oldOutbound.cardinality());
             BitSet newIn = new BitSet(oldInbound.cardinality());
-            newOutbound[i-cumulativeRemoved] = newOut;
-            newInbound[i-cumulativeRemoved] = newIn;
+            newOutbound[i - cumulativeRemoved] = newOut;
+            newInbound[i - cumulativeRemoved] = newIn;
             oldOutbound.forEachSetBitAscending(bit -> {
                 boolean isRemoved = Arrays.binarySearch(finalItems, bit) >= 0;
                 if (isRemoved) {

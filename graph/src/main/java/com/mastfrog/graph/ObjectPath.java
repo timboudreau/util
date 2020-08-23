@@ -43,6 +43,22 @@ public final class ObjectPath<T> implements Iterable<T>, Comparable<ObjectPath> 
         this.indexed = indexed;
     }
 
+    public ObjectPath prepending(T obj) {
+        int ix = indexed.indexOf(obj);
+        if (ix < 0) {
+            return null;
+        }
+        return new ObjectPath<>(ip.prepending(ix), indexed);
+    }
+
+    public ObjectPath appending(T obj) {
+        int ix = indexed.indexOf(obj);
+        if (ix < 0) {
+            return null;
+        }
+        return new ObjectPath<>(ip.appending(ix), indexed);
+    }
+
     public int size() {
         return ip.size();
     }

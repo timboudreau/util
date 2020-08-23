@@ -33,6 +33,26 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
         return new IntPath(size, items);
     }
 
+    public IntPath prepending(int value) {
+        int[] nue = new int[size + 1];
+        System.arraycopy(items, 0, nue, 1, items.length);
+        nue[0] = value;
+        return new IntPath(nue.length, nue);
+    }
+
+    public IntPath appending(int value) {
+        int[] nue = new int[size+1];
+        System.arraycopy(items, 0, nue, 0, items.length);
+        items[size] = value;
+        return new IntPath(nue.length, nue);
+    }
+
+    public void forEachInt(IntConsumer c) {
+        for (int i = 0; i < size; i++) {
+            c.accept(items[i]);
+        }
+    }
+
     public int first() {
         if (size == 0) {
             throw new IndexOutOfBoundsException("Empty");

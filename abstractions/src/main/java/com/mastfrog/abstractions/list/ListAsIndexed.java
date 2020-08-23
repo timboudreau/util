@@ -35,7 +35,7 @@ final class ListAsIndexed<T> implements IndexedResolvable<T> {
 
     private final List<T> list;
 
-    public ListAsIndexed(List<T> list) {
+    ListAsIndexed(List<T> list) {
         this.list = list;
     }
 
