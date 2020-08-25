@@ -148,6 +148,7 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
         System.arraycopy(values, 0, items, size, values.length);
         size += values.length;
         contents = null;
+        cachedHashCode = 0;
         return this;
     }
 
@@ -155,6 +156,7 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
         growIfNeeded();
         items[size++] = item;
         contents = null;
+        cachedHashCode = 0;
         return this;
     }
 
@@ -169,6 +171,7 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
         System.arraycopy(other.items, 0, items, size, other.size());
         size = targetSize;
         contents = null;
+        cachedHashCode = 0;
         return this;
     }
 
@@ -209,6 +212,7 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
         size = index;
         append(other);
         contents = null;
+        cachedHashCode = 0;
         return this;
     }
 
@@ -410,17 +414,29 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
     public boolean equals(Object o) {
         if (o == this) {
             return true;
-        } else if (o == null) {
+        } else if (o == null || !(o instanceof IntPath)) {
             return false;
-        } else if (o instanceof IntPath) {
-            return Arrays.equals(items(), ((IntPath) o).items());
         }
-        return false;
+        IntPath ip = (IntPath) o;
+        if (size != ip.size || hashCode() != ip.hashCode()) {
+            return false;
+        }
+
+        return arraysEquals(items, 0, size, ip.items, 0, size);
     }
+
+    private int cachedHashCode = 0;
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(items());
+        if (cachedHashCode != 0) {
+            return cachedHashCode;
+        }
+        int result = 1;
+        for (int i = 0; i < size; i++) {
+            result = 31 * result + this.items[i];
+        }
+        return cachedHashCode = result;
     }
 
     @Override

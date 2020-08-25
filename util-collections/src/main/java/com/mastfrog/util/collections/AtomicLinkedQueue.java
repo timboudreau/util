@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util.thread;
+package com.mastfrog.util.collections;
 
 import com.mastfrog.util.preconditions.Checks;
 import static com.mastfrog.util.preconditions.Checks.notNull;
@@ -54,12 +54,45 @@ import java.util.stream.StreamSupport;
  * Note that iteration occurs in reverse order. Identity-based removal
  * operations exist; under concurrency they may spuriously fail, but will report
  * that to the caller with their result value, and the caller may retry.
+ * </p>
+ * Typical usage is to collect items that are applied to some work which will
+ * be scheduled in the future - a rough sketch
+ * <pre>
+ *
+ * class WorkDoer implements Runnable {
+ *
+ * private final AtomicLinkedQueue&lt;Listener&gt; listeners = new AtomicLinkedQueue&lt;&gt;();
+ * private final ScheduledExecutorService svc = Executors.newScheduledThreadPool(5);
+ * private final AtomicBoolean scheduled = new AtomicBoolean();
+ *
+ * void listenToWork(Listener listener) {
+ *     listeners.add(listener);
+ *     if (!scheduled.compareAndSet(false, true)) {
+ *        svc.schedule(this, 200, TimeUnit.MILLISECONDS);
+ *     }
+ * }
+ *
+ * public void run() {
+ *     try {
+ *       List&lt;Listener&gt; all = new ArrayList&lt;&gt;();
+ *       // Since we are atomic, not synchronized, we need to
+ *       // loop to guarantee we catch any items added after we enter here
+ *       do {
+ *         all.clear();
+ *         listeners.drainTo(all); // listeners is now empty
+ *         all.forEach(listener -> listener.doSomething());
+ *       } (while !all.isEmpty());
+ *     } finally {
+ *        scheduled.set(false);
+ *     }
+ * }
+ * }
+ * </pre>
+ * <i>This class originally appeared in <code>com.mastfrog.util.thread</code>;
+ * the version there will not be further maintained.</i>
  *
  * @author Tim Boudreau
- * @deprecated Moved to a more appropriate place, <code>com.mastfrog.util.collections.AtomicLinkedQueue</code>.
- * This version will eventually be removed.
  */
-@Deprecated
 public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
 
     // A basic linked list structure, where the head is found by
@@ -155,17 +188,6 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
      */
     public AtomicLinkedQueue onAdd(Runnable run) {
         this.onAdd = run;
-        return this;
-    }
-
-    /**
-     * Convenience method to trigger a OneThreadLatch on add.
-     *
-     * @param latch The latch
-     * @return this
-     */
-    public AtomicLinkedQueue onAdd(OneThreadLatch latch) {
-        this.onAdd = latch::releaseOne;
         return this;
     }
 

@@ -3,6 +3,7 @@ package com.mastfrog.bits.collections;
 import com.mastfrog.abstractions.list.IndexedResolvable;
 import com.mastfrog.bits.Bits;
 import com.mastfrog.bits.MutableBits;
+import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.util.AbstractSet;
 import java.util.BitSet;
 import java.util.Collection;
@@ -25,7 +26,7 @@ public final class BitSetSet<T> extends AbstractSet<T> implements Set<T> {
     private final IndexedResolvable<? extends T> data;
 
     public BitSetSet(IndexedResolvable<? extends T> data) {
-        this(data, MutableBits.create(data.size()));
+        this(notNull("data", data), MutableBits.create(data.size()));
     }
 
     public BitSetSet(IndexedResolvable<? extends T> data, BitSet set) {
@@ -33,7 +34,7 @@ public final class BitSetSet<T> extends AbstractSet<T> implements Set<T> {
     }
 
     public BitSetSet(IndexedResolvable<? extends T> data, Bits set) {
-        this.data = data;
+        this.data = notNull("data", data);
         this.set = set;
     }
 

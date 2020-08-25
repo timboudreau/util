@@ -25,6 +25,7 @@ package com.mastfrog.graph;
 
 import com.mastfrog.abstractions.list.IndexedResolvable;
 import com.mastfrog.bits.collections.BitSetSet;
+import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.lang.reflect.Array;
 import java.util.BitSet;
 import java.util.Iterator;
@@ -44,7 +45,7 @@ public final class ObjectPath<T> implements Iterable<T>, Comparable<ObjectPath> 
 
     ObjectPath(IntPath ip, IndexedResolvable<? extends T> indexed) {
         this.ip = ip;
-        this.indexed = indexed;
+        this.indexed = notNull("indexed", indexed);
     }
 
     /**
@@ -292,7 +293,7 @@ public final class ObjectPath<T> implements Iterable<T>, Comparable<ObjectPath> 
             return false;
         } else if (o instanceof ObjectPath<?>) {
             ObjectPath<?> other = (ObjectPath<?>) o;
-            return other.ip.equals(ip) && other.indexed.toList().equals(indexed.toList());
+            return other.ip.equals(ip);
         }
         return false;
     }

@@ -49,12 +49,16 @@ final class BitSetStringGraph implements StringGraph {
         assert a.equals(b) : "Array is not sorted: " + a;
         return true;
     }
-
-    Set<String> toSet(Bits bits) {
+    
+    IndexedImpl indexedImpl() {
         if (indexedImpl == null) {
             indexedImpl = new IndexedImpl();
         }
-        return new BitSetSet<>(indexedImpl, bits);
+        return indexedImpl;
+    }
+
+    Set<String> toSet(Bits bits) {
+        return new BitSetSet<>(indexedImpl(), bits);
     }
 
     Set<String> newSet() {
@@ -67,7 +71,7 @@ final class BitSetStringGraph implements StringGraph {
         List<IntPath> raw = tree.pathsBetween(aix, bix);
         List<ObjectPath<String>> result = new ArrayList<>(raw.size());
         for (IntPath ip : raw) {
-            ObjectPath<String> op = new ObjectPath<String>(ip, indexedImpl);
+            ObjectPath<String> op = new ObjectPath<>(ip, indexedImpl());
             result.add(op);
         }
         return result;

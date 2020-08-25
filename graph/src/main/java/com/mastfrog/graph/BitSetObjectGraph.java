@@ -59,7 +59,7 @@ class BitSetObjectGraph<T> implements ObjectGraph<T> {
         List<IntPath> raw = graph.pathsBetween(aix, bix);
         List<ObjectPath<T>> result = new ArrayList<>(raw.size());
         for (IntPath ip : raw) {
-            ObjectPath<T> op = new ObjectPath<T>(ip, indexed);
+            ObjectPath<T> op = new ObjectPath<>(ip, indexed);
             result.add(op);
         }
         return result;
