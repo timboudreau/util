@@ -8,6 +8,7 @@
         <version>2.7.0</version>
         <relativePath/>
     </parent>
+    <version>2.7.0.1</version>
     <artifactId>subscription</artifactId>
     <url>https://github.com/timboudreau/util</url>
     <scm>

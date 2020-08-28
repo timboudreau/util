@@ -195,9 +195,10 @@ final class SubscribersStoreImpl<K, C> implements SubscribersStore<K, C> {
         @Override
         public Collection<? extends K> subscribedKeys() {
             Set<K> keys = new LinkedHashSet<>(map.size());
-            for (Map.Entry<K, Set<C>> e : map.entrySet()) {
-                if (!e.getValue().isEmpty()) {
-                    keys.add(e.getKey());
+            for (K key : keys) {
+                Set<C> val = map.get(key);
+                if (!val.isEmpty()) {
+                    keys.add(key);
                 }
             }
             return keys;
