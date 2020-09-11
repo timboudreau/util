@@ -5,15 +5,13 @@ import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Test;
 import com.mastfrog.bits.Bits;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  *
@@ -136,7 +134,7 @@ public class BitSetGraphTest {
             assertEquals(0, added.size());
             assertFalse(removed.size() == 0);
             for (Edg e : expectedRemoved) {
-                assertTrue("Not removed: " + e, removed.containsEdge(e.from, e.to));
+                assertTrue(removed.containsEdge(e.from, e.to), "Not removed: " + e);
             }
         });
     }
@@ -145,7 +143,7 @@ public class BitSetGraphTest {
     public void sanityCheckGraph() {
         PairSet ps = new PairSet(graph.size());
         for (int[] edge : EDGES_1) {
-            assertTrue("Edge not present: " + edge[0] + "->" + edge[1], graph.containsEdge(edge[0], edge[1]));
+            assertTrue(graph.containsEdge(edge[0], edge[1]), "Edge not present: " + edge[0] + "->" + edge[1]);
             ps.add(edge[0], edge[1]);
         }
     }
@@ -188,7 +186,7 @@ public class BitSetGraphTest {
             BitSet closure = computeClosureSlow(i, EDGES_1);
             if (closure.cardinality() > 0) {
                 Bits graphClosure = graph.closureOf(i);
-                assertEquals("Closures for " + i + " differ", closure, graphClosure.toBitSet());
+                assertEquals(closure, graphClosure.toBitSet(), "Closures for " + i + " differ");
             }
         }
     }
@@ -199,7 +197,7 @@ public class BitSetGraphTest {
             BitSet closure = computeReverseClosureSlow(i, EDGES_1);
             if (closure.cardinality() > 0) {
                 Bits graphClosure = graph.reverseClosureOf(i);
-                assertEquals("Closures for " + i + " differ", closure, graphClosure.toBitSet());
+                assertEquals(closure, graphClosure.toBitSet(), "Closures for " + i + " differ");
             }
         }
     }
@@ -250,8 +248,10 @@ public class BitSetGraphTest {
                 last.pop();
             }
         });
-        assertEquals("Visited" + foundPairs + " but should have visited " + expectedPairs,
-                expectedUnvisited, testPairs);
+        assertEquals(
+                expectedUnvisited, testPairs,
+                "Visited" + foundPairs + " but should have visited "
+                + expectedPairs);
     }
 
     private BitSet computeClosureSlow(int of, int[][] edges) {
@@ -303,17 +303,17 @@ public class BitSetGraphTest {
         BitSet inverted = BitSetUtils.invert(set);
         for (int i = 0; i < 100; i++) {
             if (i % 2 == 1) {
-                assertFalse("Should not be set: " + i, inverted.get(i));
+                assertFalse(inverted.get(i), "Should not be set: " + i);
             } else {
-                assertTrue("Should be set: " + i, inverted.get(i));
+                assertTrue(inverted.get(i), "Should be set: " + i);
             }
         }
         for (int i = 100; i < 140; i++) {
-            assertFalse("Bits after end should not be set but " + i + " is, in " + inverted, inverted.get(i));
+            assertFalse(inverted.get(i), "Bits after end should not be set but " + i + " is, in " + inverted);
         }
     }
 
-    @Before
+    @BeforeEach
     public void buildGraph() {
         graph = IntGraph.builder(5).addEdges(EDGES_1).build();
         cyclesGraph = IntGraph.builder(5).addEdges(EDGES_WITH_CYCLES).build();

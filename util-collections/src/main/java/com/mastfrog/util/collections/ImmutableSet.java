@@ -111,7 +111,11 @@ final class ImmutableSet<T> implements Set<T> {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> Set<T> of(boolean identity, Collection<? extends T> objs) {
+        if (objs instanceof ImmutableSet<?>) {
+            return (Set<T>) objs;
+        }
         switch (objs.size()) {
             case 0:
                 return Collections.emptySet();

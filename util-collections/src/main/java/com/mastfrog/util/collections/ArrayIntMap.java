@@ -67,8 +67,8 @@ final class ArrayIntMap<T> implements IntMap<T> {
     private boolean addSuppliedValues;
 
     private ArrayIntMap(ArrayIntMap<T> other) {
-        keys = Arrays.copyOf(other.keys, other.keys.length);
-        vals = Arrays.copyOf(other.vals, other.vals.length);
+        keys = Arrays.copyOf(other.keys, Math.max(16, other.size()));
+        vals = Arrays.copyOf(other.vals, Math.max(16, other.size()));
         last = other.last;
         emptyValue = other.emptyValue;
         resort = other.resort;
@@ -93,6 +93,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
         if (minCapacity <= 0) {
             throw new IllegalArgumentException("Must be > 0");
         }
+        minCapacity = Math.max(1, minCapacity);
         this.addSuppliedValues = addSuppliedValues;
         this.emptyValue = emptyValue;
         keys = new int[minCapacity];
@@ -392,6 +393,7 @@ final class ArrayIntMap<T> implements IntMap<T> {
         return Arrays.copyOf(vals, last + 1);
     }
 
+    @Override
     public ArrayIntMap<T> copy() {
         return new ArrayIntMap<>(this);
     }

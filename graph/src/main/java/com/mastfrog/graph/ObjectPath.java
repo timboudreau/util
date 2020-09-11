@@ -231,6 +231,15 @@ public final class ObjectPath<T> implements Iterable<T>, Comparable<ObjectPath> 
         return new ObjectPath<>(ip.reversed(), indexed);
     }
 
+    /**
+     * Get the IntPath underlying this ObjectPath.
+     *
+     * @return An IntPath
+     */
+    public IntPath toIntPath() {
+        return ip;
+    }
+
     public T start() {
         if (ip.isEmpty()) {
             return null;
@@ -289,13 +298,11 @@ public final class ObjectPath<T> implements Iterable<T>, Comparable<ObjectPath> 
     public boolean equals(Object o) {
         if (o == this) {
             return true;
-        } else if (o == null) {
+        } else if (o == null || !(o instanceof ObjectPath<?>)) {
             return false;
-        } else if (o instanceof ObjectPath<?>) {
-            ObjectPath<?> other = (ObjectPath<?>) o;
-            return other.ip.equals(ip);
         }
-        return false;
+        ObjectPath<?> other = (ObjectPath<?>) o;
+        return other.ip.equals(ip);
     }
 
     @Override

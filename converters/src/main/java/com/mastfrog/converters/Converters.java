@@ -80,7 +80,8 @@ public final class Converters {
 
     @Override
     public String toString() {
-        return graph().toString();
+        return graph().toString() + " with " + entries.size()
+                + " entries " + entries;
     }
 
     /**
@@ -192,6 +193,20 @@ public final class Converters {
         public Object apply(Object t) {
             return t;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            return o == this;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
+        }
+
+        public String toString() {
+            return "(identity)";
+        }
     }
 
     /**
@@ -203,7 +218,7 @@ public final class Converters {
 
         private final List<ObjectPath<Class<?>>> paths;
 
-        public ObjectPathConverter(List<ObjectPath<Class<?>>> paths) {
+        ObjectPathConverter(List<ObjectPath<Class<?>>> paths) {
             this.paths = paths;
         }
 
@@ -430,6 +445,16 @@ public final class Converters {
         @Override
         public String toString() {
             return "(" + pre + "->" + post + ')';
+        }
+
+        public boolean equals(Object o) {
+            if (o == this) {
+                return true;
+            } else if (o == null || !(o.getClass() == ComposedFunction.class)) {
+                return false;
+            }
+            ComposedFunction<?, ?, ?> cf = (ComposedFunction<?, ?, ?>) o;
+            return Objects.equals(pre, cf.pre) && Objects.equals(post, cf.post);
         }
     }
 }

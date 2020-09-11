@@ -4,23 +4,49 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.function.IntConsumer;
 import com.mastfrog.abstractions.list.IndexedResolvable;
+import static com.mastfrog.util.preconditions.Checks.notNull;
+import java.io.Serializable;
 import java.util.BitSet;
+import java.util.Collection;
+import java.util.List;
+import java.util.PrimitiveIterator;
 
 /**
  * A finite path between two elements in a graph.
  *
  * @author Tim Boudreau
  */
-public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
+public final class IntPath implements Comparable<IntPath>, Iterable<Integer>, Serializable {
 
     private static int DEFAULT_SIZE = 12;
     private int[] items;
     private int size;
-    private BitSet contents;
+    private transient BitSet contents;
 
-    private IntPath(int size, int[] items) {
+    IntPath(int size, int[] items) {
         this.size = size;
         this.items = Arrays.copyOf(items, size + DEFAULT_SIZE);
+    }
+
+    IntPath(boolean unsafe, int[] items) {
+        this(items.length, unsafe, items);
+    }
+
+    IntPath(int size, boolean unsafe, int[] items) {
+        this.items = unsafe ? items : Arrays.copyOf(notNull("items", items), items.length);
+        this.size = size;
+        if (!unsafe) {
+            if (size < items.length) {
+                throw new IllegalArgumentException("Size " + size
+                        + " is > array length " + items.length);
+            }
+            for (int i = 0; i < items.length; i++) {
+                if (items[i] < 0) {
+                    throw new IllegalArgumentException("Negative numbers not "
+                            + "allowed");
+                }
+            }
+        }
     }
 
     IntPath(int initialItems) {
@@ -31,8 +57,81 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
         this(DEFAULT_SIZE);
     }
 
+    IntPath(Collection<? extends Integer> ints) {
+        items = new int[ints.size()];
+        Iterator<? extends Integer> iter = ints.iterator();
+        if (iter instanceof PrimitiveIterator.OfInt) {
+            PrimitiveIterator.OfInt pi = (PrimitiveIterator.OfInt) iter;
+            int cursor = 0;
+            while (pi.hasNext()) {
+                items[cursor++] = pi.nextInt();
+            }
+            size = cursor;
+        } else {
+            int cursor = 0;
+            while (iter.hasNext()) {
+                items[cursor++] = notNull("Null at " + (cursor + 1), iter.next());
+            }
+            size = cursor;
+        }
+    }
+
     IntPath copy() {
-        return new IntPath(size, items);
+        IntPath result = new IntPath(size, items);
+        if (contents != null) {
+            result.contents = (BitSet) contents.clone();
+        }
+        return result;
+    }
+
+    IntPath(String ser) {
+        String[] parts = ser.split("\\s*?,\\s*");
+        items = new int[parts.length];
+        int cursor = 0;
+        contents = new BitSet(parts.length);
+        for (int i = 0; i < parts.length; i++) {
+            int val = Integer.parseInt(parts[i]);
+            if (val < 0) {
+                throw new IllegalArgumentException("Path may not contain "
+                        + "negative numbers");
+            }
+            items[cursor++] = val;
+            contents.set(val);
+        }
+        size = cursor;
+    }
+
+    public static IntPath of(Collection<? extends Integer> ints) {
+        return new IntPath(notNull("ints", ints));
+    }
+
+    /**
+     * Creates an IntPath from a comma-delimited list of integers (which may
+     * contain whitespace), such as the output of <code>toString()</code>.
+     *
+     * @param val A string
+     * @return A path
+     * @throws NumberFormatException If the text contains non-comma,
+     * non-whitespace, non-digit characters
+     */
+    public static IntPath parse(String val) {
+        return new IntPath(notNull("val", val));
+    }
+
+    /**
+     * Create a new IntPath of this one concatenated with another.
+     *
+     * @param other The other path
+     * @return A new IntPath
+     */
+    public IntPath appending(IntPath other) {
+        if (other.isEmpty()) {
+            return copy();
+        }
+        int[] nue = Arrays.copyOf(items, size + other.size());
+        int[] append = other.items();
+        System.arraycopy(append, 0, nue, size, other.size());
+        return new IntPath(true, nue);
     }
 
     /**
@@ -71,10 +170,10 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
             throw new IllegalArgumentException("Paths may not contain "
                     + "negative elements: " + value);
         }
-        int[] nue = new int[size + 1];
-        System.arraycopy(items, 0, nue, 0, items.length);
-        items[size] = value;
-        IntPath result = new IntPath(nue.length, nue);
+        int[] nue = items.length > size + 1 ? Arrays.copyOf(items, items.length)
+                : Arrays.copyOf(items, items.length + 1);
+        nue[size] = value;
+        IntPath result = new IntPath(size + 1, true, nue);
         if (contents != null) {
             BitSet newContents = (BitSet) contents.clone();
             newContents.set(value);
@@ -138,6 +237,55 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
         }
     }
 
+    /**
+     * Create an IntPath from an array of ints.
+     *
+     * @param items An array of ints
+     * @return An int path
+     */
+    public static IntPath of(int... items) {
+        return new IntPath(false, items);
+    }
+
+    /**
+     * Create an IntPath from an array of ints, using the passed array directly
+     * rather than copying it.
+     *
+     * @param items An array of ints
+     * @return An int path
+     */
+    public static IntPath ofUnsafe(int... items) {
+        return new IntPath(false, items);
+    }
+
+    /**
+     * Create a builder for int paths.
+     *
+     * @return A builder
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Create a builder for int paths.
+     *
+     * @param first The first element
+     * @return A builder
+     */
+    public static Builder builder(int first) {
+        return new Builder(first);
+    }
+
+    /**
+     * Create a builder initialized from this path.
+     *
+     * @return a builder
+     */
+    public Builder toBuilder() {
+        return new Builder(copy());
+    }
+
     IntPath addAll(int... values) {
         if (values.length == 0) {
             return this;
@@ -176,14 +324,16 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
     }
 
     IntPath trim() {
-        items = Arrays.copyOf(items, size);
+        if (items.length > size) {
+            items = Arrays.copyOf(items, size);
+        }
         return this;
     }
 
     /**
      * Create a new path, lopping off the first element.
      *
-     * @return A new path
+     * @return A new path, or this path if this path is empty
      */
     public IntPath childPath() {
         if (size == 0) {
@@ -203,12 +353,11 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
         if (size == 0) {
             return this;
         }
-        int[] nue = new int[size - 1];
-        System.arraycopy(items, 0, nue, 0, nue.length);
-        return new IntPath(nue.length, nue);
+        int[] nue = Arrays.copyOf(items, size - 1);
+        return new IntPath(nue.length, true, nue);
     }
 
-    IntPath replace(int index, IntPath other) {
+    IntPath replaceFrom(int index, IntPath other) {
         size = index;
         append(other);
         contents = null;
@@ -231,6 +380,79 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
         return result;
     }
 
+    /**
+     * Determine if this path starts with (or is equal to) another path.
+     *
+     * @param other Another path
+     * @return
+     */
+    public boolean startsWith(IntPath other) {
+        if (other.isEmpty() || isEmpty()) {
+            return false;
+        } else if (other == this) {
+            return true;
+        } else if (other.size > size) {
+            return false;
+        }
+        int max = Math.min(size, other.size);
+        for (int i = 0; i < max; i++) {
+            if (get(i) != other.get(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Determine if this path ends with (or is equal to) another path.
+     *
+     * @param other Another path
+     * @return
+     */
+    public boolean endsWith(IntPath other) {
+        if (other.isEmpty() || isEmpty()) {
+            return false;
+        } else if (other == this) {
+            return true;
+        } else if (other.size > size) {
+            return false;
+        }
+        for (int mine = size - 1, theirs = other.size - 1; mine >= 0 && theirs >= 0; mine--, theirs--) {
+            if (get(mine) != other.get(theirs)) {
+                return false;
+            } else if (mine == 0 && theirs != 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Get a subpath.
+     *
+     * @param start The start index, inclusive
+     * @param end The end index, exclusive
+     * @return A path
+     * @throws IllegalArgumentException if the arguments are out of range or
+     * invalid
+     */
+    public IntPath subPath(int start, int end) {
+        if (start >= size || end > size) {
+            throw new IllegalArgumentException(start + ":" + end + " is out of range 0:" + size);
+        } else if (start == 0 && end == size) {
+            return this;
+        } else if (start > end) {
+            throw new IllegalArgumentException("Start > end: " + start + ":" + end);
+        } else if (start < 0 || end < 0) {
+            throw new IllegalArgumentException("Start or end < 0: " + start + ":" + end);
+        } else if (start == end) {
+            return new IntPath(0, true, new int[0]);
+        }
+        int[] result = new int[end - start];
+        System.arraycopy(items, start, result, 0, end - start);
+        return new IntPath(true, result);
+    }
+
     public int start() {
         return size == 0 ? -1 : items[0];
     }
@@ -247,7 +469,9 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
      * @return true if this path contains the passed one
      */
     public boolean contains(IntPath path) {
-        if (path == this) {
+        if (isEmpty() || path.isEmpty()) {
+            return false;
+        } else if (path == this) {
             return true;
         } else if (path.size() > size) {
             return false;
@@ -255,12 +479,15 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
             return path.equals(this);
         } else {
             BitSet ct = contents();
+            if (endsWith(path)) {
+                return true;
+            }
             for (int i = 0; i < path.size; i++) {
                 if (!ct.get(path.get(i))) {
                     return false;
                 }
             }
-            for (int i = 0; i < size - path.size(); i++) {
+            for (int i = 0; i < (size - path.size()); i++) {
                 if (arraysEquals(items, i, i + path.size(), path.items, 0, path.size())) {
                     return true;
                 }
@@ -312,6 +539,50 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
             }
         }
         throw new AssertionError("contents bitset out of sync");
+    }
+
+    /**
+     * Get the first occurrence of the passed value in this path.
+     *
+     * @param from The index to start searching at
+     * @param val An integer path element
+     * @return the index or -1
+     */
+    public int indexOf(int from, int val) {
+        if (!contains(val) || from >= size) {
+            return -1;
+        }
+        for (int i = Math.max(0, from); i < size; i++) {
+            if (get(i) == val) {
+                return i;
+            }
+        }
+        if (from == 0) {
+            throw new AssertionError("contents bitset out of sync");
+        }
+        return -1;
+    }
+
+    /**
+     * Get the last occurrence of the passed value in this path.
+     *
+     * @param from The index to stop searching at
+     * @param val An integer path element
+     * @return the index or -1
+     */
+    public int lastIndexOf(int from, int val) {
+        if (!contains(val) || from < 0) {
+            return -1;
+        }
+        for (int i = from; i >= 0; i--) {
+            if (get(i) == val) {
+                return i;
+            }
+        }
+        if (from == 0) {
+            throw new AssertionError("contents bitset out of sync");
+        }
+        return -1;
     }
 
     /**
@@ -421,8 +692,12 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
         if (size != ip.size || hashCode() != ip.hashCode()) {
             return false;
         }
-
-        return arraysEquals(items, 0, size, ip.items, 0, size);
+        for (int i = 0; i < size; i++) {
+            if (get(i) != ip.get(i)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private int cachedHashCode = 0;
@@ -452,6 +727,45 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
         return sb.toString();
     }
 
+    public final int sum() {
+        int result = 0;
+        for (int i = 0; i < size; i++) {
+            result += items[i];
+        }
+        return result;
+    }
+
+    /**
+     * Create an ObjectPath from this IntPath.
+     *
+     * @param <T> The object type
+     * @param indexed A list of objects
+     * @return An object path
+     */
+    public <T> ObjectPath<T> toObjectPath(List<T> indexed) {
+        return toObjectPath(IndexedResolvable.forList(indexed));
+    }
+
+    /**
+     * Create an ObjectPath from this IntPath.
+     *
+     * @param <T> The object type
+     * @param indexed An array of comparable items
+     * @return An object path
+     */
+    @SafeVarargs // well, more like it doesn't care
+    public final <T extends Comparable<T>> ObjectPath<T> toObjectPath(T... indexed) {
+        return toObjectPath(IndexedResolvable.fromArray(indexed));
+    }
+
+    /**
+     * Create an ObjectPath from this IntPath.
+     *
+     * @param <T> The object type
+     * @param indexed An IndexedResolvable (has static methods to wrap lists,
+     * etc.)
+     * @return An object path
+     */
     public <T> ObjectPath<T> toObjectPath(IndexedResolvable<T> indexed) {
         return new ObjectPath<>(this, indexed);
     }
@@ -480,6 +794,82 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer> {
         @Override
         public Integer next() {
             return get(++pos);
+        }
+    }
+
+    /**
+     * A builder for IntPaths.
+     */
+    public static final class Builder {
+
+        private IntPath result;
+
+        Builder() {
+            result = new IntPath();
+        }
+
+        Builder(int first) {
+            result = new IntPath();
+            result.add(first);
+        }
+
+        Builder(Builder toCopy) {
+            this.result = toCopy.result.copy();
+        }
+
+        Builder(IntPath orig) {
+            result = orig.copy();
+        }
+
+        /**
+         * Make a copy of this builder and its internal state.
+         *
+         * @return A copy of this builder
+         */
+        public Builder copy() {
+            return new Builder(result);
+        }
+
+        /**
+         * Add an int to this builder.
+         *
+         * @param val A value
+         * @return this
+         */
+        public Builder add(int val) {
+            result.add(val);
+            return this;
+        }
+
+        /**
+         * Add multiple ints to this builder.
+         *
+         * @param values An array of ints
+         * @return this
+         */
+        public Builder add(int... values) {
+            result.addAll(values);
+            return this;
+        }
+
+        /**
+         * Create an IntPath from this builder.
+         *
+         * @return An IntPath
+         */
+        public IntPath build() {
+            return result.copy().trim();
+        }
+
+        /**
+         * Prepend an int to the head of this builder's result.
+         *
+         * @param val An int
+         * @return A builder
+         */
+        public Builder prepend(int val) {
+            result = result.prepending(val);
+            return this;
         }
     }
 }

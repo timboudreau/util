@@ -190,6 +190,10 @@ public interface IntMap<T> extends Iterable<Map.Entry<Integer, T>>, Map<Integer,
         return new ArrayIntMap<>(initialCapacity, addSuppliedValues, emptyValues);
     }
 
+    default IntMap<T> copy() {
+        return copyOf(this);
+    }
+
     /**
      * Get the value at a particular index in this map's iteration order.
      *

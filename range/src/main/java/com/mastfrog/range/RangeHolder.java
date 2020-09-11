@@ -74,6 +74,10 @@ class RangeHolder<R extends Range<R>> {
     }
 
     RangeHolder<R> coalesce(R range, Coalescer<R> c) {
+//        System.out.println("coalesce " + this.range.startValue().intValue() + ":"
+//                + this.range.sizeValue().intValue() + " and "
+//                + range.startValue().intValue() + ":"
+//                + range.sizeValue().intValue());
         if (range == this.range) {
             return this;
         }

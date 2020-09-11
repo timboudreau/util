@@ -1,14 +1,10 @@
 package com.mastfrog.graph;
 
-import com.mastfrog.graph.PairSet;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 /**
  *
@@ -34,7 +30,7 @@ public class PairSetTest {
         }
         for (int[] ints : set) {
             Coord coord = new Coord(ints);
-            assertTrue("Iterator returned " + coord + " which should not be present", coords.contains(coord));
+            assertTrue(coords.contains(coord), "Iterator returned " + coord + " which should not be present");
         }
         PairSet inverted = set.inverse();
         assertEquals(set.size(), inverted.size());
@@ -47,11 +43,11 @@ public class PairSetTest {
             for (int y = 0; y < set.size(); y++) {
                 Coord coord = new Coord(x, y);
                 if (!coords.contains(coord)) {
-                    assertFalse("Unexpected " + coord, set.contains(x, y));
-                    assertTrue("Inverted set should contain " + coord, inverted.contains(x, y));
+                    assertFalse(set.contains(x, y), "Unexpected " + coord);
+                    assertTrue(inverted.contains(x, y), "Inverted set should contain " + coord);
                 } else {
-                    assertTrue("Missing " + coord, set.contains(coord.x, coord.y));
-                    assertFalse("Inverted set should not contain " + coord, inverted.contains(x, y));
+                    assertTrue(set.contains(coord.x, coord.y), "Missing " + coord);
+                    assertFalse(inverted.contains(x, y), "Inverted set should not contain " + coord);
                 }
             }
         }

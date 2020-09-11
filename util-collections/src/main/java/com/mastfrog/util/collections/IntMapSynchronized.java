@@ -49,6 +49,11 @@ final class IntMapSynchronized<T> implements IntMap<T> {
     }
 
     @Override
+    public IntMap<T> copy() {
+        return new IntMapSynchronized<>(delegate.copy());
+    }
+
+    @Override
     public synchronized int nearestIndexTo(int key, boolean backward) {
         return delegate.nearestIndexTo(key, backward);
     }

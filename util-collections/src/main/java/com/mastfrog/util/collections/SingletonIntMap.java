@@ -48,6 +48,10 @@ final class SingletonIntMap<T> implements IntMap<T>, Map.Entry<Integer, T> {
         this.value = value;
     }
 
+    public SingletonIntMap<T> copy() {
+        return this; // immutable
+    }
+
     @Override
     public void trim() {
         // do nothing
