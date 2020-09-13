@@ -25,12 +25,14 @@ package com.mastfrog.util.collections;
 
 import com.mastfrog.util.preconditions.Checks;
 import static com.mastfrog.util.preconditions.Checks.notNull;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -55,8 +57,8 @@ import java.util.stream.StreamSupport;
  * operations exist; under concurrency they may spuriously fail, but will report
  * that to the caller with their result value, and the caller may retry.
  * </p>
- * Typical usage is to collect items that are applied to some work which will
- * be scheduled in the future - a rough sketch
+ * Typical usage is to collect items that are applied to some work which will be
+ * scheduled in the future - a rough sketch
  * <pre>
  *
  * class WorkDoer implements Runnable {
@@ -93,7 +95,7 @@ import java.util.stream.StreamSupport;
  *
  * @author Tim Boudreau
  */
-public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
+public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queue<Message> {
 
     // A basic linked list structure, where the head is found by
     // iterating backwards
@@ -140,6 +142,68 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
         return new AtomicLinkedQueue<>(this);
     }
 
+    public void swapContents(AtomicLinkedQueue<Message> other) {
+        tail.getAndUpdate(t -> {
+            return other.tail.getAndUpdate(t2 -> {
+                return t;
+            });
+        });
+    }
+
+    /**
+     * The inverse of <code>drainTo()</code> take the contents of another queue
+     * and add it to this one.
+     *
+     * @param other
+     */
+    public void transferContentsFrom(AtomicLinkedQueue<Message> other) {
+        if (other == this) {
+            return;
+        }
+        MessageEntry<Message> otherHead = other.detachHead();
+        if (otherHead != null) {
+            MessageEntry<Message> myOldTail = tail.getAndSet(otherHead);
+            // This does open a small race-window.
+            do {
+                otherHead = otherHead.getPrev();
+            } while (otherHead.getPrev() != null);
+            otherHead.setPrev(myOldTail);
+        }
+    }
+
+    /**
+     * Drain this <code>AtomicLinkedQueue</code> into another one; note this
+     * overloaded method is <i>far</i> more efficient than any of the other
+     * <code>drainTo()</code> methods, since it simply removes the tail of this
+     * queue and attaches it to the passed one, with no iteration required.
+     *
+     * @param other Another queue
+     */
+    public void drainTo(AtomicLinkedQueue<Message> other) {
+        if (other == this) {
+            return;
+        }
+        MessageEntry<Message> oldTail = tail.getAndSet(null);
+        if (oldTail == null) {
+            return;
+        }
+        MessageEntry<Message> oldHead = oldTail;
+        while (oldHead.getPrev() != null) {
+            oldHead = oldHead.getPrev();
+        }
+        MessageEntry<Message> fh = oldHead;
+        MessageEntry otherTail = other.tail.getAndUpdate(old -> {
+            if (old != null) {
+                fh.setPrev(old);
+            }
+            return oldTail;
+        });
+    }
+
+    private MessageEntry<Message> detachHead() {
+        return tail.getAndSet(null);
+    }
+
     /**
      * Reverse the contents of this queue in-place. This method is not
      * guaranteed to be unaffected by operations that modify the queue in other
@@ -161,17 +225,26 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
     }
 
     /**
+     * For API-compatibility with Queue - same as <code>add(message)</code>.
+     *
+     * @param message
+     */
+    public void push(final Message message) {
+        add(message);
+    }
+
+    /**
      * Add an element to the tail of the queue
      *
      * @param message
      * @return this
      */
-    public AtomicLinkedQueue<Message> add(final Message message) {
+    public boolean add(final Message message) {
         tail.getAndUpdate(new Applier<>(notNull("message", message)));
         if (onAdd != null) {
             onAdd.run();
         }
-        return this;
+        return true;
     }
 
     /**
@@ -186,7 +259,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
      * @param run A runnable
      * @return this
      */
-    public AtomicLinkedQueue onAdd(Runnable run) {
+    public AtomicLinkedQueue<Message> onAdd(Runnable run) {
         this.onAdd = run;
         return this;
     }
@@ -535,7 +608,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
      * @param msg An element to remove
      * @return True if it is removed
      */
-    public boolean removeByIdentity(Message msg) {
+    public boolean removeByIdentity(Object msg) {
         Remover<Message> remover = new Remover<>(msg);
         tail.updateAndGet(remover);
         if (!remover.removed) {
@@ -544,7 +617,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
         return remover.removed;
     }
 
-    boolean contains(Message msg) {
+    public boolean contains(Object msg) {
         MessageEntry<Message> top = tail.get();
         while (top != null) {
             if (msg == top.message) {
@@ -592,12 +665,208 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message> {
         return StreamSupport.stream(spliterator(), true);
     }
 
+    /**
+     * Equivalent to a call to <code>add(message)</code>, for compatibility with
+     * queue.
+     *
+     * @param message An element
+     * @return true
+     */
+    @Override
+    public boolean offer(Message message) {
+        return add(message);
+    }
+
+    /**
+     * Remove the leading element; note that since this queue is concurrent, it
+     * is entirely possible that the item you expect to remove has been removed
+     * by another thread; this method follows the contract of
+     * <code>Queue.remove()</code> for compatibility, but <code>pop()</code>
+     * (which returns null on failure) is likely to be a better choice.
+     *
+     * @return The removed item
+     * @throws NoSuchElementException if no items are present
+     */
+    @Override
+    public Message remove() {
+        Message result = pop();
+        if (result == null) {
+            throw new NoSuchElementException();
+        }
+        return result;
+    }
+
+    /**
+     * Compatibility with Queue: Delegates to <code>pop()</code>.
+     *
+     * @return
+     */
+    @Override
+    public Message poll() {
+        return pop();
+    }
+
+    /**
+     * Get the leading element; note that since this queue is concurrent, it is
+     * entirely possible that the item you expect to remove has been removed by
+     * another thread; this method follows the contract of
+     * <code>Queue.remove()</code> for compatibility, but <code>peek()</code>
+     * (which returns null on failure) is likely to be a better choice.
+     *
+     * @return The removed item
+     * @throws NoSuchElementException if no items are present
+     */
+    @Override
+    public Message element() {
+        Message result = peek();
+        if (result == null) {
+            throw new NoSuchElementException();
+        }
+        return result;
+    }
+
+    /**
+     * Get the leading element of the queue.
+     *
+     * @return An element or null
+     */
+    @Override
+    public Message peek() {
+        MessageEntry<Message> t = tail.get();
+        return t == null ? null : t.message;
+    }
+
+    @Override
+    public Object[] toArray() {
+        return asList().toArray();
+    }
+
+    @Override
+    public <T> T[] toArray(T[] a) {
+        return asList().toArray(a);
+    }
+
+    /**
+     * Remove - note this method delegates to <code>removeByIdentity()</code>
+     * and does not do object equality checks, only instance equality.
+     *
+     * @param o An object
+     * @return true if it was (probably) removed
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    public boolean remove(Object o) {
+        return removeByIdentity(o);
+    }
+
+    @Override
+    public boolean containsAll(Collection<?> c) {
+        return asList().containsAll(c);
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends Message> c) {
+        if (c instanceof AtomicLinkedQueue<?>) {
+            boolean wasEmpty = c.isEmpty();
+            if (!wasEmpty) {
+                transferContentsFrom((AtomicLinkedQueue<Message>) c);
+                return true;
+            }
+            return false;
+        }
+        if (c.isEmpty()) {
+            return false;
+        }
+        MessageEntry<Message> nue = null;
+        MessageEntry<Message> first = null;
+        for (Message m : c) {
+            nue = new MessageEntry<>(nue, m);
+            if (first == null) {
+                first = nue;
+            }
+        }
+        MessageEntry<Message> f = first;
+        MessageEntry<Message> last = nue;
+        tail.getAndUpdate(t -> {
+            f.prev = t;
+            return last;
+        });
+        return true;
+    }
+
+    @Override
+    public boolean removeAll(Collection<?> c) {
+        if (c.isEmpty()) {
+            return false;
+        }
+        boolean[] changed = new boolean[1];
+        tail.getAndUpdate(t -> {
+            if (t == null) {
+                return null;
+            }
+            MessageEntry<Message> lastGood = null;
+            MessageEntry<Message> m = t;
+            MessageEntry<Message> firstGood = null;
+            do {
+                if (!c.contains(m.message)) {
+                    if (lastGood != null) {
+                        lastGood.setPrev(new MessageEntry<>(null, m.message));;
+                        lastGood = lastGood.prev;
+                    } else {
+                        firstGood = new MessageEntry<Message>(null, m.message);
+                        lastGood = firstGood;
+                    }
+                    m = m.prev;
+                    continue;
+                }
+                changed[0] = true;
+                m = m.prev;
+            } while (m != null);
+            return changed[0] ? firstGood : null;
+        });
+        return changed[0];
+    }
+
+    @Override
+    public boolean retainAll(Collection<?> c) {
+        if (c.isEmpty()) {
+            MessageEntry<Message> old = tail.getAndSet(null);
+            return old != null && old.message != null;
+        }
+        boolean[] changed = new boolean[1];
+        tail.getAndUpdate(t -> {
+            if (t == null) {
+                return null;
+            }
+            MessageEntry<Message> lastGood = null;
+            MessageEntry<Message> m = t;
+            MessageEntry<Message> firstGood = null;
+            do {
+                if (c.contains(m.message)) {
+                    if (lastGood != null) {
+                        lastGood.setPrev(new MessageEntry<>(null, m.message));;
+                        lastGood = lastGood.prev;
+                    } else {
+                        firstGood = new MessageEntry<Message>(null, m.message);
+                        lastGood = firstGood;
+                    }
+                    m = m.prev;
+                    continue;
+                }
+                changed[0] = true;
+                m = m.prev;
+            } while (m != null);
+            return changed[0] ? firstGood : null;
+        });
+        return changed[0];
+    }
+
     static final class Remover<Message> implements UnaryOperator<MessageEntry<Message>> {
 
-        private final Message toRemove;
+        private final Object toRemove;
         boolean removed;
 
-        public Remover(Message toRemove) {
+        public Remover(Object toRemove) {
             this.toRemove = toRemove;
         }
 

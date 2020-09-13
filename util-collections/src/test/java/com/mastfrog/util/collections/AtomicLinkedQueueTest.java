@@ -56,6 +56,79 @@ import org.junit.Test;
  */
 public class AtomicLinkedQueueTest {
 
+
+    @Test
+    public void testSwap() {
+        AtomicLinkedQueue<String> a = new AtomicLinkedQueue<>(Arrays.asList("A", "B", "C"));
+        AtomicLinkedQueue<String> b = new AtomicLinkedQueue<>(Arrays.asList("D", "E", "F"));
+        a.swapContents(b);
+        assertEquals("D,E,F", a.toString());
+        assertEquals("A,B,C", b.toString());
+        a.swapContents(b);
+        assertEquals("D,E,F", b.toString());
+        assertEquals("A,B,C", a.toString());
+    }
+
+    @Test
+    public void testRemoveRetain() {
+        AtomicLinkedQueue<String> q = new AtomicLinkedQueue<>(Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H", "I"));
+        q.retainAll(Arrays.asList("B", "D", "F", "G", "I", "Q"));
+        assertEquals("B,D,F,G,I", q.toString());
+
+        q = new AtomicLinkedQueue<>(Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H", "I"));
+        q.removeAll(Arrays.asList("B", "D", "F", "G", "I"));
+        q.retainAll(Collections.emptySet());
+        assertTrue(q.isEmpty());
+
+        q = new AtomicLinkedQueue<>();
+        q.retainAll(Arrays.asList("A", "B", "C"));
+        assertTrue(q.isEmpty());
+
+        q.addAll(Arrays.asList("A", "B", "C", "D"));
+        assertEquals("A,B,C,D", q.toString());
+        q.retainAll(Arrays.asList("G", "H", "I"));
+        assertTrue(q.isEmpty());
+    }
+
+    @Test
+    public void testTransfer() {
+        AtomicLinkedQueue<String> a = new AtomicLinkedQueue<>(Arrays.asList("A", "B", "C"));
+        AtomicLinkedQueue<String> b = new AtomicLinkedQueue<>();
+        assertEquals(3, a.size());
+        assertTrue(b.isEmpty());
+
+        a.drainTo(b);
+        assertTrue(a.isEmpty());
+        assertEquals(3, b.size());
+        assertEquals("A,B,C", b.toString());
+
+        AtomicLinkedQueue<String> c = new AtomicLinkedQueue<>(Arrays.asList("D", "E", "F"));
+        c.drainTo(b);
+
+        assertTrue(c.isEmpty());
+        assertEquals(6, b.size());
+        assertTrue(a.isEmpty());
+        assertEquals("A,B,C,D,E,F", b.toString());
+
+        a.transferContentsFrom(b);
+        assertTrue(b.isEmpty());
+        assertEquals(6, a.size());
+        assertEquals("A,B,C,D,E,F", a.toString());
+
+        AtomicLinkedQueue<String> d = new AtomicLinkedQueue<>(Arrays.asList("G", "H", "I"));
+        a.transferContentsFrom(d);
+
+        assertTrue(d.isEmpty());
+        assertEquals(9, a.size());
+        assertEquals("A,B,C,D,E,F,G,H,I", a.toString());
+
+        d.transferContentsFrom(new AtomicLinkedQueue<String>());
+        assertTrue(d.isEmpty());
+        d.drainTo(b);
+        assertTrue(d.isEmpty());
+        assertTrue(b.isEmpty());
+    }
+
     @Test
     public void testStream() {
         int max = 20000;
@@ -256,25 +329,24 @@ public class AtomicLinkedQueueTest {
 
     @Test
     public void testAtomicQueue() {
-        AtomicLinkedQueue<String> q = new AtomicLinkedQueue<>();
-        q.add("a").add("b").add("c");
+        AtomicLinkedQueue<String> q = new AtomicLinkedQueue<>(Arrays.asList("a", "b", "c"));
         assertEquals(3, q.size());
         List<String> l = q.drain();
         assertEquals(Arrays.asList("a", "b", "c"), l);
         assertTrue(q.isEmpty());
 
-        q.add("a").add("b").add("c");
+        q.addAll(Arrays.asList("a", "b", "c"));
         q.removeByIdentity("b");
         assertEquals(2, q.size());
         assertEquals(Arrays.asList("a", "c"), q.drain());
         assertTrue(q.isEmpty());
 
-        q.add("a").add("b").add("c");
+        q.addAll(Arrays.asList("a", "b", "c"));
         assertEquals(3, q.size());
         q.pop();
         assertEquals(Arrays.asList("a", "b"), q.drain());
 
-        q.add("a").add("b").add("c").add("d");
+        q.addAll(Arrays.asList("a", "b", "c", "d"));
         q.filter(s -> {
             switch (s) {
                 case "a":
@@ -292,7 +364,8 @@ public class AtomicLinkedQueueTest {
         q.reverseInPlace();;
         assertEquals(Arrays.asList("d", "c", "b", "a"), q.drain());
 
-        q.add("a").add("b").add("c").add("d");
+//        q.add("a").add("b").add("c").add("d");
+        q.addAll(Arrays.asList("a", "b", "c", "d"));
         l = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
             l.add(q.pop(() -> "x"));
