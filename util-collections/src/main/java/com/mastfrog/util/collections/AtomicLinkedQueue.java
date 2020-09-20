@@ -45,7 +45,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * A non-blocking, thread-safe, memory-efficient queue using a simple linked
+ * A non-blocking, thread-safe, memory-efficient FIFO queue using a simple linked
  * list structure and atomic add and drain operations. Atomicity is achieved by
  * using a singly-tail-linked data structure using atomic references. Mutation
  * operations that affect the tail, such as <code>add()</code> and
@@ -91,7 +91,9 @@ import java.util.stream.StreamSupport;
  * }
  * </pre>
  * <i>This class originally appeared in <code>com.mastfrog.util.thread</code>;
- * the version there will not be further maintained.</i>
+ * the version there will not be further maintained.</i>. Note:  Remove operations
+ * other than <code>pop()</code> are expensive, particularly under concurrent
+ * access.
  *
  * @author Tim Boudreau
  */
@@ -597,24 +599,29 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
     }
 
     /**
-     * Remove an object, using identity (not equality) testing.
-     * <i><b>Behavior under concurrent access:</b> This method may return false
-     * because another thread is part-way through removing a node adjacent to
-     * one that exists and does contain the requested object - making it
-     * apparently not present when the linked list of nodes is traversed. So
-     * removal <u>may</u>
-     * spuriously fail, but the return value will reliably indicate that.</i>
+     * Remove an object, using identity (not equality) testing. Note this method
+     * may loop repeatedly creating a copy of the contents of this queue in
+     * order to guarantee atomicity. If the object occurs more than once in the
+     * queue, the first occurrence is removed.
      *
      * @param msg An element to remove
      * @return True if it is removed
      */
-    public boolean removeByIdentity(Object msg) {
-        Remover<Message> remover = new Remover<>(msg);
-        tail.updateAndGet(remover);
-        if (!remover.removed) {
-            tail.updateAndGet(remover);
+    public synchronized boolean removeByIdentity(Object msg) {
+        for (;;) {
+            MessageEntry<Message> t = tail.get();
+            if (t == null) {
+                return false;
+            }
+            boolean[] found = new boolean[1];
+            MessageEntry<Message> copy = t.deepCopyRemoving(msg, found);
+            if (!found[0]) {
+                return false;
+            }
+            if (tail.compareAndSet(t, copy)) {
+                return true;
+            }
         }
-        return remover.removed;
     }
 
     public boolean contains(Object msg) {
@@ -765,6 +772,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public boolean addAll(Collection<? extends Message> c) {
         if (c instanceof AtomicLinkedQueue<?>) {
             boolean wasEmpty = c.isEmpty();
@@ -799,90 +807,37 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
         if (c.isEmpty()) {
             return false;
         }
-        boolean[] changed = new boolean[1];
-        tail.getAndUpdate(t -> {
+        for (;;) {
+            MessageEntry<Message> t = tail.get();
             if (t == null) {
-                return null;
+                return false;
             }
-            MessageEntry<Message> lastGood = null;
-            MessageEntry<Message> m = t;
-            MessageEntry<Message> firstGood = null;
-            do {
-                if (!c.contains(m.message)) {
-                    if (lastGood != null) {
-                        lastGood.setPrev(new MessageEntry<>(null, m.message));;
-                        lastGood = lastGood.prev;
-                    } else {
-                        firstGood = new MessageEntry<Message>(null, m.message);
-                        lastGood = firstGood;
-                    }
-                    m = m.prev;
-                    continue;
-                }
-                changed[0] = true;
-                m = m.prev;
-            } while (m != null);
-            return changed[0] ? firstGood : null;
-        });
-        return changed[0];
+            boolean[] found = new boolean[1];
+            MessageEntry<Message> nue = t.deepCopyRemovingAll(c, found);
+            if (!found[0]) {
+                return false;
+            }
+            if (tail.compareAndSet(t, nue)) {
+                return true;
+            }
+        }
     }
 
     @Override
     public boolean retainAll(Collection<?> c) {
-        if (c.isEmpty()) {
-            MessageEntry<Message> old = tail.getAndSet(null);
-            return old != null && old.message != null;
-        }
-        boolean[] changed = new boolean[1];
-        tail.getAndUpdate(t -> {
+        for (;;) {
+            MessageEntry<Message> t = tail.get();
             if (t == null) {
-                return null;
+                return false;
             }
-            MessageEntry<Message> lastGood = null;
-            MessageEntry<Message> m = t;
-            MessageEntry<Message> firstGood = null;
-            do {
-                if (c.contains(m.message)) {
-                    if (lastGood != null) {
-                        lastGood.setPrev(new MessageEntry<>(null, m.message));;
-                        lastGood = lastGood.prev;
-                    } else {
-                        firstGood = new MessageEntry<Message>(null, m.message);
-                        lastGood = firstGood;
-                    }
-                    m = m.prev;
-                    continue;
-                }
-                changed[0] = true;
-                m = m.prev;
-            } while (m != null);
-            return changed[0] ? firstGood : null;
-        });
-        return changed[0];
-    }
-
-    static final class Remover<Message> implements UnaryOperator<MessageEntry<Message>> {
-
-        private final Object toRemove;
-        boolean removed;
-
-        public Remover(Object toRemove) {
-            this.toRemove = toRemove;
-        }
-
-        @Override
-        public MessageEntry<Message> apply(MessageEntry<Message> t) {
-            if (t == null) {
-                return null;
+            boolean[] found = new boolean[1];
+            MessageEntry<Message> nue = t.deepCopyRetainingAll(c, found);
+            if (!found[0]) {
+                return false;
             }
-            MessageEntry<Message> prev = t.prev;
-            if (t.message == toRemove) {
-                removed = true;
-                return prev;
-            } else {
-                t.updatePrev(this);
+            if (tail.compareAndSet(t, nue)) {
+                return true;
             }
-            return t;
         }
     }
 
@@ -912,6 +867,54 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
             return (MessageEntry<Message>) UPDATER.get(this);
         }
 
+        MessageEntry<Message> deepCopy() {
+            MessageEntry<Message> p = getPrev();
+            if (p != null) {
+                p = p.deepCopy();
+            }
+            return new MessageEntry<>(p, message);
+        }
+
+        MessageEntry<Message> deepCopyRemoving(Object msg, boolean[] found) {
+            if (message == msg) {
+                found[0] = true;
+                MessageEntry<Message> p = getPrev();
+//                return p == null ? null : p.deepCopyRemoving(msg, found);
+                return p;
+            }
+            MessageEntry<Message> p = getPrev();
+            if (p != null) {
+                p = p.deepCopyRemoving(msg, found);
+            }
+            return new MessageEntry<>(p, message);
+        }
+
+        MessageEntry<Message> deepCopyRemovingAll(Collection<?> objs, boolean[] found) {
+            if (objs.contains(message)) {
+                found[0] = true;
+                MessageEntry<Message> p = getPrev();
+                return p == null ? null : p.deepCopyRemovingAll(objs, found);
+            }
+            MessageEntry<Message> p = getPrev();
+            if (p != null) {
+                p = p.deepCopyRemovingAll(objs, found);
+            }
+            return new MessageEntry<>(p, message);
+        }
+
+        MessageEntry<Message> deepCopyRetainingAll(Collection<?> objs, boolean[] found) {
+            if (!objs.contains(message)) {
+                found[0] = true;
+                MessageEntry<Message> p = getPrev();
+                return p == null ? null : p.deepCopyRetainingAll(objs, found);
+            }
+            MessageEntry<Message> p = getPrev();
+            if (p != null) {
+                p = p.deepCopyRetainingAll(objs, found);
+            }
+            return new MessageEntry<>(p, message);
+        }
+
         MessageEntry<Message> copy() {
             MessageEntry<Message> p = getPrev();
             if (p == this) {
@@ -930,11 +933,15 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
         }
 
         @SuppressWarnings("unchecked")
-        void setPrev(MessageEntry<Message> prev) {
+        MessageEntry<Message> setPrev(MessageEntry<Message> prev) {
             if (prev == this) {
                 throw new IllegalArgumentException("Previous cannot be self");
             }
-            UPDATER.set(this, prev);
+            return (MessageEntry<Message>) UPDATER.getAndSet(this, prev);
+        }
+
+        boolean compareAndSetPrev(MessageEntry<Message> expect, MessageEntry<Message> update) {
+            return UPDATER.compareAndSet(this, expect, update);
         }
 
         @SuppressWarnings("unchecked")

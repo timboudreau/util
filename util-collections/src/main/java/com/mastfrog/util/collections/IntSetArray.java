@@ -210,6 +210,12 @@ class IntSetArray extends IntSet {
         int lastValue = data[size - 1];
         if (value == lastValue) {
             return false;
+        } else if (size > 1 && value == data[size - 2]) {
+            // A small optimization for the use case of coalescing ranges, where
+            // it is common to add the start and end of one range to the set, then
+            // the next pair, so it is very common to have adds of the same thing
+            // in staggered order
+            return false;
         } else if (value > lastValue) {
             maybeGrow();
             data[size] = value;

@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.collections;
 
+import com.mastfrog.util.preconditions.Exceptions;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -56,6 +57,102 @@ import org.junit.Test;
  */
 public class AtomicLinkedQueueTest {
 
+    @Test
+    public void testRemoveSingle() throws Throwable {
+        AtomicLinkedQueue<Integer> q = new AtomicLinkedQueue<>();
+        q.add(5);
+        assertEquals(1, q.size());
+        q.remove(6);
+        q.remove(5);
+        assertEquals(0, q.size());
+    }
+
+    @Test
+    public void testConcurrentRemove() throws InterruptedException {
+        Phaser ph = new Phaser(4);
+        List<Integer> toRemove = new CopyOnWriteArrayList<>();
+        int count = 10000;
+        for (int i = 0; i < count; i++) {
+            toRemove.add(i);
+        }
+        AtomicLinkedQueue<Integer> in = new AtomicLinkedQueue<>(toRemove);
+        BatchRemover rem1 = new BatchRemover(ph, toRemove, in);
+        BatchRemover rem2 = new BatchRemover(ph, toRemove, in);
+        BatchRemover rem3 = new BatchRemover(ph, toRemove, in);
+        Thread t1 = new Thread(rem1);
+        Thread t2 = new Thread(rem2);
+        Thread t3 = new Thread(rem3);
+        t1.setName("t1");
+        t2.setName("t2");
+        t2.setName("t3");
+        t1.setDaemon(true);
+        t2.setDaemon(true);
+        t3.setDaemon(true);
+
+        t1.start();
+        t2.start();
+        t3.start();
+        ph.arriveAndDeregister();
+        t1.join(10000);
+        t2.join(10000);
+        t3.join(10000);
+        rem1.rethrow();
+        rem2.rethrow();
+        assertEquals("Remove count does not match", count, rem1.removed + rem2.removed + rem3.removed);
+        assertTrue("Queue not emptied", in.isEmpty());
+    }
+
+    static class BatchRemover implements Runnable {
+
+        private final Phaser ph;
+        private final List<Integer> ints;
+        private final AtomicLinkedQueue<Integer> q;
+        private Throwable thrown;
+        volatile int removed;
+
+        public BatchRemover(Phaser ph, List<Integer> ints, AtomicLinkedQueue<Integer> q) {
+            this.ph = ph;
+            this.ints = ints;
+            this.q = q;
+        }
+
+        @Override
+        public void run() {
+            try {
+                ph.arriveAndAwaitAdvance();
+                int loop;
+                for (loop = 0;; loop++) {
+                    if (!ints.isEmpty()) {
+                        Integer val = null;
+                        try {
+                            val = ints.remove(0);
+                        } catch (Exception e) {
+                            // concurrent removal is possible
+                        }
+                        if (val != null) {
+                            if (q.remove(val)) {
+                                removed++;
+                            } else {
+                                System.out.println("failed to remove " + val);
+                            }
+                        }
+                    }
+                    if (ints.isEmpty()) {
+                        break;
+                    }
+                }
+                System.out.println(loop + " loops on " + Thread.currentThread().getName());
+            } catch (Throwable t) {
+                thrown = t;
+            }
+        }
+
+        void rethrow() {
+            if (thrown != null) {
+                Exceptions.chuck(thrown);
+            }
+        }
+    }
 
     @Test
     public void testSwap() {
