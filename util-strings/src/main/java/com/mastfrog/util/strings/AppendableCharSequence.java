@@ -65,6 +65,7 @@ public final class AppendableCharSequence implements Appendable, Comparable<Char
         this.seqs = new ArrayList<>(INCREMENT);
         for (CharSequence s : seqs) {
             this.seqs.add(s);
+            length += s.length();
         }
     }
 

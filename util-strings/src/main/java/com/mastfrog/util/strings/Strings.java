@@ -26,6 +26,7 @@ package com.mastfrog.util.strings;
 import com.mastfrog.util.preconditions.Checks;
 import com.mastfrog.util.preconditions.Exceptions;
 import static com.mastfrog.util.preconditions.Checks.notNull;
+import com.mastfrog.util.preconditions.InvalidArgumentException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
@@ -2524,24 +2525,33 @@ public final class Strings {
      * head and the tail and inserting &#2026; as an elipsis.
      *
      * @param orig The original character sequence
-     * @param thresholdLength The threshold length
+     * @param targetLength The target length
      * @param ellipsis The character sequence to insert as ellipsis
      * @return an elided sequence if the length is greater than 40 characters
      */
-    public static CharSequence elide(CharSequence orig, int thresholdLength, CharSequence ellipsis) {
+    public static CharSequence elide(CharSequence orig, int targetLength, CharSequence ellipsis) {
         int len = orig.length();
-        if (len <= 2 + ellipsis.length() + 1 || orig.length() <= thresholdLength) {
+        if (len <= targetLength) {
             return orig;
         }
-        if (thresholdLength % 2 != 0) {
-            thresholdLength--;
+        targetLength -= ellipsis.length();
+        targetLength = Math.max(targetLength, 3);
+        if (len <= 2 + ellipsis.length() + 1 || orig.length() <= targetLength) {
+            return orig;
         }
-        int half = len / 2;
-        int leftEnd = half - thresholdLength;
-        int rightStart = half + thresholdLength;
+        if (targetLength % 2 != 0) {
+            targetLength--;
+        }
+        if (targetLength <= 3) {
+            return new AppendableCharSequence(singleChar(orig.charAt(0)),
+                    ellipsis, singleChar(orig.charAt(orig.length() - 1)));
+        }
+        int halfLength = targetLength / 2;
+//        int textMidpoint = len / 2;
+        int leftEnd = halfLength;
+        int rightStart = len - halfLength;
 
-//        System.out.println("Start with '" + orig.subSequence(0, leftEnd));
-
+        // Fudge a little to find a whitespace character to split on
         int leftScanStop = Math.max(leftEnd - (leftEnd / 3), leftEnd - MAX_ELLIPSIS_SKEW);
         int rightScanStop = Math.min(rightStart + ((len - rightStart) / 3), rightStart + MAX_ELLIPSIS_SKEW);
         if (!Character.isWhitespace(orig.charAt(leftEnd))) {
@@ -2572,6 +2582,59 @@ public final class Strings {
         CharSequence left = orig.subSequence(0, leftEnd);
         CharSequence right = orig.subSequence(rightStart, len);
         return new AppendableCharSequence(left, ellipsis, right);
+    }
+
+    /**
+     * Truncate a character sequence, appending an ellipsis (\u2026); the length
+     * may be adjusted to not place the ellipsis immediately following a
+     * whitespace character.
+     *
+     * @param orig The original character sequence
+     * @param maxLength The maximum length of the result (less the length of the
+     * ellipsis text if present)
+     * @return A truncated version of the original string which may append the
+     * ellipsis
+     * @throws InvalidArgumentException if maxLength is less than or equal to 1
+     */
+    public static CharSequence truncate(CharSequence orig, int maxLength) {
+        return truncate(orig, maxLength, ELLIPSIS);
+    }
+
+    /**
+     * Truncate a character sequence, optionally appending an ellipsis; the
+     * length may be adjusted to not place the ellipsis immediately following a
+     * whitespace character.
+     *
+     * @param orig The original character sequence
+     * @param maxLength The maximum length of the result (less the length of the
+     * ellipsis text if present)
+     * @param ellipsis The text to append to the truncated result
+     * @return A truncated version of the original string which may append the
+     * ellipsis
+     * @throws InvalidArgumentException if maxLength is less than or equal to 1
+     */
+    public static CharSequence truncate(CharSequence orig, int maxLength, CharSequence ellipsis) {
+        int len = orig.length();
+        if (len <= Checks.greaterThanZero("maxLength", maxLength)) {
+            return orig;
+        }
+        int end = Math.min(maxLength, len);
+        int maxFudge = Math.max(2, Math.max(end - (maxLength / 3), end - MAX_ELLIPSIS_SKEW));
+        while (end > maxFudge && Character.isWhitespace(orig.charAt(end-1))) {
+            end--;
+        }
+        if (end >= len-1 || !Character.isWhitespace(orig.charAt(end + 1))) {
+            for (int i = Math.min(len-1, end); i >= maxFudge; i--) {
+                if (Character.isWhitespace(orig.charAt(i))) {
+                    end = i;
+                    break;
+                }
+            }
+        }
+        if (ellipsis == null || ellipsis.length() == 0) {
+            return orig.subSequence(0, end);
+        }
+        return new AppendableCharSequence(orig.subSequence(0, end), ellipsis);
     }
 
     /**

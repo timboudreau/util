@@ -24,6 +24,7 @@
  */
 package com.mastfrog.util.strings;
 
+import com.mastfrog.util.preconditions.InvalidArgumentException;
 import static com.mastfrog.util.strings.Strings.quickJson;
 import java.util.Arrays;
 import static java.util.Arrays.asList;
@@ -762,19 +763,149 @@ public class StringsTest {
 
     @Test
     public void testElide() {
-        CharSequence res = Strings.elide("This is some text which will be elided for you", 16);
-        assertCharSequences("This is…for you", res);
+        String base = "This is some text which will be elided for you";
+        assertElidedTo("This is…for you", base, 16);
 
-        res = Strings.elide("This is some text which will be elided for you", 10);
-        assertCharSequences("This is some…elided for you", res);
-
-        System.out.println("--------------------------");
-        res = Strings.elide("This is some text which will be elided for you", 5);
-        assertCharSequences("This is some text…be elided for you", res);
-
+        assertElidedTo("This is some…elided for you", base, 28);
+        assertElidedTo("This is some…be elided for you", base, 32);
+        assertElidedTo("This is some text…elided for you", base, 36);
+        assertElidedTo("This…you", base, 10);
+        assertElidedTo("T…u", base, 3);
+        assertElidedTo("T…u", base, 1);
+        assertElidedTo("Th…ou", base, 5);
+        assertElidedTo(base, base, base.length());
+        assertElidedTo(base, base, 1000);
+        try {
+            Strings.elide("abc", -1);
+            fail("Exception not thrown");
+        } catch (InvalidArgumentException ex) {
+            // ok
+        }
+        try {
+            Strings.elide("abc", 0);
+            fail("Exception not thrown");
+        } catch (InvalidArgumentException ex) {
+            // ok
+        }
     }
 
-    private void assertCharSequences(String exp, CharSequence got) {
+    @Test
+    public void testTruncate() {
+        String base = "This is some text which will be elided for you";
+        for (int i = base.length() + 1; i >= 1; i--) {
+            if (i >= base.length()) {
+                assertTruncatedTo(base, base, i);
+            } else {
+                String exp = base.substring(0, i).trim() + '\u2026';
+                CharSequence got = Strings.truncate(base, i);
+                assertFalse("Zero length?", got.length() == 0);
+                switch (i) {
+                    case 45:
+                    case 44:
+                    case 43:
+                    case 42:
+                        assertTruncatedTo("This is some text which will be elided for…", base, i);
+                        break;
+                    case 41:
+                        assertTruncatedTo("This is some text which will be elided fo…", base, i);
+                        break;
+                    case 40:
+                    case 39:
+                    case 38:
+                        assertTruncatedTo("This is some text which will be elided…", base, i);
+                        break;
+                    case 37:
+                        assertTruncatedTo("This is some text which will be elide…", base, i);
+                        break;
+                    case 36:
+                    case 35:
+                    case 34:
+                    case 33:
+                    case 32:
+                    case 31:
+                        assertTruncatedTo("This is some text which will be…", base, i);
+                        break;
+                    case 30:
+                        assertTruncatedTo("This is some text which will b…", base, i);
+                        break;
+                    case 29:
+                    case 28:
+                        assertTruncatedTo("This is some text which will…", base, i);
+                        break;
+                    case 27:
+                        assertTruncatedTo("This is some text which wil…", base, i);
+                        break;
+                    case 26:
+                    case 25:
+                    case 24:
+                    case 23:
+                        assertTruncatedTo("This is some text which…", base, i);
+                        break;
+                    case 22:
+                        assertTruncatedTo("This is some text whic…", base, i);
+                        break;
+                    case 21:
+                    case 20:
+                    case 19:
+                    case 18:
+                        assertTruncatedTo("This is some text…", base, i);
+                        break;
+                    case 17:
+                        assertTruncatedTo("This is some text…", base, i);
+                        break;
+                    case 16:
+                        assertTruncatedTo("This is some tex…", base, i);
+                        break;
+                    case 15:
+                    case 14:
+                    case 13:
+                    case 12:
+                        assertTruncatedTo("This is some…", base, i);
+                        break;
+                    case 11:
+                        assertTruncatedTo("This is som…", base, i);
+                        break;
+                    case 10:
+                        assertTruncatedTo("This is…", base, i);
+                        break;
+                    case 9:
+                    case 8:
+                    case 7:
+                        assertTruncatedTo("This is…", base, i);
+                        break;
+                    case 6:
+                        assertTruncatedTo("This i…", base, i);
+                        break;
+                    case 5:
+                    case 4:
+                        assertTruncatedTo("This…", base, i);
+                        break;
+                    case 3:
+                        assertTruncatedTo("Thi…", base, i);
+                        break;
+                    case 2:
+                        assertTruncatedTo("Th…", base, i);
+                        break;
+                    case 1:
+                        assertTruncatedTo("T…", base, i);
+                        break;
+                }
+            }
+        }
+    }
+
+    private static void assertElidedTo(String expect, CharSequence orig, int amount) {
+        assertCharSequences(expect, Strings.elide(orig, amount));
+    }
+
+    private static void assertTruncatedTo(String expect, CharSequence orig, int amount) {
+        CharSequence trunc = Strings.truncate(orig, amount);
+        assertCharSequences(expect, trunc);
+        assertTrue(trunc.length() <= amount + 1);
+        assertEquals(expect.length(), trunc.length());
+    }
+
+    private static void assertCharSequences(String exp, CharSequence got) {
         assertEquals(exp, got.toString());
     }
 }
