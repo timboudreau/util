@@ -8,13 +8,14 @@
         <version>2.7.0</version>
         <relativePath/>
     </parent>
+    <version>2.7.0.1</version>
     <artifactId>util-strings</artifactId>
     <url>https://github.com/timboudreau/util</url>
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>util-preconditions</artifactId>
-            <version>2.6.11</version>
+            <version>${mastfrog.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

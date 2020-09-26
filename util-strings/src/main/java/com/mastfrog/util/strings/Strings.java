@@ -48,6 +48,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -75,12 +76,18 @@ import java.util.function.Supplier;
  */
 public final class Strings {
 
-    private static final boolean[] PUNC = new boolean[128];
+    private static final BitSet PUNC = new BitSet(128);
+    private static final CharSequence ELLIPSIS = new SingleCharSequence('\u2026');
+    private static final int MAX_ELLIPSIS_SKEW = 12;
+    private static boolean puncInitialized;
 
     static {
-        for (int i = 0; i < PUNC.length; i++) {
-            PUNC[i] = isPunctuation((char) i);
+        for (int i = 0; i < 128; i++) {
+            if (isPunctuation((char) i)) {
+                PUNC.set(i);
+            }
         }
+        puncInitialized = true;
     }
 
     /**
@@ -122,15 +129,12 @@ public final class Strings {
      * @since 2.6.13
      */
     public static boolean isPunctuation(char c) {
-        if (c < 128) {
-            return PUNC[(int) c];
+        if (puncInitialized && c < 128) {
+            return PUNC.get((int) c);
         }
-        if (Character.isLetter(c) || Character.isDigit(c)
+        return !(Character.isLetter(c) || Character.isDigit(c)
                 || Character.isWhitespace(c) || Character.isISOControl(c)
-                || Character.UnicodeBlock.of(c) == Character.UnicodeBlock.LETTERLIKE_SYMBOLS) {
-            return false;
-        }
-        return true;
+                || Character.UnicodeBlock.of(c) == Character.UnicodeBlock.LETTERLIKE_SYMBOLS);
     }
 
     /**
@@ -862,6 +866,16 @@ public final class Strings {
         return commas(all);
     }
 
+    /**
+     * Delimit and concatenate objects using a custom stringifier, into an
+     * existing StringBuilder.
+     *
+     * @param <T> The type
+     * @param delimiter The delimiter
+     * @param iter The collection of objects
+     * @param into The destination buffer
+     * @param toString The stringifying method
+     */
     public static <T> void concatenate(String delimiter, Iterable<T> iter, StringBuilder into, Function<? super T, String> toString) {
         for (Iterator<T> it = iter.iterator(); it.hasNext();) {
             into.append(toString.apply(it.next()));
@@ -889,6 +903,16 @@ public final class Strings {
         return sb.toString();
     }
 
+    /**
+     * Concatenate objects to a delimited string , using a custom stringifier
+     * function.
+     *
+     * @param <T> The object type
+     * @param delim The delimiter
+     * @param parts The collection of objects
+     * @param stringConvert The converter function
+     * @return A string
+     */
     public static <T> String join(char delim, Iterable<T> parts, Function<T, String> stringConvert) {
         StringBuilder sb = new StringBuilder(256);
         for (Iterator<T> it = parts.iterator(); it.hasNext();) {
@@ -913,7 +937,15 @@ public final class Strings {
     private static final SingleCharSequence CLOSE_PAREN = new SingleCharSequence(')');
     private static final SingleCharSequence OPEN_SQUARE = new SingleCharSequence('[');
     private static final SingleCharSequence CLOSE_SQUARE = new SingleCharSequence(']');
+    private static final SingleCharSequence SLASH = new SingleCharSequence('/');
 
+    /**
+     * Create a lightwieight single-character character sequence with minimal
+     * footprint.
+     *
+     * @param c A character
+     * @return A character sequence
+     */
     public static CharSequence singleChar(char c) {
         switch (c) {
             case '\n':
@@ -936,18 +968,43 @@ public final class Strings {
                 return OPEN_SQUARE;
             case ']':
                 return CLOSE_SQUARE;
+            case '/':
+                return SLASH;
+            case '\u2026':
+                return ELLIPSIS;
             default:
                 return new SingleCharSequence(c);
         }
     }
 
+    /**
+     * Split a character sequence on a character
+     *
+     * @param delim A character
+     * @param seq A character sequence to split
+     * @return An array of character sequences
+     */
     public static CharSequence[] split(char delim, CharSequence seq) {
+        if (seq.length() == 0) {
+            return new CharSequence[0];
+        }
         List<CharSequence> l = splitToList(delim, seq);
         return l.toArray(new CharSequence[l.size()]);
     }
 
+    /**
+     * Split a character sequence on the first occurrence of the passed
+     * character, if any.
+     *
+     * @param c The character
+     * @param cs The sequence
+     * @return An array of strings - may be 1 length if not present
+     */
     public static CharSequence[] splitOnce(char c, CharSequence cs) {
         int max = cs.length();
+        if (max == 0) {
+            return new CharSequence[0];
+        }
         int splitAt = -1;
         for (int i = 0; i < cs.length(); i++) {
             if (c == cs.charAt(i)) {
@@ -966,8 +1023,18 @@ public final class Strings {
         return new CharSequence[]{left};
     }
 
+    /**
+     * Split a string on the first occurrence of the passed character, if any.
+     *
+     * @param c The character
+     * @param cs The sequence
+     * @return An array of strings - may be 1 length if not present
+     */
     public static String[] splitOnce(char c, String cs) {
         int max = cs.length();
+        if (max == 0) {
+            return new String[0];
+        }
         int splitAt = -1;
         for (int i = 0; i < cs.length(); i++) {
             if (c == cs.charAt(i)) {
@@ -986,6 +1053,12 @@ public final class Strings {
         return new String[]{left};
     }
 
+    /**
+     * Remove leading and trailing double quotes if present.
+     *
+     * @param cs A character sequence
+     * @return A character sequence
+     */
     public static final CharSequence stripDoubleQuotes(CharSequence cs) {
         if (cs.length() >= 2) {
             if (cs.charAt(0) == '"') {
@@ -1705,7 +1778,7 @@ public final class Strings {
     public static StringBuilder appendPaddedHex(int val, StringBuilder sb) {
         String sval = Integer.toHexString(val & 0xFFFFFFFF);
         if (sval.length() != 8) {
-            char[] c = new char[8-sval.length()];
+            char[] c = new char[8 - sval.length()];
             Arrays.fill(c, '0');
             sb.append(c);
             sb.append(sval);
@@ -2418,7 +2491,87 @@ public final class Strings {
             }
         }
         return s;
+    }
 
+    /**
+     * Elide a string to 40 characters, breaking on whitespace if possible,
+     * leaving the head and the tail and inserting &#2026; as an elipsis.
+     *
+     * @param orig The original character sequence
+     * @return an elided sequence if the length is greater than 40 characters
+     */
+    public static CharSequence elide(CharSequence orig) {
+        return elide(orig, 40);
+    }
+
+    /**
+     * Elide a string to the passed number of characters plus the length of an
+     * one-character elipsis, breaking on whitespace if possible, leaving the
+     * head and the tail and inserting &#2026; as an elipsis.
+     *
+     * @param orig The original character sequence
+     * @param thresholdLength The threshold length
+     * @return an elided sequence if the length is greater than the passed
+     * length characters
+     */
+    public static CharSequence elide(CharSequence orig, int thresholdLength) {
+        return elide(orig, Checks.greaterThanOne("maxLength", thresholdLength), ELLIPSIS);
+    }
+
+    /**
+     * Elide a string to the passed number of characters plus the length of an
+     * one-character elipsis, breaking on whitespace if possible, leaving the
+     * head and the tail and inserting &#2026; as an elipsis.
+     *
+     * @param orig The original character sequence
+     * @param thresholdLength The threshold length
+     * @param ellipsis The character sequence to insert as ellipsis
+     * @return an elided sequence if the length is greater than 40 characters
+     */
+    public static CharSequence elide(CharSequence orig, int thresholdLength, CharSequence ellipsis) {
+        int len = orig.length();
+        if (len <= 2 + ellipsis.length() + 1 || orig.length() <= thresholdLength) {
+            return orig;
+        }
+        if (thresholdLength % 2 != 0) {
+            thresholdLength--;
+        }
+        int half = len / 2;
+        int leftEnd = half - thresholdLength;
+        int rightStart = half + thresholdLength;
+
+//        System.out.println("Start with '" + orig.subSequence(0, leftEnd));
+
+        int leftScanStop = Math.max(leftEnd - (leftEnd / 3), leftEnd - MAX_ELLIPSIS_SKEW);
+        int rightScanStop = Math.min(rightStart + ((len - rightStart) / 3), rightStart + MAX_ELLIPSIS_SKEW);
+        if (!Character.isWhitespace(orig.charAt(leftEnd))) {
+            for (int i = leftEnd - 1; i > leftScanStop; i--) {
+                if (Character.isWhitespace(orig.charAt(i))) {
+                    rightStart -= (leftEnd - (i));
+                    leftEnd = i;
+                    break;
+                }
+            }
+        } else {
+            while (leftEnd > leftScanStop && Character.isWhitespace(orig.charAt(leftEnd + 1))) {
+                leftEnd--;
+            }
+        }
+        if (!Character.isWhitespace(orig.charAt(rightStart))) {
+            for (int i = rightStart + 1; i < rightScanStop; i++) {
+                if (Character.isWhitespace(orig.charAt(i))) {
+                    rightStart = i + 1;
+                    break;
+                }
+            }
+        } else {
+            while (rightStart < orig.length() - 2 && Character.isWhitespace(orig.charAt(rightStart))) {
+                rightStart++;
+            }
+        }
+        CharSequence left = orig.subSequence(0, leftEnd);
+        CharSequence right = orig.subSequence(rightStart, len);
+        return new AppendableCharSequence(left, ellipsis, right);
     }
 
     /**

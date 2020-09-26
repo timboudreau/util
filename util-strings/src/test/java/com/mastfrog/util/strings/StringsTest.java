@@ -759,4 +759,22 @@ public class StringsTest {
         assertEquals("\\\"The QQueen QQuaffed QQuickly\\\"\\n",
                 Strings.escape("\"The queen quaffed quickly\"\n", weird));
     }
+
+    @Test
+    public void testElide() {
+        CharSequence res = Strings.elide("This is some text which will be elided for you", 16);
+        assertCharSequences("This is…for you", res);
+
+        res = Strings.elide("This is some text which will be elided for you", 10);
+        assertCharSequences("This is some…elided for you", res);
+
+        System.out.println("--------------------------");
+        res = Strings.elide("This is some text which will be elided for you", 5);
+        assertCharSequences("This is some text…be elided for you", res);
+
+    }
+
+    private void assertCharSequences(String exp, CharSequence got) {
+        assertEquals(exp, got.toString());
+    }
 }

@@ -886,6 +886,9 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
             if (p != null) {
                 p = p.deepCopyRemoving(msg, found);
             }
+            if (!found[0]) {
+                return this;
+            }
             return new MessageEntry<>(p, message);
         }
 
