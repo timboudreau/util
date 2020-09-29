@@ -98,4 +98,8 @@ public interface Flt extends FloatConsumer, FloatSupplier, Consumer<Float>, Supp
     default int round() {
         return Math.round(getAsFloat());
     }
+
+    default FloatSupplier combinedWith(FloatSupplier otherValue, FloatBinaryOperator formula) {
+        return () -> formula.applyAsFloat(getAsFloat(), otherValue.getAsFloat());
+    }
 }

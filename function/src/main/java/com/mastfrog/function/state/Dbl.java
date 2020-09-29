@@ -114,4 +114,8 @@ public interface Dbl extends DoubleConsumer, DoubleSupplier, Consumer<Double>, S
     default double round() {
         return Math.round(getAsDouble());
     }
+
+    default DoubleSupplier combinedWith(DoubleSupplier otherValue, DoubleBinaryOperator formula) {
+        return () -> formula.applyAsDouble(getAsDouble(), otherValue.getAsDouble());
+    }
 }

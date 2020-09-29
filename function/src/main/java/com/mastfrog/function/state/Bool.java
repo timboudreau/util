@@ -11,7 +11,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Holder for a primitive boolean that needs to be updated within a lambda.
+ * Holder for a primitive boolean that needs to be updated within a lambda
+ * or set of recursive calls to hold transitive state.
  *
  * @author Tim Boudreau
  */
@@ -31,6 +32,44 @@ public interface Bool extends BooleanConsumer, BooleanSupplier, Supplier<Boolean
 
     public static Bool createAtomic(boolean val) {
         return new BoolAtomic(val);
+    }
+
+    default boolean or(boolean val) {
+        boolean old = getAsBoolean();
+        set(old || val);
+        return old != val;
+    }
+
+    default boolean and(boolean val) {
+        boolean old = getAsBoolean();
+        boolean newVal = old && val;
+        if (newVal != old) {
+            set(newVal);
+            return true;
+        }
+        return false;
+    }
+
+    default boolean xor(boolean val) {
+        boolean old = getAsBoolean();
+        boolean nue = old ^ val;
+        if (nue != old) {
+            set(nue);
+            return true;
+        }
+        return false;
+    }
+
+    default BooleanSupplier or(BooleanSupplier other) {
+        return () -> getAsBoolean() || other.getAsBoolean();
+    }
+
+    default BooleanSupplier and(BooleanSupplier other) {
+        return () -> getAsBoolean() && other.getAsBoolean();
+    }
+
+    default BooleanSupplier xor(BooleanSupplier other) {
+        return () -> getAsBoolean() ^ other.getAsBoolean();
     }
 
     default boolean set() {
@@ -78,6 +117,7 @@ public interface Bool extends BooleanConsumer, BooleanSupplier, Supplier<Boolean
         return set(!getAsBoolean());
     }
 
+    @Override
     default Boolean get() {
         return getAsBoolean();
     }

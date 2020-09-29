@@ -1,7 +1,9 @@
 package com.mastfrog.function.state;
 
+import com.mastfrog.function.FloatSupplier;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.DoubleSupplier;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongConsumer;
 import java.util.function.LongPredicate;
@@ -54,8 +56,17 @@ public interface Lng extends LongConsumer, LongSupplier, Supplier<Long>, Compara
         return result;
     }
 
+    default long decrement() {
+        return decrement(1);
+    }
+
     default long decrement(long val) {
         return increment(-val);
+    }
+
+    default long decrementSafe(long by) {
+        long val = getAsLong();
+        return set(Math.subtractExact(val, by));
     }
 
     @Override
@@ -113,6 +124,10 @@ public interface Lng extends LongConsumer, LongSupplier, Supplier<Long>, Compara
         return set(getAsLong() + val);
     }
 
+    default long incrementSafe(long by) {
+        return set(Math.addExact(getAsLong(), by));
+    }
+
     default Lng reset() {
         set(0);
         return this;
@@ -154,4 +169,40 @@ public interface Lng extends LongConsumer, LongSupplier, Supplier<Long>, Compara
     default boolean equals(long val) {
         return val == getAsLong();
     }
+
+    default LongSupplier plus(LongSupplier supp) {
+        return () -> getAsLong() + supp.getAsLong();
+    }
+
+    default LongSupplier minus(LongSupplier supp) {
+        return () -> getAsLong() - supp.getAsLong();
+    }
+
+    default LongSupplier times(LongSupplier supp) {
+        return () -> getAsLong() * supp.getAsLong();
+    }
+
+    default LongSupplier dividedBy(LongSupplier supp) {
+        return () -> {
+            long suppVal = supp.getAsLong();
+            return suppVal == 0 ? 0 : getAsLong() / supp.getAsLong();
+        };
+    }
+
+    default FloatSupplier asFloatSupplier() {
+        return () -> (float) getAsLong();
+    }
+
+    default DoubleSupplier asDoubleSupplier() {
+        return () -> (double) getAsLong();
+    }
+
+    default LongSupplier asLongSupplier() {
+        return () -> (long) getAsLong();
+    }
+
+    default LongSupplier combinedWith(LongSupplier otherValue, LongBinaryOperator formula) {
+        return () -> formula.applyAsLong(getAsLong(), otherValue.getAsLong());
+    }
+
 }
