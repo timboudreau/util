@@ -943,6 +943,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
             return (MessageEntry<Message>) UPDATER.getAndSet(this, prev);
         }
 
+        @SuppressWarnings("unchecked")
         boolean compareAndSetPrev(MessageEntry<Message> expect, MessageEntry<Message> update) {
             return UPDATER.compareAndSet(this, expect, update);
         }

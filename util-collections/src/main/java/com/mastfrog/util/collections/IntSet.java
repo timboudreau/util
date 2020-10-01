@@ -54,7 +54,7 @@ import java.util.function.IntConsumer;
  *
  * @author Tim Boudreau
  */
-public abstract class IntSet implements Set<Integer>, Cloneable, Trimmable {
+public abstract class IntSet implements Set<Integer>, Cloneable, Trimmable, OrderedIntegerCollection {
 
 //    @HotSpotIntrinsicCandidate
     IntSet() {
@@ -435,6 +435,31 @@ public abstract class IntSet implements Set<Integer>, Cloneable, Trimmable {
         BitSet nue = (BitSet) other.bitsUnsafe().clone();
         nue.and(b1);
         return new IntSetImpl(nue);
+    }
+
+    /**
+     * Add all numbers from start up to but excluding end.
+     *
+     * @param start The start
+     * @param end The end
+     * @return true if the collection was modified
+     */
+    public boolean addInterval(int start, int end) {
+        int oldSize = size();
+        if (this.isArrayBased()) {
+            int[] toAdd = new int[end - start];
+            for (int i = start; i < end; i++) {
+                toAdd[i - start] = i;
+            }
+            addAll(toAdd);
+        } else {
+            BitSet orig = this.bitsUnsafe();
+            BitSet nue = new BitSet(end - start);
+            nue.set(start, end);
+
+            orig.or(nue);
+        }
+        return oldSize != size();
     }
 
     /**
@@ -902,7 +927,7 @@ public abstract class IntSet implements Set<Integer>, Cloneable, Trimmable {
      */
     @Override
     public abstract PrimitiveIterator.OfInt iterator();
-    
+
     public IntList toList() {
         return IntList.createFrom(toIntArray());
     }

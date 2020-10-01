@@ -555,6 +555,15 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
         return old;
     }
 
+    public void forEachInt(IntConsumer c) {
+        forEach(c);
+    }
+
+    @Override
+    public int valueAt(int position) {
+        return getAsInt(position);
+    }
+
     @Override
     public void forEach(IntConsumer c) {
         for (int i = 0; i < size; i++) {

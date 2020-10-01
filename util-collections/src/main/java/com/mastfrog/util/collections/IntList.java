@@ -40,7 +40,7 @@ import java.util.function.IntConsumer;
  *
  * @author Tim Boudreau
  */
-public interface IntList extends List<Integer>, Trimmable {
+public interface IntList extends List<Integer>, Trimmable, OrderedIntegerCollection {
 
     /**
      * Create an IntList with the default capacity (currently 96 for historical

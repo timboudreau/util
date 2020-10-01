@@ -141,7 +141,6 @@ public class AtomicLinkedQueueTest {
                         break;
                     }
                 }
-                System.out.println(loop + " loops on " + Thread.currentThread().getName());
             } catch (Throwable t) {
                 thrown = t;
             }

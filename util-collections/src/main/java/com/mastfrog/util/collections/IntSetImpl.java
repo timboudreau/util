@@ -33,6 +33,7 @@ import java.util.PrimitiveIterator;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.IntConsumer;
+import java.util.function.IntFunction;
 
 /**
  * A Java set of integers backed by a BitSet, which can look up random elements.
@@ -773,5 +774,16 @@ final class IntSetImpl extends IntSet {
             }
         }
         return sb.append(']').toString();
+    }
+
+    public String toString(String delimiter, IntFunction<?> stringifier) {
+        StringBuilder sb = new StringBuilder(size() * 8);
+        for (int curr = bits.nextSetBit(0); curr != -1; curr = bits.nextSetBit(curr + 1)) {
+            if (sb.length() > 0) {
+                sb.append(delimiter);
+            }
+            sb.append(stringifier.apply(curr));
+        }
+        return sb.toString();
     }
 }
