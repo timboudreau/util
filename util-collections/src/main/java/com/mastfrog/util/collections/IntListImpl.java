@@ -517,10 +517,8 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
     @Override
     public void addAll(int... values) {
         maybeGrow(size + values.length);
-        System.out.println("WAS " + this);
         System.arraycopy(values, 0, this.values, size, values.length);
         size += values.length;
-        System.out.println("NOW " + this);
     }
 
     @Override
