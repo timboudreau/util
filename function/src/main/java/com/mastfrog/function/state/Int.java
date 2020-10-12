@@ -170,7 +170,7 @@ public interface Int extends IntConsumer, IntSupplier, Supplier<Integer>, Compar
     default int min(int min) {
         int val = getAsInt();
         if (min < val) {
-            set(val);
+            set(min);
         }
         return val;
     }
@@ -178,7 +178,7 @@ public interface Int extends IntConsumer, IntSupplier, Supplier<Integer>, Compar
     default int max(int max) {
         int val = getAsInt();
         if (max > val) {
-            set(val);
+            set(max);
         }
         return val;
     }

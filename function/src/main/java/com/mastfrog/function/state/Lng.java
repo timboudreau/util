@@ -138,7 +138,7 @@ public interface Lng extends LongConsumer, LongSupplier, Supplier<Long>, Compara
     default long min(long min) {
         long val = getAsLong();
         if (min < val) {
-            set(val);
+            set(min);
         }
         return val;
     }
@@ -146,7 +146,7 @@ public interface Lng extends LongConsumer, LongSupplier, Supplier<Long>, Compara
     default long max(long max) {
         long val = getAsLong();
         if (max > val) {
-            set(val);
+            set(max);
         }
         return val;
     }

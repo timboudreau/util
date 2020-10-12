@@ -81,7 +81,7 @@ public interface Dbl extends DoubleConsumer, DoubleSupplier, Consumer<Double>, S
 
     default double max(double val) {
         double old = getAsDouble();
-        if (val > getAsDouble()) {
+        if (val > old) {
             accept(val);
         }
         return old;
@@ -89,7 +89,7 @@ public interface Dbl extends DoubleConsumer, DoubleSupplier, Consumer<Double>, S
 
     default double min(double val) {
         double old = getAsDouble();
-        if (val < getAsDouble()) {
+        if (val < old) {
             accept(val);
         }
         return old;

@@ -65,7 +65,7 @@ public interface Flt extends FloatConsumer, FloatSupplier, Consumer<Float>, Supp
 
     default float max(float val) {
         float old = getAsFloat();
-        if (val > getAsFloat()) {
+        if (val > old) {
             accept(val);
         }
         return old;
@@ -73,7 +73,7 @@ public interface Flt extends FloatConsumer, FloatSupplier, Consumer<Float>, Supp
 
     default float min(float val) {
         float old = getAsFloat();
-        if (val < getAsFloat()) {
+        if (val < old) {
             accept(val);
         }
         return old;
