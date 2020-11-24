@@ -20,6 +20,7 @@ import com.mastfrog.graph.algorithm.Algorithm;
 import com.mastfrog.graph.algorithm.RankingAlgorithm;
 import com.mastfrog.graph.algorithm.Score;
 import com.mastfrog.abstractions.list.IndexedResolvable;
+import java.util.BitSet;
 import java.util.function.BiConsumer;
 
 /**
@@ -40,7 +41,7 @@ class BitSetObjectGraph<T> implements ObjectGraph<T> {
         this.indexed = indexedImpl;
     }
 
-    BitSetObjectGraph(BitSetGraph graph, int size, ToIntFunction<Object> toId, IntFunction<T> toObject) {
+    BitSetObjectGraph(IntGraph graph, int size, ToIntFunction<Object> toId, IntFunction<T> toObject) {
         this.graph = graph;
         this.indexed = new FIndexed<>(size, toId, toObject);
     }
@@ -476,12 +477,27 @@ class BitSetObjectGraph<T> implements ObjectGraph<T> {
         }
         List<T> newItems = new ArrayList<>(indexed.toList());
         newItems.removeAll(items);
-        return new BitSetObjectGraph<T>(graph.omitting(indices),
+        return new BitSetObjectGraph<>(graph.omitting(indices),
                 IndexedResolvable.forList(newItems));
     }
 
     @Override
     public int size() {
         return graph.size();
+    }
+
+    @Override
+    public List<T> topologicalSort(Set<T> items) {
+        BitSet set = new BitSet(size());
+        for (T item : items) {
+            int ix = toNodeId(item);
+            set.set(ix);
+        }
+        IntPath path = graph.topologicalSort(set);
+        List<T> result = new ArrayList<>(path.size());
+        path.forEachInt(ix -> {
+            result.add(toNode(ix));
+        });
+        return result;
     }
 }

@@ -18,6 +18,7 @@ import com.mastfrog.graph.algorithm.Algorithm;
 import com.mastfrog.graph.algorithm.RankingAlgorithm;
 import com.mastfrog.graph.algorithm.Score;
 import com.mastfrog.abstractions.list.IndexedResolvable;
+import java.util.BitSet;
 import java.util.function.BiConsumer;
 
 /**
@@ -420,5 +421,20 @@ final class BitSetStringGraph implements StringGraph {
     @Override
     public int size() {
         return tree.size();
+    }
+
+    @Override
+    public List<String> topologicalSort(Set<String> items) {
+        BitSet set = new BitSet(size());
+        for (String item : items) {
+            int ix = toNodeId(item);
+            set.set(ix);
+        }
+        IntPath path = tree.topologicalSort(set);
+        List<String> result = new ArrayList<>(path.size());
+        path.forEachInt(ix -> {
+            result.add(toNode(ix));
+        });
+        return result;
     }
 }

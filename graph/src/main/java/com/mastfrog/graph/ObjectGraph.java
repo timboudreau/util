@@ -279,4 +279,16 @@ public interface ObjectGraph<T> {
      * @return The size
      */
     int size();
+
+    /**
+     * Topologically sort a set of items; note that if a graph contains cycles,
+     * topological sorting is impossible - you will get <i>some</i> order that
+     * roughly approximates a topological sort for any items that are not part
+     * of a cycle; the order of appearance of items that participate in cycles
+     * is implementation-dependent.
+     *
+     * @param items some items
+     * @return A list
+     */
+    List<T> topologicalSort(Set<T> items);
 }
