@@ -520,13 +520,58 @@ public interface IntGraph {
     IntGraph omitting(int... items);
 
     /**
-     * Compare this graph and another; it is assumed that they
-     * have the same size.
+     * Compare this graph and another; it is assumed that they have the same
+     * size.
      *
      * @param other Another graph
-     * @param c A consumer which will be passed two arguments: A
-     * graph containing only added edges, and a graph containing only
-     * removed edges
+     * @param c A consumer which will be passed two arguments: A graph
+     * containing only added edges, and a graph containing only removed edges
      */
     void diff(IntGraph other, BiConsumer<IntGraph, IntGraph> c);
+
+    /**
+     * Topologically sort a set of ints; note that if a graph contains cycles,
+     * topological sorting is impossible - you will get <i>some</i> order that
+     * roughly approximates a topological sort for any ints that are not part of
+     * a cycle; the order of appearance of ints that participate in cycles is
+     * implementation-dependent.
+     *
+     * @param items some items
+     * @return A list
+     */
+    default IntPath topologicalSort(BitSet bits) {
+        return topologicalSort(Bits.fromBitSet(bits));
+    }
+
+    /**
+     * Topologically sort a set of ints; note that if a graph contains cycles,
+     * topological sorting is impossible - you will get <i>some</i> order that
+     * roughly approximates a topological sort for any ints that are not part of
+     * a cycle; the order of appearance of ints that participate in cycles is
+     * implementation-dependent.
+     *
+     * @param items some items
+     * @return A list
+     */
+    default IntPath topologicalSort(Bits bits) {
+        BitSet visited = new BitSet();
+
+        IntPath.Builder ipb = IntPath.builder();
+        IntConsumer visitPreceding = new IntConsumer() {
+            @Override
+            public void accept(int node) {
+                boolean wasVisited = visited.get(node);
+                visited.set(node);
+                if (!wasVisited && node > 0 && node < size()) {
+                    Bits ancestors = parents(node);
+                    ancestors.forEachSetBitAscending(this);
+                }
+                if (!wasVisited && bits.get(node)) {
+                    ipb.add(node);
+                }
+            }
+        };
+        bits.forEachSetBitAscending(visitPreceding);
+        return ipb.build().trim();
+    }
 }

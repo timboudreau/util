@@ -612,6 +612,11 @@ public class DynamicGraph<T> implements ObjectGraph<T> {
     }
 
     @Override
+    public List<T> topologicalSort(Set<T> items) {
+        return graph().topologicalSort(items);
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj == this) {
             return true;
