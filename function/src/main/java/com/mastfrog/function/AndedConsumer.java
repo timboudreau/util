@@ -37,7 +37,7 @@ final class AndedConsumer<T> implements LoggableConsumer<T> {
     private final Consumer<? super T> a;
     private final Consumer<? super T> b;
 
-    public AndedConsumer(Consumer<? super T> a, Consumer<? super T> b) {
+    AndedConsumer(Consumer<? super T> a, Consumer<? super T> b) {
         this.a = a;
         this.b = b;
     }

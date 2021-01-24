@@ -34,6 +34,7 @@ import java.io.IOException;
 @FunctionalInterface
 public interface IOOctoConsumer<A, B, C, D, E, F, G, H> extends ThrowingOctoConsumer<A, B, C, D, E, F, G, H> {
 
+    @Override
     void accept(A a, B b, C c, D d, E e, F f, G g, H h) throws IOException;
 
     default IOOctoConsumer<A, B, C, D, E, F, G, H> andThen(IOOctoConsumer<A, B, C, D, E, F, G, H> tb) {

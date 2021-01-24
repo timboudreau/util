@@ -47,7 +47,7 @@ public interface IOShortBiFunction<T> {
         return (a, b) -> {
             try {
                 return apply(a, b);
-            } catch (Exception ex) {
+            } catch (IOException ex) {
                 return Exceptions.chuck(ex);
             }
         };

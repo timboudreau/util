@@ -39,6 +39,7 @@ import java.util.function.ToIntBiFunction;
 @FunctionalInterface
 public interface ToIntHomoBiFunction<T> extends Comparator<T>, ToIntBiFunction<T,T> {
 
+    @Override
     int applyAsInt(T a, T b);
 
     static <R extends Comparable<R>> EnhIntSupplier comparer(Supplier<R> a, Supplier<R> b) {

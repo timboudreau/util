@@ -113,6 +113,7 @@ public interface BytePredicate {
                 return val == b;
             }
 
+            @Override
             public String toString() {
                 return "equalTo(" + val + ")";
             }
@@ -127,6 +128,7 @@ public interface BytePredicate {
                 return value == val || Arrays.binarySearch(moreVals, value) >= 0;
             }
 
+            @Override
             public String toString() {
                 StringBuilder sb = new StringBuilder().append("anyOf(").append(val);
                 if (moreVals.length > 0) {

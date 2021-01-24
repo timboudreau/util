@@ -32,6 +32,7 @@ import java.io.IOException;
  */
 public interface IOTriPredicate<In1, In2, In3> extends ThrowingTriPredicate<In1, In2, In3> {
 
+    @Override
     boolean test(In1 a, In2 b, In3 c) throws IOException;
 
     default IOTriPredicate<In1, In2, In3> and(IOTriPredicate<? super In1, ? super In2, ? super In3> other) {

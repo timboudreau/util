@@ -40,4 +40,10 @@ public interface DoubleBiFunction<T> {
             return apply(sa.getAsDouble(), sb.getAsDouble());
         };
     }
+
+    default FloatBiFunction<T> toFloatBiFunction() {
+        return (a, b) -> {
+            return apply(a, b);
+        };
+    }
 }

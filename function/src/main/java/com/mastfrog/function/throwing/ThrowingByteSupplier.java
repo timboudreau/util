@@ -23,6 +23,9 @@
  */
 package com.mastfrog.function.throwing;
 
+import com.mastfrog.function.ByteSupplier;
+import com.mastfrog.util.preconditions.Exceptions;
+
 /**
  *
  * @author Tim Boudreau
@@ -31,6 +34,23 @@ package com.mastfrog.function.throwing;
 public interface ThrowingByteSupplier {
 
     byte getAsByte() throws Exception;
+
+    /**
+     * Convert to a non-throwing equivalent. Note that the resulting method
+     * <i>will</i> rethrow any thrown checked exceptions.
+     *
+     * @return An equivalent function that does not declare the exceptions which
+     * it throws
+     */
+    default ByteSupplier toNonThrowing() {
+        return () -> {
+            try {
+                return getAsByte();
+            } catch (Exception ex) {
+                return Exceptions.chuck(ex);
+            }
+        };
+    }
 
     default ThrowingIntSupplier toUnsignedIntSupplier() {
         return () -> {

@@ -58,7 +58,27 @@ public interface ThrowingBiConsumer<T, R> {
         };
     }
 
+    /**
+     * Convert to a plain BiConsumer (which will throw undeclared checked
+     * exceptions).
+     *
+     * @return A BiConsumer
+     * @deprecated Use the better-named and consistent toNonThrowing() method
+     * instead
+     */
+    @Deprecated
     default BiConsumer<T, R> asBiconsumer() {
+        return toNonThrowing();
+    }
+
+    /**
+     * Convert to a plain BiConsumer (which will throw undeclared checked
+     * exceptions).
+     *
+     * @return A BiConsumer
+     * @deprecated
+     */
+    default BiConsumer<T, R> toNonThrowing() {
         return (T t, R u) -> {
             try {
                 ThrowingBiConsumer.this.accept(t, u);

@@ -34,6 +34,7 @@ import java.io.IOException;
 @FunctionalInterface
 public interface IOSextaConsumer<A, B, C, D, E, F> extends ThrowingSextaConsumer<A, B, C, D, E, F> {
 
+    @Override
     void accept(A a, B b, C c, D d, E e, F f) throws IOException;
 
     default IOSextaConsumer<A, B, C, D, E, F> andThen(IOSextaConsumer<A, B, C, D, E, F> tb) {

@@ -36,6 +36,7 @@ final class DblImpl implements Dbl {
         return Double.toString(value);
     }
 
+    @Override
     public boolean equals(Object o) {
         if (o == this) {
             return true;
@@ -50,6 +51,7 @@ final class DblImpl implements Dbl {
         return false;
     }
 
+    @Override
     public int hashCode() {
         long val = Double.doubleToLongBits(value);
         return (int) (val ^ val >> 32);

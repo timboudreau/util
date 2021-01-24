@@ -34,5 +34,6 @@ import java.io.IOException;
 @FunctionalInterface
 public interface IOToByteFunction<T> extends ThrowingToByteFunction<T> {
 
+    @Override
     byte applyAsByte(T obj) throws IOException;
 }

@@ -17,4 +17,8 @@ public interface IntBiFunction<T> {
             return f.apply(apply(a, b));
         };
     }
+
+    default ShortBiFunction<T> toShortBiFunction() {
+        return (a, b) -> apply(a, b);
+    }
 }

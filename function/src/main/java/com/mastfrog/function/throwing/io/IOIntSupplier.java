@@ -36,6 +36,7 @@ import java.util.function.IntSupplier;
 @FunctionalInterface
 public interface IOIntSupplier extends ThrowingIntSupplier {
 
+    @Override
     int getAsInt() throws IOException;
 
     @Override

@@ -34,5 +34,6 @@ import java.io.IOException;
 @FunctionalInterface
 public interface IOShortConsumer extends ThrowingShortConsumer {
 
+    @Override
     void accept(short s) throws IOException;
 }

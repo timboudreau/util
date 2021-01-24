@@ -90,9 +90,14 @@ public interface IntBiPredicate {
                 return aPredicate.test(a) && bPredicate.test(b);
             }
 
+            @Override
             public String toString() {
                 return "{" + aPredicate + ", " + bPredicate + "}";
             }
         };
+    }
+
+    default ShortBiPredicate toShortBiPredicate() {
+        return (a, b) -> test(a, b);
     }
 }

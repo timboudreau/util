@@ -34,6 +34,7 @@ import java.io.IOException;
 @FunctionalInterface
 public interface IOQuadConsumer<A, B, C, D> extends ThrowingQuadConsumer<A, B, C, D> {
 
+    @Override
     void accept(A a, B b, C s, D u) throws IOException;
 
     default IOQuadConsumer<A, B, C, D> andThen(IOQuadConsumer<? super A, ? super B, ? super C, ? super D> other) {

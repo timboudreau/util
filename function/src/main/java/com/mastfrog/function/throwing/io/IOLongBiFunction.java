@@ -34,6 +34,7 @@ import java.io.IOException;
 @FunctionalInterface
 public interface IOLongBiFunction<T> extends ThrowingLongBiFunction<T> {
 
+    @Override
     T applyAsLong(long a, long b) throws IOException;
 
 }

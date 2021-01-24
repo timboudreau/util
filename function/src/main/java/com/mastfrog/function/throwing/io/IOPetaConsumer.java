@@ -34,6 +34,7 @@ import java.io.IOException;
 @FunctionalInterface
 public interface IOPetaConsumer<A, B, C, D, E> extends ThrowingPetaConsumer<A, B, C, D, E> {
 
+    @Override
     void accept(A a, B b, C c, D d, E e) throws IOException;
 
     default IOPetaConsumer<A, B, C, D, E> andThen(IOPetaConsumer<? super A, ? super B, ? super C, ? super D, ? super E> other) {

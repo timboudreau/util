@@ -67,6 +67,7 @@ public class ThrowingRunnableTest {
             this.callOrder = callOrder;
         }
 
+        @Override
         public String toString() {
             return Integer.toString(ix);
         }
@@ -80,7 +81,7 @@ public class ThrowingRunnableTest {
     @Test
     public void testComposableAllCalled() throws Throwable {
         ThrowingRunnable t = ThrowingRunnable.composable();
-        List<AC> all = new ArrayList<AC>();
+        List<AC> all = new ArrayList<>();
         for (int i = 0; i < 20; i++) {
             ThrowingRunnable old = t;
             AC ac;
@@ -118,7 +119,7 @@ public class ThrowingRunnableTest {
     @Test
     public void testComposableAllCalledOneShot() throws Throwable {
         ThrowingRunnable t = ThrowingRunnable.oneShot();
-        List<AC> all = new ArrayList<AC>();
+        List<AC> all = new ArrayList<>();
         for (int i = 0; i < 20; i++) {
             ThrowingRunnable old = t;
             AC ac;
@@ -156,7 +157,7 @@ public class ThrowingRunnableTest {
     @Test
     public void testComposableAllCalledWithErrors() throws Throwable {
         ThrowingRunnable t = ThrowingRunnable.composable();
-        List<AC> all = new ArrayList<AC>();
+        List<AC> all = new ArrayList<>();
         for (int i = 0; i < 55; i++) {
             ThrowingRunnable old = t;
             AC ac;
@@ -210,7 +211,7 @@ public class ThrowingRunnableTest {
     @Test
     public void testComposableAllCalledOneShotWithErrors() throws Throwable {
         ThrowingRunnable t = ThrowingRunnable.oneShot();
-        List<AC> all = new ArrayList<AC>();
+        List<AC> all = new ArrayList<>();
         for (int i = 0; i < 55; i++) {
             ThrowingRunnable old = t;
             AC ac;
@@ -306,6 +307,7 @@ public class ThrowingRunnableTest {
             this.ix = ix;
         }
 
+        @Override
         public String toString() {
             return getClass().getSimpleName() + "-" + ix;
         }
@@ -315,6 +317,7 @@ public class ThrowingRunnableTest {
             assertFalse(called.get());
         }
 
+        @Override
         public void assertCalled() {
             boolean result = called.compareAndSet(true, false);
             assertTrue(result);
@@ -330,7 +333,7 @@ public class ThrowingRunnableTest {
 
         private final boolean error;
 
-        public RCRE(int ix, AtomicBoolean called, boolean error) {
+        RCRE(int ix, AtomicBoolean called, boolean error) {
             super(ix, called);
             this.error = error;
         }
@@ -350,7 +353,7 @@ public class ThrowingRunnableTest {
 
         final boolean error;
 
-        public RCTE(int ix, AtomicBoolean called, boolean error) {
+        RCTE(int ix, AtomicBoolean called, boolean error) {
             super(ix, called);
             this.error = error;
         }

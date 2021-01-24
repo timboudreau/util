@@ -52,6 +52,7 @@ public interface BooleanConsumer {
                 }
             }
 
+            @Override
             public String toString() {
                 return BooleanConsumer.this + ", " + others;
             }

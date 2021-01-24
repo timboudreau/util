@@ -87,10 +87,10 @@ public interface LongBiPredicate {
                 return aPredicate.test(a) && bPredicate.test(b);
             }
 
+            @Override
             public String toString() {
                 return "{" + aPredicate + ", " + bPredicate + "}";
             }
         };
     }
-
 }

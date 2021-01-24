@@ -22,6 +22,7 @@ public interface IORunnable extends ThrowingRunnable {
         };
     }
 
+    @Override
     default IORunnable andThen(Runnable next) {
         return () -> {
             IORunnable.this.run();

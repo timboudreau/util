@@ -85,7 +85,7 @@ public final class FunctionUtils {
 
         private final long[] arr;
 
-        public ArrayIntToLongFunction(long[] arr) {
+        ArrayIntToLongFunction(long[] arr) {
             this.arr = arr;
         }
 
@@ -126,7 +126,7 @@ public final class FunctionUtils {
 
         private final int[] arr;
 
-        public ArrayIntUnaryOperator(int[] arr) {
+        ArrayIntUnaryOperator(int[] arr) {
             this.arr = arr;
         }
 

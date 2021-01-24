@@ -23,33 +23,53 @@
  */
 package com.mastfrog.function.throwing;
 
+import com.mastfrog.util.preconditions.Exceptions;
+import java.util.function.BiPredicate;
+
 /**
  *
  * @author Tim Boudreau
  */
-public interface ThrowingBiPredicate<In1, In2> {
+public interface ThrowingBiPredicate<A, B> {
 
-    boolean test(In1 a, In2 b) throws Exception;
+    boolean test(A a, B b) throws Exception;
 
-    default ThrowingBiPredicate<In1, In2> and(ThrowingBiPredicate<? super In1, ? super In2> other) {
+    /**
+     * Convert to a non-throwing equivalent. Note that the resulting method
+     * <i>will</i> rethrow any thrown checked exceptions.
+     *
+     * @return An equivalent function that does not declare the exceptions which
+     * it throws
+     */
+    default BiPredicate<A, B> toNonThrowing() {
+        return (a, b) -> {
+            try {
+                return test(a, b);
+            } catch (Exception ex) {
+                return Exceptions.chuck(ex);
+            }
+        };
+    }
+
+    default ThrowingBiPredicate<A, B> and(ThrowingBiPredicate<? super A, ? super B> other) {
         return (a, b) -> {
             return this.test(a, b) && other.test(a, b);
         };
     }
 
-    default ThrowingBiPredicate<In1, In2> or(ThrowingBiPredicate<? super In1, ? super In2> other) {
+    default ThrowingBiPredicate<A, B> or(ThrowingBiPredicate<? super A, ? super B> other) {
         return (a, b) -> {
             return this.test(a, b) || other.test(a, b);
         };
     }
 
-    default ThrowingBiPredicate<In1, In2> andNot(ThrowingBiPredicate<? super In1, ? super In2> other) {
+    default ThrowingBiPredicate<A, B> andNot(ThrowingBiPredicate<? super A, ? super B> other) {
         return (a, b) -> {
             return this.test(a, b) && !other.test(a, b);
         };
     }
 
-    default ThrowingBiPredicate<In1, In2> xor(ThrowingBiPredicate<? super In1, ? super In2> other) {
+    default ThrowingBiPredicate<A, B> xor(ThrowingBiPredicate<? super A, ? super B> other) {
         return (a, b) -> {
             return this.test(a, b) != other.test(a, b);
         };

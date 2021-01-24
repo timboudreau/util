@@ -35,6 +35,7 @@ import java.util.function.LongSupplier;
 @FunctionalInterface
 public interface IOLongSupplier extends ThrowingLongSupplier {
 
+    @Override
     long getAsLong() throws IOException;
 
     @Override
@@ -177,6 +178,7 @@ public interface IOLongSupplier extends ThrowingLongSupplier {
         };
     }
 
+    @Override
     default IOSupplier<Long> toBoxedSupplier() {
         return () -> {
             return getAsLong();

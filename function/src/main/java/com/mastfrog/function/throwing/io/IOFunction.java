@@ -14,6 +14,7 @@ import java.util.function.Function;
 @FunctionalInterface
 public interface IOFunction<In, Out> extends ThrowingFunction<In, Out> {
 
+    @Override
     Out apply(In a) throws IOException;
 
     @Override
@@ -22,6 +23,7 @@ public interface IOFunction<In, Out> extends ThrowingFunction<In, Out> {
         return (In t) -> after.apply(apply(t));
     }
 
+    @Override
     default <V> ThrowingFunction<V, Out> compose(Function<? super V, ? extends In> before) {
         Checks.notNull("before", before);
         return (V v) -> apply(before.apply(v));

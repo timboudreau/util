@@ -36,6 +36,10 @@ public interface ThrowingLongBiConsumer {
 
     void accept(long a, long b) throws Exception;
 
+    default ThrowingIntBiConsumer toIntBiConsumer() {
+        return (a, b) -> accept(a, b);
+    }
+
     /**
      * Returns a wrapper which does not declare the checked exception (but will
      * rethrow it if thrown via Exceptions.chuck()).

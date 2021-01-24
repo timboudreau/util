@@ -13,8 +13,10 @@ import java.util.function.Function;
 @FunctionalInterface
 public interface IOConsumer<T> extends ThrowingConsumer<T> {
 
+    @Override
     void accept(T arg) throws IOException;
 
+    @Override
     default <R> IOConsumer<R> adapt(Function<R, T> conversion) {
         return (R r) -> {
             IOConsumer.this.accept(conversion.apply(r));
@@ -28,6 +30,7 @@ public interface IOConsumer<T> extends ThrowingConsumer<T> {
         };
     }
 
+    @Override
     default ThrowingConsumer<T> andThen(Consumer<T> other) {
         return t -> {
             this.accept(t);

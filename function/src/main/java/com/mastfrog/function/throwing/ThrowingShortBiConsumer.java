@@ -21,19 +21,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.function.throwing.io;
-
-import com.mastfrog.function.throwing.ThrowingToShortFunction;
-import java.io.IOException;
+package com.mastfrog.function.throwing;
 
 /**
- * Equivalent of ToIntFunction for <code>short</code>s that throws.
+ * Equivalent of IntConsumer for <code>short</code>s that throws.
  *
  * @author Tim Boudreau
  */
 @FunctionalInterface
-public interface IOToShortFunction<T> extends ThrowingToShortFunction<T> {
+public interface ThrowingShortBiConsumer {
 
-    @Override
-    short applyAsShort(T val) throws IOException;
+    void accept(short a, short b) throws Exception;
 }

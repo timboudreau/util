@@ -15,11 +15,11 @@ class IntImpl implements Int {
 
     private int value;
 
-    public IntImpl() {
+    IntImpl() {
 
     }
 
-    public IntImpl(int initial) {
+    IntImpl(int initial) {
         this.value = initial;
     }
 

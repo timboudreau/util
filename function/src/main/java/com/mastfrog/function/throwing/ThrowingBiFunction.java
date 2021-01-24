@@ -23,7 +23,9 @@
  */
 package com.mastfrog.function.throwing;
 
+import com.mastfrog.util.preconditions.Exceptions;
 import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -41,4 +43,20 @@ public interface ThrowingBiFunction<InA, InB, Out> {
         return (InA t, InB u) -> after.apply(apply(t, u));
     }
 
+    /**
+     * Convert to a non-throwing equivalent. Note that the resulting method
+     * <i>will</i> rethrow any thrown checked exceptions.
+     *
+     * @return An equivalent function that does not declare the exceptions which
+     * it throws
+     */
+    default BiFunction<InA, InB, Out> toNonThrowing() {
+        return (a, b) -> {
+            try {
+                return apply(a, b);
+            } catch (Exception ex) {
+                return Exceptions.chuck(ex);
+            }
+        };
+    }
 }

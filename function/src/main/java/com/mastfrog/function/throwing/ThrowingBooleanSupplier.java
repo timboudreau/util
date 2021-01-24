@@ -1,5 +1,6 @@
 package com.mastfrog.function.throwing;
 
+import com.mastfrog.util.preconditions.Exceptions;
 import java.util.function.BooleanSupplier;
 
 /**
@@ -12,6 +13,23 @@ import java.util.function.BooleanSupplier;
 public interface ThrowingBooleanSupplier {
 
     boolean getAsBoolean() throws Exception;
+
+    /**
+     * Convert to a non-throwing equivalent. Note that the resulting method
+     * <i>will</i> rethrow any thrown checked exceptions.
+     *
+     * @return An equivalent function that does not declare the exceptions which
+     * it throws
+     */
+    default BooleanSupplier toNonThrowing() {
+        return () -> {
+            try {
+                return getAsBoolean();
+            } catch (Exception ex) {
+                return Exceptions.chuck(ex);
+            }
+        };
+    }
 
     default ThrowingBooleanSupplier invert() {
         return () -> {

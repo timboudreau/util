@@ -30,6 +30,7 @@ final class ObjImpl<T> implements Obj<T> {
         return old;
     }
 
+    @Override
     public boolean ifUpdate(T newValue, Runnable ifChange) {
         if (!Objects.equals(obj, newValue)) {
             obj = newValue;

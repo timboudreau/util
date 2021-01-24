@@ -32,4 +32,8 @@ package com.mastfrog.function;
 public interface LongBiFunction<T> {
 
     T applyAsLong(long a, long b);
+
+    default IntBiFunction<T> toIntBiFunction() {
+        return (a, b) -> applyAsLong(a, b);
+    }
 }

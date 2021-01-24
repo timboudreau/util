@@ -45,6 +45,7 @@ public interface IOShortBiPredicate extends ThrowingShortBiPredicate {
      *
      * @return A wrapper around this function
      */
+    @Override
     default ShortBiPredicate toNonThrowing() {
         return (a, b) -> {
             try {

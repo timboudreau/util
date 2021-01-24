@@ -32,5 +32,6 @@ import java.io.IOException;
  */
 public interface IOToIntBiFunction<A, B> extends ThrowingToIntBiFunction<A, B> {
 
+    @Override
     int applyAsInt(A a, B b) throws IOException;
 }

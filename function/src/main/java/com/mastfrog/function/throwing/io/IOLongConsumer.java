@@ -13,8 +13,10 @@ import java.util.function.LongConsumer;
 @FunctionalInterface
 public interface IOLongConsumer extends ThrowingLongConsumer {
 
+    @Override
     void accept(long val) throws IOException;
 
+    @Override
     default IOLongConsumer andThen(LongConsumer after) {
         Objects.requireNonNull(after);
         return (long t) -> {

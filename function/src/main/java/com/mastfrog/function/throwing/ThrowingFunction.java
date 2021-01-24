@@ -38,7 +38,26 @@ public interface ThrowingFunction<In, Out> {
 
     Out apply(In arg) throws Exception;
 
+    /**
+     * Convert this to a non-throwing version (which *will* actually thrown
+     * checked exceptions via Exceptions.chuck()).
+     *
+     * @return A function
+     * @deprecated Use the better named toNonThrowing() instead.
+     */
+    @Deprecated
     default Function<In, Out> toFunction() {
+        return toNonThrowing();
+    }
+
+    /**
+     * Convert to a non-throwing equivalent. Note that the resulting method
+     * <i>will</i> rethrow any thrown checked exceptions.
+     *
+     * @return An equivalent function that does not declare the exceptions which
+     * it throws
+     */
+    default Function<In, Out> toNonThrowing() {
         return (In t) -> {
             try {
                 return ThrowingFunction.this.apply(t);

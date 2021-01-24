@@ -24,4 +24,8 @@ public interface IntBiConsumer {
             next.accept(a, b);
         };
     }
+
+    default ShortBiConsumer toShortBiConsumer() {
+        return (a, b) -> accept(a, b);
+    }
 }

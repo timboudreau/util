@@ -31,6 +31,7 @@ final class FltImpl implements Flt {
         return Float.toString(value);
     }
 
+    @Override
     public boolean equals(Object o) {
         if (o == this) {
             return true;

@@ -32,4 +32,8 @@ package com.mastfrog.function;
 public interface LongBiConsumer {
 
     void accept(long a, long b);
+
+    default IntBiConsumer toIntBiConsumer() {
+        return (a, b) -> accept(a, b);
+    }
 }

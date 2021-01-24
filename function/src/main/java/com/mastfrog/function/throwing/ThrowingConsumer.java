@@ -42,8 +42,21 @@ public interface ThrowingConsumer<T> {
      * exception).
      *
      * @return A consumer
+     * @deprecated Use the better-named toNonThrowing()
      */
+    @Deprecated
     default Consumer<T> asConsumer() {
+        return toNonThrowing();
+    }
+
+    /**
+     * Convert to a non-throwing equivalent. Note that the resulting method
+     * <i>will</i> rethrow any thrown checked exceptions.
+     *
+     * @return An equivalent function that does not declare the exceptions which
+     * it throws
+     */
+    default Consumer<T> toNonThrowing() {
         return (obj) -> {
             try {
                 ThrowingConsumer.this.accept(obj);
@@ -59,7 +72,7 @@ public interface ThrowingConsumer<T> {
         };
     }
 
-    default ThrowingConsumer<T> andThen (ThrowingConsumer<T> other) {
+    default ThrowingConsumer<T> andThen(ThrowingConsumer<T> other) {
         return t -> {
             this.accept(t);
             other.accept(t);

@@ -1,8 +1,8 @@
 package com.mastfrog.function.throwing;
 
+import com.mastfrog.function.IntBiConsumer;
 import com.mastfrog.util.preconditions.Exceptions;
 import java.util.Objects;
-import java.util.function.IntConsumer;
 
 /**
  * Throwing version of IntConsumer.
@@ -10,9 +10,13 @@ import java.util.function.IntConsumer;
  * @author Tim Boudreau
  */
 @FunctionalInterface
-public interface ThrowingIntConsumer {
+public interface ThrowingIntBiConsumer {
 
-    void accept(int val) throws Exception;
+    void accept(int a, int b) throws Exception;
+
+    default ThrowingShortBiConsumer toShortBiConsumer() {
+        return (a, b) -> accept(a, b);
+    }
 
     /**
      * Convert to a non-throwing equivalent. Note that the resulting method
@@ -21,33 +25,29 @@ public interface ThrowingIntConsumer {
      * @return An equivalent function that does not declare the exceptions which
      * it throws
      */
-    default IntConsumer toNonThrowing() {
-        return val -> {
+    default IntBiConsumer toNonThrowing() {
+        return (a, b) -> {
             try {
-                accept(val);
+                accept(a, b);
             } catch (Exception ex) {
                 Exceptions.chuck(ex);
             }
         };
     }
 
-    default ThrowingShortConsumer toShortConsumer() {
-        return val -> accept(val);
-    }
-
-    default ThrowingIntConsumer andThen(IntConsumer after) {
+    default ThrowingIntBiConsumer andThen(IntBiConsumer after) {
         Objects.requireNonNull(after);
-        return (int t) -> {
-            accept(t);
-            after.accept(t);
+        return (int a, int b) -> {
+            accept(a, b);
+            after.accept(a, b);
         };
     }
 
-    default ThrowingIntConsumer andThen(ThrowingIntConsumer after) {
+    default ThrowingIntBiConsumer andThen(ThrowingIntBiConsumer after) {
         Objects.requireNonNull(after);
-        return (int t) -> {
-            accept(t);
-            after.accept(t);
+        return (int a, int b) -> {
+            accept(a, b);
+            after.accept(a, b);
         };
     }
 

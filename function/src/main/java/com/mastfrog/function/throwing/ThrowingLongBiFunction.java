@@ -51,4 +51,8 @@ public interface ThrowingLongBiFunction<T> {
             }
         };
     }
+
+    default ThrowingIntBiFunction<T> toIntBiFunction() {
+        return (a, b) -> applyAsLong(a, b);
+    }
 }

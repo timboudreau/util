@@ -34,6 +34,7 @@ import java.io.IOException;
 @FunctionalInterface
 public interface IOSeptaConsumer<A, B, C, D, E, F, G> extends ThrowingSeptaConsumer<A, B, C, D, E, F, G> {
 
+    @Override
     void accept(A a, B b, C c, D d, E e, F f, G g) throws IOException;
 
     default IOSeptaConsumer<A, B, C, D, E, F, G> andThen(IOSeptaConsumer<A, B, C, D, E, F, G> tb) {

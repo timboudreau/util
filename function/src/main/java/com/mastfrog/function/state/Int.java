@@ -261,7 +261,7 @@ public interface Int extends IntConsumer, IntSupplier, Supplier<Integer>, Compar
      * @return The value of this int as an unsigned integer
      */
     default long unsignedValue() {
-        return ((long) getAsInt()) & 0x00000000ffffffffL;
+        return ((long) getAsInt()) & 0x0000_0000_ffff_ffffL;
     }
 
     default IntSupplier combinedWith(IntSupplier otherValue, IntBinaryOperator formula) {

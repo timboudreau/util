@@ -23,17 +23,15 @@
  */
 package com.mastfrog.function.throwing.io;
 
-import com.mastfrog.function.throwing.ThrowingToShortFunction;
 import java.io.IOException;
 
 /**
- * Equivalent of ToIntFunction for <code>short</code>s that throws.
+ * Equivalent of IntConsumer for <code>short</code>s that throws IOException.
  *
  * @author Tim Boudreau
  */
 @FunctionalInterface
-public interface IOToShortFunction<T> extends ThrowingToShortFunction<T> {
+public interface IOShortBiConsumer {
 
-    @Override
-    short applyAsShort(T val) throws IOException;
+    void accept(short a, short b) throws IOException;
 }

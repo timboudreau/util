@@ -35,8 +35,10 @@ import java.util.function.Function;
 @FunctionalInterface
 public interface IOSupplier<T> extends ThrowingSupplier<T> {
 
+    @Override
     T get() throws IOException;
 
+    @Override
     default <R> ThrowingSupplier<R> adapt(Function<T, R> func) {
         return () -> {
             return func.apply(IOSupplier.this.get());

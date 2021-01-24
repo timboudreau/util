@@ -32,5 +32,6 @@ import java.io.IOException;
  */
 public interface IOToLongBiFunction<A, B> extends ThrowingToLongBiFunction<A, B> {
 
+    @Override
     long applyAsLong(A a, B b) throws IOException;
 }

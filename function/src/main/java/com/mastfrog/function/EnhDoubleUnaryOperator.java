@@ -67,11 +67,13 @@ public interface EnhDoubleUnaryOperator extends DoubleUnaryOperator {
         return v -> -v;
     }
 
+    @Override
     default EnhDoubleUnaryOperator andThen(DoubleUnaryOperator after) {
         Objects.requireNonNull(after);
         return (double t) -> after.applyAsDouble(applyAsDouble(t));
     }
 
+    @Override
     default EnhDoubleUnaryOperator compose(DoubleUnaryOperator before) {
         Objects.requireNonNull(before);
         return (double v) -> applyAsDouble(before.applyAsDouble(v));

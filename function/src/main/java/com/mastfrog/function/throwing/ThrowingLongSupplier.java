@@ -23,6 +23,7 @@
  */
 package com.mastfrog.function.throwing;
 
+import com.mastfrog.util.preconditions.Exceptions;
 import java.util.function.LongPredicate;
 import java.util.function.LongSupplier;
 
@@ -34,6 +35,23 @@ import java.util.function.LongSupplier;
 public interface ThrowingLongSupplier {
 
     long getAsLong() throws Exception;
+
+    /**
+     * Convert to a non-throwing equivalent. Note that the resulting method
+     * <i>will</i> rethrow any thrown checked exceptions.
+     *
+     * @return An equivalent function that does not declare the exceptions which
+     * it throws
+     */
+    default LongSupplier toNonThrowing() {
+        return () -> {
+            try {
+                return getAsLong();
+            } catch (Exception ex) {
+                return Exceptions.chuck(ex);
+            }
+        };
+    }
 
     default ThrowingLongSupplier or(LongPredicate test, LongSupplier next) {
         return () -> {
@@ -170,5 +188,4 @@ public interface ThrowingLongSupplier {
             return getAsLong();
         };
     }
-
 }
