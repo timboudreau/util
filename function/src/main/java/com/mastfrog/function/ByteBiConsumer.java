@@ -24,19 +24,19 @@
 package com.mastfrog.function;
 
 /**
- * Like IntConsumer, for bytes.
+ * Like IntBiConsumer, for bytes.
  *
  * @author Tim Boudreau
  */
 @FunctionalInterface
-public interface ByteConsumer {
+public interface ByteBiConsumer {
 
-    void accept(byte b);
+    void accept(byte a, byte b);
 
-    default ByteConsumer andThen(ByteConsumer next) {
-        return b -> {
-            this.accept(b);
-            next.accept(b);
+    default ByteBiConsumer andThen(ByteBiConsumer next) {
+        return (a, b) -> {
+            this.accept(a, b);
+            next.accept(a, b);
         };
     }
 }

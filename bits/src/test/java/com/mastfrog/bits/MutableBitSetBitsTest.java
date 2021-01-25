@@ -14,13 +14,9 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.IntSupplier;
 import java.util.function.LongSupplier;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  *
@@ -30,7 +26,7 @@ public class MutableBitSetBitsTest {
 
     private Random rnd;
 
-    @Before
+    @BeforeEach
     public void setup() {
         rnd = new Random(102924230947L);
     }
@@ -216,22 +212,22 @@ public class MutableBitSetBitsTest {
         BitSet b1 = b.get(10, 20);
         for (int i = 0; i < 20; i++) {
             if (i >= 10) {
-                assertFalse(i + "", b1.get(i));
+                assertFalse(b1.get(i), i + "");
             } else {
-                assertTrue(i + "", b1.get(i));
+                assertTrue(b1.get(i), i + "");
             }
         }
     }
 
     private void assertSlice(Bits bits, int start, int end, Set<Integer> expected) {
         for (Integer exp : expected) {
-            assertTrue("Slice does not contain " + exp, bits.get(exp));
+            assertTrue(bits.get(exp), "Slice does not contain " + exp);
         }
         Set<Integer> got = new HashSet<>();
         int[] lastBit = new int[]{Integer.MIN_VALUE};
         int countUp = bits.forEachSetBitAscending(start, end, bit -> {
             got.add(bit);
-            assertTrue("bit " + bit + ">" + lastBit[0], bit > lastBit[0]);
+            assertTrue(bit > lastBit[0], "bit " + bit + ">" + lastBit[0]);
             lastBit[0] = bit;
         });
         assertSets(expected, got);
@@ -240,7 +236,7 @@ public class MutableBitSetBitsTest {
         lastBit[0] = Integer.MAX_VALUE;
         int countDown = bits.forEachSetBitDescending(end, start, bit -> {
             got.add(bit);
-            assertTrue("bit " + bit + "<" + lastBit[0], bit < lastBit[0]);
+            assertTrue(bit < lastBit[0], "bit " + bit + "<" + lastBit[0]);
             lastBit[0] = bit;
         });
         assertSets(expected, got);
@@ -250,7 +246,7 @@ public class MutableBitSetBitsTest {
         long countUpLong = bits.forEachLongSetBitAscending(start, end, bit -> {
             int ib = (int) bit;
             got.add(ib);
-            assertTrue("bit " + ib + ">" + lastBit[0], ib > lastBit[0]);
+            assertTrue(ib > lastBit[0], "bit " + ib + ">" + lastBit[0]);
             lastBit[0] = ib;
         });
         assertSets(expected, got);
@@ -259,7 +255,7 @@ public class MutableBitSetBitsTest {
         lastBit[0] = Integer.MAX_VALUE;
         long countDownLong = bits.forEachLongSetBitDescending(end, start, bit -> {
             got.add((int) bit);
-            assertTrue("bit " + bit + "<" + lastBit[0], bit < lastBit[0]);
+            assertTrue(bit < lastBit[0], "bit " + bit + "<" + lastBit[0]);
             lastBit[0] = (int) bit;
         });
         assertSets(expected, got);
@@ -272,7 +268,7 @@ public class MutableBitSetBitsTest {
 
     private void assertContents(Bits bits, Set<Integer> expected) {
         for (Integer exp : expected) {
-            assertTrue("Bits does not contain " + exp, bits.get(exp));
+            assertTrue(bits.get(exp), "Bits does not contain " + exp);
         }
         BitSet bs = bits.toBitSet();
         Set<Integer> got = new HashSet<>();
@@ -384,11 +380,11 @@ public class MutableBitSetBitsTest {
             if (rnd.nextInt(10) == 3) {
                 fake.set(i);
                 real.set(i);
-                assertTrue("Failed to set " + i, fake.get(i));
+                assertTrue(fake.get(i), "Failed to set " + i);
             } else if (rnd.nextInt(4) == 2) {
                 real.clear(i);
                 fake.clear(i);
-                assertFalse("Failed to clear " + i, fake.get(i));
+                assertFalse(fake.get(i), "Failed to clear " + i);
             }
         }
         assertEquals(fake, real);

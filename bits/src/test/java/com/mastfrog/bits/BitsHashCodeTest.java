@@ -2,9 +2,9 @@ package com.mastfrog.bits;
 
 import java.util.BitSet;
 import java.util.Random;
-import static org.junit.Assert.*;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  *
@@ -58,12 +58,12 @@ public class BitsHashCodeTest {
     }
 
     private void assertHashCode(Bits bits) {
-        assertEquals(bits + "", bits.hashCode(), bits.bitsHashCode());
+        assertEquals(bits.hashCode(), bits.bitsHashCode(), bits + "");
     }
 
     private Random rnd;
 
-    @Before
+    @BeforeEach
     public void setup() {
         rnd = new Random(10292423094L);
     }

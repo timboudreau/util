@@ -1,8 +1,8 @@
 package com.mastfrog.bits.large;
 
 import java.util.Random;
-import static org.junit.Assert.assertEquals;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  *
@@ -44,7 +44,7 @@ public class MappedFileLongArrayTest {
             long val = Long.MAX_VALUE / 4;
             arr.fill(0, arr.size(), val);
             for (long i = 0; i < arr.size(); i++) {
-                assertEquals(i + "", val, arr.get(i));
+                assertEquals(val, arr.get(i), i + "");
             }
             long size = arr.size() * 2;
             for (int i = 0; i < size; i++) {
@@ -63,9 +63,9 @@ public class MappedFileLongArrayTest {
                 arr.fill(arr.size() - i, i, 23);
                 for (int j = 0; j < arr.size(); j++) {
                     if (j < arr.size() - i) {
-                        assertEquals("at " + i + "," + j, j * 2, arr.get(j));
+                        assertEquals(j * 2, arr.get(j), "at " + i + "," + j);
                     } else {
-                        assertEquals("Mismatch at " + i + "," + j, 23, arr.get(j));
+                        assertEquals(23, arr.get(j), "Mismatch at " + i + "," + j);
                     }
                 }
             }
@@ -123,7 +123,7 @@ public class MappedFileLongArrayTest {
         long val = Long.MAX_VALUE / 4;
         arr.fill(0, arr.size(), val);
         for (long i = 0; i < arr.size(); i++) {
-            assertEquals(i + "", val, arr.get(i));
+            assertEquals(val, arr.get(i), i + "");
         }
         long size = arr.size() * 2;
         arr.resize(size);
@@ -138,9 +138,9 @@ public class MappedFileLongArrayTest {
             arr.fill(arr.size() - i, i, 23);
             for (int j = 0; j < arr.size(); j++) {
                 if (j < arr.size() - i) {
-                    assertEquals("at " + i + "," + j, j * 2, arr.get(j));
+                    assertEquals(j * 2, arr.get(j), "at " + i + "," + j);
                 } else {
-                    assertEquals("Mismatch at " + i + "," + j, 23, arr.get(j));
+                    assertEquals(23, arr.get(j), "Mismatch at " + i + "," + j);
                 }
             }
         }

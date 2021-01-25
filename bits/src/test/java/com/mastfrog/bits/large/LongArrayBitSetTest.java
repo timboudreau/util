@@ -9,21 +9,16 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.Random;
 import java.util.function.LongFunction;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  *
  * @author Tim Boudreau
  */
-@RunWith(Parameterized.class)
 public class LongArrayBitSetTest {
 
     private LongArrayBitSet odds;
@@ -32,19 +27,13 @@ public class LongArrayBitSetTest {
     private BitSet randomBitSet;
     private static final int SIZE = 530;
     private Random rnd;
-    private final LongFunction<LongArray> arrayFactory;
 
-    @Parameters(name = "{index}:{0}")
+//    @Parameters(name = "{index}:{0}")
     public static Collection<LongFunction<LongArray>> params() {
         return Arrays.asList(new UnsafeLong(), new MappedLong(), new JavaLong());
     }
 
-    public LongArrayBitSetTest(LongFunction<LongArray> arrayFactory) {
-        this.arrayFactory = arrayFactory;
-    }
-
-    @Before
-    public void setup() {
+    private void setupArray(LongFunction<LongArray> arrayFactory) {
         rnd = new Random(2398203973213L);
         odds = new LongArrayBitSet(SIZE, arrayFactory);
         assertTrue(odds.isEmpty());
@@ -71,8 +60,10 @@ public class LongArrayBitSetTest {
         assertFalse(random.isEmpty());
     }
 
-    @Test
-    public void testBasic() {
+    @ParameterizedTest
+    @MethodSource("params")
+    public void testBasic(LongFunction<LongArray> arrayFactory) {
+        setupArray(arrayFactory);
         assertMatch(randomBitSet, random);
         assertMatch(oddBitSet, odds);
         int i = randomBitSet.nextSetBit(0);
@@ -83,36 +74,46 @@ public class LongArrayBitSetTest {
         }
     }
 
-    @Test
-    public void testOr() {
+    @ParameterizedTest
+    @MethodSource("params")
+    public void testOr(LongFunction<LongArray> arrayFactory) {
+        setupArray(arrayFactory);
         odds.or(random);
         oddBitSet.or(randomBitSet);
         assertMatch(oddBitSet, odds);
     }
 
-    @Test
-    public void testXor() {
+    @ParameterizedTest
+    @MethodSource("params")
+    public void testXor(LongFunction<LongArray> arrayFactory) {
+        setupArray(arrayFactory);
         odds.xor(random);
         oddBitSet.xor(randomBitSet);
         assertMatch(oddBitSet, odds);
     }
 
-    @Test
-    public void testAnd() {
+    @ParameterizedTest
+    @MethodSource("params")
+    public void testAnd(LongFunction<LongArray> arrayFactory) {
+        setupArray(arrayFactory);
         odds.and(random);
         oddBitSet.and(randomBitSet);
         assertMatch(oddBitSet, odds);
     }
 
-    @Test
-    public void testAndNot() {
+    @ParameterizedTest
+    @MethodSource("params")
+    public void testAndNot(LongFunction<LongArray> arrayFactory) {
+        setupArray(arrayFactory);
         odds.andNot(random);
         oddBitSet.andNot(randomBitSet);
         assertMatch(oddBitSet, odds);
     }
 
-    @Test
-    public void testFlip() {
+    @ParameterizedTest
+    @MethodSource("params")
+    public void testFlip(LongFunction<LongArray> arrayFactory) {
+        setupArray(arrayFactory);
         for (long i = 0; i < odds.size(); i++) {
             if (rnd.nextBoolean()) {
                 odds.flip(i);
@@ -122,8 +123,10 @@ public class LongArrayBitSetTest {
         }
     }
 
-    @Test
-    public void testClear() {
+    @ParameterizedTest
+    @MethodSource("params")
+    public void testClear(LongFunction<LongArray> arrayFactory) {
+        setupArray(arrayFactory);
         for (long i = 0; i < odds.size(); i++) {
             if (rnd.nextBoolean()) {
                 odds.clear(i);
@@ -135,8 +138,10 @@ public class LongArrayBitSetTest {
         }
     }
 
-    @Test
-    public void testClearMany() {
+    @ParameterizedTest
+    @MethodSource("params")
+    public void testClearMany(LongFunction<LongArray> arrayFactory) {
+        setupArray(arrayFactory);
         for (long i = 0; i < odds.size(); i++) {
             if (rnd.nextBoolean()) {
                 odds.clear(0, i);
@@ -146,8 +151,10 @@ public class LongArrayBitSetTest {
         }
     }
 
-    @Test
-    public void testSetMany() {
+    @ParameterizedTest
+    @MethodSource("params")
+    public void testSetMany(LongFunction<LongArray> arrayFactory) {
+        setupArray(arrayFactory);
         for (long i = 0; i < odds.size(); i++) {
             if (rnd.nextBoolean()) {
                 odds.set(0, i);
@@ -157,8 +164,10 @@ public class LongArrayBitSetTest {
         }
     }
 
-    @Test
-    public void testFlipMany() {
+    @ParameterizedTest
+    @MethodSource("params")
+    public void testFlipMany(LongFunction<LongArray> arrayFactory) {
+        setupArray(arrayFactory);
         for (long i = 0; i < odds.size(); i++) {
             if (rnd.nextBoolean()) {
                 odds.flip(0, i);
@@ -170,8 +179,10 @@ public class LongArrayBitSetTest {
         }
     }
 
-    @Test
-    public void testSet() {
+    @ParameterizedTest
+    @MethodSource("params")
+    public void testSet(LongFunction<LongArray> arrayFactory) {
+        setupArray(arrayFactory);
         for (long i = 0; i < odds.size(); i++) {
             if (rnd.nextBoolean()) {
                 odds.set(i);
@@ -183,8 +194,10 @@ public class LongArrayBitSetTest {
         }
     }
 
-    @Test
-    public void testInitBug() {
+    @ParameterizedTest
+    @MethodSource("params")
+    public void testInitBug(LongFunction<LongArray> arrayFactory) {
+        setupArray(arrayFactory);
         int ct = 990;
         LongArrayBitSet labs = new LongArrayBitSet(ct, arrayFactory);
         MutableBits labs2 = MutableBits.createLarge(990);
@@ -216,8 +229,8 @@ public class LongArrayBitSetTest {
         @Override
         public LongArray apply(long value) {
             // Ensure that in parallel tests, files don't collide
-            assertTrue("tmpdir does not exist", Files.exists(tmp));
-            assertTrue("tmpdir not a dir", Files.isDirectory(tmp));
+            assertTrue(Files.exists(tmp), "tmpdir does not exist");
+            assertTrue(Files.isDirectory(tmp), "tmpdir not a dir");
             String nm = pfx + ix++ + ".longs";
             return new MappedFileLongArray(tmp.resolve(nm), value, false);
         }

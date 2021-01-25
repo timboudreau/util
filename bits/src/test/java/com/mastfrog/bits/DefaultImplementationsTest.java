@@ -2,9 +2,9 @@ package com.mastfrog.bits;
 
 import java.util.BitSet;
 import java.util.Random;
-import static org.junit.Assert.*;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests that the fallback implementations on Bits do the right thing.
@@ -110,7 +110,7 @@ public class DefaultImplementationsTest {
     private BitSet a, b, aCopy, bCopy;
     private B aBits, bBits;
 
-    @Before
+    @BeforeEach
     public void setup() {
         rnd = new Random(882924230947L);
         a = randomBits(100);
