@@ -1,10 +1,15 @@
 package com.mastfrog.util.sort;
 
 import com.mastfrog.util.preconditions.Checks;
+import java.util.Comparator;
+import java.util.function.IntBinaryOperator;
+import java.util.function.IntFunction;
 
 /**
- * QuickSort multiple arrays (or anything) according to the sort order of a
- * number array.
+ * Sort multiple arrays (or anything) according to the sort order of a number
+ * array; generic sorting of anything integer-indexed where you can provide a
+ * comparison function that returns a value for to indices in accordance with
+ * the contract of java.lang.Comparator.
  *
  * @author Tim Boudreau
  */
@@ -334,6 +339,55 @@ public final class Sort {
 
     private static void _multiSort(short[] keys, int fromIndex, int toIndex, Swapper swapper) {
         sortShorts(keys, swapper, fromIndex, toIndex - fromIndex);
+    }
+
+    /**
+     * Sort some collection of objects which can be looked up by the passed
+     * IntFunction, using the passed comparator, with the passed Swapper
+     * (immediately) reolocating elements.
+     *
+     * @param <T> The object type
+     * @param items Function that can look up objects by integer index
+     * @param comp A comparator
+     * @param swapper Function that can transponse the location of two items
+     * @param off The starting offset
+     * @param len The length
+     */
+    public static <T> void sortObjects(IntFunction<T> items, Comparator<T> comp, Swapper swapper, int off, int len) {
+        ObjSort.sortObjects(items, comp, swapper, off, len);
+    }
+
+    /**
+     * Sort <i>whatever</i>, with the thing being sorted completely abstracted -
+     * you supply a swapper which can transpose elements, and an
+     * IntBinaryOperator which supplies similar output to a Comparator for a
+     * pair of indices.
+     *
+     * @param <T>
+     * @param swapper Function that can transponse the location of two items
+     * @param len The length to sort
+     * @param cmp Comparator like function that can give the result of comparing
+     * the contents of two indices
+     */
+    public static <T> void sortAdhoc(Swapper swapper, int len, IntBinaryOperator cmp) {
+        ObjSort.sortAdhoc(swapper, len, cmp);
+    }
+
+    /**
+     * Sort <i>whatever</i>, with the thing being sorted completely abstracted -
+     * you supply a swapper which can transpose elements, and an
+     * IntBinaryOperator which supplies similar output to a Comparator for a
+     * pair of indices.
+     *
+     * @param <T>
+     * @param swapper Function that can transponse the location of two items
+     * @param off The starting offset
+     * @param len The length to sort
+     * @param cmp Comparator like function that can give the result of comparing
+     * the contents of two indices
+     */
+    public static void sortAdhoc(Swapper swapper, int off, int len, IntBinaryOperator cmp) {
+        ObjSort.sortAdhoc(swapper, off, len, cmp);
     }
 
     private static void sortInts(int[] x, Swapper swapper, int off, int len) {

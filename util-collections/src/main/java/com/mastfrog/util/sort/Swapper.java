@@ -65,4 +65,10 @@ public interface Swapper {
     static <T> Swapper forList(List<T> list) {
         return new ListSwapper<>(Checks.notNull("list", list));
     }
+
+    default void bulkSwap(int a, int b, int count) {
+        for (int i = 0; i < count; i++, a++, b++) {
+            swap(a, b);
+        }
+    }
 }
