@@ -268,6 +268,7 @@ public final class FileUtils {
                 path = newTempPath(prefix);
                 try {
                     Files.createFile(path);
+                    break;
                 } catch (FileAlreadyExistsException ex) {
                     // Racing with another process - not unusual in
                     // parallel tests on a big enough machine
@@ -280,7 +281,6 @@ public final class FileUtils {
                         setInterrupt = true;
                     }
                 }
-                break;
             }
         }
         setPermissions(path, permissions);

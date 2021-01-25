@@ -28,6 +28,7 @@ import java.io.PrintStream;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -37,6 +38,7 @@ import java.util.concurrent.Executors;
 import java.util.function.Predicate;
 import org.junit.After;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -99,12 +101,13 @@ public class TailTest {
 
     @Before
     public void setup() throws IOException {
-        tmp = FileUtils.newTempFile("tail");
+        tmp = FileUtils.newTempFile("tail", PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE, PosixFilePermission.GROUP_READ, PosixFilePermission.GROUP_WRITE);
+        assertTrue("Temp file " + tmp + " was not actually created", Files.exists(tmp));
     }
 
     @After
     public void teardown() throws Exception {
-        Files.delete(tmp);
+        Files.deleteIfExists(tmp);
     }
 
 }
