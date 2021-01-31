@@ -47,6 +47,7 @@ import java.util.stream.Stream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Test;
@@ -56,6 +57,54 @@ import org.junit.Test;
  * @author Tim Boudreau
  */
 public class AtomicLinkedQueueTest {
+
+    @Test
+    @SuppressWarnings("ThrowableResultIgnored")
+    public void testTransferringFromEmptyDoesNotCauseNPE() throws Throwable {
+        AtomicLinkedQueue<String> a = new AtomicLinkedQueue<>();
+        AtomicLinkedQueue<String> b = new AtomicLinkedQueue<>();
+        b.transferContentsFrom(a);
+        a.clear();
+
+        a.add("x");
+        assertEquals(1, a.size());
+        assertEquals(0, b.size());
+        b.transferContentsFrom(a);
+        assertEquals(1, b.size());
+        assertEquals(0, a.size());
+
+        b.clear();
+        a.clear();
+
+        a.transferContentsFrom(b);
+        b.transferContentsFrom(a);
+        assertTrue(a.isEmpty());
+        assertTrue(b.isEmpty());
+
+        // And test a few other things that could contain code that expects a
+        // non-null head
+        List<?> l = a.drain();
+        l = b.drain();
+
+        assertFalse(a.iterator().hasNext());
+        assertFalse(b.iterator().hasNext());
+
+        assertEquals(0, a.size());
+        assertEquals(0, b.size());
+
+        assertFalse(a.contains("x"));
+        assertFalse(b.contains("x"));
+
+        a.remove("y");
+        b.remove("y");
+
+        assertThrows(NoSuchElementException.class, () -> {
+            a.iterator().next();
+        });
+        assertThrows(NoSuchElementException.class, () -> {
+            b.iterator().next();
+        });
+    }
 
     @Test
     public void testRemoveSingle() throws Throwable {

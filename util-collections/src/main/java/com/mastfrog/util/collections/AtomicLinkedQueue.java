@@ -164,10 +164,20 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
         }
         MessageEntry<Message> otherHead = other.detachHead();
         if (otherHead != null) {
+            // Under concurrency, this could be mutated by another thread that
+            // is already re-stitching the linked list, so make a private
+            // copy - was running into an NPE because otherHead.getPrev() was
+            // non-null in the whiie() clause but has been nulled by the
+            // time we loop back around
+            otherHead = otherHead.copy();
             MessageEntry<Message> myOldTail = tail.getAndSet(otherHead);
             // This does open a small race-window.
             do {
-                otherHead = otherHead.getPrev();
+                MessageEntry<Message> next = otherHead.getPrev();
+                if (next == null) {
+                    break;
+                }
+                otherHead = next;
             } while (otherHead.getPrev() != null);
             otherHead.setPrev(myOldTail);
         }
