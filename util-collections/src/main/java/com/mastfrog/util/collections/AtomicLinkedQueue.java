@@ -251,6 +251,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
      * @param message
      * @return this
      */
+    @Override
     public boolean add(final Message message) {
         tail.getAndUpdate(new Applier<>(notNull("message", message)));
         if (onAdd != null) {
@@ -280,7 +281,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
 
         private final Message message;
 
-        public Applier(Message message) {
+        Applier(Message message) {
             this.message = message;
         }
 
@@ -390,6 +391,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
     /**
      * Clear the contents of this queue.
      */
+    @Override
     public void clear() {
         tail.set(null);
     }
@@ -438,7 +440,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
 
         private MessageEntry<T> en;
 
-        public It(MessageEntry<T> en) {
+        It(MessageEntry<T> en) {
             this.en = en;
         }
 
@@ -460,6 +462,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
      *
      * @return true if it is empty
      */
+    @Override
     public boolean isEmpty() {
         return tail.get() == null;
     }
@@ -469,6 +472,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
      *
      * @return The size
      */
+    @Override
     public int size() {
         MessageEntry<Message> tailLocal = this.tail.get();
         int result = 0;
@@ -634,6 +638,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
         }
     }
 
+    @Override
     public boolean contains(Object msg) {
         MessageEntry<Message> top = tail.get();
         while (top != null) {
@@ -666,6 +671,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
      *
      * @return A stream
      */
+    @Override
     public Stream<Message> stream() {
         return StreamSupport.stream(spliterator(), false);
     }
@@ -678,6 +684,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
      *
      * @return A stream
      */
+    @Override
     public Stream<Message> parallelStream() {
         return StreamSupport.stream(spliterator(), true);
     }
@@ -1008,7 +1015,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
 
         private final AtomicReference<MessageEntry<T>> curr = new AtomicReference<>();
 
-        public QSplit(MessageEntry<T> tail) {
+        QSplit(MessageEntry<T> tail) {
             curr.set(tail);
         }
 

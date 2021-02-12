@@ -48,7 +48,7 @@ final class AtomicRing<T> implements Iterable<T>, Consumer<T>, Ring<T> {
      *
      * @param size The buffer size
      */
-    public AtomicRing(int size) {
+    AtomicRing(int size) {
         Entry<T> first = new Entry<>(null);
         Entry<T> last = first;
         for (int i = 0; i < greaterThanOne("size", size) - 1; i++) {
@@ -119,6 +119,7 @@ final class AtomicRing<T> implements Iterable<T>, Consumer<T>, Ring<T> {
      *
      * @param c A consumer
      */
+    @Override
     public void forEach(Consumer<? super T> c) {
         head.get().get(c);
     }
@@ -198,7 +199,7 @@ final class AtomicRing<T> implements Iterable<T>, Consumer<T>, Ring<T> {
         private Entry<T> curr;
         private boolean done;
 
-        public LazyIter(AtomicReference<Entry<T>> ref) {
+        LazyIter(AtomicReference<Entry<T>> ref) {
             this.ref = ref;
         }
 
