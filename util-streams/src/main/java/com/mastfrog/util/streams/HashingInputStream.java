@@ -50,7 +50,7 @@ public final class HashingInputStream extends FilterInputStream {
     }
     private final MessageDigest digest;
     private volatile boolean closed;
-    
+
     public static final MessageDigest createDigest(String algorithm) {
         try {
             return MessageDigest.getInstance(algorithm);
@@ -79,19 +79,18 @@ public final class HashingInputStream extends FilterInputStream {
     @Override
     public int read() throws IOException {
         int result = wrapped.read();
-        digest.update((byte) result);
+        if (result >= 0) {
+            digest.update((byte) result);
+        }
         return result;
     }
 
     public int read(byte b[], int off, int len) throws IOException {
         int result = wrapped.read(b, off, len);
-        digest.update(b, off, len);
+        if (result > 0) {
+            digest.update(b, off, result);
+        }
         return result;
-    }
-
-    @Override
-    public int read(byte[] b) throws IOException {
-        return super.read(b);
     }
 
     @Override
@@ -113,12 +112,12 @@ public final class HashingInputStream extends FilterInputStream {
     public synchronized void reset() throws IOException {
         wrapped.reset();
     }
-    
+
     public String getHashAsString() throws IOException {
         if (!closed) {
             close();
         }
         byte[] bytes = getDigest();
         return hashString(bytes);
-    }    
+    }
 }
