@@ -28,13 +28,14 @@ import java.io.PrintStream;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
 import org.junit.After;
 import static org.junit.Assert.assertEquals;
@@ -50,27 +51,38 @@ public class TailTest {
 
     private Path tmp;
 
-    @Test(timeout=5000)
+    @Test(timeout = 40000)
     public void testSomeMethod() throws IOException, InterruptedException {
-        ExecutorService exe = Executors.newSingleThreadExecutor();
-        Tail tail = new Tail(exe, tmp, 256, UTF_8);
-        C c = new C();
-        Runnable canceller = tail.watch(c);
-        try (PrintStream ps = new PrintStream(tmp.toFile(), "UTF-8")) {
-            ps.println("Hello");
-            Thread.sleep(10);
-            ps.println("Goodbye.");
-            Thread.sleep(10);
-            ps.println("Whatevs.");
-            Thread.sleep(10);
-            ps.println("Woo hoo.");
-            Thread.sleep(10);
-            ps.println("Gwerp.");
+        ScheduledExecutorService exe = Executors.newScheduledThreadPool(1);
+        WatchManager watchManager = new WatchManager(exe, 20, 20, 100);
+        try {
+            Tail tail = new Tail(watchManager, tmp, 256, UTF_8);
+            C c = new C();
+            Runnable canceller = tail.watch(c);
+            try (PrintStream ps = new PrintStream(tmp.toFile(), "UTF-8")) {
+                ps.println("Hello");
+                ps.flush();
+                Thread.sleep(30);
+                ps.println("Goodbye.");
+                ps.flush();
+                Thread.sleep(30);
+                ps.println("Whatevs.");
+                ps.flush();
+                Thread.sleep(30);
+                ps.println("Woo hoo.");
+                ps.flush();
+                Thread.sleep(30);
+                ps.println("Gwerp.");
+                ps.flush();
+            }
+            Thread.sleep(12100);
+            canceller.run();
+            exe.shutdown();
+            c.assertSeen("Hello", "Goodbye.", "Whatevs.", "Woo hoo.", "Gwerp.");
+        } finally {
+            watchManager.shutdown();
+            exe.shutdownNow();
         }
-        Thread.sleep(2100);
-        canceller.run();
-        exe.shutdown();
-        c.assertSeen("Hello", "Goodbye.", "Whatevs.", "Woo hoo.", "Gwerp.");
     }
 
     private static final class C implements Predicate<CharSequence> {
@@ -101,7 +113,11 @@ public class TailTest {
 
     @Before
     public void setup() throws IOException {
-        tmp = FileUtils.newTempFile("tail", PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE, PosixFilePermission.GROUP_READ, PosixFilePermission.GROUP_WRITE);
+        Path dir = Paths.get("/tmp");
+        Path file = dir.resolve("tailtest-" + System.currentTimeMillis() + "_"
+                + ThreadLocalRandom.current().nextInt());
+        tmp = Files.createFile(file);
+//        tmp = FileUtils.newTempFile("tail", PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE, PosixFilePermission.GROUP_READ, PosixFilePermission.GROUP_WRITE);
         assertTrue("Temp file " + tmp + " was not actually created", Files.exists(tmp));
     }
 
@@ -109,5 +125,4 @@ public class TailTest {
     public void teardown() throws Exception {
         Files.deleteIfExists(tmp);
     }
-
 }

@@ -974,7 +974,7 @@ public final class FileUtils {
      */
     public static IOFunction<Predicate<CharSequence>, Runnable> tail(Path file,
             Charset charset, int bufferSize, Executor exe) throws IOException {
-        return new Tail(exe, file, bufferSize, charset);
+        return new Tail(file, bufferSize, charset);
     }
 
     /**
