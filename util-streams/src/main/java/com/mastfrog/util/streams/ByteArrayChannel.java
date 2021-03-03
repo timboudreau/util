@@ -41,6 +41,7 @@ final class ByteArrayChannel implements GeneralByteChannel {
         return max;
     }
 
+    @Override
     public int reset() {
         int oldCursor = cursor;
         closed = false;

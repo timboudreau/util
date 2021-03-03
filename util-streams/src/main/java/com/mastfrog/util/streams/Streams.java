@@ -128,7 +128,7 @@ public final class Streams {
         return bytesCopied;
     }
 
-    private static final int DEFAULT_BUFFER_SIZE = 4096;
+    private static final int DEFAULT_BUFFER_SIZE = 4_096;
 
     private static int bufferSize(InputStream in) {
         int bufferSize = DEFAULT_BUFFER_SIZE;
@@ -623,6 +623,7 @@ public final class Streams {
             // do nothing
         }
 
+        @Override
         public String toString() {
             return "/dev/null";
         }
@@ -646,7 +647,7 @@ public final class Streams {
 
         private static final NullPrintStream INSTANCE = new NullPrintStream();
 
-        public NullPrintStream() {
+        NullPrintStream() {
             super(NullOutputStream.INSTANCE);
         }
 
@@ -820,11 +821,13 @@ public final class Streams {
             // do nothing
         }
 
+        @Override
         public String toString() {
             return "/dev/null";
         }
 
         //@Override // XXX JDK-14
+        @Override
         public void writeBytes(byte[] buf) {
             // do nothing
         }

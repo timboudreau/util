@@ -85,6 +85,7 @@ final class ByteBufferInputStream extends InputStream {
     }
 
     //        @Override /* JDK9 */
+    @Override
     public int readNBytes(byte[] b, int off, int len) throws IOException {
         int rem = available();
         int remainingInArray = b.length - off;
@@ -94,6 +95,7 @@ final class ByteBufferInputStream extends InputStream {
     }
 
     //        @Override /* JDK9 */
+    @Override
     public byte[] readNBytes(int len) throws IOException {
         int lengthToRead = Math.min(len, available());
         byte[] bytes = new byte[lengthToRead];
@@ -102,6 +104,7 @@ final class ByteBufferInputStream extends InputStream {
     }
 
     //        @Override /* JDK9 */
+    @Override
     public byte[] readAllBytes() throws IOException {
         byte[] result = new byte[available()];
         buf.get(result);

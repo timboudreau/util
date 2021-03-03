@@ -102,7 +102,7 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
      * @throws IllegalArgumentException if the file is not readable
      */
     public static ContinuousLineStream of(File file) {
-        return of(file, 8192);
+        return of(file, 8_192);
     }
 
     /**

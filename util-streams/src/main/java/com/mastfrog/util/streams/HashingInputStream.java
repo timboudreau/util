@@ -85,6 +85,7 @@ public final class HashingInputStream extends FilterInputStream {
         return result;
     }
 
+    @Override
     public int read(byte b[], int off, int len) throws IOException {
         int result = wrapped.read(b, off, len);
         if (result > 0) {
