@@ -827,7 +827,6 @@ public final class Streams {
         }
 
         //@Override // XXX JDK-14
-        @Override
         public void writeBytes(byte[] buf) {
             // do nothing
         }
