@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.file;
 
+import com.mastfrog.function.state.Obj;
 import com.mastfrog.function.throwing.io.IOFunction;
 import com.mastfrog.function.throwing.io.IOSupplier;
 import com.mastfrog.util.preconditions.Checks;
@@ -809,12 +810,23 @@ public final class FileUtils {
     }
 
     public static int decode(ReadableByteChannel fileChannel, ByteBuffer readBuffer, CharBuffer target, CharsetDecoder charsetDecoder, boolean permissive) throws IOException {
-        int result = decode(fileChannel, readBuffer, target, charsetDecoder, permissive, null);
+        int result = decode(fileChannel, readBuffer, target, charsetDecoder, permissive, (CoderResult[]) null);
         target.flip();
         return result;
     }
 
     public static int decode(ReadableByteChannel fileChannel, ByteBuffer readBuffer, CharBuffer target, CharsetDecoder charsetDecoder, boolean permissive, CoderResult[] res) throws IOException {
+        Obj<CoderResult> obj = res == null ? null : Obj.create();
+        try {
+            return decode(fileChannel, readBuffer, target, charsetDecoder, obj, permissive);
+        } finally {
+            if (res != null) {
+                res[0] = obj.get();
+            }
+        }
+    }
+
+    public static int decode(ReadableByteChannel fileChannel, ByteBuffer readBuffer, CharBuffer target, CharsetDecoder charsetDecoder, Obj<CoderResult> res, boolean permissive) throws IOException {
         CoderResult lastCoderResult = null;
         int numBytesRead;
         int total = 0;
@@ -872,7 +884,7 @@ public final class FileUtils {
             }
         }
         if (res != null) {
-            res[0] = lastCoderResult;
+            res.set(lastCoderResult);
         }
         return total;
     }

@@ -1,5 +1,6 @@
 package com.mastfrog.util.streams;
 
+import com.mastfrog.function.state.Obj;
 import com.mastfrog.util.file.FileUtils;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -84,15 +85,15 @@ public final class ContinuousStringStream implements AutoCloseable {
      * @throws IOException If something goes wrong
      */
     public synchronized CoderResult decode(CharBuffer target, CharsetDecoder charsetDecoder) throws IOException {
-        CoderResult[] r = new CoderResult[1];
+        Obj<CoderResult> result = Obj.create();
         if (readBuffer.position() == readBuffer.capacity()) {
             readBuffer.clear();
         }
-        int count = FileUtils.decode(fileChannel, readBuffer, target, charsetDecoder, true, r);
+        int count = FileUtils.decode(fileChannel, readBuffer, target, charsetDecoder, result, true);
         if (count > 0) {
             target.flip();
         }
-        return r[0];
+        return result.get();
     }
 
     static String escape(CharBuffer s) {

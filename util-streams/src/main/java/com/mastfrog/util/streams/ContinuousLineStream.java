@@ -1,5 +1,6 @@
 package com.mastfrog.util.streams;
 
+import static com.mastfrog.util.preconditions.Checks.greaterThanOne;
 import static com.mastfrog.util.preconditions.Checks.nonNegative;
 import static com.mastfrog.util.preconditions.Checks.nonZero;
 import static com.mastfrog.util.preconditions.Checks.notNull;
@@ -15,8 +16,10 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Reads a file line-by-line, but unlike a BufferedReader, does not give up when
@@ -25,6 +28,9 @@ import java.util.LinkedList;
  * <p>
  * Implements Iterable&lt;CharSequence&gt; for convenience (these methods can
  * throw RuntimeExceptions wrapping any encountered IOException).
+ * </p><p>
+ * This class is not thread-safe.
+ * </p>
  */
 public final class ContinuousLineStream implements AutoCloseable, Iterator<CharSequence> {
 
@@ -33,10 +39,16 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
     private final LinkedList<CharSequence> queuedLines = new LinkedList<>();
     private String cachedPartialNextLine = null;
     private final int byteCount;
+    private final int maxLinesToBuffer;
 
     public ContinuousLineStream(ContinuousStringStream stringStream, CharsetDecoder charsetDecoder, int charsPerBuffer) {
-        this.stringStream = stringStream;
-        this.charsetDecoder = charsetDecoder;
+        this(stringStream, charsetDecoder, charsPerBuffer, Integer.MAX_VALUE);
+    }
+
+    public ContinuousLineStream(ContinuousStringStream stringStream, CharsetDecoder charsetDecoder, int charsPerBuffer, int maxLinesToBuffer) {
+        this.maxLinesToBuffer = greaterThanOne("maxLinesToBuffer", maxLinesToBuffer);
+        this.stringStream = notNull("stringStream", stringStream);
+        this.charsetDecoder = notNull("charsetDecoder", charsetDecoder);
         float bytesPerChar = Math.max(1F, 1F / charsetDecoder.averageCharsPerByte());
         this.byteCount = Math.max(512, (int) (charsPerBuffer * bytesPerChar));
     }
@@ -180,7 +192,8 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
     }
 
     /**
-     * Change the position for reading in the file
+     * Change the position for reading in the file, discarding any
+     * enqueued partial or complete lines.
      *
      * @param pos The new position
      * @throws IOException If the position is invalid or something else is wrong
@@ -314,12 +327,47 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
                         cachedPartialNextLine += partialLine.toString();
                     }
                 }
+                if (queuedLines.size() >= maxLinesToBuffer) {
+                    break;
+                }
                 prevChar = c;
                 charIndex++;
             }
         }
     }
 
+    /**
+     * Close this stream, returning any already read lines and
+     * any partial line for which a newline had not yet been
+     * encountered; if at the end of the file, this will be the
+     * tail.
+     *
+     * @return A list of any remaining strings
+     */
+    public List<CharSequence> closeReturningTail() throws IOException {
+        try {
+            List<CharSequence> result = new ArrayList<>(queuedLines);
+            queuedLines.clear();
+            if (cachedPartialNextLine != null && cachedPartialNextLine.length() > 0) {
+                result.add(cachedPartialNextLine);
+                cachedPartialNextLine = null;
+            }
+            return result;
+        } finally {
+            close();
+        }
+    }
+
+    public boolean isAtEndOfFile() throws IOException {
+        return !isOpen() || this.stringStream.available() == 0;
+    }
+
+    /**
+     * Close the underlying stream. Note there may still be partial lines or an
+     * unfinished line held when this instance is closed.
+     *
+     * @throws IOException If something goes wrong
+     */
     @Override
     public void close() throws IOException {
         stringStream.close();
@@ -334,6 +382,12 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
         }
     }
 
+    /**
+     * Get the next char sequence, returning none if at the end of the file or
+     * nothing further is available.
+     *
+     * @return A char sequence or null
+     */
     @Override
     public CharSequence next() {
         try {
@@ -343,8 +397,20 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
         }
     }
 
+    /**
+     * Throws a UOE.
+     */
     @Override
     public void remove() {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Return this as an iterable.
+     *
+     * @return An iterable of char sequences
+     */
+    public Iterable<CharSequence> toIterable() {
+        return () -> this;
     }
 }
