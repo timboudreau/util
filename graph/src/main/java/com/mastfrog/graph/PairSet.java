@@ -37,6 +37,10 @@ public final class PairSet implements Iterable<int[]> {
         return set;
     }
 
+    public static PairSet create(int graphSize) {
+        return new PairSet(graphSize);
+    }
+
     public boolean isEmpty() {
         return set.cardinality() == 0;
     }

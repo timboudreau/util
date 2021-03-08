@@ -315,12 +315,23 @@ final class BitSetGraph implements IntGraph {
      */
     @Override
     public void edges(IntBiConsumer bi) {
-        for (int i = 0; i < size(); i++) {
+        int sz = size();
+        for (int i = 0; i < sz; i++) {
             int index = i;
             outboundEdges[i].forEachSetBitAscending(bit -> {
                 bi.accept(index, bit);
             });
         }
+    }
+
+    @Override
+    public int edgeCount() {
+        int sz = size();
+        int result = 0;
+        for (int i = 0; i < sz; i++) {
+            result += outboundEdges[i].cardinality();
+        }
+        return result;
     }
 
     /**

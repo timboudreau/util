@@ -11,6 +11,7 @@ import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 import com.mastfrog.bits.Bits;
 import com.mastfrog.function.IntBiConsumer;
+import com.mastfrog.function.state.Int;
 import java.util.function.BiConsumer;
 
 /**
@@ -230,6 +231,19 @@ public interface IntGraph {
      * @param bi A consumer
      */
     void edges(IntBiConsumer bi);
+
+    /**
+     * Get the total number of edges in the graph.
+     *
+     * @return The number of edges
+     */
+    default int edgeCount() {
+        Int result = Int.create();
+        edges((ignoredA, ignoredB) -> {
+            result.increment();
+        });
+        return result.getAsInt();
+    }
 
     /**
      * Compute the eigenvector centrality of each node in the graph - an

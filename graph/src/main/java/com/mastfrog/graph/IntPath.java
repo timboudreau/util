@@ -4,12 +4,15 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.function.IntConsumer;
 import com.mastfrog.abstractions.list.IndexedResolvable;
+import com.mastfrog.bits.Bits;
+import static com.mastfrog.util.preconditions.Checks.greaterThanZero;
 import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.io.Serializable;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.List;
 import java.util.PrimitiveIterator;
+import java.util.function.Consumer;
 
 /**
  * A finite path between two elements in a graph.
@@ -124,13 +127,200 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer>, Se
      * @param other The other path
      * @return A new IntPath
      */
+    public IntPath prepending(IntPath other) {
+        if (other.isEmpty()) {
+            return copy();
+        }
+        int[] nue = Arrays.copyOf(other.items, size + other.size());
+        System.arraycopy(items, 0, nue, other.size, size);
+        return new IntPath(true, nue);
+    }
+
+    /**
+     * Returns true if the other path's start is this one's end or vice-versa.
+     *
+     * @param other Another path
+     * @return True if these paths share an end/start pair
+     */
+    public boolean canJoin(IntPath other) {
+        return notNull("other", other).last() == first()
+                || other.first() == last();
+    }
+
+    /**
+     * Join this path with another path, prepending or appending depending on
+     * whether this one's start and the other's end are the same, or the other's
+     * start and this one's end are the same. Returns null if they cannot be
+     * joined.
+     *
+     * @param other Another path
+     * @return A path or null
+     */
+    public IntPath join(IntPath other) {
+        return join(other, false);
+    }
+
+    /**
+     * Returns the index in this IntPath of the first path element also present
+     * in the other, or -1 if there is none.
+     *
+     * @param other Another path
+     * @return An index into this path, or -1
+     */
+    public int firstOverlappingElement(IntPath other) {
+        if (other == this) {
+            return isEmpty() ? -1 : 0;
+        }
+        Bits a = toBits();
+        Bits b = other.toBits();
+        if (a.intersects(b)) {
+            for (int i = 0; i < size; i++) {
+                if (b.get(items[i])) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Returns the index in this IntPath of the first path element also present
+     * in the other, or -1 if there is none.
+     *
+     * @param other Another path
+     * @return An index into this path, or -1
+     */
+    public int lastOverlappingElement(IntPath other) {
+        if (other == this) {
+            return isEmpty() ? -1 : 0;
+        }
+        Bits a = toBits();
+        Bits b = other.toBits();
+        if (a.intersects(b)) {
+            for (int i = size - 1; i >= 0; i--) {
+                if (b.get(items[i])) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Join this path with another path, if they share a start/end pair, without
+     * duplicating elements; if <code>eliminateOverlap</code> is passed, then
+     * whichever the latter path is in the result, it will be truncated so as
+     * not to include any elements also present in the other - this is commonly
+     * needed when computing sets of paths that have no partial overlap; returns
+     * null if the start/end pairs of neither match.
+     * <p>
+     * Examples:
+     * <ul>
+     * <li>Joining 1,2,3 with 3,4,5, gets 1,2,3,4,5 </li>
+     * <li>Joining 3,4,5, with 1,2,3 also gets 1,2,3,4,5 </li>
+     * <li>Joining 3,4,5,1,2 with 1,2,3 also gets 1,2,3,4,5,1,2 if
+     * <code>elimimnateOverlap</code> is <b>false</b></li>
+     * <li>Joining 3,4,5,1,2 with 1,2,3 also gets 1,2,3,4,5 if
+     * <code>elimimnateOverlap</code> is <b>true</b></li>
+     * <li>Joining 1,2,3 with 4,5,6 gets null because they don't share a start
+     * or an end</li>
+     * <li>Ambiguous cases such as 1,2,1 and 1,3,4,1 are joined with the
+     * argument prepended to this path, resulting in 1,3,4,1,2,1</li>
+     * <li>In overlap elimination, only the first overlapping element is
+     * considered, so joining 1,1,1,2 and 2,2,2,1 gets 1,1,1,2,2,2</li>
+     * </ul>
+     *
+     * </p>
+     *
+     * @param other Another path
+     * @param eliminateOverlap If true, truncate one of the paths when
+     * concatenating, as described above
+     * @return An IntPath or null
+     */
+    public IntPath join(IntPath other, boolean eliminateOverlap) {
+        if (other.isEmpty()) {
+            return this;
+        } else if (isEmpty()) {
+            return other;
+        }
+        if (notNull("other", other).last() == first()) {
+            IntPath toAppend = childPath();
+            IntPath appendTo = other;
+            if (eliminateOverlap) {
+                if (eliminateOverlap) {
+                    int index1 = appendTo.firstOverlappingElement(toAppend);
+                    int index2 = toAppend.lastOverlappingElement(appendTo);
+                    int deletia1 = appendTo.size() - index1;
+                    int deletia2 = index2;
+                    if (deletia1 > 0 && deletia1 >= deletia2) {
+                        appendTo = appendTo.subPath(index1, appendTo.size);
+                    } else if (deletia2 >= 0) {
+                        toAppend = toAppend.subPath(0, index2);
+                    }
+                }
+            }
+            IntPath result = appendTo.append(toAppend);
+            if (eliminateOverlap && result.containsRepeatedNodes()) {
+                return result.trimmingAtFirstDuplicate();
+            }
+            return result;
+        } else if (other.first() == last()) {
+            IntPath toAppend = other.childPath();
+            IntPath appendTo = this;
+            if (eliminateOverlap) {
+                int index1 = appendTo.firstOverlappingElement(toAppend);
+                int index2 = toAppend.lastOverlappingElement(appendTo);
+                int deletia1 = appendTo.size() - index1;
+                int deletia2 = index2;
+                if (deletia1 > 0 && deletia1 >= deletia2 && index1 > 0) {
+                    appendTo = appendTo.subPath(index1, appendTo.size);
+                } else if (deletia2 >= 0 && index2 >= 0) {
+                    toAppend = toAppend.subPath(0, index2);
+                }
+            }
+            IntPath result = appendTo.append(toAppend);
+            if (eliminateOverlap && result.containsRepeatedNodes()) {
+                return result.trimmingAtFirstDuplicate();
+            }
+            return result;
+        } else {
+            return null;
+        }
+    }
+
+    IntPath trimmingAtFirstDuplicate() {
+        for (int i = 0; i < size; i++) {
+            int val = items[i];
+            for (int j = i + 1; j < size; j++) {
+                if (items[j] == val) {
+                    if (size - j > j) {
+                        System.arraycopy(items, j, items, 0, size - j);
+                        size -= j;
+                    } else {
+                        size = j;
+                    }
+                    contents = null;
+                    break;
+                }
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Create a new IntPath of this one concatenated with another.
+     *
+     * @param other The other path
+     * @return A new IntPath
+     */
     public IntPath appending(IntPath other) {
         if (other.isEmpty()) {
             return copy();
         }
         int[] nue = Arrays.copyOf(items, size + other.size());
-        int[] append = other.items();
-        System.arraycopy(append, 0, nue, size, other.size());
+        System.arraycopy(other.items, 0, nue, size, other.size);
+//        int[] append = other.items();
+//        System.arraycopy(append, 0, nue, size, other.size());
         return new IntPath(true, nue);
     }
 
@@ -428,6 +618,89 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer>, Se
     }
 
     /**
+     * Determine if this IntPath contains some nodes in common with another.
+     *
+     * @param other Another IntPath
+     * @return True if they contain some of teh same nodes
+     */
+    public boolean intersects(IntPath other) {
+        if (notNull("other", other) == this) {
+            return true;
+        }
+        return toBits().intersects(other.toBits());
+    }
+
+    /**
+     * Get all nodes in this path as a Bits useful for intersection testing.
+     *
+     * @return A Bits
+     */
+    public Bits toBits() {
+        if (isEmpty()) {
+            return Bits.EMPTY;
+        }
+        return Bits.fromBitSet(contents());
+    }
+
+    /**
+     * Visit every possible child path of this path which is smaller than this
+     * path but greater than or equal to the passed minimum length.
+     *
+     * @param minLength The length
+     * @param c A consumer
+     * @return The number of paths that were visited
+     */
+    public int visitAllSubPaths(int minLength, Consumer<IntPath> c) {
+        if (size <= greaterThanZero("minLength", minLength)) {
+            return 0;
+        }
+        int result = 0;
+        for (int length = size - 1; length >= minLength; length--) {
+            for (int start = 0; start < size; start++) {
+                if (start + length > size) {
+                    break;
+                }
+                c.accept(subPath(start, start + length));
+                result++;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Visit every possible child path of this path which is smaller than this
+     * path but greater than or equal to the passed minimum length.
+     *
+     * @param length The length
+     * @param c A consumer
+     * @return The number of paths that were visited
+     */
+    public int visitSubPathsOfLength(int length, Consumer<IntPath> c) {
+        if (size <= greaterThanZero("minLength", length)) {
+            return 0;
+        }
+        int result = 0;
+        for (int start = 0; start < size; start++) {
+            if (start + length > size) {
+                break;
+            }
+            c.accept(subPath(start, start + length));
+            result++;
+        }
+        return result;
+    }
+
+    /**
+     * Returns true if at least one node in this path occurs more than once in
+     * it.
+     *
+     * @return True if there are repetitions
+     */
+    public boolean containsRepeatedNodes() {
+        return toBits().cardinality() < size();
+    }
+
+    /**
      * Get a subpath.
      *
      * @param start The start index, inclusive
@@ -645,6 +918,10 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer>, Se
         return size() < 2;
     }
 
+    public boolean isEdge() {
+        return size() == 2;
+    }
+
     /**
      * Get the path element at the specified index.
      *
@@ -689,9 +966,11 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer>, Se
             return false;
         }
         IntPath ip = (IntPath) o;
-        if (size != ip.size || hashCode() != ip.hashCode()) {
+        if ((size != ip.size) || (hashCode() != ip.hashCode())) {
             return false;
         }
+        // JDK 9
+//        return Arrays.equals(this.items, 0, size, ip.items, 0, size);
         for (int i = 0; i < size; i++) {
             if (get(i) != ip.get(i)) {
                 return false;

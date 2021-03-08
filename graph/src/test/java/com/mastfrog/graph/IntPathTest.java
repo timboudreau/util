@@ -1,7 +1,10 @@
 package com.mastfrog.graph;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
@@ -10,6 +13,135 @@ import org.junit.jupiter.api.Test;
  * @author Tim Boudreau
  */
 public class IntPathTest {
+
+    /**
+     * Join this path with another path, if they share a start/end pair, without
+     * duplicating elements; if <code>eliminateOverlap</code> is passed, then
+     * whichever the latter path is in the result, it will be truncated so as
+     * not to include any elements also present in the other - this is commonly
+     * needed when computing sets of paths that have no partial overlap; returns
+     * null if the start/end pairs of neither match.
+     * <p>
+     * Examples:
+     * <ul>
+     * <li>Joining 1,2,3 with 3,4,5, gets 1,2,3,4,5 </li>
+     * <li>Joining 3,4,5, with 1,2,3 also gets 1,2,3,4,5 </li>
+     * <li>Joining 3,4,5,1,2 with 1,2,3 also gets 1,2,3,4,5,1,2 if
+     * <code>elimimnateOverlap</code> is <b>false</b></li>
+     * <li>Joining 3,4,5,1,2 with 1,2,3 also gets 1,2,3,4,5 if
+     * <code>elimimnateOverlap</code> is <b>true</b></li>
+     * <li>Joining 1,2,3 with 4,5,6 gets null because they don't share a start
+     * or an end</li>
+     * <li>Ambiguous cases such as 1,2,1 and 1,3,4,1 are joined with the
+     * argument prepended to this path, resulting in 1,3,4,1,2,1</li>
+     * <li>In overlap elimination, only the first overlapping element is
+     * considered, so joining 1,1,1,2 and 2,2,2,1 gets 1,1,1,2,2,2</li>
+     * </ul>
+     *
+     * </p>
+     */
+    @Test
+    public void testJoin() {
+        assertEquals(IntPath.of(1, 2, 3, 4, 5), IntPath.of(1, 2, 3).join(IntPath.of(3, 4, 5)));
+        assertEquals(IntPath.of(1, 2, 3, 4, 5), IntPath.of(3, 4, 5).join(IntPath.of(1, 2, 3)));
+        assertEquals(IntPath.of(1, 2, 3, 5, 1, 2), IntPath.of(3, 5, 1, 2).join(IntPath.of(1, 2, 3)));
+        assertEquals(IntPath.of(1, 2, 3, 4, 5, 1, 2), IntPath.of(3, 4, 5, 1, 2).join(IntPath.of(1, 2, 3)));
+        assertEquals(IntPath.of(1, 2, 3, 4, 5), IntPath.of(3, 4, 5, 1, 2).join(IntPath.of(1, 2, 3), true));
+        assertEquals(IntPath.of(1, 2, 3, 4, 5), IntPath.of(1, 2, 3).join(IntPath.of(3, 4, 5, 1, 2), true));
+        assertEquals(IntPath.of(1, 2, 3, 4, 5, 6, 7), IntPath.of(1, 2, 3).join(IntPath.of(3, 4, 5, 6, 7, 1, 2), true));
+
+        assertEquals(IntPath.of(2, 1, 5, 4, 3, 7, 8, 9), IntPath.of(3, 7, 8, 9, 2, 1).join(IntPath.of(2, 1, 5, 4, 3), true));
+        assertEquals(IntPath.of(1, 5, 4, 3, 7, 8), IntPath.of(2, 1, 5, 4, 3).join(IntPath.of(3, 7, 8, 1), true));
+
+        assertEquals(IntPath.of(1, 7, 6, 5, 4, 3, 2), IntPath.of(3, 2, 1).join(IntPath.of(1, 7, 6, 5, 4, 3), true));
+    }
+
+    @Test
+    public void testCanJoin() {
+        assertTrue(IntPath.of(1, 2, 3).canJoin(IntPath.of(3, 4, 5)));
+        assertFalse(IntPath.of(1, 2, 3).canJoin(IntPath.of(1, 2, 3)));
+        assertFalse(IntPath.of(1, 2, 3).canJoin(IntPath.of(4, 5, 6)));
+        assertTrue(IntPath.of(1, 1, 1).canJoin(IntPath.of(1, 2, 1)));
+        assertTrue(IntPath.of(1, 1, 1).canJoin(IntPath.of(1, 1, 1)));
+        assertTrue(IntPath.of(1, 1, 1).canJoin(IntPath.of(0, 1, 1)));
+    }
+
+    @Test
+    public void testPrependingPath() {
+        IntPath a = IntPath.of(3, 4, 5);
+        IntPath b = IntPath.of(1, 2);
+        IntPath ac = a.prepending(b);
+        assertEquals(IntPath.of(1, 2, 3, 4, 5), ac);
+
+        IntPath ca = b.prepending(a);
+        assertEquals(IntPath.of(3, 4, 5, 1, 2), ca);
+    }
+
+    @Test
+    public void testVisitAllSubpaths() {
+        IntPath orig = IntPath.of(32, 31, 33, 32, 35, 34, 102);
+        Set<IntPath> expected = setOf(
+                IntPath.of(31, 33, 32, 35, 34, 102),
+                IntPath.of(32, 31, 33, 32, 35, 34),
+                IntPath.of(33, 32, 35, 34, 102),
+                IntPath.of(31, 33, 32, 35, 34),
+                IntPath.of(32, 31, 33, 32, 35),
+                IntPath.of(32, 31, 33, 32),
+                IntPath.of(33, 32, 35, 34),
+                IntPath.of(32, 35, 34, 102),
+                IntPath.of(31, 33, 32, 35),
+                IntPath.of(32, 31, 33),
+                IntPath.of(31, 33, 32),
+                IntPath.of(33, 32, 35),
+                IntPath.of(32, 35, 34),
+                IntPath.of(35, 34, 102),
+                IntPath.of(32, 31),
+                IntPath.of(31, 33),
+                IntPath.of(33, 32),
+                IntPath.of(32, 35),
+                IntPath.of(35, 34),
+                IntPath.of(34, 102)
+        );
+        Set<IntPath> got = new HashSet<>();
+        orig.visitAllSubPaths(2, got::add);
+        assertEquals(expected, got, () -> {
+            Set<IntPath> absent = new HashSet<>(expected);
+            absent.removeAll(got);
+            Set<IntPath> unexpected = new HashSet<>(got);
+            unexpected.removeAll(expected);
+            return "Sets do not match.  Missing: " + absent + " unexpected: " + unexpected;
+        });
+        Set<IntPath> expected3 = setOf(
+                IntPath.of(31, 33, 32, 35, 34, 102),
+                IntPath.of(32, 31, 33, 32, 35, 34),
+                IntPath.of(33, 32, 35, 34, 102),
+                IntPath.of(31, 33, 32, 35, 34),
+                IntPath.of(32, 31, 33, 32, 35),
+                IntPath.of(32, 31, 33, 32),
+                IntPath.of(33, 32, 35, 34),
+                IntPath.of(32, 35, 34, 102),
+                IntPath.of(31, 33, 32, 35),
+                IntPath.of(32, 31, 33),
+                IntPath.of(31, 33, 32),
+                IntPath.of(33, 32, 35),
+                IntPath.of(32, 35, 34),
+                IntPath.of(35, 34, 102)
+        );
+
+        Set<IntPath> got3 = new HashSet<>();
+        orig.visitAllSubPaths(3, got3::add);
+        assertEquals(expected3, got3, () -> {
+            Set<IntPath> absent = new HashSet<>(expected3);
+            absent.removeAll(got3);
+            Set<IntPath> unexpected = new HashSet<>(got3);
+            unexpected.removeAll(expected3);
+            return "Sets do not match.  Missing: " + absent + " unexpected: " + unexpected;
+        });
+    }
+
+    private Set<IntPath> setOf(IntPath... paths) {
+        return new HashSet<>(Arrays.<IntPath>asList(paths));
+    }
 
     @Test
     public void testParse() {
@@ -80,10 +212,10 @@ public class IntPathTest {
         }
 
         for (int i = 0; i < g.size(); i++) {
-            for (int j = g.size()-1; j > i; j--) {
+            for (int j = g.size() - 1; j > i; j--) {
                 IntPath sub = g.subPath(i, j);
                 for (int k = 0; k < sub.size(); k++) {
-                    assertEquals(g.get(i+k), sub.get(k));
+                    assertEquals(g.get(i + k), sub.get(k));
                 }
             }
         }
