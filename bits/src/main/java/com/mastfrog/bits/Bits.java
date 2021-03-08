@@ -1105,7 +1105,7 @@ public interface Bits extends Serializable {
      * @return Long.MAX_VALUE by default
      */
     default long maxLong() {
-        return Long.MAX_VALUE;
+        return isNativelyLongIndexed() ? Long.MAX_VALUE : max();
     }
 
     // Long variants

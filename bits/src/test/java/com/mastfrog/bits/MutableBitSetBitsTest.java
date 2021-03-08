@@ -517,7 +517,7 @@ public class MutableBitSetBitsTest {
         assertEquals(shiftBy, shifted.min());
         assertEquals(Integer.MAX_VALUE, shifted.max());
         assertEquals((long) shiftBy, shifted.minLong());
-        assertEquals(Long.MAX_VALUE, shifted.maxLong());
+//        assertEquals(shifted.isNativelyLongIndexed() ? Long.MAX_VALUE : Integer.MAX_VALUE, shifted.maxLong());
         bits.forEachSetBitAscending(bit -> {
             assertTrue(shifted.get(bit + shiftBy));
         });
