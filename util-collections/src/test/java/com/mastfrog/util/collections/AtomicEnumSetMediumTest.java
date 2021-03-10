@@ -47,7 +47,7 @@ public class AtomicEnumSetMediumTest {
 
     @Test
     public void testSomeMethod() {
-        AtomicEnumSetMedium<X> a = new AtomicEnumSetMedium(X.class);
+        AtomicEnumSetMedium<X> a = new AtomicEnumSetMedium<>(X.class);
         assertTrue(a.isEmpty());
         assertEquals(0, a.size());
 

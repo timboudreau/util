@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.collections;
 
+import com.mastfrog.util.preconditions.Exceptions;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -35,6 +36,7 @@ import java.util.function.IntFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
@@ -122,6 +124,8 @@ public class AtomicRingTest {
         // Kill the watch thread and wait for it to exit
         watchThread.interrupt();
         watchThread.join();
+        w.rethrow();
+        assertFalse(collected.isEmpty());
         // We only care about unique strings
         HashSet<String> all = new HashSet<>(collected);
         for (String c : all) {
@@ -138,8 +142,14 @@ public class AtomicRingTest {
                 // concurrency is broken
                 char prev = c.charAt(i - 1);
                 char curr = c.charAt(i);
-                assertNotEquals("Adjacent characters " + prev + " in " + c
-                        + " - same item was added twice", prev, curr);
+                // FIXME:  This test is not correct for this case - we should
+                // use an atomic integer or something that cannot possibly repeat,
+                // otherwise it IS possible to encounter adjacent values - the
+                // background threads just need to complete an entire cycle between
+                // the watcher thread's read of one element and the next
+
+//                assertNotEquals("Adjacent characters " + prev + " in " + c
+//                        + " - same item was added twice", prev, curr);
             }
         }
     }
@@ -150,6 +160,7 @@ public class AtomicRingTest {
         private final StringBuilder sb = new StringBuilder();
         private final List<String> collected;
         private final Phaser ph;
+        private volatile Throwable thrown;
 
         public Watcher(Ring<String> ring, Phaser ph, List<String> collected) {
             this.ring = ring;
@@ -164,14 +175,30 @@ public class AtomicRingTest {
             return t;
         }
 
+        void rethrow() {
+            if (thrown != null) {
+                Exceptions.chuck(thrown);
+            }
+        }
+
         @Override
         public void run() {
-            ph.arriveAndAwaitAdvance();
-            Consumer<String> cb = sb::append;
-            while (!Thread.interrupted()) {
-                ring.forEach(cb);
-                collected.add(sb.toString());
-                sb.setLength(0);
+            try {
+                ph.arriveAndAwaitAdvance();
+                Consumer<String> cb = sb::append;
+                char[] cc = new char[1];
+                while (!Thread.interrupted()) {
+                    ring.forEach(ch -> {
+                        char last = cc[0];
+                        sb.append(ch);
+                        cc[0] = ch.charAt(0);
+                    });
+                    collected.add(sb.toString());
+                    sb.setLength(0);
+                    cc[0] = 0;
+                }
+            } catch (Throwable thrown) {
+                this.thrown = thrown;
             }
         }
 
@@ -193,6 +220,12 @@ public class AtomicRingTest {
             this.ring = ring;
             this.phaser = phaser;
             this.loopSync = loopSync;
+
+            StringBuilder sb = new StringBuilder();
+            for (char c = start; c <= end; c++) {
+                sb.append(c);
+            }
+//            System.out.println("CR " + sb);
         }
 
         Thread start() {
@@ -205,11 +238,17 @@ public class AtomicRingTest {
         @Override
         public void run() {
             phaser.arriveAndAwaitAdvance();
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(AtomicRingTest.class.getName()).log(Level.SEVERE, null, ex);
+            }
             char[] arr = new char[1];
             for (int i = 0; i < iters; i++) {
                 for (char c = start; c <= end; c++) {
                     arr[0] = c;
                     ring.accept(new String(arr));
+                    Thread.yield();
                 }
                 try {
                     loopSync.await();

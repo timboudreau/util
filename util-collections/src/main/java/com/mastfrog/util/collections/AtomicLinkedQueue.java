@@ -45,13 +45,13 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * A non-blocking, thread-safe, memory-efficient FIFO queue using a simple linked
- * list structure and atomic add and drain operations. Atomicity is achieved by
- * using a singly-tail-linked data structure using atomic references. Mutation
- * operations that affect the tail, such as <code>add()</code> and
- * <code>pop()</code> are guaranteed to be thread-safe and non-blocking;
- * operations that affect other parts of the queue are not (though
- * <code>removeByIdentity()</code> will tell you if it failed).
+ * A non-blocking, thread-safe, memory-efficient FIFO queue using a simple
+ * linked list structure and atomic add and drain operations. Atomicity is
+ * achieved by using a singly-tail-linked data structure using atomic
+ * references. Mutation operations that affect the tail, such as
+ * <code>add()</code> and <code>pop()</code> are guaranteed to be thread-safe
+ * and non-blocking; operations that affect other parts of the queue are not
+ * (though <code>removeByIdentity()</code> will tell you if it failed).
  * <p>
  * Note that iteration occurs in reverse order. Identity-based removal
  * operations exist; under concurrency they may spuriously fail, but will report
@@ -91,9 +91,9 @@ import java.util.stream.StreamSupport;
  * }
  * </pre>
  * <i>This class originally appeared in <code>com.mastfrog.util.thread</code>;
- * the version there will not be further maintained.</i>. Note:  Remove operations
- * other than <code>pop()</code> are expensive, particularly under concurrent
- * access.
+ * the version there will not be further maintained.</i>. Note: Remove
+ * operations other than <code>pop()</code> are expensive, particularly under
+ * concurrent access.
  *
  * @author Tim Boudreau
  */
@@ -895,18 +895,11 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
         MessageEntry<Message> deepCopyRemoving(Object msg, boolean[] found) {
             if (message == msg) {
                 found[0] = true;
-                MessageEntry<Message> p = getPrev();
-//                return p == null ? null : p.deepCopyRemoving(msg, found);
-                return p;
+                return prev;
             }
-            MessageEntry<Message> p = getPrev();
-            if (p != null) {
-                p = p.deepCopyRemoving(msg, found);
-            }
-            if (!found[0]) {
-                return this;
-            }
-            return new MessageEntry<>(p, message);
+            MessageEntry<Message> prev = getPrev();
+            MessageEntry<Message> newPrev = prev == null ? null : prev.deepCopyRemoving(msg, found);
+            return new MessageEntry<>(newPrev, message);
         }
 
         MessageEntry<Message> deepCopyRemovingAll(Collection<?> objs, boolean[] found) {

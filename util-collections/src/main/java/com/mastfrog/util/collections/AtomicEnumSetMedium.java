@@ -41,7 +41,8 @@ import java.util.function.Consumer;
 final class AtomicEnumSetMedium<T extends Enum<T>> extends AbstractSet<T> implements AtomicEnumSet<T> {
 
     private volatile long value;
-    static AtomicLongFieldUpdater upd = AtomicLongFieldUpdater.newUpdater(AtomicEnumSetMedium.class, "value");
+    static AtomicLongFieldUpdater<AtomicEnumSetMedium> upd
+            = AtomicLongFieldUpdater.newUpdater(AtomicEnumSetMedium.class, "value");
     private final Class<T> type;
     private final int max;
 
@@ -66,6 +67,11 @@ final class AtomicEnumSetMedium<T extends Enum<T>> extends AbstractSet<T> implem
         this(type, true);
     }
 
+    AtomicEnumSetMedium(T a) {
+        this(notNull("a", a).getDeclaringClass());
+        value = a.ordinal();
+    }
+
     AtomicEnumSetMedium(T a, T b) {
         this(notNull("a", a).getDeclaringClass());
         value = (1L << a.ordinal()) | (1L << b.ordinal());
@@ -86,7 +92,7 @@ final class AtomicEnumSetMedium<T extends Enum<T>> extends AbstractSet<T> implem
 
     @Override
     public AtomicEnumSetMedium<T> copy() {
-        return new AtomicEnumSetMedium(type, get());
+        return new AtomicEnumSetMedium<>(type, get());
     }
 
     private boolean _contains(T obj) {
@@ -200,6 +206,7 @@ final class AtomicEnumSetMedium<T extends Enum<T>> extends AbstractSet<T> implem
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public boolean addAll(Collection<? extends T> coll) {
         if (coll.isEmpty()) {
             return false;
@@ -265,6 +272,7 @@ final class AtomicEnumSetMedium<T extends Enum<T>> extends AbstractSet<T> implem
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public boolean equals(Object obj) {
         if (obj == this) {
             return true;

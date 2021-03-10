@@ -34,7 +34,6 @@ import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntPredicate;
 import org.junit.Test;
@@ -48,7 +47,7 @@ public class AtomicEnumSetSmallTest {
 
     @Test
     public void testSomeMethod() {
-        AtomicEnumSetSmall<X> a = new AtomicEnumSetSmall(X.class);
+        AtomicEnumSetSmall<X> a = new AtomicEnumSetSmall<>(X.class);
         assertTrue(a.isEmpty());
         assertEquals(0, a.size());
 
