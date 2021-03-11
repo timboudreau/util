@@ -25,6 +25,7 @@ package com.mastfrog.util.collections;
 
 import com.mastfrog.util.preconditions.Checks;
 import static com.mastfrog.util.preconditions.Checks.notNull;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -905,14 +906,13 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
         MessageEntry<Message> deepCopyRemovingAll(Collection<?> objs, boolean[] found) {
             if (objs.contains(message)) {
                 found[0] = true;
-                MessageEntry<Message> p = getPrev();
-                return p == null ? null : p.deepCopyRemovingAll(objs, found);
+                MessageEntry<Message> prev = getPrev();
+                return prev == null ? null : prev.deepCopyRemovingAll(objs, found);
             }
             MessageEntry<Message> p = getPrev();
-            if (p != null) {
-                p = p.deepCopyRemovingAll(objs, found);
-            }
-            return new MessageEntry<>(p, message);
+            MessageEntry<Message> newPrev = p == null ? null
+                    : p.deepCopyRemovingAll(objs, found);
+            return new MessageEntry<>(newPrev, message);
         }
 
         MessageEntry<Message> deepCopyRetainingAll(Collection<?> objs, boolean[] found) {

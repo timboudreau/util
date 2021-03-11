@@ -36,8 +36,12 @@ import static java.lang.Long.lowestOneBit;
 import static java.lang.Long.numberOfLeadingZeros;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
+import java.util.PrimitiveIterator;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.function.IntPredicate;
+import java.util.function.IntSupplier;
+import java.util.function.IntUnaryOperator;
+import java.util.function.ToIntFunction;
 
 /**
  * An non-blocking, thread-safe, atomic implementation of MutableBits; this
@@ -102,7 +106,6 @@ final class AtomicBitsImpl implements Externalizable, AtomicBits {
     // XXX the capacity in long-indices is really
     // Integer.MAX_VALUE * 8, but the indexing logic would need to be
     // changed to long-based to take advantage of it
-
     private final AtomicLongArray arr;
     private final int capacity;
 
@@ -420,11 +423,47 @@ final class AtomicBitsImpl implements Externalizable, AtomicBits {
         return (arr.get(indexOfLong(bitIndex)) & maskFor(bitIndex)) != 0;
     }
 
+    private ToIntFunction<IntUnaryOperator> iterate(int from) {
+        // A function that starts with the passed from-bit,
+        // and if no unset bits are found in that cell (the IntUnaryOperator
+        // returns < 0) then tries the 0th bit of the next long,
+        // until a non-zero result or all available positions in the
+        // array have been exhausted
+        return op -> {
+            int step = from;
+            if (step > capacity) {
+                return -1;
+            }
+            int result = -1;
+            do {
+                result = op.applyAsInt(step);
+                if (result < 0) {
+                    if (step == from) {
+                        int lix = indexOfLong(from);
+                        int base = lix * BITS_PER_ENTRY;
+                        step = base + BITS_PER_ENTRY;
+                    } else {
+                        step += BITS_PER_ENTRY;
+                    }
+                } else if (result >= capacity) {
+                    return -1;
+                }
+            } while (result < 0 && step < capacity);
+            return result;
+        };
+    }
+
     @Override
     public int settingNextClearBit(int from) {
-        if (from >= capacity) {
+        if (from < 0) {
+            from = 0;
+        } else if (from >= capacity) {
             return -1;
         }
+        return iterate(from).applyAsInt(this::_settingNextClearBit);
+    }
+
+    private int _settingNextClearBit(int from) {
         // Holder for our result
         Int targetBit = Int.of(-1);
         // from / 64
@@ -440,19 +479,20 @@ final class AtomicBitsImpl implements Externalizable, AtomicBits {
         } else {
             full = FULL_MASKS[BITS_PER_ENTRY - 1];
         }
+        int f = from;
         arr.updateAndGet(lix, old -> {
             // AtomicLong busywaits, so we can be called more than once -
             // reset any past result here
             targetBit.set(-1);
             if (old != full) {
-                if (old == 0 && from % BITS_PER_ENTRY == 0) {
-                    targetBit.set(from);
+                if (old == 0 && f % BITS_PER_ENTRY == 0) {
+                    targetBit.set(f);
                     return 1;
                 }
-                long mask = maskFor(from);
+                long mask = maskFor(f);
                 // We got an immediate hit
                 if ((old & mask) == 0) {
-                    targetBit.set(from);
+                    targetBit.set(f);
                     long result = old | mask;
                     return result;
                 } else {
@@ -472,7 +512,7 @@ final class AtomicBitsImpl implements Externalizable, AtomicBits {
                         long bitmask = (1L << zeroBitPosition);
                         // It may be a bit below the first requested bit, in which
                         // case we loop
-                        if ((zeroBitPosition + base) >= from) {
+                        if ((zeroBitPosition + base) >= f) {
                             targetBit.set(zeroBitPosition + base);
                             // Merge it into our value
                             return old | bitmask;
@@ -486,18 +526,7 @@ final class AtomicBitsImpl implements Externalizable, AtomicBits {
         int result = targetBit.getAsInt();
         // If we found a bit, return it
         if (result != -1) {
-            if (result >= capacity) {
-                return -1;
-            }
             return result;
-        }
-        // If there are any more longs in the array, recurse to scan forward
-        // through them
-        if (from < capacity) {
-            int startOfNextArrayEntry = base + BITS_PER_ENTRY;
-            if (startOfNextArrayEntry <= capacity - 1) {
-                return settingNextClearBit(startOfNextArrayEntry);
-            }
         }
         // No bits found; we're done
         return -1;

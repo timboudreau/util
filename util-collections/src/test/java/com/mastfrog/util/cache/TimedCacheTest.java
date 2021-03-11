@@ -78,7 +78,12 @@ public class TimedCacheTest {
 
         void assertLastExpired(String txt) throws InterruptedException {
             synchronized (this) {
-                wait(100);
+                for (int i = 0; i < 100; i++) {
+                    wait(10);
+                    if (lastExpired.get() != null) {
+                        break;
+                    }
+                }
             }
             Expirable last = lastExpired.getAndSet(null);
             assertNotNull(last);
@@ -87,11 +92,16 @@ public class TimedCacheTest {
 
         void assertLastOffered(String txt) throws InterruptedException {
             synchronized (this) {
-                wait(100);
+                for (int i = 0; i < 100; i++) {
+                    wait(10);
+                    if (lastOffered.get() != null) {
+                        break;
+                    }
+                }
             }
             Expirable last = lastOffered.getAndSet(null);
             assertNotNull("Last is null", last);
-            assertEquals("Wrong last offered",txt, last.toString());
+            assertEquals("Wrong last offered", txt, last.toString());
             if (latch != null) {
                 latch.countDown();
                 latch = null;

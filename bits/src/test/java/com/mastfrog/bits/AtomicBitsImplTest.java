@@ -252,6 +252,21 @@ public class AtomicBitsImplTest {
     }
 
     @Test
+    public void testSettingNextDoesNotOverflowStack() {
+        for (int sz = 62; sz < 514; sz++) {
+            AtomicBitsImpl ab = new AtomicBitsImpl(sz);
+            int val = -1;
+            do {
+                int nue = ab.settingNextClearBit(val);
+                if (nue != -1) {
+                    assertEquals(val + 1, nue, "Wrong target for " + val);
+                }
+                val = nue;
+            } while (val >= 0);
+        }
+    }
+
+    @Test
     public void testSettingNextParallel() throws InterruptedException {
         final int size = (1024 * 1024) + 333;
         AtomicBitsImpl bits = new AtomicBitsImpl(size);
@@ -284,7 +299,6 @@ public class AtomicBitsImplTest {
                         + b1 + " vs\n" + b2);
             }
         }
-        assertTrue(Math.abs(sum - combined.nextClearBit(0)) < 4);
     }
 
     static class RR implements Runnable {

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<!--
+The MIT License
+
+Copyright 2021 Mastfrog Technologies.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+-->
+<html>
+    <head>
+        <title>State Holders</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+        <h1>State Holders</h1>
+        <p>
+            Particularly when using lambdas, it is not unusual to have the
+            problem of having a variable that needs to be final, but whose
+            value can and should be altered inside a lambda, with no means of
+            returning the altered value as the result of the lambda. 
+        </p><p>
+            For example, if you want to note for the caller whether an <code>IntUnaryOperator</code>
+            <i>updated</i> an <code>AtomicInteger</code> or simply returned the old value,
+            the code inside the lambda knows what it did, but since it must
+            return <i>a</i> value, it cannot directly tell you - you could
+            fetch its value <i>prior to</i> calling <code>updateAndGet(IntUnaryOperator)</code>,
+            but now the code is no longer atomic - you just know the returned
+            value is or isn't different from the value at some time in the
+            past, not whether or not it is different <i>because of</i> the
+            <code>IntUnaryOperator</code>.
+        </p><p>
+            <code>AtomicBits.settingNextClearBit(int start)</code> in the
+            <b>bits</b> project is an example of exactly that situation - 
+            we need to know the exact bit (if any) which was set on one
+            long in an <code>AtomicLongArray</code>, and we have to know
+            that it was this caller, not some other code running concurrently,
+            that set this particular bit, or it will be possible for two threads
+            to both appear to set the same bit simultaneously (and the entire
+            purpose of AtomicBits is to avoid that situation without locks!).
+            It is worth noting that if you want to use this pattern, you
+            <i>must</i> reset the state of the state-holder upon entry, as
+            atomics use a form of busy-wait to update, so the IntUnaryOperator
+            may be called multiple times before it succeeds in updating the
+            value under concurrent writes.
+        </p><p>
+            So, far from being a hack, there are some kinds of code that simply
+            cannot be written any other way.  The typical pattern is to allocate
+            an <code>int[1]</code> or similar, but this is both unappealing,
+            and the allocated array may have more memory overhead than a
+            single-int-field object.  <code>AtomicInteger</code> offers one
+            alternative, but these also have more overhead than is needed in
+            the case that the value is local to the calling method and cannot
+            possibly encounter concurrency. To solve that problem, this package
+            was born.
+        </p>
+        <h2>What's Here</h2>
+        <p>
+            Inituitively named classes that wrap a single-field primitive or
+            object value.  To make it easy to switch between atomic and non-atomic
+            implementations, most types have factory methods for both atomic
+            and non-atomic versions - and <code>Flt</code>'s and <code>Dbl</code>'s
+            atomic variants provide atomics not available from the JDK (wrapping
+            an <code>AtomicInteger</code> and <code>AtomicLong</code> under the
+            hood, thanks to <code>Double.doubleBitsToLong()</code> and similar
+            methods).
+        </p>
+    </body>
+</html>
