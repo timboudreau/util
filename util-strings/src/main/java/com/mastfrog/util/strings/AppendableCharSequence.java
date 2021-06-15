@@ -237,6 +237,7 @@ public final class AppendableCharSequence implements Appendable, Comparable<Char
         }
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(length);
         for (CharSequence seq : seqs) {
@@ -245,6 +246,7 @@ public final class AppendableCharSequence implements Appendable, Comparable<Char
         return sb.toString();
     }
 
+    @Override
     public boolean equals(Object o) {
         if (o == null) {
             return false;
@@ -265,6 +267,7 @@ public final class AppendableCharSequence implements Appendable, Comparable<Char
         return false;
     }
 
+    @Override
     public int hashCode() {
         return Strings.charSequenceHashCode(this);
     }

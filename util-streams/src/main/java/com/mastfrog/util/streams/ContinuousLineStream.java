@@ -32,7 +32,7 @@ import java.util.List;
  * This class is not thread-safe.
  * </p>
  */
-public final class ContinuousLineStream implements AutoCloseable, Iterator<CharSequence> {
+public final class ContinuousLineStream implements  Iterator<CharSequence>, LinesSource {
 
     private final ContinuousStringStream stringStream;
     private final CharsetDecoder charsetDecoder;
@@ -148,6 +148,7 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
         }
     }
 
+    @Override
     public boolean isOpen() {
         return stringStream.isOpen();
     }
@@ -164,6 +165,7 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
      * @return True if there are more lines
      * @throws IOException If something goes wrong
      */
+    @Override
     public synchronized boolean hasMoreLines() throws IOException {
         check();
         boolean result = !queuedLines.isEmpty();
@@ -176,6 +178,7 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
      * @return The next line, or null if there are none
      * @throws IOException If something goes wrong
      */
+    @Override
     public synchronized CharSequence nextLine() throws IOException {
         check();
         return queuedLines.isEmpty() ? null : queuedLines.pop();
@@ -187,6 +190,7 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
      * @return The file position
      * @throws IOException If the channel is closed or something else is wrong
      */
+    @Override
     public long position() throws IOException {
         return stringStream.position();
     }
@@ -198,6 +202,7 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
      * @param pos The new position
      * @throws IOException If the position is invalid or something else is wrong
      */
+    @Override
     public synchronized void position(long pos) throws IOException {
         stringStream.position(pos);
         // Discard any partially read line
@@ -344,6 +349,7 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
      *
      * @return A list of any remaining strings
      */
+    @Override
     public List<CharSequence> closeReturningTail() throws IOException {
         try {
             List<CharSequence> result = new ArrayList<>(queuedLines);
@@ -358,6 +364,7 @@ public final class ContinuousLineStream implements AutoCloseable, Iterator<CharS
         }
     }
 
+    @Override
     public boolean isAtEndOfFile() throws IOException {
         return !isOpen() || this.stringStream.available() == 0;
     }

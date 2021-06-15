@@ -55,6 +55,7 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -809,6 +810,26 @@ public final class FileUtils {
         }
     }
 
+    /**
+     * Create a CharSequence from an array of CharBuffers used in-place.
+     *
+     * @param buffers An array of CharBuffers.
+     * @return A char sequence
+     */
+    public static CharSequence charBuffersCharSequence(CharBuffer... buffers) {
+        return buffers.length == 0 ? "" : new CharBuffersCharSequence(buffers);
+    }
+
+    /**
+     * Create a CharSequence from a list of CharBuffers used in-place.
+     *
+     * @param buffers An array of CharBuffers.
+     * @return A char sequence
+     */
+    public static CharSequence charBuffersCharSequence(Collection<? extends CharBuffer> buffers) {
+        return charBuffersCharSequence(buffers.toArray(new CharBuffer[buffers.size()]));
+    }
+
     public static int decode(ReadableByteChannel fileChannel, ByteBuffer readBuffer, CharBuffer target, CharsetDecoder charsetDecoder, boolean permissive) throws IOException {
         int result = decode(fileChannel, readBuffer, target, charsetDecoder, permissive, (CoderResult[]) null);
         target.flip();
@@ -826,6 +847,19 @@ public final class FileUtils {
         }
     }
 
+    /**
+     * Decode data from the passed file channel at its current position, loading it into the read buffer
+     * and decoding into the target CharBuffer using the specified encoding.
+     *
+     * @param fileChannel A channel
+     * @param readBuffer A buffer to read bytes into
+     * @param target A char buffer to decode into - should be positioned to 0, limit = capacity
+     * @param charsetDecoder A decoder
+     * @param res A holder for the decoder result
+     * @param permissive Allow for encoding errors
+     * @return the number of bytes read from the channel
+     * @throws IOException If something goes wrong
+     */
     public static int decode(ReadableByteChannel fileChannel, ByteBuffer readBuffer, CharBuffer target, CharsetDecoder charsetDecoder, Obj<CoderResult> res, boolean permissive) throws IOException {
         CoderResult lastCoderResult = null;
         int numBytesRead;

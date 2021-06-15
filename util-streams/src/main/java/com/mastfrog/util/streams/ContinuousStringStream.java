@@ -12,7 +12,7 @@ import java.nio.charset.CoderResult;
 /**
  * An InputStream-like construct which does not acknowledge the end of files.
  */
-public final class ContinuousStringStream implements AutoCloseable {
+public final class ContinuousStringStream implements CharSequenceSource {
 
     private final FileChannel fileChannel;
     private final ByteBuffer readBuffer;
@@ -36,6 +36,7 @@ public final class ContinuousStringStream implements AutoCloseable {
      * @return The position in the file
      * @throws IOException
      */
+    @Override
     public synchronized long position() throws IOException {
         return fileChannel.position();
     }
@@ -46,6 +47,7 @@ public final class ContinuousStringStream implements AutoCloseable {
      * @param pos
      * @throws IOException
      */
+    @Override
     public synchronized void position(long pos) throws IOException {
         fileChannel.position(pos);
     }
@@ -84,6 +86,7 @@ public final class ContinuousStringStream implements AutoCloseable {
      * @return The result of decoding
      * @throws IOException If something goes wrong
      */
+    @Override
     public synchronized CoderResult decode(CharBuffer target, CharsetDecoder charsetDecoder) throws IOException {
         Obj<CoderResult> result = Obj.create();
         if (readBuffer.position() == readBuffer.capacity()) {
@@ -94,54 +97,5 @@ public final class ContinuousStringStream implements AutoCloseable {
             target.flip();
         }
         return result.get();
-    }
-
-    static String escape(CharBuffer s) {
-        s = s.duplicate();
-        s.flip();
-        StringBuilder sb = new StringBuilder();
-        int start = s.position();
-        int max = s.length();
-        for (int i = start; i < max; i++) {
-            char c = s.charAt(i);
-            switch (c) {
-                case '\n':
-                    sb.append("\\n");
-                    break;
-                default:
-                    sb.append(c);
-            }
-        }
-        return sb.toString();
-    }
-
-    static String escape(CharSequence s) {
-        StringBuilder sb = new StringBuilder();
-        int start = 0;
-        int max = s.length();
-        for (int i = start; i < max; i++) {
-            char c = s.charAt(i);
-            switch (c) {
-                case '\n':
-                    sb.append("\\n");
-                    break;
-                default:
-                    sb.append(c);
-            }
-        }
-        return sb.toString();
-    }
-
-    static String escape(char c) {
-        switch (c) {
-            case '\n':
-                return "\\n";
-            case '\t':
-                return "\\t";
-            case 0:
-                return "\\0";
-            default:
-                return "" + c;
-        }
     }
 }

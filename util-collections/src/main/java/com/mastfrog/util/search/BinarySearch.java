@@ -219,6 +219,9 @@ public class BinarySearch<T> {
         // in the next stack frame
         int startComparison = cachedComparisonDirectionType == -1
                 ? cachedComparison : comparer.applyAsInt(start);
+        if (startComparison == 0) {
+            return start;
+        }
         if (range == 0) {
             // We hit the end of any possible matches - start and end are
             // the same, so return that value if it satisfies the bias
