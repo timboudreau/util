@@ -2620,11 +2620,11 @@ public final class Strings {
         }
         int end = Math.min(maxLength, len);
         int maxFudge = Math.max(2, Math.max(end - (maxLength / 3), end - MAX_ELLIPSIS_SKEW));
-        while (end > maxFudge && Character.isWhitespace(orig.charAt(end-1))) {
+        while (end > maxFudge && Character.isWhitespace(orig.charAt(end - 1))) {
             end--;
         }
-        if (end >= len-1 || !Character.isWhitespace(orig.charAt(end + 1))) {
-            for (int i = Math.min(len-1, end); i >= maxFudge; i--) {
+        if (end >= len - 1 || !Character.isWhitespace(orig.charAt(end + 1))) {
+            for (int i = Math.min(len - 1, end); i >= maxFudge; i--) {
                 if (Character.isWhitespace(orig.charAt(i))) {
                     end = i;
                     break;
@@ -2703,6 +2703,166 @@ public final class Strings {
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * Slightly faster than Character.isDigit() for ascii.
+     *
+     * @param ch A character
+     * @return True if it is a digit
+     */
+    public static boolean isDigit(char ch) {
+        // uses slightly faster test for ascii digits, and falls
+        // back to Character.isDigit
+        switch (ch) {
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                return true;
+            default:
+                if (ch < 48) {
+                    return false;
+                } else if (ch > 57 && ch < 128) {
+                    return false;
+                }
+        }
+        return Character.isDigit(ch);
+    }
+
+    // Slightly more efficient to cache these
+    private static final CharPred IS_DIGIT = Strings::isDigit;
+    private static final CharPred IS_LETTERS = Character::isLetter;
+
+    /**
+     * Determine if a string is entirely composed of digits efficiently.
+     *
+     * @param seq A sequence
+     * @return True if it is all digits
+     */
+    public static boolean isDigits(CharSequence seq) {
+        return is(seq, IS_DIGIT);
+    }
+
+    /**
+     * Determine if a string is entirely composed of digits efficiently.
+     *
+     * @param seq A sequence
+     * @return True if it is all digits
+     */
+    public static boolean isLetters(CharSequence seq) {
+        return is(seq, IS_LETTERS);
+    }
+
+    /**
+     * Determine very efficiently if a string matches the regex pattern
+     * \d+\.\d+.
+     *
+     * @param seq A character sequence
+     * @return true if the pattern is matched
+     */
+    public static boolean isPositiveDecimal(CharSequence seq) {
+        PositiveDecimalCheck pdc = new PositiveDecimalCheck();
+        return is(seq, pdc) && pdc.dotCount == 1
+                // do not match, e.g. '100.'
+                && seq.charAt(seq.length() - 1) != '.';
+    }
+
+    static class PositiveDecimalCheck implements CharPred {
+
+        private int dotCount;
+
+        @Override
+        public boolean test(char ch) {
+            switch (ch) {
+                case '.':
+                    dotCount++;
+                    return true;
+                default:
+                    return isDigit(ch);
+            }
+        }
+
+    }
+
+    /**
+     * Test a string, testing both ends of the string alternately to produce
+     * faster negative results and use fewer iterations.
+     *
+     * @param in A character sequence
+     * @param pred A predicate
+     * @return true if all of the characters match
+     */
+    public static boolean is(CharSequence in, CharPred pred) {
+        int max = in.length();
+        switch (max) {
+            case 0:
+                return false;
+            case 1:
+                return pred.test(in.charAt(0));
+            case 2:
+                return pred.test(in.charAt(0))
+                        && pred.test(in.charAt(1));
+            case 3:
+                return pred.test(in.charAt(1))
+                        && pred.test(in.charAt(0))
+                        && pred.test(in.charAt(2));
+            case 4:
+                return pred.test(in.charAt(1))
+                        && pred.test(in.charAt(3))
+                        && pred.test(in.charAt(0))
+                        && pred.test(in.charAt(2));
+            case 5:
+                return pred.test(in.charAt(0))
+                        && pred.test(in.charAt(4))
+                        && pred.test(in.charAt(3))
+                        && pred.test(in.charAt(1))
+                        && pred.test(in.charAt(2));
+            default:
+                boolean odd = (max % 2) != 0;
+                int mid = max / 2;
+                if (odd) {
+                    if (pred.test(in.charAt(mid))) {
+                        for (int i = 0; i < mid; i++) {
+                            if (!pred.test(in.charAt(i))) {
+                                return false;
+                            } else if (!pred.test(in.charAt(max - (i + 1)))) {
+                                return false;
+                            }
+                        }
+                    } else {
+                        return false;
+                    }
+                } else {
+                    for (int i = 0; i < mid; i++) {
+                        if (!pred.test(in.charAt(i))) {
+                            return false;
+                        } else if (!pred.test(in.charAt(max - (i + 1)))) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+        }
+    }
+
+    /**
+     * A simple character predicate for use with Strings.is() for fast testing
+     * of string contents.
+     */
+    public interface CharPred {
+
+        boolean test(char ch);
+
+        default CharPred or(CharPred other) {
+            return ch -> test(ch) || other.test(ch);
+        }
     }
 
     static final class LazyToString {

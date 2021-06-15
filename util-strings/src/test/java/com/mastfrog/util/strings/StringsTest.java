@@ -25,10 +25,15 @@
 package com.mastfrog.util.strings;
 
 import com.mastfrog.util.preconditions.InvalidArgumentException;
+import com.mastfrog.util.strings.Strings.CharPred;
+import static com.mastfrog.util.strings.Strings.isDigits;
+import static com.mastfrog.util.strings.Strings.is;
+import static com.mastfrog.util.strings.Strings.isPositiveDecimal;
 import static com.mastfrog.util.strings.Strings.quickJson;
 import java.util.Arrays;
 import static java.util.Arrays.asList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -907,5 +912,150 @@ public class StringsTest {
 
     private static void assertCharSequences(String exp, CharSequence got) {
         assertEquals(exp, got.toString());
+    }
+
+    @Test
+    public void testIsDigits() {
+        assertFalse("Empty string cannot be digits", isDigits(""));
+        assertTrue(isDigits("0"));
+        assertTrue(isDigits("01"));
+        assertTrue(isDigits("012"));
+        assertTrue(isDigits("0123"));
+        assertTrue(isDigits("01234"));
+
+        assertFalse(isDigits("A"));
+        assertFalse(isDigits("-"));
+        assertFalse(isDigits("\u0000"));
+        assertFalse(isDigits("0A"));
+        assertFalse(isDigits("A0"));
+        assertFalse(isDigits("A0A"));
+        assertFalse(isDigits("0A0"));
+        assertFalse(isDigits("0A00"));
+        assertFalse(isDigits("00A00"));
+        assertFalse(isDigits("00A0A"));
+        assertFalse(isDigits("A0A0A"));
+        assertTrue(isDigits("00000"));
+        assertFalse(isDigits("0A000"));
+        assertFalse(isDigits("000A0"));
+        assertFalse(isDigits("0000A0"));
+        assertFalse(isDigits("0000A"));
+        assertFalse(isDigits("AAAAA"));
+        assertFalse(isDigits("------"));
+        assertFalse(isDigits(" "));
+        assertFalse(isDigits(" 1233"));
+    }
+
+    @Test
+    public void testIsPositiveDecimal() {
+        assertTrue(isPositiveDecimal("0.1"));
+        assertTrue(isPositiveDecimal("0.123"));
+        assertTrue(isPositiveDecimal("0.1234"));
+        assertTrue(isPositiveDecimal("0.12345"));
+        assertTrue(isPositiveDecimal("10.12345"));
+        assertTrue(isPositiveDecimal(".1"));
+        assertTrue(isPositiveDecimal(".123"));
+        assertTrue(isPositiveDecimal(".1234"));
+        assertTrue(isPositiveDecimal(".12345"));
+        assertTrue(isPositiveDecimal(".123456"));
+        assertTrue(isPositiveDecimal(".1234567"));
+        assertFalse(isPositiveDecimal("."));
+        assertFalse(isPositiveDecimal("1."));
+        assertFalse(isPositiveDecimal("12."));
+        assertFalse(isPositiveDecimal("123."));
+        assertFalse(isPositiveDecimal("1234."));
+        assertFalse(isPositiveDecimal("12345."));
+        assertFalse(isPositiveDecimal("a"));
+        assertFalse(isPositiveDecimal("a."));
+        assertFalse(isPositiveDecimal(".a."));
+        assertFalse(isPositiveDecimal("a.a"));
+        assertFalse(isPositiveDecimal("1.1.1"));
+        assertFalse(isPositiveDecimal("12.3.12"));
+        assertFalse(isPositiveDecimal("123.45.987"));
+        assertFalse(isPositiveDecimal(".1234."));
+        assertFalse(isPositiveDecimal("0.12345."));
+    }
+
+    @Test
+    public void testIs() {
+        EfficiencyCheckingCharPred cp = new EfficiencyCheckingCharPred(Character::isDigit);
+        testOneIs(true, cp, "0");
+        testOneIs(true, cp, "01");
+        testOneIs(true, cp, "012");
+        testOneIs(true, cp, "0123");
+        testOneIs(true, cp, "01234");
+        testOneIs(true, cp, "012345");
+        testOneIs(true, cp, "0123456");
+        testOneIs(true, cp, "01234567");
+        testOneIs(true, cp, "012345678");
+        testOneIs(true, cp, "0123456789");
+        testOneIs(false, cp, "a0123456789");
+        testOneIs(false, cp, "0a123456789");
+        testOneIs(false, cp, "01a23456789");
+        testOneIs(false, cp, "012a3456789");
+        testOneIs(false, cp, "0123a456789");
+        testOneIs(false, cp, "01234a56789");
+        testOneIs(false, cp, "012345a6789");
+        testOneIs(false, cp, "0123456a789");
+        testOneIs(false, cp, "01234567a89");
+        testOneIs(false, cp, "012345678a9");
+        testOneIs(false, cp, "0123456789a");
+        testOneIs(false, cp, "a");
+        testOneIs(false, cp, "");
+    }
+
+    private void testOneIs(boolean expect, EfficiencyCheckingCharPred pred, String what) {
+        if (expect) {
+            assertTrue("Expected true with '" + what + "'", is(what, pred.reset(what)));
+            Set<Character> shouldHaveTested = new HashSet<>();
+            for (char c : what.toCharArray()) {
+                shouldHaveTested.add(c);
+            }
+            if (!shouldHaveTested.equals(pred.calledFor)) {
+                Set<Character> absent = new HashSet<>(shouldHaveTested);
+                Set<Character> surprises = new HashSet<>(pred.calledFor);
+                absent.removeAll(pred.calledFor);
+                surprises.removeAll(shouldHaveTested);
+                fail("Not called for all characters - missing " + absent
+                        + (surprises.isEmpty() ? "" : " unexpected: " + surprises)
+                        + " for '" + what + "' length " + (what.length() % 2 == 0 ? "even" : "odd"));
+            }
+        } else {
+            assertFalse("Expected false with '" + what + "'", is(what, pred.reset(what)));
+        }
+    }
+
+    static class EfficiencyCheckingCharPred implements CharPred {
+
+        private final CharPred delegate;
+        private final Set<Character> calledFor = new HashSet<>();
+        private String msg;
+
+        public EfficiencyCheckingCharPred(CharPred delegate) {
+            this.delegate = delegate;
+        }
+
+        EfficiencyCheckingCharPred reset() {
+            calledFor.clear();
+            return this;
+        }
+
+        EfficiencyCheckingCharPred reset(String msg) {
+            this.msg = msg;
+            calledFor.clear();
+            return this;
+        }
+
+        char addOrFail(char ch) {
+            Character c = ch;
+            assertFalse("Already called for " + c + " in "
+                    + calledFor + (msg == null ? "" : ": " + msg), calledFor.contains(c));
+            calledFor.add(c);
+            return ch;
+        }
+
+        @Override
+        public boolean test(char ch) {
+            return delegate.test(addOrFail(ch));
+        }
     }
 }
