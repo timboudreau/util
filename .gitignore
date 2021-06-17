@@ -16,6 +16,7 @@ nb-configuration.xml
 /annotation-processors/nbproject/
 /annotation-processors/target/
 /util/target/
+/concurrent/target/
 /subscriptions/target/
 /util-time/target/
 /util-streams/target/

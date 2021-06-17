@@ -1,0 +1,136 @@
+/*
+ * The MIT License
+ *
+ * Copyright 2021 Mastfrog Technologies.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+package com.mastfrog.concurrent;
+
+import com.mastfrog.function.IntBiConsumer;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.function.IntUnaryOperator;
+
+/**
+ * Pair of integers which can both be updated in a single atomic operation.
+ *
+ * @author Tim Boudreau
+ */
+public class AtomicIntegerPair {
+
+    private volatile long value;
+
+    private static final AtomicLongFieldUpdater<AtomicIntegerPair> UPD
+            = AtomicLongFieldUpdater.newUpdater(AtomicIntegerPair.class, "value");
+
+    public AtomicIntegerPair() {
+
+    }
+
+    public AtomicIntegerPair(int a, int b) {
+        this.value = pack(a, b);
+    }
+
+    public long toLong() {
+        return value();
+    }
+
+    private long value() {
+        return UPD.get(this);
+    }
+
+    public void fetch(IntBiConsumer pair) {
+        long val = value();
+        pair.accept(unpackLeft(val), unpackRight(val));
+    }
+
+    public int[] get() {
+        int[] result = new int[2];
+        fetch((a, b) -> {
+            result[0] = a;
+            result[1] = b;
+        });
+        return result;
+    }
+
+    public void update(IntUnaryOperator leftFunction, IntUnaryOperator rightFunction) {
+        UPD.updateAndGet(this, old -> {
+            int left = leftFunction.applyAsInt(unpackLeft(old));
+            int right = rightFunction.applyAsInt(unpackRight(old));
+            return pack(left, right);
+        });
+    }
+
+    public void swap() {
+        UPD.updateAndGet(this, old -> {
+            int left = unpackLeft(old);
+            int right = unpackRight(old);
+            return pack(right, left);
+        });
+    }
+
+    public void set(int left, int right) {
+        UPD.set(this, pack(left, right));
+    }
+
+    public void setLeft(int newLeft) {
+        UPD.updateAndGet(this, old -> {
+            int left = newLeft;
+            int right = unpackRight(old);
+            return pack(left, right);
+        });
+    }
+
+    public void setRight(int newRight) {
+        UPD.updateAndGet(this, old -> {
+            int left = unpackLeft(old);
+            int right = newRight;
+            return pack(left, right);
+        });
+    }
+
+    public int left() {
+        long val = value();
+        return (int) (val >> 32);
+    }
+
+    public int right() {
+        return unpackRight(value());
+    }
+
+    static long pack(int left, int right) {
+        return (((long) left) << 32) | (right & 0xFFFF_FFFFL);
+    }
+
+    static int unpackLeft(long value) {
+        return (int) ((value >>> 32) & 0xFFFF_FFFFL);
+    }
+
+    static int unpackRight(long value) {
+        return (int) (value & 0xFFFF_FFFFL);
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder("(");
+        fetch((a, b) -> {
+            sb.append(a).append(", ").append(b);
+        });
+        return sb.append(')').toString();
+    }
+}
