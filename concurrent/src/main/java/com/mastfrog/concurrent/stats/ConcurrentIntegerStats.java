@@ -62,7 +62,13 @@ final class ConcurrentIntegerStats implements IntConsumer, StatisticCollector<In
         int[] vals = new int[sampleCount()];
         Int cursor = Int.create();
         forEach(val -> {
-            vals[cursor.increment(1)] = val;
+            // We can visit more values than we allocated for if the
+            // data changes between allocating and running this loop -
+            // that can and does happen
+            int ct = cursor.increment(1);
+            if (ct < vals.length) {
+                vals[ct] = val;
+            }
         });
         Arrays.sort(vals);
         int mid = vals[vals.length / 2];

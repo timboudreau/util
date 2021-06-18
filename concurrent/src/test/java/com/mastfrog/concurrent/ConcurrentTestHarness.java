@@ -77,7 +77,7 @@ public class ConcurrentTestHarness<R extends Runnable> {
     public ConcurrentTestHarness(int threadCount, IntFunction<R> runnables) {
         this.threadCount = threadCount;
         this.runnables = runnables;
-    }
+    }   
 
     /**
      * Run background threads using the default 1-minute timeout for them to
@@ -105,7 +105,7 @@ public class ConcurrentTestHarness<R extends Runnable> {
         for (int i = 0; i < threadCount; i++) {
             R r = runnables.apply(i);
             result.add(r);
-            WrapRun<R> wr = new WrapRun(exitLatch, entryLatch, phaser, i, r);
+            WrapRun<R> wr = new WrapRun<>(exitLatch, entryLatch, phaser, i, r);
             wrs.add(wr);
             Thread t = new Thread(wr, "test-" + i);
             t.setDaemon(true);

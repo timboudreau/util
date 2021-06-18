@@ -64,7 +64,13 @@ final class ConcurrentLongStats implements LongConsumer, LongStatisticCollector 
         long[] vals = new long[sampleCount()];
         Int cursor = Int.create();
         forEach(val -> {
-            vals[cursor.increment(1)] = val;
+            // We can visit more values than we allocated for if the
+            // data changes between allocating and running this loop -
+            // that can and does happen
+            int ct = cursor.increment(1);
+            if (ct < vals.length) {
+                vals[ct] = val;
+            }
         });
         Arrays.sort(vals);
         long mid = vals[vals.length / 2];
