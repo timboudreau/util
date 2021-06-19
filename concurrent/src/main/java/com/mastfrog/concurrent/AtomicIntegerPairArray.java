@@ -30,7 +30,8 @@ public class AtomicIntegerPairArray {
         int sz = orig.size();
         AtomicLongArray a = arr = new AtomicLongArray(sz);
         for (int i = 0; i < sz; i++) {
-            a.setOpaque(i, orig.arr.get(i));
+//            a.setOpaque(i, orig.arr.get(i)); // JDK9
+            a.set(i, orig.arr.get(i));
         }
     }
 
@@ -41,7 +42,8 @@ public class AtomicIntegerPairArray {
         }
         arr = new AtomicLongArray(pairs.length / 2);
         for (int i = 0; i < pairs.length; i += 2) {
-            arr.setOpaque(i / 2, pack(pairs[i], pairs[i + 1]));
+//            arr.setOpaque(i / 2, pack(pairs[i], pairs[i + 1])); // JDK9
+            arr.set(i / 2, pack(pairs[i], pairs[i + 1]));
         }
     }
 
@@ -71,7 +73,8 @@ public class AtomicIntegerPairArray {
     public AtomicIntegerPairArray copyOfRange(int start, int lengthToCopy, int size) {
         AtomicIntegerPairArray nue = new AtomicIntegerPairArray(size);
         for (int i = start; i < start + lengthToCopy && i - start < size; i++) {
-            nue.arr.setOpaque(i - start, arr.get(i));
+//            nue.arr.setOpaque(i - start, arr.get(i)); // JDK9
+            nue.arr.set(i - start, arr.get(i));
         }
         return nue;
     }
