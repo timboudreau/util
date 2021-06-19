@@ -24,9 +24,6 @@
 package com.mastfrog.concurrent;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BooleanSupplier;
 
@@ -78,48 +75,5 @@ public class Periodic implements BooleanSupplier {
 
     private static long withBit(long val) {
         return val | MASK;
-    }
-
-    public static void main(String[] args) {
-        long now = System.currentTimeMillis();
-        System.out.println("NOW " + now);
-        StringBuilder sb = new StringBuilder(Long.toBinaryString(now));
-        while (sb.length() < 64) {
-            sb.insert(0, 'x');
-        }
-        System.out.println(sb);
-
-        System.out.println("164 is " + (1L << 63));
-        System.out.println("164 is " + Long.toHexString(1L << 63));
-        System.out.println("164 is " + Long.toBinaryString(1L << 63));
-
-        System.out.println("");
-        Date nowD = new Date(now);
-        System.out.println("NOW " + nowD);
-        Date mNow = new Date(withBit(now));
-        System.out.println("NOW MASKED: " + mNow);
-
-        Duration dur = Duration.between(nowD.toInstant(), mNow.toInstant());
-
-        long mt = withBit(now);
-        long diffSecs = (mt - now) / 1000;
-
-        System.out.println("Duration years " + (diffSecs / 31536000L));
-
-        long then = System.currentTimeMillis();
-
-        List<Long> vals = new ArrayList<>(100);
-        Periodic p = new Periodic(10);
-        while ((now = System.currentTimeMillis()) - then < 1000) {
-            if (p.getAsBoolean()) {
-                vals.add(now);
-            }
-        }
-
-        for (int i = 1; i < vals.size(); i++) {
-            long curr = vals.get(i);
-            long prev = vals.get(i-1);
-            System.out.println(i + ".\t" + (curr - prev));
-        }
     }
 }

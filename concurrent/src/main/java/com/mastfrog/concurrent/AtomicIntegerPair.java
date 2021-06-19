@@ -24,6 +24,7 @@
 package com.mastfrog.concurrent;
 
 import com.mastfrog.function.IntBiConsumer;
+import com.mastfrog.function.state.Lng;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.IntUnaryOperator;
 
@@ -32,21 +33,26 @@ import java.util.function.IntUnaryOperator;
  *
  * @author Tim Boudreau
  */
-public class AtomicIntegerPair {
+final class AtomicIntegerPair implements IntegerPair {
 
     private volatile long value;
 
     private static final AtomicLongFieldUpdater<AtomicIntegerPair> UPD
             = AtomicLongFieldUpdater.newUpdater(AtomicIntegerPair.class, "value");
 
-    public AtomicIntegerPair() {
+    AtomicIntegerPair() {
 
     }
 
-    public AtomicIntegerPair(int a, int b) {
+    AtomicIntegerPair(int a, int b) {
         this.value = pack(a, b);
     }
 
+    AtomicIntegerPair(long value) {
+        this.value = value;
+    }
+
+    @Override
     public long toLong() {
         return value();
     }
@@ -55,6 +61,7 @@ public class AtomicIntegerPair {
         return UPD.get(this);
     }
 
+    @Override
     public void fetch(IntBiConsumer pair) {
         long val = value();
         pair.accept(unpackLeft(val), unpackRight(val));
@@ -69,12 +76,32 @@ public class AtomicIntegerPair {
         return result;
     }
 
+    @Override
     public void update(IntUnaryOperator leftFunction, IntUnaryOperator rightFunction) {
         UPD.updateAndGet(this, old -> {
             int left = leftFunction.applyAsInt(unpackLeft(old));
             int right = rightFunction.applyAsInt(unpackRight(old));
             return pack(left, right);
         });
+    }
+
+    @Override
+    public void update(IntegerPairUpdater updater) {
+        Lng val = Lng.create();
+        UPD.updateAndGet(this, old -> {
+            val.set(old);
+            updater.update(unpackLeft(old), unpackRight(old), (newLeft, newRight) -> {
+                val.set(pack(newLeft, newRight));
+            });
+            return val.getAsLong();
+        });
+    }
+
+    @Override
+    public boolean compareAndSet(int expectedLeftValue, int expectedRightValue, int newLeftValue, int newRightValue) {
+        long expect = pack(expectedLeftValue, expectedRightValue);
+        long nue = pack(newLeftValue, newRightValue);
+        return UPD.compareAndSet(this, expect, nue);
     }
 
     public void swap() {
@@ -85,10 +112,12 @@ public class AtomicIntegerPair {
         });
     }
 
+    @Override
     public void set(int left, int right) {
         UPD.set(this, pack(left, right));
     }
 
+    @Override
     public void setLeft(int newLeft) {
         UPD.updateAndGet(this, old -> {
             int left = newLeft;
@@ -97,6 +126,7 @@ public class AtomicIntegerPair {
         });
     }
 
+    @Override
     public void setRight(int newRight) {
         UPD.updateAndGet(this, old -> {
             int left = unpackLeft(old);
@@ -105,11 +135,13 @@ public class AtomicIntegerPair {
         });
     }
 
+    @Override
     public int left() {
         long val = value();
         return (int) (val >> 32);
     }
 
+    @Override
     public int right() {
         return unpackRight(value());
     }

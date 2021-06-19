@@ -77,7 +77,7 @@ public class ConcurrentTestHarness<R extends Runnable> {
     public ConcurrentTestHarness(int threadCount, IntFunction<R> runnables) {
         this.threadCount = threadCount;
         this.runnables = runnables;
-    }   
+    }
 
     /**
      * Run background threads using the default 1-minute timeout for them to
@@ -126,10 +126,14 @@ public class ConcurrentTestHarness<R extends Runnable> {
                     thrown.addSuppressed(t);
                 } catch (Exception e) { // A few things like NPE fail here
                     if (thrown.getCause() == null) {
-                        thrown.initCause(t);
+                        if (t != null) {
+                            thrown.initCause(t);
+                        }
                     } else {
                         // ignore
-                        t.printStackTrace();
+                        if (t != null) {
+                            t.printStackTrace();
+                        }
                     }
                 }
             } else {
