@@ -23,8 +23,6 @@
  */
 package com.mastfrog.util.strings;
 
-import com.mastfrog.util.strings.AppendingCharSequence;
-import com.mastfrog.util.strings.ComparableCharSequence;
 import java.util.ArrayList;
 import java.util.List;
 

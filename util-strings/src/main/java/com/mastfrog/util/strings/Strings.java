@@ -59,6 +59,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
@@ -2850,6 +2851,89 @@ public final class Strings {
                 }
                 return true;
         }
+    }
+
+    /**
+     * Create a pattern matcher which uses <code>toString()</code> on the passed
+     * enum type for substrings to look for in the input to the returned
+     * function, and returns the enum constant for the first one that matches.
+     *
+     * @param <T> The type
+     * @param enumType An enum whose toString() return values are patterns to
+     * look for
+     * @return A function
+     */
+    public static <T extends Enum<T>> Function<CharSequence, T> literalMatcher(Class<T> enumType) {
+        return MultiLiteralPattern.forEnums(enumType);
+    }
+
+    /**
+     * Create a pattern matcher which efficiently matches the first occuring
+     * value from the passed map, returning the associated key. The returned
+     * function is safe to reuse or use across multiple threads.
+     *
+     * @param <T>
+     * @param m
+     * @return
+     */
+    public static <T extends Enum<T>> Function<CharSequence, T> literalMatcher(Map<T, CharSequence> m) {
+        return MultiLiteralPattern.forEnums(m);
+    }
+
+    /**
+     * Create a pattern matcher which efficiently matches the first occuring
+     * value from the passed map, returning the index of that value in the
+     * passed array. The returned function is safe to reuse or use across
+     * multiple threads.
+     *
+     * @param patterns An array of patterns
+     * @return
+     */
+    public static Function<CharSequence, Integer> literalMatcher(CharSequence... patterns) {
+        return MultiLiteralPattern.forStrings(patterns);
+    }
+
+    /**
+     * Find the first (by position, then map-iteration-order) exact match in the
+     * passed map's values, in the input string, returning the key. If you need
+     * to match the same patterns repeatedly, it is more efficient to call
+     * literalPatternMatcher() and reuse the result.
+     *
+     * @param <T> A map where the values are literal strings to match
+     * @param map A map whose values are literal strings to look for in the
+     * input text
+     * @param input The input text
+     * @return An enum constant or null
+     */
+    public static <T extends Enum<T>> T findMatch(Map<T, CharSequence> map, CharSequence input) {
+        return literalMatcher(map).apply(input);
+    }
+
+    /**
+     * Find the first (by position in input string, then iteration order of the
+     * passed patterns) pattern that is contained in the passed input string,
+     * returning its index.
+     *
+     * @param input An input string
+     * @param literalPatterns A list of literal strings the input may contain
+     * @return The index of the matched literal or null
+     */
+    public static Integer findMatch(CharSequence input, CharSequence... literalPatterns) {
+        return literalMatcher(literalPatterns).apply(input);
+    }
+
+    /**
+     * Find the first (by position, then enum-constant-iteration-order) exact
+     * textual match of the string value of an enum constant on the passed type.
+     *
+     * @param <T> The type
+     * @param type An enum type whose toString() method returns a string literal
+     * to look for
+     * @param input An input string
+     * @return An enum constant or null
+     */
+    public static <T extends Enum<T>> T findMatch(Class<T> type, CharSequence input) {
+        return literalMatcher(type).apply(input);
     }
 
     /**
