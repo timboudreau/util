@@ -109,17 +109,7 @@ public final class Strings {
         if (len == 1) {
             return isPunctuation(name.charAt(0));
         }
-        boolean result = name.length() > 0;
-        if (result) {
-            for (int i = 0; i < name.length(); i++) {
-                char c = name.charAt(i);
-                if (!isPunctuation(c)) {
-                    result = false;
-                    break;
-                }
-            }
-        }
-        return result;
+        return is(name, Strings::isPunctuation);
     }
 
     /**
@@ -178,12 +168,7 @@ public final class Strings {
         if (!Character.isWhitespace(s.charAt(len - 1))) {
             return false;
         }
-        for (int i = 0; i < len - 1; i++) {
-            if (!Character.isWhitespace(s.charAt(i))) {
-                return false;
-            }
-        }
-        return true;
+        return is(s, Character::isWhitespace);
     }
 
     /**
@@ -200,16 +185,7 @@ public final class Strings {
         if (seq == null || seq.length() == 0) {
             return true;
         }
-        int len = seq.length();
-        if (Character.isWhitespace(seq.charAt(len - 1))) {
-            return false;
-        }
-        for (int i = 0; i < len - 1; i++) {
-            if (!Character.isWhitespace(seq.charAt(i))) {
-                return false;
-            }
-        }
-        return true;
+        return is(seq, Character::isWhitespace);
     }
 
     /**
@@ -587,6 +563,17 @@ public final class Strings {
         return charSequencesEqual(a, b, false);
     }
 
+    public static int countOccurrences(char c, CharSequence in) {
+        int result = 0;
+        int max = in.length();
+        for (int i = 0; i < max; i++) {
+            if (c == in.charAt(i)) {
+                result++;
+            }
+        }
+        return result;
+    }
+
     /**
      * Compare the contents of two CharSequences which may be of different types
      * for equality.
@@ -614,7 +601,7 @@ public final class Strings {
         if (length != b.length()) {
             return false;
         }
-        if (ignoreCase && a.getClass() == b.getClass()) {
+        if (!ignoreCase && a.getClass() == b.getClass()) {
             return a.equals(b);
         }
         if (!ignoreCase && a instanceof String) {
@@ -622,15 +609,14 @@ public final class Strings {
         } else if (!ignoreCase && b instanceof String) {
             return ((String) b).contentEquals(a);
         } else {
-            for (int i = 0; i < length; i++) {
-                char ca = ignoreCase ? Character.toLowerCase(a.charAt(i)) : a.charAt(i);
-                char cb = ignoreCase ? Character.toLowerCase(b.charAt(i)) : b.charAt(i);
-                if (cb != ca) {
-                    return false;
-                }
+            if (ignoreCase) {
+                return contentEqualsIgnoreCase(a, b);
             }
+            return biIterate(a, (index, ch, l, remaining) -> {
+                boolean match = ch == b.charAt(index);
+                return !match ? BiIterateResult.NO : BiIterateResult.MAYBE;
+            }).isOk();
         }
-        return true;
     }
 
     /**
@@ -685,10 +671,9 @@ public final class Strings {
         for (int i = 0; i < max; i++) {
             char ac = ignoreCase ? Character.toLowerCase(a.charAt(i)) : a.charAt(i);
             char bc = ignoreCase ? Character.toLowerCase(b.charAt(i)) : b.charAt(i);
-            if (ac > bc) {
-                return 1;
-            } else if (ac < bc) {
-                return -1;
+            int result = Character.compare(ac, bc);
+            if (result != 0) {
+                return result;
             }
         }
         if (aLength == bLength) {
@@ -707,7 +692,7 @@ public final class Strings {
      * @return A comparator
      */
     public static Comparator<CharSequence> charSequenceComparator(boolean caseInsensitive) {
-        return new CharSequenceComparator(caseInsensitive);
+        return caseInsensitive ? CharSequenceComparator.INSENSITIVE : CharSequenceComparator.SENSITIVE;
     }
 
     /**
@@ -716,10 +701,13 @@ public final class Strings {
      * @return A comparator
      */
     public static Comparator<CharSequence> charSequenceComparator() {
-        return charSequenceComparator(false);
+        return CharSequenceComparator.INSENSITIVE;
     }
 
     private static final class CharSequenceComparator implements Comparator<CharSequence> {
+
+        private static final Comparator<CharSequence> INSENSITIVE = new CharSequenceComparator(true);
+        private static final Comparator<CharSequence> SENSITIVE = new CharSequenceComparator(false);
 
         private final boolean caseInsensitive;
 
@@ -1165,7 +1153,16 @@ public final class Strings {
         return result;
     }
 
-    public static void split(char delim, CharSequence seq, Function<CharSequence, Boolean> proc) {
+    /**
+     * Split a character sequence on occurrences of a character, passing them to
+     * the passed predicate and aborting splitting if it returns false - for
+     * splitting strings when some initial number of matches is sufficient.
+     *
+     * @param delim A delimiter character
+     * @param seq a character sequence
+     * @param proc A predicate which receives split elements until it returns false
+     */
+    public static void split(char delim, CharSequence seq, Predicate<CharSequence> proc) {
         Checks.notNull("seq", seq);
         Checks.notNull("proc", proc);
         int lastStart = 0;
@@ -1182,11 +1179,11 @@ public final class Strings {
                         offset--;
                     }
                     CharSequence sub = seq.subSequence(lastStart, offset);
-                    if (!proc.apply(sub)) {
+                    if (!proc.test(sub)) {
                         return;
                     }
                 } else {
-                    if (!proc.apply("")) {
+                    if (!proc.test("")) {
                         return;
                     }
                 }
@@ -1210,7 +1207,10 @@ public final class Strings {
         if (startLength > targetLength) {
             return false;
         }
-        for (int i = 0; i < startLength; i++) {
+        if (target.charAt(startLength - 1) != start.charAt(startLength - 1)) {
+            return false;
+        }
+        for (int i = 0; i < startLength - 1; i++) {
             if (start.charAt(i) != target.charAt(i)) {
                 return false;
             }
@@ -1233,6 +1233,9 @@ public final class Strings {
         if (startLength > targetLength) {
             return false;
         }
+        if (Character.toLowerCase(target.charAt(startLength - 1)) != Character.toLowerCase(start.charAt(startLength - 1))) {
+            return false;
+        }
         for (int i = 0; i < startLength; i++) {
             if (start.charAt(i) != target.charAt(i) && Character.toLowerCase(start.charAt(i)) != target.charAt(i) && Character.toUpperCase(start.charAt(i)) != target.charAt(i)) {
                 return false;
@@ -1253,12 +1256,10 @@ public final class Strings {
         if (b.length() != len) {
             return false;
         }
-        for (int i = 0; i < len; i++) {
-            if (a.charAt(i) != b.charAt(i) && Character.toLowerCase(a.charAt(i)) != b.charAt(i) && Character.toUpperCase(a.charAt(i)) != b.charAt(i)) {
-                return false;
-            }
-        }
-        return true;
+        return biIterate(a, (index, ch, l, remaining) -> {
+            boolean match = Character.toLowerCase(ch) == Character.toLowerCase(b.charAt(index));
+            return !match ? BiIterateResult.NO : BiIterateResult.MAYBE;
+        }).isOk();
     }
 
     /**
@@ -1551,7 +1552,7 @@ public final class Strings {
                 if (i > 0) {
                     sb.append(',');
                 }
-                sb.append(Objects.toString(item));
+                sb.append(toString(item));
             }
             return sb.toString();
         }
@@ -1567,14 +1568,13 @@ public final class Strings {
      */
     public static boolean containsCaseInsensitive(char lookFor, CharSequence in) {
         char lookFor1 = Character.toLowerCase(lookFor);
-        char lookFor2 = Character.toLowerCase(lookFor);
-        int max = in.length();
-        for (int i = 0; i < max; i++) {
-            if (in.charAt(i) == lookFor1 || in.charAt(i) == lookFor2) {
-                return true;
+        char lookFor2 = Character.toUpperCase(lookFor);
+        return biIterate(in, (index, ch, len, remaining) -> {
+            if (ch == lookFor1 || ch == lookFor2) {
+                return BiIterateResult.YES;
             }
-        }
-        return false;
+            return BiIterateResult.MAYBE;
+        }).isSuccess();
     }
 
     /**
@@ -1588,13 +1588,9 @@ public final class Strings {
         if (in instanceof String) {
             return ((String) in).indexOf(lookFor) != -1;
         }
-        int max = in.length();
-        for (int i = 0; i < max; i++) {
-            if (in.charAt(i) == lookFor) {
-                return true;
-            }
-        }
-        return false;
+        return biIterate(in, (index, ch, len, rem) -> {
+            return ch == lookFor ? BiIterateResult.YES : BiIterateResult.MAYBE;
+        }).isSuccess();
     }
 
     /**
@@ -2650,6 +2646,14 @@ public final class Strings {
         return new LazyToString(stringify);
     }
 
+    /**
+     * Wrap a supplier of a string in an object whose toString() method invokes
+     * the supplier - useful for some forms of logging where toString() is
+     * expensive.
+     *
+     * @param s A supplier of a string value
+     * @return An object
+     */
     public static Object wrappedSupplier(Supplier<String> s) {
         return new LazySupplierToString(s);
     }
@@ -2692,18 +2696,42 @@ public final class Strings {
         if (orig.length() == 0 || Character.isUpperCase(orig.charAt(0))) {
             return orig instanceof String ? (String) orig : orig.toString();
         }
-        StringBuilder sb = new StringBuilder(orig.length());
-        for (int i = 0; i < orig.length(); i++) {
-            switch (i) {
-                case 0:
-                    sb.append(Character.toUpperCase(orig.charAt(i)));
-                    break;
-                default:
-                    sb.append(orig.charAt(i));
-                    break;
-            }
+        char[] chars = toCharArray(orig);
+        chars[0] = Character.toUpperCase(chars[0]);
+        return new String(chars);
+    }
+
+    private static final char[] EMPTY_CHARS = new char[0];
+
+    /**
+     * Convert a CharSequence to an array (uses String.toCharArray() if the
+     * argument is a String).
+     *
+     * @param seq A character sequence
+     * @return A character array
+     */
+    public static char[] toCharArray(CharSequence seq) {
+        int len = seq.length();
+        switch (len) {
+            case 0:
+                return EMPTY_CHARS;
+            case 1:
+                return new char[]{seq.charAt(0)};
+            case 2:
+                return new char[]{seq.charAt(0), seq.charAt(1)};
+            case 3:
+                return new char[]{seq.charAt(0), seq.charAt(1), seq.charAt(2)};
+            case 4:
+                return new char[]{seq.charAt(0), seq.charAt(1), seq.charAt(2), seq.charAt(3)};
+            case 5:
+                return new char[]{seq.charAt(0), seq.charAt(1), seq.charAt(2), seq.charAt(3), seq.charAt(4)};
+            default:
+                char[] result = new char[len];
+                for (int i = 0; i < len; i++) {
+                    result[i] = seq.charAt(i);
+                }
+                return result;
         }
-        return sb.toString();
     }
 
     /**
@@ -2728,6 +2756,7 @@ public final class Strings {
             case '9':
                 return true;
             default:
+                // Weed out the rest of ascii
                 if (ch < 48) {
                     return false;
                 } else if (ch > 57 && ch < 128) {
@@ -2854,6 +2883,124 @@ public final class Strings {
     }
 
     /**
+     * Interface which is passed characters and positions while testing the
+     * characters in a a string.
+     *
+     * @see Strings.biIterate(CharSequence, BiIterationReceiver)
+     * @see BiIterateResult
+     */
+    @FunctionalInterface
+    public interface BiIterationReceiver {
+
+        BiIterateResult onChar(int index, char c, int of, int remaining);
+    }
+
+    /**
+     * Iterate the characters in a char sequence in minimal steps, alternating
+     * between head and tail positions (if the sequence has an odd number of
+     * characters, tests the innermost character first). This is useful for
+     * efficientlly testing strings for matches where the common case is a
+     * non-match, by providing fewer steps to disconfirming a match when
+     * iterating the string sequentially might test many characters before
+     * determining that no match is present.
+     *
+     * @param in The string to examine
+     * @param func A test function, which returns YES, NO or MAYBE (continue
+     * iterating).
+     * @return A result
+     */
+    public static BiIterateResult biIterate(CharSequence in, BiIterationReceiver func) {
+        int max = notNull("in", in).length();
+        switch (max) {
+            case 0:
+                return BiIterateResult.MAYBE;
+            case 1:
+                return func.onChar(0, in.charAt(0), 1, 0);
+            case 2:
+                return func.onChar(0, in.charAt(0), 2, 1).or(func.onChar(1, in.charAt(1), 2, 0));
+            case 3:
+                return func.onChar(1, in.charAt(1), 3, 2)
+                        .or(func.onChar(0, in.charAt(0), 3, 1)
+                                .or(func.onChar(2, in.charAt(2), 3, 0)));
+            default:
+                boolean odd = (max % 2) != 0;
+                int mid = max / 2;
+                int remaining = max;
+                if (odd) {
+                    BiIterateResult res;
+                    if ((res = func.onChar(mid, in.charAt(mid), max, --remaining)).isOk()) {
+                        for (int i = 0; i < mid; i++) {
+                            res = func.onChar(i, in.charAt(i), max, --remaining);
+                            switch (res) {
+                                case MAYBE:
+                                    break;
+                                default:
+                                    return res;
+                            }
+                            int op = max - (i + 1);
+                            res = func.onChar(op, in.charAt(op), max, --remaining);
+                            switch (res) {
+                                case MAYBE:
+                                    break;
+                                default:
+                                    return res;
+                            }
+                        }
+                    } else {
+                        return res;
+                    }
+                } else {
+                    for (int i = 0; i < mid; i++) {
+                        BiIterateResult res = func.onChar(i, in.charAt(i), max, --remaining);
+                        switch (res) {
+                            case MAYBE:
+                                break;
+                            default:
+                                return res;
+                        }
+                        int op = max - (i + 1);
+                        res = func.onChar(op, in.charAt(op), max, --remaining);
+                        switch (res) {
+                            case MAYBE:
+                                break;
+                            default:
+                                return res;
+                        }
+                    }
+                }
+                return BiIterateResult.MAYBE;
+        }
+    }
+
+    public static enum BiIterateResult {
+        YES,
+        MAYBE,
+        NO;
+
+        public BiIterateResult or(BiIterateResult res) {
+            if (res == this) {
+                return this;
+            } else if (res == NO || this == NO) {
+                return NO;
+            } else {
+                return MAYBE;
+            }
+        }
+
+        public boolean isOk() {
+            return this == YES || this == MAYBE;
+        }
+
+        public boolean isSuccess() {
+            return this == YES;
+        }
+
+        public boolean isFinished() {
+            return this == YES || this == null;
+        }
+    }
+
+    /**
      * Create a pattern matcher which uses <code>toString()</code> on the passed
      * enum type for substrings to look for in the input to the returned
      * function, and returns the enum constant for the first one that matches.
@@ -2942,10 +3089,20 @@ public final class Strings {
      */
     public interface CharPred {
 
+        /**
+         * Test the character.
+         *
+         * @param ch The character
+         * @return true if the test passes
+         */
         boolean test(char ch);
 
         default CharPred or(CharPred other) {
             return ch -> test(ch) || other.test(ch);
+        }
+
+        default CharPred and(CharPred other) {
+            return ch -> test(ch) && other.test(ch);
         }
     }
 
