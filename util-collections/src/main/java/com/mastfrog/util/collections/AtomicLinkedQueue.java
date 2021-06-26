@@ -25,7 +25,6 @@ package com.mastfrog.util.collections;
 
 import com.mastfrog.util.preconditions.Checks;
 import static com.mastfrog.util.preconditions.Checks.notNull;
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;

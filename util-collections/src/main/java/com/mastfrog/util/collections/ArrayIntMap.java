@@ -604,6 +604,10 @@ final class ArrayIntMap<T> implements IntMap<T> {
 
     @Override
     public int nearestIndexTo(int key, boolean backward) {
+        if (last < 0) {
+            return -1;
+        }
+        checkSort();
         if (key < keys[0]) {
             return backward ? last : 0;
         }
