@@ -8,6 +8,7 @@
         <version>2.7.2</version>
         <relativePath/>
     </parent>
+    <version>2.7.2.1</version>
     <artifactId>util-collections</artifactId>
     <url>https://github.com/timboudreau/util</url>
     <dependencies>
