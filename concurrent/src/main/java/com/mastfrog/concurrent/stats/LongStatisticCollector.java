@@ -25,12 +25,17 @@ package com.mastfrog.concurrent.stats;
 
 import com.mastfrog.function.IntQuadConsumer;
 import com.mastfrog.function.LongQuadConsumer;
+import com.mastfrog.function.throwing.ThrowingRunnable;
 import com.mastfrog.util.preconditions.Checks;
+import com.mastfrog.util.preconditions.Exceptions;
 import java.util.LongSummaryStatistics;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Subtype of StatisticCollector for integers.
@@ -82,6 +87,34 @@ public interface LongStatisticCollector extends StatisticCollector<LongConsumer,
         return intermittentlySampling(() -> {
             return rnd.nextInt(oneIn) == 1;
         });
+    }
+
+    default LongStatisticCollector time(TimeUnit unit, Runnable r) {
+        try {
+            return timeThrowing(unit, true, () -> r.run());
+        } catch (Exception ex) {
+            return Exceptions.chuck(ex);
+        }
+    }
+
+    default LongStatisticCollector timeThrowing(TimeUnit unit, boolean recordFailed, ThrowingRunnable r) throws Exception {
+        boolean failed = false;
+        boolean nanos = unit == TimeUnit.MICROSECONDS || unit == TimeUnit.NANOSECONDS;
+        long then = nanos ? System.nanoTime() : System.currentTimeMillis();
+        try {
+            r.run();
+            return this;
+        } catch (Exception | Error ex) {
+            failed = true;
+            return Exceptions.chuck(ex);
+        } finally {
+            if (!failed || recordFailed) {
+                long now = nanos ? System.nanoTime() : System.currentTimeMillis();
+                long elapsed = now - then;
+                long value = unit.convert(elapsed, nanos ? TimeUnit.NANOSECONDS : TimeUnit.MILLISECONDS);
+                accept(value);
+            }
+        }
     }
 
     /**

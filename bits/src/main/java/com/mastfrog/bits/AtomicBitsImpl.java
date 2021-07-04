@@ -36,10 +36,8 @@ import static java.lang.Long.lowestOneBit;
 import static java.lang.Long.numberOfLeadingZeros;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
-import java.util.PrimitiveIterator;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.function.IntPredicate;
-import java.util.function.IntSupplier;
 import java.util.function.IntUnaryOperator;
 import java.util.function.ToIntFunction;
 
@@ -349,7 +347,7 @@ final class AtomicBitsImpl implements Externalizable, AtomicBits {
     @Override
     public boolean setting(int bit) {
         if (bit < 0 || bit >= capacity) {
-            return false;
+            throw new IndexOutOfBoundsException("Outside 0-" + capacity + ": " + bit);
         }
         long mask = maskFor(bit);
         long val = arr.getAndUpdate(indexOfLong(bit), old -> {
@@ -368,7 +366,7 @@ final class AtomicBitsImpl implements Externalizable, AtomicBits {
     @Override
     public boolean clearing(int bit) {
         if (bit < 0 || bit >= capacity) {
-            return false;
+            throw new IndexOutOfBoundsException("Outside 0-" + capacity + ": " + bit);
         }
         long mask = maskFor(bit);
         long val = arr.getAndUpdate(indexOfLong(bit), old -> {
@@ -410,7 +408,7 @@ final class AtomicBitsImpl implements Externalizable, AtomicBits {
         for (int i = 0; i < Math.min(nue.length(), arr.length()); i++) {
             nue.set(i, arr.get(i));
         }
-        return new AtomicBitsImpl(nue, capacity, false);
+        return new AtomicBitsImpl(nue, newBits, true);
     }
 
     @Override

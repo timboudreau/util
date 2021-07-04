@@ -25,6 +25,7 @@
  */
 package com.mastfrog.bits;
 
+import com.mastfrog.util.preconditions.InvalidArgumentException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -47,6 +48,127 @@ public class AtomicBitsImplTest {
 
     private Random rnd;
     private static final int SIZE = (64 * 5) + 7;
+
+    @Test
+    public void testInverted() {
+        AtomicBitsImpl bits = new AtomicBitsImpl(128);
+        for (int i = 0; i < 128; i++) {
+            assertFalse(bits.get(i));
+            if (i % 2 == 0) {
+                bits.set(i);
+                assertTrue(bits.get(i));
+            }
+        }
+        Bits inv = bits.inverted();
+        for (int i = 0; i < 128; i++) {
+            if (i % 2 == 0) {
+                assertFalse(inv.get(i));
+            } else {
+                assertTrue(inv.get(i));
+            }
+        }
+    }
+
+    @Test
+    public void testCannotCreateWithNegativeCapacity() {
+        try {
+            AtomicBitsImpl bits = new AtomicBitsImpl(-128);
+            fail("Exception should be thrown, but got " + bits);
+        } catch (InvalidArgumentException ex) {
+
+        }
+    }
+
+    @Test
+    public void testCannotCreateWithZeroCapacity() {
+        try {
+            AtomicBitsImpl bits = new AtomicBitsImpl(0);
+            fail("Exception should be thrown, but got " + bits);
+        } catch (InvalidArgumentException ex) {
+
+        }
+    }
+
+    @Test
+    public void testCannotSetValuesGreaterThanCapacity() {
+        AtomicBitsImpl bits = new AtomicBitsImpl(128);
+        assertEquals(128, bits.capacity());
+        for (int i = 0; i < 128; i++) {
+            assertFalse(bits.get(i));
+            bits.set(i);
+            assertTrue(bits.get(i));
+        }
+        assertFalse(bits.canContain(-2));
+        assertFalse(bits.canContain(200));
+        assertFalse(bits.canContain(128));
+        try {
+            boolean res = bits.setting(200);
+            fail("Exception should have been thrown");
+        } catch (IndexOutOfBoundsException ex) {
+            // ok
+        }
+    }
+
+    @Test
+    public void testCannotClerValuesGreaterThanCapacity() {
+        AtomicBitsImpl bits = new AtomicBitsImpl(128);
+        assertEquals(128, bits.capacity());
+        for (int i = 0; i < 128; i++) {
+            assertFalse(bits.get(i));
+            bits.set(i);
+            assertTrue(bits.get(i));
+        }
+        try {
+            bits.clearing(200);
+            fail("Exception should have been thrown");
+        } catch (IndexOutOfBoundsException ex) {
+            // ok
+        }
+    }
+
+    @Test
+    public void testCapacityCanBeIncreasedByCopy() {
+        AtomicBitsImpl bits = new AtomicBitsImpl(128);
+        assertEquals(128, bits.capacity());
+        for (int i = 0; i < 128; i++) {
+            assertFalse(bits.get(i));
+            bits.set(i);
+            assertTrue(bits.get(i));
+        }
+        AtomicBitsImpl larger = bits.copy(256);
+        assertEquals(256, larger.capacity());
+        for (int i = 0; i < 128; i++) {
+            assertTrue(larger.get(i));
+        }
+        for (int i = 128; i < 256; i++) {
+            assertFalse(larger.get(i));
+            larger.set(i);
+            assertTrue(larger.get(i));
+        }
+
+    }
+
+    @Test
+    public void testCannotSetNegativeValues() {
+        AtomicBitsImpl bits = new AtomicBitsImpl(128);
+        try {
+            boolean x = bits.setting(-10);
+            fail("Exception should have been thrown");
+        } catch (IndexOutOfBoundsException ex) {
+
+        }
+    }
+
+    @Test
+    public void testCannotClearNegativeValues() {
+        AtomicBitsImpl bits = new AtomicBitsImpl(128);
+        try {
+            bits.clearing(-10);
+            fail("Exception should have been thrown");
+        } catch (IndexOutOfBoundsException ex) {
+
+        }
+    }
 
     @Test
     public void testSetAndClearGroups() {

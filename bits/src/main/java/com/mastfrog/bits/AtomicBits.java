@@ -38,6 +38,34 @@ import java.util.function.IntPredicate;
  */
 public interface AtomicBits extends MutableBits {
 
+    default boolean canContain(int index) {
+        return index >= 0 && index < capacity();
+    }
+
+    /**
+     * Wraps this AtomicBits in one which returns the opposite values of
+     * set and unset within the capacity of this instance.
+     *
+     * @return A bits
+     */
+    default Bits inverted() {
+        return new InvertedBits(this, this::capacity);
+    }
+
+    /**
+     * Wraps this AtomicBits in one which will not throw exceptions, but simply
+     * return false for requests for out-of-range (negative or &gt;= capacity)
+     * bit queries.
+     *
+     * @return An AtomicBits
+     */
+    default AtomicBits rangeTolerant() {
+        if (this instanceof AtomicBitsRangeTolerant) {
+            return this;
+        }
+        return new AtomicBitsRangeTolerant(this);
+    }
+
     /**
      * Get the (unalterable) total size of this Bits.
      *
@@ -81,7 +109,16 @@ public interface AtomicBits extends MutableBits {
     AtomicBits copy();
 
     @Override
-    AtomicBits filter(IntPredicate pred) ;
+    AtomicBits filter(IntPredicate pred);
+
+    /**
+     * Create a copy of this atomic bits, possibly changing the fixed
+     * capacity.
+     *
+     * @param newBits A new bit count
+     * @return A new AtomicBits whose state is not shared with this one
+     */
+    AtomicBits copy(int newBits);
 
     /**
      * Create a new AtomicBits with the passed (fixed, immutable) capacity.

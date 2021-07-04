@@ -19,6 +19,12 @@ class ShiftedBits extends AbstractBits implements MutableBits {
     }
 
     @Override
+    public boolean canContain(int index) {
+        int ix = shiftBy + index;
+        return bits.canContain(ix);
+    }
+
+    @Override
     public int min() {
         int bmin = bits.min();
         int diff = bmin - Integer.MIN_VALUE;

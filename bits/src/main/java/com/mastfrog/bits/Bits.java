@@ -37,6 +37,10 @@ public interface Bits extends Serializable {
 
     public static final Bits EMPTY = EmptyBits.INSTANCE;
 
+    default boolean canContain(int index) {
+        return index > 0;
+    }
+
     /**
      * Get the number of set bits.
      *
