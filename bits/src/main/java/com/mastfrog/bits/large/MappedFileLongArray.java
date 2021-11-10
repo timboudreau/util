@@ -1,7 +1,6 @@
 package com.mastfrog.bits.large;
 
 import static com.mastfrog.bits.large.UnsafeUtils.UNSAFE;
-import com.mastfrog.util.file.FileUtils;
 import com.mastfrog.util.preconditions.Exceptions;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -9,6 +8,7 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
@@ -54,7 +54,14 @@ final class MappedFileLongArray implements CloseableLongArray {
 
     static Path newTempFile() {
         try {
-            return FileUtils.newTempFile("mapped-longs");
+            Path tmp = Paths.get(System.getProperty("java.io.tmpdir"));
+            String proposal = "mapped-longs";
+            int ix = 0;
+            while (Files.exists(tmp.resolve(proposal))) {
+                ix++;
+                proposal = "mapped-longs-" + ix;
+            }
+            return Files.createFile(tmp.resolve(proposal));
         } catch (IOException ex) {
             return Exceptions.chuck(ex);
         }
@@ -114,14 +121,14 @@ final class MappedFileLongArray implements CloseableLongArray {
                     channel.position(0);
                 } else {
 //                    if (targetSize > 0) {
-                        ByteBuffer buf = ByteBuffer.allocate(HEADER_LENGTH);
-                        buf.putInt(1);
-                        buf.putInt(1);
-                        buf.putLong(targetSize);
-                        buf.flip();
-                        channel.write(buf, 0);
-                        channel.position(0);
-                        workingLength = targetSize;
+                    ByteBuffer buf = ByteBuffer.allocate(HEADER_LENGTH);
+                    buf.putInt(1);
+                    buf.putInt(1);
+                    buf.putLong(targetSize);
+                    buf.flip();
+                    channel.write(buf, 0);
+                    channel.position(0);
+                    workingLength = targetSize;
 //                    }
                 }
                 return channel;
