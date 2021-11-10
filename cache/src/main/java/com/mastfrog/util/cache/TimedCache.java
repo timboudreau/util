@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.cache;
 
+import com.mastfrog.abstractions.misc.MapSupplier;
 import java.util.function.BiConsumer;
 
 /**

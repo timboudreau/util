@@ -29,13 +29,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  *
@@ -66,19 +62,19 @@ public class ExpirationTimingTest {
             if (val == null) {
                 idForThing.put(n, System.identityHashCode(thing));
             } else {
-                assertEquals("Thing was replaced in cache", val.intValue(), System.identityHashCode(thing));
+                assertEquals(val.intValue(), System.identityHashCode(thing), "Thing was replaced in cache");
             }
 
             tci.cache.entrySet().forEach((Map.Entry<String, TimedCacheImpl<String, Thing, IOException>.CacheEntry> en) -> {
                 TimedCacheImpl<String, Thing, IOException>.CacheEntry v = en.getValue();
                 long touched = v.touched;
-                assertNotEquals("Entry touch value is 0", 0L, touched);
+                assertNotEquals(0L, touched, "Entry touch value is 0");
                 long delay = v.getDelay(TimeUnit.MILLISECONDS);
-                assertTrue("Wrong delay <= 0 for " + en, delay > 0);
+                assertTrue(delay > 0, "Wrong delay <= 0 for " + en);
                 long elapsed = System.currentTimeMillis() - touched;
-                assertFalse(en.getKey() + ": Elapsed " + elapsed
+                assertFalse(v.isExpired(), en.getKey() + ": Elapsed " + elapsed
                         + " delay " + delay
-                        + " should be " + (System.currentTimeMillis() - touched), v.isExpired());
+                        + " should be " + (System.currentTimeMillis() - touched));
             });
             ei.checkThrown();
             assertFalse(thing.wasExpired());
@@ -98,7 +94,7 @@ public class ExpirationTimingTest {
         }
     }
 
-    @Before
+    @BeforeEach
     public void before() {
         names = new String[20];
         for (int i = 0; i < names.length; i++) {
@@ -153,7 +149,7 @@ public class ExpirationTimingTest {
         public void accept(String s, Thing u) {
             try {
                 assertEquals(u.name, s);
-                assertTrue("Expired too soon: " + u, u.age() > MAX_AGE);
+                assertTrue(u.age() > MAX_AGE, "Expired too soon: " + u);
             } catch (Throwable tt) {
                 tt.printStackTrace();
                 synchronized (this) {

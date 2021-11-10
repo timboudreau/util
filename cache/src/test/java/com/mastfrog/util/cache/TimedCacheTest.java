@@ -9,13 +9,13 @@ import java.util.concurrent.CountDownLatch;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /**
  *
@@ -53,7 +53,7 @@ public class TimedCacheTest {
         assertTrue(expiredInts.contains(24));
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         TimedCacheImpl.expirerFactory = () -> EXPIRER;
     }
@@ -100,8 +100,8 @@ public class TimedCacheTest {
                 }
             }
             Expirable last = lastOffered.getAndSet(null);
-            assertNotNull("Last is null", last);
-            assertEquals("Wrong last offered", txt, last.toString());
+            assertNotNull(last, "Last is null");
+            assertEquals(txt, last.toString(), "Wrong last offered");
             if (latch != null) {
                 latch.countDown();
                 latch = null;

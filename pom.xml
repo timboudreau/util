@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.mastfrog</groupId>
         <artifactId>mastfrog-parent</artifactId>
-        <version>2.7.2</version>
+        <version>2.7.3</version>
         <relativePath/>
     </parent>
     <name>Util Parent</name>
@@ -34,6 +34,9 @@
         <module>log-structured-storage</module>
         <module>converters</module>
         <module>subscriptions</module>
+        <module>sort</module>
+        <module>search</module>
+        <module>cache</module>
     </modules>
     <issueManagement>
         <system>Github</system>

@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.mastfrog.util.search.ComparatorSearchTest
+-------------------------------------------------------------------------------
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.5 s - in com.mastfrog.util.search.ComparatorSearchTest

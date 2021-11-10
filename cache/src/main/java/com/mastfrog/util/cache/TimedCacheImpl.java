@@ -1,5 +1,6 @@
 package com.mastfrog.util.cache;
 
+import com.mastfrog.abstractions.misc.MapSupplier;
 import com.mastfrog.util.preconditions.Checks;
 import java.util.Iterator;
 import java.util.Map;

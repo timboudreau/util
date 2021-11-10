@@ -1,7 +1,7 @@
 
 package com.mastfrog.util.collections;
 
-import com.mastfrog.util.cache.MapSupplier;
+import com.mastfrog.abstractions.misc.MapSupplier;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.HashMap;
