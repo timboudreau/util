@@ -21,7 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package com.mastfrog.bits;
 
 import java.util.function.IntPredicate;
@@ -31,6 +30,7 @@ import java.util.function.IntPredicate;
  * @author Tim Boudreau
  */
 final class AtomicBitsRangeTolerant implements AtomicBits {
+
     private final AtomicBits orig;
 
     AtomicBitsRangeTolerant(AtomicBits orig) {
@@ -107,7 +107,7 @@ final class AtomicBitsRangeTolerant implements AtomicBits {
     @Override
     public int nextClearBit(int fromIndex) {
         if (fromIndex < 0) {
-            fromIndex= 0;
+            fromIndex = 0;
         } else if (fromIndex > orig.capacity()) {
             return -1;
         }
@@ -117,7 +117,7 @@ final class AtomicBitsRangeTolerant implements AtomicBits {
     @Override
     public int nextSetBit(int fromIndex) {
         if (fromIndex < 0) {
-            fromIndex= 0;
+            fromIndex = 0;
         } else if (fromIndex > orig.capacity()) {
             return -1;
         }
@@ -129,7 +129,7 @@ final class AtomicBitsRangeTolerant implements AtomicBits {
         if (fromIndex <= 0) {
             return -1;
         } else if (fromIndex >= orig.capacity()) {
-            fromIndex = orig.capacity()-1;
+            fromIndex = orig.capacity() - 1;
         }
         return orig.previousClearBit(fromIndex);
     }
@@ -139,7 +139,7 @@ final class AtomicBitsRangeTolerant implements AtomicBits {
         if (fromIndex <= 0) {
             return -1;
         } else if (fromIndex >= orig.capacity()) {
-            fromIndex = orig.capacity()-1;
+            fromIndex = orig.capacity() - 1;
         }
         return orig.previousSetBit(fromIndex);
     }
@@ -161,5 +161,61 @@ final class AtomicBitsRangeTolerant implements AtomicBits {
 
     public String toString() {
         return orig.toString();
+    }
+
+    @Override
+    public boolean setAndClear(int toSet, int toClear, SetPreference pref) {
+        if (toSet < 0 || toSet >= orig.capacity()) {
+            if (toClear < 0 || toClear >= orig.capacity()) {
+                return false;
+            } else {
+                return clearing(toClear);
+            }
+        } else if (toClear < 0 || toClear >= orig.capacity()) {
+            return setting(toSet);
+        } else {
+            return orig.setAndClear(toSet, toClear, pref);
+        }
+    }
+
+    @Override
+    public void clearRangeAndSet(int clearStart, int clearEnd, int set) {
+        if (set < clearStart || set >= clearEnd) {
+            clear(clearStart, clearEnd);
+            set(set, true);
+        } else {
+            if (clearStart < 0) {
+                clearStart = 0;
+            }
+            if (clearEnd >= orig.capacity()) {
+                clearEnd = orig.capacity() - 1;
+            }
+            if (set < 0 || set >= orig.capacity()) {
+                clear(clearStart, clearEnd);
+            } else {
+                orig.clearRangeAndSet(clearStart, clearEnd, set);
+            }
+        }
+    }
+
+    @Override
+    public void clearRangeAndSet(int clearStart, int clearEnd, boolean backwards, int set) {
+        if (set < clearStart || set >= clearEnd) {
+            clear(clearStart, clearEnd);
+            set(set, true);
+        } else {
+            if (clearStart < 0) {
+                clearStart = 0;
+            }
+            if (clearEnd >= orig.capacity()) {
+                clearEnd = orig.capacity() - 1;
+            }
+            if (set < 0 || set >= orig.capacity()) {
+                clear(clearStart, clearEnd);
+            } else {
+                orig.clearRangeAndSet(clearStart, clearEnd, backwards, set);
+            }
+        }
+
     }
 }

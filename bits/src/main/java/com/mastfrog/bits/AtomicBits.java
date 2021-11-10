@@ -102,6 +102,98 @@ public interface AtomicBits extends MutableBits {
      */
     int settingNextClearBit(int from);
 
+    /**
+     * Perference used in @{link AtomicBits.setAndClear} to determine order of operations
+     * in cases that the clear and set operations cannot be performed in a single
+     * atomic operation.
+     */
+    public enum SetPreference {
+        CLEAR_FIRST,
+        SET_FIRST,
+        LEAST_FIRST,
+        GREATEST_FIRST;
+
+        boolean choreograph(int clearVal, IntPredicate clear, int setVal, IntPredicate set) {
+            switch (this) {
+                case CLEAR_FIRST:
+                    return clear.test(clearVal) || set.test(setVal);
+                case SET_FIRST:
+                    return set.test(setVal) || clear.test(clearVal);
+                case LEAST_FIRST:
+                    if (clearVal < setVal) {
+                        return clear.test(clearVal) && set.test(setVal);
+                    } else {
+                        return set.test(setVal) && clear.test(clearVal);
+                    }
+                case GREATEST_FIRST:
+                    if (clearVal < setVal) {
+                        return set.test(setVal) && clear.test(clearVal);
+                    } else {
+                        return clear.test(clearVal) && set.test(setVal);
+                    }
+                default:
+                    throw new AssertionError(this);
+            }
+        }
+    }
+
+    /**
+     * Set one value and clear another, atomically if they occupy the same underlying
+     * atomic array element, and if not, using SetPreference.GREATEST_FIRST.
+     *
+     * @param toSet The bit to set
+     * @param toClear The bit to clear
+     * @return True if the data was altered by this operation
+     */
+    default boolean setAndClear(int toSet, int toClear) {
+        return setAndClear(toSet, toClear, SetPreference.GREATEST_FIRST);
+    }
+
+    /**
+     * Set a value and clear a value, atomically if possible, and if not,
+     * using the supplied preference to sequence the set and clear operations
+     * (used by IntMatrixMap to make operations effectively atomic).
+     *
+     * @param toSet An index to set
+     * @param toClear An index to clear
+     * @param pref If the operation <i>cannot</i> be performed atomically,
+     * use this preference to choreograph the order of operations
+     * @return True if the data was altered by this operation
+     */
+    public boolean setAndClear(int toSet, int toClear, SetPreference pref);
+
+    /**
+     * Clear a range of bits and set one within it atomically such that a caller
+     * cannot ever see the range within which the bit to set lies as being empty
+     * unless it was empty prior to this call.
+     *
+     * @param clearStart The starting bit to clear
+     * @param clearEnd The stop bit to clear
+     * @param set The bit to set
+     * @throws IllegalArgumentException if the value to set is not within the
+     * passed range.
+     */
+    public void clearRangeAndSet(int clearStart, int clearEnd, int set);
+
+
+    /**
+     * Clear a range of bits and set one within it atomically such that a caller
+     * cannot ever see the range within which the bit to set lies as being empty
+     * unless it was empty prior to this call.  This overload allows for specifying
+     * the order in which bits are cleared, which is used by IntMatrixMap to
+     * ensure there is always one set bit for a key that had one set before -
+     * the change is just apparent to a caller only when the previously set
+     * bit is cleared.
+     *
+     * @param clearStart The starting bit to clear
+     * @param clearEnd The stop bit to clear
+     * @param set The bit to set
+     * @param backwards - if true, clear and set from greatest bits to least bits
+     * @throws IllegalArgumentException if the value to set is not within the
+     * passed range.
+     */
+    public void clearRangeAndSet(int clearStart, int clearEnd, boolean backwards, int set);
+
     @Override
     AtomicBits mutableCopy();
 

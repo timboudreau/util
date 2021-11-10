@@ -50,6 +50,61 @@ public class AtomicBitsImplTest {
     private static final int SIZE = (64 * 5) + 7;
 
     @Test
+    public void testClearRangeAndSet() {
+        AtomicBitsImpl bits = new AtomicBitsImpl(128);
+        for (int i = 0; i < 128; i += 3) {
+            bits.set(i);
+        }
+        bits.clearRangeAndSet(0, 100, 37);
+        for (int i = 0; i < 128; i++) {
+            switch (i) {
+                case 37:
+                    assertTrue(bits.get(i));
+                    break;
+                default:
+                    if (i < 100) {
+                        assertFalse(bits.get(i),
+                                "Should no longer contain a bit for " + i
+                                + " in " + bits);
+                    } else {
+                        if (i % 3 == 0) {
+                            assertTrue(bits.get(i));
+                        } else {
+                            assertFalse(bits.get(i));
+                        }
+                    }
+                    break;
+            }
+        }
+    }
+
+    @Test
+    public void testSetAndClear() {
+        AtomicBitsImpl bits = new AtomicBitsImpl(128);
+        bits.set(23);
+        bits.set(3);
+        boolean changed = bits.setAndClear(48, 23);
+        assertTrue(changed, "setAndClear(48,23) should have returned true for "
+                + bits);
+        assertFalse(bits.get(23));
+        assertTrue(bits.get(48));
+        assertTrue(bits.get(3));
+        for (int i = 0; i < 48; i++) {
+            if (i != 3 && i != 48) {
+                assertFalse(bits.get(i), i + " should NOT be set in " + bits);
+            } else {
+                assertTrue(bits.get(i), i + " should be set in " + bits);
+            }
+        }
+        String old = bits.toString();
+        bits.set(63);
+        changed = bits.setAndClear(65, 63);
+        assertTrue(changed, "setAndClear(65, 63) in " + old + " should have returned true; bits now " + bits);
+        assertFalse(bits.get(63), "Should have cleared 63 in\n" + old + " but have\n" + bits);
+        assertTrue(bits.get(65), "Should have set 65 in\n" + old + " but have\n" + bits);
+    }
+
+    @Test
     public void testInverted() {
         AtomicBitsImpl bits = new AtomicBitsImpl(128);
         for (int i = 0; i < 128; i++) {
@@ -368,7 +423,6 @@ public class AtomicBitsImplTest {
         for (int i = 0; i < 133; i++) {
             bit = ab.settingNextClearBit(i);
             String n = i < 10 ? "0" + i : Integer.toString(i);
-//            System.out.println(nf(i) + ". " + nf(bit) + "\t" + ab.toBitsString());
         }
         assertEquals(133, ab.nextClearBit(0));
     }

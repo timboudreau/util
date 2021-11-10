@@ -37,6 +37,7 @@ import static java.lang.Long.numberOfLeadingZeros;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLongArray;
+import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 import java.util.function.IntUnaryOperator;
 import java.util.function.ToIntFunction;
@@ -279,6 +280,137 @@ final class AtomicBitsImpl implements Externalizable, AtomicBits {
         change(fromIndex, toIndex, true);
     }
 
+    /**
+     * Set a value and clear a value, atomically if possible, and if not, using
+     * the supplied preference to sequence the set and clear operations (used by
+     * IntMatrixMap to make operations effectively atomic).
+     *
+     * @param toSet An index to set
+     * @param toClear An index to clear
+     * @param pref If the operation <i>cannot</i> be performed atomically, use
+     * this preference to choreograph the order of operations
+     * @return True if the data was altered by this operation
+     */
+    public boolean setAndClear(int toSet, int toClear, SetPreference pref) {
+        if (toSet == toClear) {
+            return false;
+        }
+        int setId = indexOfLong(toSet);
+        int clearId = indexOfLong(toClear);
+        if (setId == clearId) { // atomic! whee!
+            long setMask = maskFor(toSet);
+            long clearMask = maskFor(toClear);
+            long val = arr.getAndUpdate(setId, old -> {
+                return (old | setMask) & ~clearMask;
+            });
+            return (val & setMask) == 0
+                    || (val & clearMask) != 0;
+        } else {
+            return pref.choreograph(toClear, this::clearing, toSet, this::setting);
+        }
+    }
+
+    /**
+     * Clear a range of bits and set one within it atomically such that a caller
+     * cannot ever see the range within which the bit to set lies as being empty
+     * unless it was empty prior to this call.
+     *
+     * @param clearStart The starting bit to clear
+     * @param clearEnd The stop bit to clear
+     * @param set The bit to set
+     * @throws IllegalArgumentException if the value to set is not within the
+     * passed range.
+     */
+    public void clearRangeAndSet(int clearStart, int clearEnd, int set) {
+        clearEnd = Math.min(clearEnd, capacity);
+        int startIx = indexOfLong(clearStart);
+        int stopIx = Math.min(indexOfLong(clearEnd), this.arr.length() - 1);
+        int setIx = indexOfLong(set);
+        if (setIx < startIx || setIx > stopIx) {
+            throw new IllegalArgumentException("To set "
+                    + set + " is not in " + clearStart + ":" + clearEnd);
+        }
+        for (int lix = startIx; lix <= stopIx; lix++) {
+            long mask = FULL_MASKS[FULL_MASKS.length - 1];
+            if (lix == startIx) {
+                long maskMask = 0;
+                for (int i = 0; i < clearStart % BITS_PER_ENTRY; i++) {
+                    maskMask |= 1L << i;
+                }
+                mask &= ~maskMask;
+            }
+            if (lix == stopIx) {
+                int ix = (capacity % BITS_PER_ENTRY) - 1;
+                if (ix < 0) {
+                    ix = FULL_MASKS.length - 1;
+                }
+                mask &= FULL_MASKS[ix];
+                long maskMask = 0;
+                for (int i = 0; i < clearEnd % BITS_PER_ENTRY; i++) {
+                    maskMask |= 1L << i;
+                }
+                mask &= maskMask;
+            }
+            int index = lix;
+            long maskFinal;
+            maskFinal = mask;
+            arr.getAndUpdate(lix, old -> {
+                if (index == setIx) {
+                    return (old & ~maskFinal) | maskFor(set);
+                } else {
+                    return old & ~maskFinal;
+                }
+            });
+        }
+    }
+
+    public void clearRangeAndSet(int clearStart, int clearEnd, boolean backwards, int set) {
+        if (!backwards) {
+            clearRangeAndSet(clearStart, clearEnd, set);
+            return;
+        }
+        clearEnd = Math.min(clearEnd, capacity);
+        int startIx = indexOfLong(clearStart);
+        int stopIx = Math.min(indexOfLong(clearEnd), this.arr.length() - 1);
+        int setIx = indexOfLong(set);
+        if (setIx < startIx || setIx > stopIx) {
+            throw new IllegalArgumentException("To set "
+                    + set + " is not in " + clearStart + ":" + clearEnd);
+        }
+        for (int lix = stopIx; lix >= startIx; lix--) {
+            long mask = FULL_MASKS[FULL_MASKS.length - 1];
+            if (lix == startIx) {
+                long maskMask = 0;
+                for (int i = 0; i < clearStart % BITS_PER_ENTRY; i++) {
+                    maskMask |= 1L << i;
+                }
+                mask &= ~maskMask;
+            }
+            if (lix == stopIx) {
+                int ix = (capacity % BITS_PER_ENTRY) - 1;
+                if (ix < 0) {
+                    ix = FULL_MASKS.length - 1;
+                }
+                mask &= FULL_MASKS[ix];
+                long maskMask = 0;
+                for (int i = 0; i < clearEnd % BITS_PER_ENTRY; i++) {
+                    maskMask |= 1L << i;
+                }
+                mask &= maskMask;
+            }
+            int index = lix;
+            long maskFinal;
+            maskFinal = mask;
+            arr.getAndUpdate(lix, old -> {
+                if (index == setIx) {
+                    return (old & ~maskFinal) | maskFor(set);
+                } else {
+                    return old & ~maskFinal;
+                }
+            });
+        }
+    }
+
     private void change(int fromIndex, int toIndex, boolean set) {
         toIndex = Math.min(toIndex, capacity);
         int startIx = indexOfLong(fromIndex);
@@ -507,7 +639,7 @@ final class AtomicBitsImpl implements Externalizable, AtomicBits {
                         // Compute which bit it is
                         int zeroBitPosition = BITS_PER_ENTRY - (numberOfLeadingZeros(leastZeroBit) + 1);
                         // And a mask for it
-                        long bitmask = (1L << zeroBitPosition);
+                        long bitmask = 1L << zeroBitPosition;
                         // It may be a bit below the first requested bit, in which
                         // case we loop
                         if ((zeroBitPosition + base) >= f) {
