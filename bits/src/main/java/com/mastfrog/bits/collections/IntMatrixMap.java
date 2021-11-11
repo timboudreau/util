@@ -31,6 +31,7 @@ import com.mastfrog.function.IntBiPredicate;
 import com.mastfrog.function.LongBiConsumer;
 import com.mastfrog.function.LongBiPredicate;
 import com.mastfrog.function.state.Int;
+import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.LinkedHashSet;
@@ -112,6 +113,18 @@ public final class IntMatrixMap extends AbstractMap<Integer, Integer> implements
 
     public IntMatrixMap copy() {
         return new IntMatrixMap(data.mutableCopy(), stride);
+    }
+
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        } else if (o == null || !(o instanceof Map<?, ?>)) {
+            return false;
+        } else if (o instanceof IntMatrixMap) {
+            return stride == ((IntMatrixMap) o).stride
+                    && data.equals(((IntMatrixMap) o).data);
+        }
+        return super.equals(o);
     }
 
     /**
@@ -332,13 +345,34 @@ public final class IntMatrixMap extends AbstractMap<Integer, Integer> implements
      */
     public interface LongMatrixMap {
 
+        /**
+         * Get the size of the map.
+         *
+         * @return The size
+         */
         int size();
 
+        /**
+         * Determine if the map is empty.
+         *
+         * @return if it is empty
+         */
         boolean isEmpty();
 
-        void forEach(LongBiConsumer c);
+        /**
+         * Iterate each pair as primitive longs.
+         *
+         * @param c a consumer
+         */
+        void forEachPair(LongBiConsumer c);
 
-        int forEach(LongBiPredicate p);
+        /**
+         * Iterate each pair as primitive longs sequentially, stopping when
+         * the passed predicate returns false, or when done.
+         *
+         * @param p a predicate
+         */
+        int forEachPair(LongBiPredicate p);
 
         long getOrDefault(long key, long defaultValue);
 
@@ -361,7 +395,7 @@ public final class IntMatrixMap extends AbstractMap<Integer, Integer> implements
      * @param dereferencer Converts internal int keys and values to longs
      * @return A LongMatrixMap
      */
-    LongMatrixMap asLongMap(LongToIntFunction mapper, IntToLongFunction dereferencer) {
+    public LongMatrixMap asLongMap(LongToIntFunction mapper, IntToLongFunction dereferencer) {
         return new LongMapView(mapper, dereferencer);
     }
 
@@ -373,7 +407,7 @@ public final class IntMatrixMap extends AbstractMap<Integer, Integer> implements
      * conversion methods for keys and values
      * @return A LongMatrixMap adapter over this map
      */
-    LongMatrixMap asLongMap(LongMapAdapter adapter) {
+    public LongMatrixMap asLongMap(LongMapAdapter adapter) {
         return new AdaptedLongMapView(adapter);
     }
 
@@ -526,7 +560,119 @@ public final class IntMatrixMap extends AbstractMap<Integer, Integer> implements
         return res.success;
     }
 
-    private final class AdaptedLongMapView implements LongMatrixMap {
+    abstract class BaseAdapter extends AbstractMap<Long, Long> implements LongMatrixMap {
+
+        @Override
+        public int size() {
+            return IntMatrixMap.this.size();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return IntMatrixMap.this.isEmpty();
+        }
+
+        @Override
+        public void clear() {
+            IntMatrixMap.this.clear();
+        }
+
+        public String toString() {
+            StringBuilder sb = new StringBuilder("[");
+            forEach((k, v) -> {
+                if (sb.length() > 1) {
+                    sb.append(",");
+                }
+                sb.append(k).append(':').append(v);
+            });
+            return sb.append("]").toString();
+        }
+
+        @Override
+        public Set<Entry<Long, Long>> entrySet() {
+            Set<Entry<Long, Long>> result = new LinkedHashSet<>();
+            forEachPair((k, v) -> {
+                result.add(new LE(k, v));
+            });
+            return result;
+        }
+
+        @Override
+        public Long getOrDefault(Object key, Long defaultValue) {
+            notNull("defaultValue", defaultValue);
+            if (!(notNull("key", key) instanceof Long)) {
+                throw new IllegalArgumentException("Not a long: " + key);
+            }
+            return this.getOrDefault(((Long) key).longValue(), defaultValue.longValue());
+        }
+
+        @Override
+        public void forEach(BiConsumer<? super Long, ? super Long> action) {
+            forEachPair((k, v) -> {
+                action.accept(k, v);
+            });
+        }
+    }
+
+    static class LE implements Map.Entry<Long, Long> {
+
+        private final long k;
+        private final long v;
+
+        public LE(long k, long v) {
+            this.k = k;
+            this.v = v;
+        }
+
+        @Override
+        public String toString() {
+            return k + "=" + v;
+        }
+
+        @Override
+        public Long getKey() {
+            return k;
+        }
+
+        @Override
+        public Long getValue() {
+            return v;
+        }
+
+        @Override
+        public Long setValue(Long value) {
+            throw new UnsupportedOperationException("Not supported.");
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 5;
+            hash = 67 * hash + (int) (this.k ^ (this.k >>> 32));
+            hash = 67 * hash + (int) (this.v ^ (this.v >>> 32));
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final LE other = (LE) obj;
+            if (this.k != other.k) {
+                return false;
+            }
+            return this.v == other.v;
+        }
+
+    }
+
+    private final class AdaptedLongMapView extends BaseAdapter {
 
         private final LongMapAdapter adapter;
 
@@ -557,24 +703,14 @@ public final class IntMatrixMap extends AbstractMap<Integer, Integer> implements
         }
 
         @Override
-        public int size() {
-            return IntMatrixMap.this.size();
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return IntMatrixMap.this.isEmpty();
-        }
-
-        @Override
-        public void forEach(LongBiConsumer c) {
+        public void forEachPair(LongBiConsumer c) {
             IntMatrixMap.this.forEach((k, v) -> {
                 c.accept(adapter.indexOfKey(k), adapter.indexOfValue(v));
             });
         }
 
         @Override
-        public int forEach(LongBiPredicate p) {
+        public int forEachPair(LongBiPredicate p) {
             return IntMatrixMap.this.forEachPair((k, v) -> {
                 return p.test(adapter.indexOfKey(k), adapter.indexOfValue(v));
             });
@@ -589,25 +725,9 @@ public final class IntMatrixMap extends AbstractMap<Integer, Integer> implements
         public void remove(long key) {
             IntMatrixMap.this.remove(adapter.indexOfKey(key));
         }
-
-        @Override
-        public void clear() {
-            IntMatrixMap.this.clear();
-        }
-
-        public String toString() {
-            StringBuilder sb = new StringBuilder("[");
-            forEach((k, v) -> {
-                if (sb.length() > 1) {
-                    sb.append(",");
-                }
-                sb.append(k).append(':').append(v);
-            });
-            return sb.append("]").toString();
-        }
     }
 
-    private final class LongMapView implements LongMatrixMap {
+    private final class LongMapView extends BaseAdapter {
 
         private final LongToIntFunction mapper;
         private final IntToLongFunction dereferencer;
@@ -645,24 +765,14 @@ public final class IntMatrixMap extends AbstractMap<Integer, Integer> implements
         }
 
         @Override
-        public int size() {
-            return IntMatrixMap.this.size();
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return IntMatrixMap.this.isEmpty();
-        }
-
-        @Override
-        public void forEach(LongBiConsumer c) {
+        public void forEachPair(LongBiConsumer c) {
             IntMatrixMap.this.forEachPair((k, v) -> {
                 c.accept(dereferencer.applyAsLong(k), dereferencer.applyAsLong(v));
             });
         }
 
         @Override
-        public int forEach(LongBiPredicate p) {
+        public int forEachPair(LongBiPredicate p) {
             return IntMatrixMap.this.forEachPair((k, v) -> {
                 return p.test(dereferencer.applyAsLong(k), dereferencer.applyAsLong(v));
             });
@@ -676,22 +786,6 @@ public final class IntMatrixMap extends AbstractMap<Integer, Integer> implements
         @Override
         public void remove(long key) {
             IntMatrixMap.this.remove(mapper.applyAsInt(key));
-        }
-
-        @Override
-        public void clear() {
-            IntMatrixMap.this.clear();
-        }
-
-        public String toString() {
-            StringBuilder sb = new StringBuilder("[");
-            forEach((k, v) -> {
-                if (sb.length() > 1) {
-                    sb.append(",");
-                }
-                sb.append(k).append(':').append(v);
-            });
-            return sb.append("]").toString();
         }
     }
 }

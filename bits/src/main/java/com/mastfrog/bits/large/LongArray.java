@@ -141,6 +141,19 @@ public interface LongArray extends Cloneable {
         }
     }
 
+    default int getInto(long from, long[] into) {
+        long sz = size();
+        if (from >= sz) {
+            return 0;
+        }
+        long end = Math.min(from + into.length, sz);
+        int dist = (int) (end - from);
+        for (int i = 0; i < dist; i++) {
+            into[i] = get(from + i);
+        }
+        return dist;
+    }
+
     /**
      * The size of this array, which may be greater than Integer.MAX_VALUE for
      * some implementations.

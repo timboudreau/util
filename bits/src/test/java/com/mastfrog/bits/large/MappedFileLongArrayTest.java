@@ -1,5 +1,10 @@
 package com.mastfrog.bits.large;
 
+import static java.lang.ProcessBuilder.Redirect.to;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.PrimitiveIterator;
 import java.util.Random;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -11,6 +16,68 @@ import static org.junit.jupiter.api.Assertions.*;
 public class MappedFileLongArrayTest {
 
     private final Random rnd = new Random(1384013940139L);
+
+    @Test
+    public void testFromArray() throws Exception {
+        Random rnd = new Random(61309103931L);
+        long[] lngs = new long[2048];
+        for (int i = 0; i < lngs.length; i++) {
+            lngs[i] = rnd.nextLong();
+        }
+        Path fa = Paths.get(System.getProperty("java.io.tmpdir")).resolve("tfa-" + System.currentTimeMillis()
+                + "-" + rnd.nextInt());
+        try {
+            MappedFileLongArray.saveForMapping(lngs, fa);
+            assertTrue(Files.exists(fa));
+            MappedFileLongArray la = new MappedFileLongArray(fa, -1, true);
+            assertEquals(lngs.length, la.size());
+            long[] read = la.toLongArray();
+            assertArrayEquals(lngs, read);
+        } finally {
+            if (Files.exists(fa)) {
+                Files.delete(fa);
+            }
+        }
+    }
+
+    @Test
+    public void testFromIter() throws Exception {
+        Random rnd = new Random(61309103931L);
+        long[] lngs = new long[2048];
+        for (int i = 0; i < lngs.length; i++) {
+            lngs[i] = rnd.nextLong();
+        }
+
+        class P implements PrimitiveIterator.OfLong {
+
+            private int cursor = 0;
+
+            @Override
+            public long nextLong() {
+                return lngs[cursor++];
+            }
+
+            @Override
+            public boolean hasNext() {
+                return cursor < lngs.length;
+            }
+        }
+
+        Path fa = Paths.get(System.getProperty("java.io.tmpdir")).resolve("tfa-" + System.currentTimeMillis()
+                + "-" + rnd.nextInt());
+        try {
+            MappedFileLongArray.saveForMapping(new P(), fa);
+            assertTrue(Files.exists(fa));
+            MappedFileLongArray la = new MappedFileLongArray(fa, -1, true);
+            assertEquals(lngs.length, la.size());
+            long[] read = la.toLongArray();
+            assertArrayEquals(lngs, read);
+        } finally {
+            if (Files.exists(fa)) {
+                Files.delete(fa);
+            }
+        }
+    }
 
     @Test
     public void testSimple() throws Exception {

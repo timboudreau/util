@@ -3,6 +3,7 @@ package com.mastfrog.bits.large;
 import static com.mastfrog.bits.large.UnsafeUtils.UNSAFE;
 import com.mastfrog.util.preconditions.Exceptions;
 import java.io.IOException;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -10,7 +11,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
+import static java.nio.file.StandardOpenOption.WRITE;
 import java.util.Arrays;
+import java.util.PrimitiveIterator;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -22,7 +27,7 @@ import java.util.logging.Logger;
  */
 final class MappedFileLongArray implements CloseableLongArray {
 
-    private static final int HEADER_LENGTH = 16;
+    private static final int HEADER_LENGTH = Long.BYTES + Integer.BYTES * 2;
     private long workingLength;
     private final Path file;
     private MappedByteBuffer buffer;
@@ -33,13 +38,25 @@ final class MappedFileLongArray implements CloseableLongArray {
     }
 
     MappedFileLongArray(Path file) {
-        this(file, 0L, true);
+        this(file, -1L, true);
     }
 
     MappedFileLongArray(Path file, long size, boolean expectedToExist) {
         this.file = file;
         if (size < 0) {
-            throw new IllegalArgumentException("Size is < 0");
+            if (!expectedToExist) {
+                size = 0;
+            } else {
+                try {
+                    if (Files.exists(file)) {
+                        size = (Files.size(file) - HEADER_LENGTH) / Long.BYTES;
+                    } else {
+                        throw new IllegalArgumentException("Does not exist: " + file);
+                    }
+                } catch (IOException ex) {
+                    throw new IllegalStateException("Getting size of " + file, ex);
+                }
+            }
         }
         if (expectedToExist) {
             this.channel = new LoadingChannelSupplier(size);
@@ -80,6 +97,67 @@ final class MappedFileLongArray implements CloseableLongArray {
     private static abstract class ChannelSupplier implements Supplier<FileChannel> {
 
         abstract void close() throws IOException;
+
+        abstract boolean isOpen();
+
+    }
+
+    public static void saveForMapping(long[] longs, Path to) throws IOException {
+        try (FileChannel channel = FileChannel.open(to, CREATE, WRITE, TRUNCATE_EXISTING)) {
+            ByteBuffer hdr = ByteBuffer.allocate(HEADER_LENGTH);
+            hdr.putInt(1);
+            hdr.putInt(1);
+            hdr.putLong(longs.length);
+            int sizeInBytes = longs.length * Long.BYTES;
+            hdr.flip();
+            channel.write(hdr);
+            ByteBuffer buf = ByteBuffer.allocate(sizeInBytes);
+            buf.asLongBuffer().put(longs);
+            buf.position(0);
+            buf.limit(sizeInBytes);
+            channel.write(buf);
+        }
+    }
+
+    public static void saveForMapping(PrimitiveIterator.OfLong iter, Path to) throws IOException {
+        try (FileChannel channel = FileChannel.open(to, CREATE, WRITE, TRUNCATE_EXISTING)) {
+            // Write a dummy header since the size cannot yet be determined
+            ByteBuffer hdr = ByteBuffer.allocate(HEADER_LENGTH);
+            hdr.putInt(1);
+            hdr.putInt(1);
+            hdr.putLong(0);
+            hdr.flip();
+            channel.write(hdr);
+            // Write in batches for efficiency
+            ByteBuffer lngs = ByteBuffer.allocate(1024 * Long.BYTES);
+            long count = 0;
+            while (iter.hasNext()) {
+                long nxt = iter.next();
+                count++;
+                lngs.putLong(nxt);
+                if (lngs.remaining() < Long.BYTES) {
+                    lngs.flip();
+                    channel.write(lngs);
+                    lngs.rewind();
+                    lngs.limit(lngs.capacity());
+                }
+            }
+            // Ensure no remaining items are cached
+            if (lngs.position() > 0) {
+                lngs.flip();
+                channel.write(lngs);
+            }
+
+            // Now we can write the real header
+            channel.position(0);
+            hdr.rewind();
+            hdr.limit(hdr.capacity());
+            hdr.putInt(1);
+            hdr.putInt(1);
+            hdr.putLong(count);
+            hdr.flip();
+            channel.write(hdr);
+        }
     }
 
     private class LoadingChannelSupplier extends ChannelSupplier {
@@ -89,6 +167,10 @@ final class MappedFileLongArray implements CloseableLongArray {
 
         LoadingChannelSupplier(long targetSize) {
             this.targetSize = targetSize;
+        }
+
+        boolean isOpen() {
+            return channel != null;
         }
 
         @Override
@@ -101,7 +183,7 @@ final class MappedFileLongArray implements CloseableLongArray {
 
         private FileChannel init() {
             try {
-                channel = FileChannel.open(file, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ, StandardOpenOption.TRUNCATE_EXISTING);
+                channel = FileChannel.open(file, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ);
                 if (channel.size() >= HEADER_LENGTH) {
                     ByteBuffer ver = ByteBuffer.allocate(Integer.BYTES);
                     channel.position(0);
@@ -155,6 +237,10 @@ final class MappedFileLongArray implements CloseableLongArray {
             this.targetSize = targetSize;
         }
 
+        public boolean isOpen() {
+            return channel != null;
+        }
+
         @Override
         public synchronized FileChannel get() {
             if (channel != null) {
@@ -199,6 +285,9 @@ final class MappedFileLongArray implements CloseableLongArray {
             long count = targetSizeBytes / pageSize;
             targetSizeBytes = Math.max(1, count) * pageSize;
         }
+        if ((targetSizeBytes - HEADER_LENGTH) / Long.BYTES < targetSize) {
+            targetSizeBytes += pageSize;
+        }
         FileChannel channel = channel();
         long size = channel.size();
         if (size > targetSizeBytes) {
@@ -241,7 +330,7 @@ final class MappedFileLongArray implements CloseableLongArray {
     }
 
     private int sizeOffset() {
-        return 8;
+        return Integer.BYTES * 2;
     }
 
     private int indexToFilePosition(int index) {
@@ -255,6 +344,9 @@ final class MappedFileLongArray implements CloseableLongArray {
 
     @Override
     public long size() {
+        if (!this.channel.isOpen()) {
+            this.channel.get();
+        }
         return workingLength;
     }
 
@@ -263,7 +355,14 @@ final class MappedFileLongArray implements CloseableLongArray {
         if (index > workingLength) {
             throw new IllegalStateException("Index " + index + " > " + workingLength);
         }
-        return mapping().getLong(indexToFilePosition((int) index));
+        try {
+            return mapping().getLong(indexToFilePosition((int) index));
+        } catch (IndexOutOfBoundsException ex) {
+            throw new IllegalStateException("Underflow fetching item " + index
+                    + " of " + size()
+                    + " at position " + indexToFilePosition((int) index) + " in "
+                    + " mapped buffer of " + mapping().capacity() + " pos " + mapping().position());
+        }
     }
 
     @Override
