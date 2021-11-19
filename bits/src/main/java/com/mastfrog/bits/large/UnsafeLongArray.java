@@ -8,6 +8,7 @@ import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.LongConsumer;
+import java.util.function.LongUnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

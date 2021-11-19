@@ -1,5 +1,6 @@
 package com.mastfrog.bits.large;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.PrimitiveIterator;
 import java.util.function.Consumer;
@@ -111,6 +112,14 @@ public interface LongArray extends Cloneable {
      */
     public static CloseableLongArray mappedFileLongArray(Path file, long size) {
         return new MappedFileLongArray(file, size, true);
+    }
+
+    public static void saveForMapping(PrimitiveIterator.OfLong iter, Path to) throws IOException {
+        MappedFileLongArray.saveForMapping(iter, to);
+    }
+
+    public static void saveForMapping(long[] longs, Path to) throws IOException {
+        MappedFileLongArray.saveForMapping(longs, to);
     }
 
     /**

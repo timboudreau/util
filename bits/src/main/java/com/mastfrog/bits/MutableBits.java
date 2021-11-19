@@ -5,6 +5,8 @@ import com.mastfrog.bits.large.LongArrayBitSetBits;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.util.BitSet;
+import java.util.Collection;
+import java.util.Set;
 
 /**
  * Extension to the read-only Bits interface with BitSet's mutation methods,
@@ -16,8 +18,8 @@ import java.util.BitSet;
 public interface MutableBits extends Bits {
 
     /**
-     * Set or clear a bit at the specified int bitIndex, depending on
-     * the passed value.
+     * Set or clear a bit at the specified int bitIndex, depending on the passed
+     * value.
      *
      * @param bitIndex The index of the bit
      * @param value The value
@@ -41,6 +43,18 @@ public interface MutableBits extends Bits {
      */
     default Bits readOnlyView() {
         return this;
+    }
+
+    public static MutableBits longTreeSetBits() {
+        return new LongSetBits();
+    }
+
+    public static MutableBits longTreeSetBits(Collection<? extends Long> all) {
+        return new LongSetBits(all);
+    }
+
+    public static MutableBits longTreeSetBits(long... values) {
+        return new LongSetBits(values);
     }
 
     /**
