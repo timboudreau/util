@@ -17,6 +17,8 @@ import java.util.Set;
  */
 public interface MutableBits extends Bits {
 
+    public static final MutableBits EMPTY_MUTABLE = new EmptyBits();
+
     /**
      * Set or clear a bit at the specified int bitIndex, depending on the passed
      * value.
@@ -77,7 +79,10 @@ public interface MutableBits extends Bits {
      * @return A MutableBits
      */
     public static CloseableBits createLarge(long bitsCapacity, boolean offHeap) {
-        long size = bitsCapacity / Long.BYTES;
+        long size = bitsCapacity / Long.SIZE;
+        if (bitsCapacity % Long.SIZE != 0) {
+            size++;
+        }
         LongArray arr = offHeap ? LongArray.unsafeLongArray(size)
                 : LongArray.javaLongArray((int) size);
         if (!arr.isZeroInitialized()) {

@@ -1,6 +1,8 @@
 package com.mastfrog.bits;
 
 import java.util.BitSet;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.function.IntPredicate;
 import java.util.function.IntSupplier;
 import java.util.function.IntToDoubleFunction;
@@ -10,11 +12,11 @@ import java.util.function.LongSupplier;
  *
  * @author Tim Boudreau
  */
-final class EmptyBits implements Bits, LongSupplier, IntSupplier {
+final class EmptyBits implements Bits, LongSupplier, IntSupplier, MutableBits {
 
-    static final Bits INSTANCE = new EmptyBits();
+    static final MutableBits INSTANCE = new EmptyBits();
 
-    private EmptyBits() {
+    EmptyBits() {
     }
 
     @Override
@@ -43,8 +45,8 @@ final class EmptyBits implements Bits, LongSupplier, IntSupplier {
     }
 
     @Override
-    public Bits get(int fromIndex, int toIndex) {
-        return copy();
+    public MutableBits get(int fromIndex, int toIndex) {
+        return mutableCopy();
     }
 
     @Override
@@ -106,6 +108,7 @@ final class EmptyBits implements Bits, LongSupplier, IntSupplier {
     public boolean equals(Object o) {
         return o == this ? true
                 : o == null ? false
+                : o instanceof EmptyBits ? true
                 : o instanceof Bits && ((Bits) o).isEmpty();
     }
 
@@ -146,12 +149,12 @@ final class EmptyBits implements Bits, LongSupplier, IntSupplier {
     }
 
     @Override
-    public Bits orWith(Bits other) {
-        return other.copy();
+    public MutableBits orWith(Bits other) {
+        return other.mutableCopy();
     }
 
     @Override
-    public Bits andWith(Bits other) {
+    public MutableBits andWith(Bits other) {
         return this;
     }
 
@@ -171,8 +174,8 @@ final class EmptyBits implements Bits, LongSupplier, IntSupplier {
     }
 
     @Override
-    public Bits xorWith(Bits other) {
-        return other;
+    public MutableBits xorWith(Bits other) {
+        return other.mutableCopy();
     }
 
     @Override
@@ -208,5 +211,15 @@ final class EmptyBits implements Bits, LongSupplier, IntSupplier {
     @Override
     public long nextClearBitLong(long fromIndex) {
         return -1L;
+    }
+
+    @Override
+    public void set(int bitIndex, boolean value) {
+        throw new UnsupportedOperationException("Bits.EMPTY cannot be added to.");
+    }
+
+    @Override
+    public Set<Characteristics> characteristics() {
+        return EnumSet.allOf(Characteristics.class);
     }
 }

@@ -23,8 +23,13 @@
  */
 package com.mastfrog.bits;
 
+import static com.mastfrog.bits.Bits.Characteristics.LONG_VALUED;
+import static com.mastfrog.bits.Bits.Characteristics.NEGATIVE_VALUES_ALLOWED;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.LongConsumer;
 import java.util.function.LongPredicate;
@@ -40,13 +45,21 @@ final class LongSetBits implements MutableBits {
 
     private final TreeSet<Long> set;
 
+    private static final Set<Characteristics> CHARACTERISTICS =
+            Collections.unmodifiableSet(EnumSet.of(NEGATIVE_VALUES_ALLOWED,
+                    LONG_VALUED));
+
     LongSetBits(Bits bits) {
         set = new TreeSet<>();
-        bits.forEachLongSetBitAscending(set::add);
+        if (bits instanceof LongSetBits) {
+            set.addAll(((LongSetBits) bits).set);
+        } else {
+            bits.forEachLongSetBitAscending(set::add);
+        }
     }
 
     LongSetBits() {
-        set = new TreeSet();
+        set = new TreeSet<>();
     }
 
     LongSetBits(long... items) {
@@ -60,10 +73,29 @@ final class LongSetBits implements MutableBits {
         this.set = new TreeSet<>(set);
     }
 
+    @Override
+    public MutableBits newBits(int size) {
+        return new LongSetBits();
+    }
+
+    @Override
+    public MutableBits newBits(long size) {
+        if (size < Integer.MAX_VALUE) {
+            return new LongSetBits();
+        }
+        return MutableBits.super.newBits(size);
+    }
+
+    @Override
+    public Set<Characteristics> characteristics() {
+        return CHARACTERISTICS;
+    }
+
     public boolean hasIntegerBounds() {
         return minLong() >= Integer.MIN_VALUE && maxLong() <= Integer.MAX_VALUE;
     }
 
+    @Override
     public boolean equals(Object o) {
         if (o == this) {
             return true;
@@ -73,10 +105,12 @@ final class LongSetBits implements MutableBits {
         return contentEquals((Bits) o);
     }
 
+    @Override
     public int hashCode() {
         return bitsHashCode();
     }
 
+    @Override
     public String toString() {
         return set.toString();
     }
@@ -185,7 +219,7 @@ final class LongSetBits implements MutableBits {
 
     @Override
     public Bits get(long fromIndex, long toIndex) {
-        TreeSet<Long> nue = new TreeSet();
+        TreeSet<Long> nue = new TreeSet<>();
         while (fromIndex < toIndex) {
             Long ceil = set.ceiling(fromIndex);
             if (ceil == null) {
@@ -390,19 +424,72 @@ final class LongSetBits implements MutableBits {
     }
 
     @Override
+    public MutableBits andNotWith(Bits other) {
+        if (other == this || other.isEmpty()) {
+            return new LongSetBits();
+        } else if (other instanceof LongSetBits) {
+            TreeSet<Long> set = new TreeSet<>(this.set);
+            set.removeAll(((LongSetBits) other).set);
+            return new LongSetBits(set);
+        } else {
+            TreeSet<Long> set = new TreeSet<>();
+            for (Long val : this.set) {
+                if (!other.get(val)) {
+                    set.add(val);
+                }
+            }
+            return new LongSetBits(set);
+        }
+    }
+
+    @Override
+    public void andNot(Bits other) {
+        if (other == this || other.isEmpty()) {
+            clear();
+        } else if (other instanceof LongSetBits) {
+            LongSetBits lsb = (LongSetBits) other;
+            set.removeAll(lsb.set);
+        } else {
+            for (Iterator<Long> it=set.iterator(); it.hasNext();) {
+                Long val = it.next();
+                if (other.get(val)) {
+                    it.remove();
+                }
+            }
+        }
+    }
+
+    @Override
     public void and(Bits other) {
-        for (Iterator<Long> it = set.iterator(); it.hasNext();) {
-            if (!other.get(it.next())) {
-                it.remove();
+        if (other == this) {
+            return;
+        } else if (other.isEmpty()) {
+            clear();
+        } else if (other instanceof LongSetBits) {
+            LongSetBits lsb = (LongSetBits) other;
+            set.retainAll(lsb.set);
+        } else {
+            for (Iterator<Long> it = set.iterator(); it.hasNext();) {
+                if (!other.get(it.next())) {
+                    it.remove();
+                }
             }
         }
     }
 
     @Override
     public void or(Bits other) {
-        other.forEachLongSetBitAscending(lng -> {
-            set.add(lng);
-        });
+        if (other.isEmpty() || other == this) {
+            return;
+        }
+        if (other instanceof LongSetBits) {
+            LongSetBits lsb = (LongSetBits) other;
+            set.addAll(lsb.set);
+        } else {
+            other.forEachLongSetBitAscending(lng -> {
+                set.add(lng);
+            });
+        }
     }
 
     @Override
@@ -457,7 +544,7 @@ final class LongSetBits implements MutableBits {
     }
 
     @Override
-    public Bits shift(int by) {
+    public LongSetBits shift(int by) {
         if (by == 0) {
             return new LongSetBits(new TreeSet<>(set));
         }
@@ -477,5 +564,27 @@ final class LongSetBits implements MutableBits {
             }
             return -1L;
         };
+    }
+
+    @Override
+    public int length() {
+        if (set.isEmpty()) {
+            return 0;
+        }
+        return set.last().intValue() + 1;
+    }
+
+    @Override
+    public LongSetBits get(int fromIndex, int toIndex) {
+        Long item = set.ceiling((long) fromIndex);
+        if (item == null || item >= toIndex) {
+            return new LongSetBits();
+        }
+        TreeSet<Long> result = new TreeSet<>();
+        result.add(item);
+        for (item = set.ceiling(item + 1); item < toIndex; item = set.ceiling(item + 1)) {
+            result.add(item);
+        }
+        return new LongSetBits(result);
     }
 }

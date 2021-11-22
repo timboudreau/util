@@ -1,7 +1,11 @@
 package com.mastfrog.bits;
 
+import static com.mastfrog.bits.Bits.Characteristics.LONG_VALUED;
 import java.io.Serializable;
 import java.util.BitSet;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
@@ -35,7 +39,7 @@ import java.util.function.LongSupplier;
  */
 public interface Bits extends Serializable {
 
-    public static final Bits EMPTY = EmptyBits.INSTANCE;
+    public static final Bits EMPTY = new EmptyBits();
 
     default boolean canContain(int index) {
         return index > 0;
@@ -239,9 +243,9 @@ public interface Bits extends Serializable {
      */
     default Bits get(int fromIndex, int toIndex) {
         BitSet bs = new BitSet();
-        for (int i = fromIndex; i < toIndex; i++) {
-            bs.set(i, get(i));
-        }
+        forEachSetBitAscending(fromIndex, toIndex, bit -> {
+            bs.set(bit);
+        });
         return Bits.fromBitSet(bs);
     }
 
@@ -1676,7 +1680,7 @@ public interface Bits extends Serializable {
      * @return A bits
      */
     default Bits filter(IntPredicate pred) {
-        return filter(MutableBits::create, pred).immutableCopy();
+        return filter(this::newBits, pred).immutableCopy();
     }
 
     /**
@@ -1738,5 +1742,58 @@ public interface Bits extends Serializable {
                 return pos;
             }
         };
+    }
+
+    /**
+     * Create a new bits that uses the same backing storage as
+     * this one (where possible).  This variant, that takes an
+     * integer argument, delegates to the one which takes a long
+     * argument, which by default returns a BitSet-backed Bits
+     * if the size is under Integer.MAX_VALUE, and otherwise returns
+     * a long-array backed instance.
+     *
+     * @param size The number of bits that should be representable
+     * @return A mutable bits
+     */
+    default MutableBits newBits(int size) {
+        return newBits((long) size);
+    }
+
+    /**
+     * Create a new bits that uses the same backing storage as
+     * this one (where possible).  Implementations should override this
+     * method to return their own type; those that cannot handle >
+     * Integer.MAX_VALUE bits may call the super method for larger
+     * values.
+     *
+     * @param size The number of bits the returned Bits should be able
+     * to accomodate.
+     * @return A MutableBits
+     */
+    default MutableBits newBits(long size) {
+        if (size < 0) {
+            throw new IllegalArgumentException("Negative size");
+        }
+        if (size <= Integer.MAX_VALUE) {
+            return MutableBits.create((int) size);
+        }
+        return MutableBits.createLarge(size);
+    }
+
+    default Set<Characteristics> characteristics() {
+        if (isNativelyLongIndexed()) {
+            return EnumSet.of(LONG_VALUED);
+        } else {
+            return Collections.emptySet();
+        }
+    }
+
+    public enum Characteristics {
+        FIXED_SIZE,
+        THREAD_SAFE,
+        ATOMIC,
+        LARGE,
+        LONG_VALUED,
+        NEGATIVE_VALUES_ALLOWED,
     }
 }

@@ -23,6 +23,7 @@
  */
 package com.mastfrog.bits;
 
+import java.util.Set;
 import java.util.function.IntPredicate;
 
 /**
@@ -216,6 +217,23 @@ final class AtomicBitsRangeTolerant implements AtomicBits {
                 orig.clearRangeAndSet(clearStart, clearEnd, backwards, set);
             }
         }
+    }
 
+    @Override
+    public Set<Characteristics> characteristics() {
+        return orig.characteristics();
+    }
+
+    @Override
+    public MutableBits newBits(int size) {
+        return new AtomicBitsRangeTolerant(new AtomicBitsImpl(size));
+    }
+
+    @Override
+    public MutableBits newBits(long size) {
+        if (size <= Integer.MAX_VALUE) {
+            return newBits((int) size);
+        }
+        return MutableBits.createLarge(size);
     }
 }

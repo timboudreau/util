@@ -88,7 +88,9 @@ public final class BitSetSet<T> extends AbstractSet<T> implements Set<T> {
 
         @Override
         public boolean hasNext() {
-            return set.nextSetBit(ix + 1) >= 0;
+            int oldIx = ix + 1;
+            int nxt = set.nextSetBit(oldIx);
+            return nxt >= 0 && nxt >= oldIx;
         }
 
         @Override

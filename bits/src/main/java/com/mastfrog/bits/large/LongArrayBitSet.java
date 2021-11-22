@@ -1,13 +1,16 @@
 package com.mastfrog.bits.large;
 
+import com.mastfrog.bits.Bits.Characteristics;
 import com.mastfrog.bits.MutableBits;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.LongBuffer;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.EnumSet;
 import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.LongFunction;
@@ -80,6 +83,12 @@ public class LongArrayBitSet implements AutoCloseable {
 
     public LongArrayBitSet(BitSet orig, LongFunction<LongArray> arrayFactory) {
         this(orig.toLongArray(), arrayFactory);
+    }
+
+    Set<Characteristics> characteristics() {
+        Set<Characteristics> result = EnumSet.of(Characteristics.LARGE,
+                Characteristics.LONG_VALUED);
+        return result;
     }
 
     public MutableBits toBits() {

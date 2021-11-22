@@ -1,6 +1,8 @@
 package com.mastfrog.bits;
 
 import java.util.BitSet;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  *
@@ -119,5 +121,10 @@ interface BitSetBacked extends Bits {
             return ((BitSetBacked) other).bitSetUnsafe().equals(bitSetUnsafe());
         }
         return Bits.super.contentEquals(other);
+    }
+
+    @Override
+    default Set<Characteristics> characteristics() {
+        return Collections.emptySet();
     }
 }

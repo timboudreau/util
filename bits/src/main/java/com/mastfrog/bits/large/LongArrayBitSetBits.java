@@ -4,6 +4,7 @@ import com.mastfrog.bits.Bits;
 import com.mastfrog.bits.CloseableBits;
 import com.mastfrog.bits.MutableBits;
 import java.util.BitSet;
+import java.util.Set;
 
 /**
  * Bits wrapper for a LongArrayBitSet.
@@ -16,6 +17,10 @@ public final class LongArrayBitSetBits implements CloseableBits {
 
     public LongArrayBitSetBits(LongArrayBitSet bits) {
         this.bits = bits;
+    }
+
+    public Set<Characteristics> characteristics() {
+        return bits.characteristics();
     }
 
     public void close() {

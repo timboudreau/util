@@ -83,6 +83,7 @@ public class MutableBitSetBitsTest {
             assertEquals(-1, supp.getAsInt());
         }
         empty = Bits.EMPTY;
+        assertNotNull(empty, "Bits.EMPTY is null");
         supp = empty.asIntSupplier();
         for (int i = 0; i < 20; i++) {
             assertEquals(-1, supp.getAsInt());

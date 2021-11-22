@@ -1,6 +1,7 @@
 package com.mastfrog.bits;
 
 import java.util.BitSet;
+import java.util.Set;
 
 /**
  * Bits which simply shifts offsets into the underlying bits.
@@ -335,5 +336,20 @@ class ShiftedBits extends AbstractBits implements MutableBits {
     @Override
     public long cardinalityLong() {
         return bits.cardinalityLong();
+    }
+
+    @Override
+    public Set<Characteristics> characteristics() {
+        return bits.characteristics();
+    }
+
+    @Override
+    public MutableBits newBits(int size) {
+        return bits.newBits(size);
+    }
+
+    @Override
+    public MutableBits newBits(long size) {
+        return bits.newBits(size);
     }
 }

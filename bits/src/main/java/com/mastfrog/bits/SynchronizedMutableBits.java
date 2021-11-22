@@ -24,6 +24,8 @@
 package com.mastfrog.bits;
 
 import java.util.BitSet;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
@@ -43,6 +45,24 @@ final class SynchronizedMutableBits implements MutableBits {
         this.delegate = delegate;
     }
 
+    @Override
+    public Set<Characteristics> characteristics() {
+        Set<Characteristics> info = EnumSet.copyOf(delegate.characteristics());
+        info.add(Characteristics.THREAD_SAFE);
+        return info;
+    }
+
+    @Override
+    public MutableBits newBits(int size) {
+        return new SynchronizedMutableBits(delegate.newBits(size));
+    }
+
+    @Override
+    public MutableBits newBits(long size) {
+        return new SynchronizedMutableBits(delegate.newBits(size));
+    }
+
+    @Override
     public MutableBits toSynchronizedBits() {
         return this;
     }

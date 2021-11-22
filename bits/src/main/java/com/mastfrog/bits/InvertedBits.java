@@ -1,5 +1,6 @@
 package com.mastfrog.bits;
 
+import java.util.Set;
 import java.util.function.IntSupplier;
 
 /**
@@ -75,5 +76,20 @@ final class InvertedBits implements Bits {
     @Override
     public String toString() {
         return stringValue();
+    }
+
+    @Override
+    public Set<Characteristics> characteristics() {
+        return orig.characteristics();
+    }
+
+    @Override
+    public MutableBits newBits(int size) {
+        return orig.newBits(size);
+    }
+
+    @Override
+    public MutableBits newBits(long size) {
+        return orig.newBits(size);
     }
 }

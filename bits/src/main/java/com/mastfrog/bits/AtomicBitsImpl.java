@@ -25,6 +25,9 @@
  */
 package com.mastfrog.bits;
 
+import static com.mastfrog.bits.Bits.Characteristics.ATOMIC;
+import static com.mastfrog.bits.Bits.Characteristics.FIXED_SIZE;
+import static com.mastfrog.bits.Bits.Characteristics.THREAD_SAFE;
 import com.mastfrog.function.state.Int;
 import static com.mastfrog.util.preconditions.Checks.greaterThanZero;
 import static com.mastfrog.util.preconditions.Checks.notNull;
@@ -36,8 +39,10 @@ import static java.lang.Long.lowestOneBit;
 import static java.lang.Long.numberOfLeadingZeros;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLongArray;
-import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 import java.util.function.IntUnaryOperator;
 import java.util.function.ToIntFunction;
@@ -70,6 +75,8 @@ final class AtomicBitsImpl implements Externalizable, AtomicBits {
     static final int BITS_PER_ENTRY = Long.BYTES * 8;
     private static final long[] FULL_MASKS = new long[BITS_PER_ENTRY];
     private static final int VER = 1;
+    private static final Set<Characteristics> CHARACTERISTICS
+                = Collections.unmodifiableSet(EnumSet.of(ATOMIC, THREAD_SAFE, FIXED_SIZE));
 
     static {
         // Avoids an inner loop when handling the final
@@ -81,6 +88,24 @@ final class AtomicBitsImpl implements Externalizable, AtomicBits {
             }
             FULL_MASKS[i] = val;
         }
+    }
+
+    @Override
+    public MutableBits newBits(int size) {
+        return new AtomicBitsImpl(size);
+    }
+
+    @Override
+    public MutableBits newBits(long size) {
+        if (size <= Integer.MAX_VALUE) {
+            return new AtomicBitsImpl((int) size);
+        }
+        return AtomicBits.super.newBits(size);
+    }
+
+    @Override
+    public Set<Characteristics> characteristics() {
+        return CHARACTERISTICS;
     }
 
     private static String bstr(long val) {
@@ -253,6 +278,60 @@ final class AtomicBitsImpl implements Externalizable, AtomicBits {
             return;
         }
         AtomicBits.super.or(set);
+    }
+
+    @Override
+    public void andNot(Bits set) {
+        if (set == this) {
+            clear();
+            return;
+        }
+        if (set instanceof AtomicBitsImpl) {
+            AtomicBitsImpl other = (AtomicBitsImpl) set;
+            int max = Math.min(other.arr.length(), arr.length());
+            for (int i = 0; i < max; i++) {
+                long val = other.arr.get(i);
+                arr.updateAndGet(i, old -> old & ~val);
+            }
+            return;
+        }
+        AtomicBits.super.andNot(set);
+    }
+
+    @Override
+    public void and(Bits set) {
+        if (set == this) {
+            clear();
+            return;
+        }
+        if (set instanceof AtomicBitsImpl) {
+            AtomicBitsImpl other = (AtomicBitsImpl) set;
+            int max = Math.min(other.arr.length(), arr.length());
+            for (int i = 0; i < max; i++) {
+                long val = other.arr.get(i);
+                arr.updateAndGet(i, old -> old & val);
+            }
+            return;
+        }
+        AtomicBits.super.andNot(set);
+    }
+
+    @Override
+    public void xor(Bits set) {
+        if (set == this) {
+            clear();
+            return;
+        }
+        if (set instanceof AtomicBitsImpl) {
+            AtomicBitsImpl other = (AtomicBitsImpl) set;
+            int max = Math.min(other.arr.length(), arr.length());
+            for (int i = 0; i < max; i++) {
+                long val = other.arr.get(i);
+                arr.updateAndGet(i, old -> old ^ val);
+            }
+            return;
+        }
+        AtomicBits.super.andNot(set);
     }
 
     @Override
