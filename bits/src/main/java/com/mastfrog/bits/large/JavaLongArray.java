@@ -1,12 +1,13 @@
 package com.mastfrog.bits.large;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
 /**
  *
  * @author Tim Boudreau
  */
-class JavaLongArray implements LongArray {
+class JavaLongArray implements LongArray, Serializable {
 
     private long[] value;
 

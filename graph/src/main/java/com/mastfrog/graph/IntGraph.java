@@ -54,6 +54,10 @@ public interface IntGraph {
         return new BitSetGraph(reverseReferences, references);
     }
 
+    public static IntGraph create(Bits[] outboundEdges, Bits[] inboundEdges, Bits topLevel, Bits bottomLevel, IntFunction<MutableBits> bitsFactory) {
+        return new BitSetGraph(outboundEdges, inboundEdges, topLevel, bottomLevel, bitsFactory);
+    }
+
     public static IntGraph load(ObjectInputStream objectInputStream, IntFunction<MutableBits> bitsFactory) throws IOException, ClassNotFoundException {
         return BitSetGraph.load(objectInputStream, bitsFactory);
     }

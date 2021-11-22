@@ -2,6 +2,7 @@ package com.mastfrog.bits.large;
 
 import com.mastfrog.bits.Bits.Characteristics;
 import com.mastfrog.bits.MutableBits;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.LongBuffer;
@@ -25,7 +26,7 @@ import java.util.stream.StreamSupport;
  *
  * @author Tim Boudreau
  */
-public class LongArrayBitSet implements AutoCloseable {
+public class LongArrayBitSet implements AutoCloseable, Serializable {
 
     private final static int ADDRESS_BITS_PER_WORD = 6;
     private final static int BITS_PER_WORD = 1 << ADDRESS_BITS_PER_WORD;

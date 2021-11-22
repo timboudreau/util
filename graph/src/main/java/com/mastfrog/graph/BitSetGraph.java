@@ -38,6 +38,14 @@ final class BitSetGraph implements IntGraph {
     private final Bits bottomLevel;
     private final IntFunction<MutableBits> bitsFactory;
 
+    BitSetGraph(Bits[] outboundEdges, Bits[] inboundEdges, Bits topLevel, Bits bottomLevel, IntFunction<MutableBits> bitsFactory) {
+        this.outboundEdges = outboundEdges;
+        this.inboundEdges = inboundEdges;
+        this.topLevel = topLevel;
+        this.bottomLevel = bottomLevel;
+        this.bitsFactory = bitsFactory;
+    }
+
     BitSetGraph(BitSet[] outboundEdges, BitSet[] inboundEdges, IntFunction<MutableBits> bitsFactory) {
         this(toBits(outboundEdges), toBits(inboundEdges), bitsFactory);
     }
