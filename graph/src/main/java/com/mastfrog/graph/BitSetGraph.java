@@ -381,6 +381,7 @@ final class BitSetGraph implements IntGraph {
      *
      * @return A node count
      */
+    @Override
     public int size() {
         return outboundEdges.length;
     }

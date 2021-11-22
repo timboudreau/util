@@ -15,6 +15,7 @@ What's here
      * Java long arrays
      * Off-heap memory allocated via `sun.misc.Unsafe`
      * Memory-mapped NIO files which can persist and be reloaded
+ * `concurrent` - Misc concurrency primitives and concurrent statistics collectors, combinable multi-slot locks
  * `range` - A set of interfaces and implementations for dealing conveniently with ranges (things with a numeric start and size) -
 a common thing to deal in when writing memory managers, code completion, or dealing with time-series data. If you've ever 
 coded this stuff, you know it's death-by-off-by-one errors.  I never wanted to do so again.  Features:
@@ -37,6 +38,9 @@ extensions such as `ByteSupplier`.  Specifically
    * `float`- and `byte-` based equivalents of consumer, function and predicate patterns
    * "holder" types for state which must cross lambda boundaries and cannot otherwise be implemented simply, because variables declared above and used in lambdas are final:
       * Holders for objects, booleans, doubles, floats, including atomic variants
+ * `search` - generic binary-search that can be applied to any sorted backing-store, such as byte buffers over fixed-length record files
+ * `sort` - generic sorting of any backing store that contains elements that can be compared, for which a Swapper can be implemented;
+   sorting pairs of arrays by the contents of one of them
  * `util-collections` - Collection-and collection-related classes for performance and code-bloat reduction, mostly accessed via
 static methods on `CollectionUtils`.  For example:
    * `CollectionUtils.supplierMap(Supplier&lt;T&gt;)` - build caches simply with a supplier that provides missing values, e.g. `List&lt;String,List&lt;String&gt;&gt; l = CollectionUtils.supplierMap(ArrayList::new); l.get("foo").add("bar")`
@@ -46,8 +50,6 @@ static methods on `CollectionUtils`.  For example:
    * Creating lists, sets and iterables from multiple others by wrapping, not copying
    * Utilities for dealing with arrays, splitting and concatenating
    * Map-like extractions for type-safe, multi-type maps
-   * Utilities to implement binary search over anything that can be resolved to a Java long
-   * Bi-sorting - when sorting a collection or array of data where you have a secondary array or collection of data relating to each element in the same order, sort that collection too
    * Timed-eviction caches
  * `util-fileformat` - Minimal tools for writing valid JSON (for when a library like Jackson is too much), and for
 writing `.properties` files identically to the way the JDK does, minus the unavoidable timestamp comment that results
