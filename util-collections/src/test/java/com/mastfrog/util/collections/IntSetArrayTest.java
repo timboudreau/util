@@ -23,7 +23,9 @@
  */
 package com.mastfrog.util.collections;
 
+import com.mastfrog.abstractions.list.IndexedResolvable;
 import static com.mastfrog.util.collections.CollectionUtils.setOf;
+import com.mastfrog.util.search.Bias;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -554,5 +556,64 @@ public class IntSetArrayTest {
         assertEquals(msg, 100, target.size());
         target.retainAll(src);
         assertEquals(msg, src, target);
+    }
+
+    private static int norm(int val) {
+        if (val == Integer.MIN_VALUE) {
+            return -1;
+        }
+        return val;
+    }
+
+    @Test
+    public void testArrayReverseSearch() {
+        IntSetArray arr = new IntSetArray(10);
+        IntSetImpl bits = new IntSetImpl(10);
+        for (int i = 5; i < 100; i += 5) {
+            arr.add(i);
+            bits.add(i);
+            int ixA = arr.nearestIndexTo(i, Bias.FORWARD);
+            int ixB = bits.nearestIndexTo(i, Bias.FORWARD);
+            assertEquals("Different results for nearestIndexTo(" + i + ")", ixB, ixA);
+        }
+        assertEquals("Wrong index for nv 0", 0, arr.nearestIndexTo(0, Bias.FORWARD));
+
+        for (int i = 100; i >= 0; i--) {
+            int prev = norm(arr.nearestValueTo(i, Bias.BACKWARD));
+            int realPrev = norm(bits.nearestValueTo(i, Bias.BACKWARD));
+            assertEquals("Divergence at " + i, realPrev, prev);
+
+            prev = norm(arr.nearestValueTo(i, Bias.NONE));
+            realPrev = norm(arr.nearestValueTo(i, Bias.NONE));
+            assertEquals("Divergence at " + i + " bias none", realPrev, prev);
+
+            prev = norm(arr.nearestValueTo(i, Bias.FORWARD));
+            realPrev = arr.nearestValueTo(i, Bias.FORWARD);
+            assertEquals("Divergence at " + i + " bias forward", realPrev, prev);
+
+            prev = norm(arr.nearestValueTo(i, Bias.NEAREST));
+            realPrev = arr.nearestValueTo(i, Bias.NEAREST);
+            assertEquals("Divergence at " + i + " bias nearest", realPrev, prev);
+
+            int ixA = arr.nearestIndexTo(i, Bias.FORWARD);
+            int ixB = arr.nearestIndexTo(i, Bias.FORWARD);
+            assertTrue("Returned a value not an index? " + ixB, ixB == -1 || ixB < arr.size());
+
+            assertEquals("Different results for nearestIndexTo(" + i + ")", ixB, ixA);
+            int val = arr.valueAt(ixB);
+        }
+    }
+
+    @Test
+    public void testSearchOverEmpty() {
+        IntSetArray arr = new IntSetArray(10);
+        for (int i = 0; i < 100; i++) {
+            for (Bias b : Bias.values()) {
+                int ix = arr.nearestIndexTo(i, b);
+                int prev = arr.nearestValueTo(i, b);
+                assertEquals(-1, ix);
+                assertEquals(Integer.MIN_VALUE, prev);
+            }
+        }
     }
 }

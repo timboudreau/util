@@ -705,8 +705,11 @@ class IntSetArray extends IntSet {
 
     @Override
     public int nearestValueTo(int value, Bias bias) {
+        if (isEmpty()) {
+            return Integer.MIN_VALUE;
+        }
         int ix = nearestIndexTo(value, bias);
-        return ix < 0 ? Integer.MIN_VALUE : data[ix];
+        return ix < 0 ? Integer.MIN_VALUE : data[Math.min(last(), ix)];
     }
 
     @Override
@@ -729,7 +732,7 @@ class IntSetArray extends IntSet {
                 if (value - data[prev] < data[next] - value) {
                     return prev;
                 }
-                return value;
+                return next;
             default:
                 throw new AssertionError(bias);
         }
@@ -764,10 +767,19 @@ class IntSetArray extends IntSet {
     }
 
     public int nearestIndexTo(int key, boolean backward) {
+        if (size == 0) {
+            return -1;
+        }
+        checkSort();
+        if (backward && key < data[0]) {
+            return -1;
+        } else if (!backward && key < data[0]) {
+            return 0;
+        }
         int[] keys = data;
         int last = size() - 1;
         if (key < keys[0]) {
-            return backward ? last : 0;
+            return backward ? 0 : last;
         }
         if (key > keys[last]) {
             return backward ? last : 0;
@@ -780,12 +792,15 @@ class IntSetArray extends IntSet {
             } else if (idx < 0) {
                 idx = backward ? last : 0;
             }
+        } else if (keys[idx] > key) {
+            return -1;
         }
         return idx;
     }
 
     @Override
     public int valuesBetween(int first, int second, IntSetValueConsumer c) {
+        checkSort();
         int v1 = Math.min(first, second);
         int v2 = Math.max(first, second);
         int last = size() - 1;
@@ -801,8 +816,8 @@ class IntSetArray extends IntSet {
         checkSort();
         v1 = Math.max(data[0], v1);
         v2 = Math.min(data[last], v2);
-        int ix1 = nearestIndexTo(v1, false);
-        int ix2 = nearestIndexTo(v2, true);
+        int ix1 = Math.min(size - 1, nearestIndexTo(v1, false));
+        int ix2 = Math.max(0, nearestIndexTo(v2, true));
         if (ix1 == ix2) {
             int v = data[ix1];
             if (v <= v2 && v >= v1) {
