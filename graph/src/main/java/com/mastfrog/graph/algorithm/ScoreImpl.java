@@ -43,6 +43,6 @@ final class ScoreImpl<T> implements Score<T> {
 
     @Override
     public String toString() {
-        return node + ":" + score;
+        return node + ".\t" + score;
     }
 }

@@ -8,6 +8,7 @@
         <version>2.7.3</version>
         <relativePath/>
     </parent>
+    <version>2.7.3.2</version>
     <artifactId>graph</artifactId>
     <url>https://github.com/timboudreau/util</url>
     <scm>

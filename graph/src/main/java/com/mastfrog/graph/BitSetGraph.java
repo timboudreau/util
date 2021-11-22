@@ -1,5 +1,6 @@
 package com.mastfrog.graph;
 
+import com.mastfrog.bits.AtomicBits;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -19,7 +20,10 @@ import com.mastfrog.graph.algorithm.Algorithm;
 import com.mastfrog.graph.algorithm.EigenvectorCentrality;
 import com.mastfrog.graph.algorithm.PageRank;
 import com.mastfrog.function.IntBiConsumer;
+import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.RecursiveAction;
 import java.util.function.BiConsumer;
+import java.util.function.IntFunction;
 
 /**
  * A highly compact graph based on bit sets.
@@ -32,27 +36,37 @@ final class BitSetGraph implements IntGraph {
     private final Bits[] inboundEdges;
     private final Bits topLevel;
     private final Bits bottomLevel;
+    private final IntFunction<MutableBits> bitsFactory;
+
+    BitSetGraph(BitSet[] outboundEdges, BitSet[] inboundEdges, IntFunction<MutableBits> bitsFactory) {
+        this(toBits(outboundEdges), toBits(inboundEdges), bitsFactory);
+    }
 
     BitSetGraph(BitSet[] outboundEdges, BitSet[] inboundEdges) {
-        this(toBits(outboundEdges), toBits(inboundEdges));
+        this(outboundEdges, inboundEdges, MutableBits::create);
     }
 
     BitSetGraph(BitSet[] edges) {
-        this(toBits(edges));
+        this(edges, MutableBits::create);
+    }
+
+    BitSetGraph(BitSet[] edges, IntFunction<MutableBits> bitsFactory) {
+        this(toBits(edges), bitsFactory);
     }
 
     BitSetGraph(Bits[] outboundEdges, Bits[] inboundEdges) {
+        this(outboundEdges, inboundEdges, MutableBits::create);
+    }
+
+    BitSetGraph(Bits[] outboundEdges, Bits[] inboundEdges, IntFunction<MutableBits> bitsFactory) {
         assert sanityCheck(outboundEdges, inboundEdges);
         this.outboundEdges = outboundEdges;
         this.inboundEdges = inboundEdges;
-        Bits outboundKeys = keySet(outboundEdges);
-        Bits inboundKeys = keySet(inboundEdges);
-        MutableBits top = MutableBits.create(outboundEdges.length);
-        MutableBits bottom = MutableBits.create(inboundEdges.length);
-        top.or(outboundKeys);
-        bottom.or(inboundKeys);
-        top.andNot(inboundKeys);
-        bottom.andNot(outboundKeys);
+        this.bitsFactory = bitsFactory;
+        MutableBits top = keySet(outboundEdges, bitsFactory);
+        MutableBits bottom = keySet(inboundEdges, bitsFactory);
+        top.andNot(bottom);
+        bottom.andNot(top);
         topLevel = top.readOnlyView();
         bottomLevel = bottom.readOnlyView();
         checkConsistency();
@@ -67,7 +81,11 @@ final class BitSetGraph implements IntGraph {
     }
 
     BitSetGraph(Bits[] references) {
-        this(references, inverseOf(references));
+        this(references, MutableBits::create);
+    }
+
+    BitSetGraph(Bits[] references, IntFunction<MutableBits> bitsFactory) {
+        this(references, inverseOf(references, bitsFactory), bitsFactory);
     }
 
     @Override
@@ -123,6 +141,10 @@ final class BitSetGraph implements IntGraph {
      * @throws ClassNotFoundException Should not happen
      */
     public static BitSetGraph load(ObjectInput in) throws IOException, ClassNotFoundException {
+        return load(in, MutableBits::create);
+    }
+
+    public static BitSetGraph load(ObjectInput in, IntFunction<MutableBits> bitsFactory) throws IOException, ClassNotFoundException {
         int ver = in.readInt();
         if (ver != 1) {
             throw new IOException("Unsupoorted version " + ver);
@@ -137,10 +159,10 @@ final class BitSetGraph implements IntGraph {
                 sets[i] = MutableBits.valueOf(vals);
             }
         }
-        return new BitSetGraph(sets);
+        return new BitSetGraph(sets, bitsFactory);
     }
 
-    private static MutableBits[] inverseOf(Bits[] outbound) {
+    private static MutableBits[] inverseOf(Bits[] outbound, IntFunction<MutableBits> bitsFactory) {
         // Given a single set of inbound bits, create the inverse
         // set
         int size = outbound.length;
@@ -149,7 +171,7 @@ final class BitSetGraph implements IntGraph {
         for (int i = 0; i < size; i++) {
             if (outbound[i] == null) {
                 if (empty == null) {
-                    empty = MutableBits.create(0);
+                    empty = bitsFactory.apply(0);
                 }
                 outbound[i] = empty;
             }
@@ -158,7 +180,7 @@ final class BitSetGraph implements IntGraph {
                 if (b != null) {
                     if (b.get(i)) {
                         if (inbound[i] == null) {
-                            inbound[i] = MutableBits.create(size);
+                            inbound[i] = bitsFactory.apply(size);
                         }
                         inbound[i].set(j);
                     }
@@ -166,7 +188,7 @@ final class BitSetGraph implements IntGraph {
             }
             if (inbound[i] == null) {
                 if (empty == null) {
-                    empty = MutableBits.create(0);
+                    empty = bitsFactory.apply(0);
                 }
                 inbound[i] = empty;
             }
@@ -249,7 +271,7 @@ final class BitSetGraph implements IntGraph {
      */
     @Override
     public void walk(int startingWith, IntGraphVisitor v) {
-        MutableBits set = MutableBits.create(size());
+        MutableBits set = bitsFactory.apply(size());
         set.set(startingWith);
         walk(v, set, new BitSet(size()), 0);
     }
@@ -293,7 +315,7 @@ final class BitSetGraph implements IntGraph {
      */
     @Override
     public void walkUpwards(int startingWith, IntGraphVisitor v) {
-        MutableBits set = MutableBits.create(size());
+        MutableBits set = bitsFactory.apply(size());
         set.set(startingWith);
         walkUpwards(v, set, new BitSet(size()), 0);
     }
@@ -365,7 +387,7 @@ final class BitSetGraph implements IntGraph {
     @Override
     public Bits closureDisjunction(int a, int b) {
         if (a == b) {
-            return MutableBits.create(0);
+            return bitsFactory.apply(0);
         }
         MutableBits ca = _closureOf(a);
         MutableBits cb = _closureOf(b);
@@ -383,7 +405,7 @@ final class BitSetGraph implements IntGraph {
     @Override
     public Bits closureUnion(int a, int b) {
         if (a == b) {
-            return MutableBits.create(0);
+            return bitsFactory.apply(0);
         }
         MutableBits ca = _closureOf(a);
         MutableBits cb = _closureOf(b);
@@ -421,7 +443,7 @@ final class BitSetGraph implements IntGraph {
      */
     @Override
     public Bits closureDisjunction(int... nodes) {
-        MutableBits result = MutableBits.create(size());
+        MutableBits result = bitsFactory.apply(size());
         for (int i = 0; i < nodes.length; i++) {
             MutableBits clos = _closureOf(nodes[i]);
             if (i == 0) {
@@ -442,7 +464,7 @@ final class BitSetGraph implements IntGraph {
      */
     @Override
     public Bits closureDisjunction(Bits nodes) {
-        MutableBits result = MutableBits.create(size());
+        MutableBits result = bitsFactory.apply(size());
         for (int bit = nodes.nextSetBit(0), count = 0; bit >= 0; bit = nodes.nextSetBit(bit + 1), count++) {
             if (bit >= size()) {
                 break;
@@ -552,12 +574,12 @@ final class BitSetGraph implements IntGraph {
 
     @Override
     public void depthFirstSearch(int startingNode, boolean up, IntConsumer cons) {
-        depthFirstSearch(startingNode, up, cons, MutableBits.create(size()));
+        depthFirstSearch(startingNode, up, cons, bitsFactory.apply(size()));
     }
 
     @Override
     public void breadthFirstSearch(int startingNode, boolean up, IntConsumer cons) {
-        breadthFirstSearch(startingNode, up, cons, MutableBits.create(size()));
+        breadthFirstSearch(startingNode, up, cons, bitsFactory.apply(size()));
     }
 
     private void breadthFirstSearch(int startingNode, boolean up, IntConsumer cons, MutableBits traversed) {
@@ -613,7 +635,7 @@ final class BitSetGraph implements IntGraph {
      */
     @Override
     public boolean abortableDepthFirstSearch(int startingNode, boolean up, IntPredicate cons) {
-        return abortableDepthFirstSearch(startingNode, up, cons, MutableBits.create(size()));
+        return abortableDepthFirstSearch(startingNode, up, cons, bitsFactory.apply(size()));
     }
 
     /**
@@ -629,7 +651,7 @@ final class BitSetGraph implements IntGraph {
      */
     @Override
     public boolean abortableBreadthFirstSearch(int startingNode, boolean up, IntPredicate cons) {
-        return abortableBreadthFirstSearch(startingNode, up, cons, MutableBits.create(size()));
+        return abortableBreadthFirstSearch(startingNode, up, cons, bitsFactory.apply(size()));
     }
 
     private boolean abortableBreadthFirstSearch(int startingNode, boolean up, IntPredicate cons, MutableBits traversed) {
@@ -688,7 +710,7 @@ final class BitSetGraph implements IntGraph {
     @Override
     public Bits connectors() {
         int sz = size();
-        MutableBits result = MutableBits.create(sz);
+        MutableBits result = bitsFactory.apply(sz);
         for (int i = 0; i < sz; i++) {
             if (!inboundEdges[i].isEmpty() && !outboundEdges[i].isEmpty()) {
                 result.set(i);
@@ -700,7 +722,7 @@ final class BitSetGraph implements IntGraph {
     @Override
     public Bits orphans() {
         int sz = size();
-        MutableBits result = MutableBits.create(sz);
+        MutableBits result = bitsFactory.apply(sz);
         for (int i = 0; i < sz; i++) {
             if (inboundEdges[i].isEmpty() && outboundEdges[i].isEmpty()) {
                 result.set(i);
@@ -719,9 +741,9 @@ final class BitSetGraph implements IntGraph {
     public Bits disjointNodes() {
         MutableBits[] unions = new MutableBits[size()];
         for (int i = 0; i < unions.length; i++) {
-            unions[i] = MutableBits.create(unions.length);
+            unions[i] = bitsFactory.apply(unions.length);
         }
-        MutableBits result = MutableBits.create(size());
+        MutableBits result = bitsFactory.apply(size());
         for (int i = 0; i < unions.length; i++) {
             unions[i] = _closureOf(i);
             unions[i].clear(i);
@@ -761,7 +783,7 @@ final class BitSetGraph implements IntGraph {
      */
     @Override
     public boolean isIndirectlyRecursive(int node) {
-        MutableBits test = MutableBits.create(size());
+        MutableBits test = bitsFactory.apply(size());
         test.or(outboundEdges[node]);
         test.clear(node);
         closureOf(node, test, 0);
@@ -899,14 +921,82 @@ final class BitSetGraph implements IntGraph {
         return inboundEdges[node];
     }
 
-    private static Bits keySet(Bits[] bits) {
-        BitSet nue = new BitSet(bits.length);
-        for (int i = 0; i < bits.length; i++) {
-            if (bits[i].cardinality() > 0) {
+    private static MutableBits keySet(Bits[] bits, IntFunction<MutableBits> factory) {
+        int len = bits.length;
+        if (len > 2_000_000) {
+            // For very large graphs, this becomes a significant bottleneck
+            return parallelKeySet(bits, factory);
+        }
+        MutableBits nue = factory.apply(len);
+        for (int i = 0; i < len; i++) {
+            Bits b = bits[i];
+            if (!b.isEmpty()) {
                 nue.set(i);
             }
         }
-        return Bits.fromBitSet(nue);
+        return nue;
+    }
+
+    private static MutableBits parallelKeySet(Bits[] bits, IntFunction<MutableBits> factory) {
+        int len = bits.length;
+        MutableBits nue = AtomicBits.create(len);
+        int pcount = Runtime.getRuntime().availableProcessors();
+        class A extends RecursiveAction {
+
+            private final int start;
+            private final int end;
+
+            A() {
+                this.start = 0;
+                this.end = 0;
+            }
+
+            A(int start, int end) {
+                this.start = start;
+                this.end = Math.min(len, end);
+                assert end > start;
+            }
+
+            public String toString() {
+                return "KeySet " + start + "-" + end;
+            }
+
+            @Override
+            protected void compute() {
+                if (end == 0 && start == 0) {
+                    int count = len / pcount;
+                    int st = 0;
+                    List<A> recu = new ArrayList<>();
+                    for (int i = 0; i < pcount; i++) {
+                        int ct;
+                        if (i == pcount - 1) {
+                            ct = end - st;
+                        } else {
+                            ct = count;
+                        }
+                        A next = new A(st, st + ct);
+                        recu.add(next);
+                        st += ct;
+                    }
+                    ForkJoinTask.invokeAll(recu)
+                            .stream().map(ForkJoinTask::join).forEach((task) -> {
+                    });
+                } else {
+                    doCompute();
+                }
+            }
+
+            private void doCompute() {
+                for (int i = start; i < end; i++) {
+                    Bits b = bits[i];
+                    if (!b.isEmpty()) {
+                        nue.set(i);
+                    }
+                }
+            }
+        }
+        new A().invoke();
+        return nue;
     }
 
     /**
@@ -976,7 +1066,7 @@ final class BitSetGraph implements IntGraph {
     }
 
     private MutableBits _closureOf(int node) {
-        MutableBits result = MutableBits.create(size());
+        MutableBits result = bitsFactory.apply(size());
         closureOf(node, result, 0);
         return result;
     }
@@ -1119,7 +1209,7 @@ final class BitSetGraph implements IntGraph {
      */
     @Override
     public Bits reverseClosureOf(int node) {
-        MutableBits result = MutableBits.create(size());
+        MutableBits result = bitsFactory.apply(size());
         reverseClosureOf(node, result, 0);
         return result;
     }

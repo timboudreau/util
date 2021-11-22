@@ -10,9 +10,11 @@ import java.util.Optional;
 import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 import com.mastfrog.bits.Bits;
+import com.mastfrog.bits.MutableBits;
 import com.mastfrog.function.IntBiConsumer;
 import com.mastfrog.function.state.Int;
 import java.util.function.BiConsumer;
+import java.util.function.IntFunction;
 
 /**
  *
@@ -32,8 +34,28 @@ public interface IntGraph {
         return new BitSetGraph(references);
     }
 
+    public static IntGraph create(BitSet[] reverseReferences, BitSet[] references, IntFunction<MutableBits> bitsFactory) {
+        return new BitSetGraph(reverseReferences, references, bitsFactory);
+    }
+
+    public static IntGraph create(Bits[] references, IntFunction<MutableBits> bitsFactory) {
+        return new BitSetGraph(references, bitsFactory);
+    }
+
+    public static IntGraph create(BitSet[] references, IntFunction<MutableBits> bitsFactory) {
+        return new BitSetGraph(references, bitsFactory);
+    }
+
+    public static IntGraph create(Bits[] reverseReferences, Bits[] references, IntFunction<MutableBits> bitsFactory) {
+        return new BitSetGraph(reverseReferences, references, bitsFactory);
+    }
+
     public static IntGraph create(Bits[] reverseReferences, Bits[] references) {
         return new BitSetGraph(reverseReferences, references);
+    }
+
+    public static IntGraph load(ObjectInputStream objectInputStream, IntFunction<MutableBits> bitsFactory) throws IOException, ClassNotFoundException {
+        return BitSetGraph.load(objectInputStream, bitsFactory);
     }
 
     public static IntGraph load(ObjectInputStream objectInputStream) throws IOException, ClassNotFoundException {
@@ -50,6 +72,10 @@ public interface IntGraph {
 
     default <T> ObjectGraph<T> toObjectGraph(List<T> items) {
         return new BitSetObjectGraph<>(this, IndexedResolvable.forList(items));
+    }
+
+    default <T> ObjectGraph<T> toObjectGraph(IndexedResolvable<T> res) {
+        return new BitSetObjectGraph<>(this, res);
     }
 
     /**

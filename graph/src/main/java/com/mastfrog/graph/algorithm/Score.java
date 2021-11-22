@@ -48,4 +48,8 @@ public interface Score<T> extends Comparable<Score<?>> {
         return a > b ? -1 : a == b ? 0 : 1;
     }
 
+    public static <T> Score<T> create(double score, int index, T val) {
+        return new ScoreImpl<>(score, index, val);
+    }
+
 }
