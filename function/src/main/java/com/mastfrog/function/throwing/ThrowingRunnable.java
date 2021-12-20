@@ -23,6 +23,8 @@
  */
 package com.mastfrog.function.throwing;
 
+import com.mastfrog.function.state.Obj;
+import static com.mastfrog.util.preconditions.Checks.notNull;
 import com.mastfrog.util.preconditions.Exceptions;
 import java.util.concurrent.Callable;
 import java.util.function.BooleanSupplier;
@@ -40,13 +42,13 @@ public interface ThrowingRunnable {
 
     /**
      * Returns a runnable which can be added to asynchronously (all andThen()
-     * style methods return the instance) and which will discard all composed-in
-     * runnables once run is called.
+     * style methods return <code>this</code>) and which will discard all
+     * composed-in runnables once run is called.
      *
      * @return A ThrowingRunnable with the described characteristics
      */
     public static ThrowingRunnable oneShot() {
-        return new ComposableThrowingRunnable(true, false);
+        return new ComposableAtomicThrowingRunnable(true, false);
     }
 
     /**
@@ -56,7 +58,7 @@ public interface ThrowingRunnable {
      * @return A ThrowingRunnable with the described characteristics
      */
     public static ThrowingRunnable composable() {
-        return new ComposableThrowingRunnable(false, false);
+        return new ComposableAtomicThrowingRunnable(false, false);
     }
 
     /**
@@ -70,7 +72,7 @@ public interface ThrowingRunnable {
      * @return A ThrowingRunnable with the described characteristics
      */
     public static ThrowingRunnable oneShot(boolean lifo) {
-        return new ComposableThrowingRunnable(true, lifo);
+        return new ComposableAtomicThrowingRunnable(true, lifo);
     }
 
     /**
@@ -83,7 +85,23 @@ public interface ThrowingRunnable {
      * @return A ThrowingRunnable with the described characteristics
      */
     public static ThrowingRunnable composable(boolean lifo) {
-        return new ComposableThrowingRunnable(false, lifo);
+        return new ComposableAtomicThrowingRunnable(false, lifo);
+    }
+
+    /**
+     * Wrap a ThrowingRunnable in another one which weakly references the
+     * original.
+     *
+     * @param delegate A throwing runnable
+     * @return A wrapper ThrowingRunnable that does not hold a strong reference
+     * to the argument passed
+     * @throws NullArgumentException if the delegate is null
+     */
+    public static ThrowingRunnable weak(ThrowingRunnable delegate) {
+        if (delegate instanceof ThrowingRunnableWeakDelegating) {
+            return delegate;
+        }
+        return new ThrowingRunnableWeakDelegating(notNull("delegate", delegate));
     }
 
     /**
@@ -126,25 +144,26 @@ public interface ThrowingRunnable {
      */
     default ThrowingRunnable andAlways(ThrowingRunnable run) {
         return () -> {
-            Exception[] ex = new Exception[1];
+            Obj<Throwable> ex = Obj.create();
             try {
                 ThrowingRunnable.this.run();
-            } catch (Exception ex1) {
-                ex[0] = ex1;
+            } catch (Exception | Error ex1) {
+                ex.set(ex1);
             } finally {
                 try {
                     run.run();
-                } catch (Exception ex2) {
-                    if (ex[0] == null) {
-                        ex[0] = ex2;
-                    } else {
-                        ex[0].addSuppressed(ex2);
-                    }
+                } catch (Exception | Error ex2) {
+                    ex.apply(old -> {
+                        if (old != null) {
+                            old.addSuppressed(ex2);
+                            return old;
+                        }
+                        return ex2;
+                    });
                 }
             }
-            if (ex[0] != null) {
-                throw ex[0];
-            }
+            // Rethrow if present
+            ex.ifNotNull(Exceptions::chuck);
         };
     }
 
@@ -162,25 +181,26 @@ public interface ThrowingRunnable {
      */
     default ThrowingRunnable andAlwaysFirst(ThrowingRunnable run) {
         return () -> {
-            Exception[] ex = new Exception[1];
+            Obj<Throwable> ex = Obj.create();
             try {
                 run.run();
             } catch (Exception ex1) {
-                ex[0] = ex1;
+                ex.set(ex1);
             } finally {
                 try {
                     ThrowingRunnable.this.run();
-                } catch (Exception ex2) {
-                    if (ex[0] == null) {
-                        ex[0] = ex2;
-                    } else {
-                        ex[0].addSuppressed(ex2);
-                    }
+                } catch (Exception | Error ex2) {
+                    ex.apply(old -> {
+                        if (old != null) {
+                            old.addSuppressed(ex2);
+                            return old;
+                        }
+                        return ex2;
+                    });
                 }
             }
-            if (ex[0] != null) {
-                throw ex[0];
-            }
+            // Rethrow if present
+            ex.ifNotNull(Exceptions::chuck);
         };
     }
 
@@ -217,25 +237,26 @@ public interface ThrowingRunnable {
      */
     default ThrowingRunnable andAlwaysRun(Runnable run) {
         return () -> {
-            Exception[] ex = new Exception[1];
+            Obj<Throwable> ex = Obj.create();
             try {
                 ThrowingRunnable.this.run();
             } catch (Exception ex1) {
-                ex[0] = ex1;
+                ex.set(ex1);
             } finally {
                 try {
                     run.run();
-                } catch (Exception ex2) {
-                    if (ex[0] == null) {
-                        ex[0] = ex2;
-                    } else {
-                        ex[0].addSuppressed(ex2);
-                    }
+                } catch (Exception | Error ex2) {
+                    ex.apply(old -> {
+                        if (old != null) {
+                            old.addSuppressed(ex2);
+                            return old;
+                        }
+                        return ex2;
+                    });
                 }
             }
-            if (ex[0] != null) {
-                throw ex[0];
-            }
+            // Rethrow if present
+            ex.ifNotNull(Exceptions::chuck);
         };
     }
 
@@ -247,33 +268,35 @@ public interface ThrowingRunnable {
      * this one's <code>run()</code> method - if both throw exceptions, the
      * first's exception will be added as a suppressed exception to the
      * second's. Offers the same functionality as
-     * <code>andAlwaysFirst(ThrowingRunnable)</code> for <code>Runnables</code> - named differently so
-     * lambda users will not have to cast as one or the other.
+     * <code>andAlwaysFirst(ThrowingRunnable)</code> for <code>Runnables</code>
+     * - named differently so lambda users will not have to cast as one or the
+     * other.
      *
      * @param run Another runnable
      * @return a wrapper around this and the other
      */
     default ThrowingRunnable andAlwaysRunFirst(Runnable run) {
         return () -> {
-            Exception[] ex = new Exception[1];
+            Obj<Throwable> ex = Obj.create();
             try {
                 run.run();
             } catch (Exception ex1) {
-                ex[0] = ex1;
+                ex.set(ex1);
             } finally {
                 try {
                     ThrowingRunnable.this.run();
-                } catch (Exception ex2) {
-                    if (ex[0] == null) {
-                        ex[0] = ex2;
-                    } else {
-                        ex[0].addSuppressed(ex2);
-                    }
+                } catch (Exception | Error ex2) {
+                    ex.apply(old -> {
+                        if (old != null) {
+                            old.addSuppressed(ex2);
+                            return old;
+                        }
+                        return ex2;
+                    });
                 }
             }
-            if (ex[0] != null) {
-                throw ex[0];
-            }
+            // Rethrow if present
+            ex.ifNotNull(Exceptions::chuck);
         };
     }
 
@@ -286,27 +309,28 @@ public interface ThrowingRunnable {
      */
     default ThrowingRunnable andAlwaysIf(BooleanSupplier test, ThrowingRunnable run) {
         return () -> {
-            Exception[] ex = new Exception[1];
+            Obj<Throwable> ex = Obj.create();
             try {
                 ThrowingRunnable.this.run();
             } catch (Exception ex1) {
-                ex[0] = ex1;
+                ex.set(ex1);
             } finally {
                 if (test.getAsBoolean()) {
                     try {
                         run.run();
-                    } catch (Exception ex2) {
-                        if (ex[0] == null) {
-                            ex[0] = ex2;
-                        } else {
-                            ex[0].addSuppressed(ex2);
-                        }
+                    } catch (Exception | Error ex2) {
+                        ex.apply(old -> {
+                            if (old != null) {
+                                old.addSuppressed(ex2);
+                                return old;
+                            }
+                            return ex2;
+                        });
                     }
                 }
             }
-            if (ex[0] != null) {
-                throw ex[0];
-            }
+            // Rethrow if present
+            ex.ifNotNull(Exceptions::chuck);
         };
     }
 
@@ -323,27 +347,28 @@ public interface ThrowingRunnable {
      */
     default ThrowingRunnable andAlwaysIfNotNull(Supplier<?> testForNull, ThrowingRunnable run) {
         return () -> {
-            Exception[] ex = new Exception[1];
+            Obj<Throwable> ex = Obj.create();
             try {
                 ThrowingRunnable.this.run();
             } catch (Exception ex1) {
-                ex[0] = ex1;
+                ex.set(ex1);
             } finally {
                 if (testForNull.get() != null) {
                     try {
                         run.run();
-                    } catch (Exception ex2) {
-                        if (ex[0] == null) {
-                            ex[0] = ex2;
-                        } else {
-                            ex[0].addSuppressed(ex2);
-                        }
+                    } catch (Exception | Error ex2) {
+                        ex.apply(old -> {
+                            if (old != null) {
+                                old.addSuppressed(ex2);
+                                return old;
+                            }
+                            return ex2;
+                        });
                     }
                 }
             }
-            if (ex[0] != null) {
-                throw ex[0];
-            }
+            // Rethrow if present
+            ex.ifNotNull(Exceptions::chuck);
         };
     }
 
@@ -401,7 +426,8 @@ public interface ThrowingRunnable {
      * one wants a single call that can sometimes needs a return value, and
      * sometimes doesn't.
      *
-     * @return A ThrowingSupplier that runs this ThrowingRunnable and returns null
+     * @return A ThrowingSupplier that runs this ThrowingRunnable and returns
+     * null
      */
     default ThrowingSupplier<Void> toThrowingSupplier() {
         return () -> {
@@ -414,6 +440,19 @@ public interface ThrowingRunnable {
         return () -> {
             this.run();
             return obj;
+        };
+    }
+
+    static ThrowingRunnable fromRunnable(Runnable run) {
+        return new ThrowingRunnable() {
+
+            public void run() throws Exception {
+                run.run();
+            }
+
+            public String toString() {
+                return run.toString();
+            }
         };
     }
 

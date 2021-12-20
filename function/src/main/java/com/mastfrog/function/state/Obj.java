@@ -101,4 +101,13 @@ public interface Obj<T> extends Supplier<T>, Consumer<T> {
     default T setFrom(Supplier<T> supp) {
         return set(supp.get());
     }
+
+    default boolean ifNotNull(Consumer<T> c) {
+        T obj = get();
+        if (obj != null) {
+            c.accept(obj);
+            return true;
+        }
+        return false;
+    }
 }

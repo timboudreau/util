@@ -24,6 +24,7 @@
 package com.mastfrog.function.throwing;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -424,6 +425,97 @@ public class ThrowingRunnableTest {
         assertTrue(ex instanceof FooException, ex::toString);
         assertTrue(ex.getSuppressed().length == 1);
         assertTrue(ex.getSuppressed()[0] instanceof BarException, () -> ex.getSuppressed()[0].toString());
+    }
+
+    @Test
+    public void testAddAfterRunRunsLifo() throws Exception {
+        ThrowingRunnable tr = ThrowingRunnable.oneShot(true);
+        List<Integer> all = new ArrayList<>();
+        tr.andAlways(new Adder(all, 20));
+        tr.andAlways(new Adder(all, 10));
+        tr.run();
+        assertEquals(Arrays.asList(10, 20), all, "All tasks did not run");
+        tr.andAlways(new Adder(all, 40));
+        tr.andAlways(new Adder(all, 30));
+        tr.run();
+        assertEquals(Arrays.asList(10, 20, 30, 40), all, "Added tasks did not run");
+        List<Integer> last = new ArrayList<>(all);
+        tr.run();
+        assertEquals(last, all, "One shots should not call a runnable more than once");
+    }
+
+    @Test
+    public void testAddAfterRunRunsFifo() throws Exception {
+        ThrowingRunnable tr = ThrowingRunnable.oneShot(false);
+        List<Integer> all = new ArrayList<>();
+        tr.andAlways(new Adder(all, 10));
+        tr.andAlways(new Adder(all, 20));
+        tr.run();
+        assertEquals(Arrays.asList(10, 20), all, "All tasks did not run");
+        tr.andAlways(new Adder(all, 30));
+        tr.andAlways(new Adder(all, 40));
+        tr.run();
+        assertEquals(Arrays.asList(10, 20, 30, 40), all, "Added tasks did not run");
+        List<Integer> last = new ArrayList<>(all);
+        tr.run();
+        assertEquals(last, all, "One shots should not call a runnable more than once");
+    }
+
+    @Test
+    public void testComposableAddAfterRunRunsFifo() throws Exception {
+        ThrowingRunnable tr = ThrowingRunnable.composable(false);
+        List<Integer> all = new ArrayList<>();
+        tr.andAlways(new Adder(all, 10));
+        tr.andAlways(new Adder(all, 20));
+        tr.run();
+        assertEquals(Arrays.asList(10, 20), all, "All tasks did not run");
+        tr.andAlways(new Adder(all, 30));
+        tr.andAlways(new Adder(all, 40));
+        tr.run();
+        assertEquals(Arrays.asList(10, 20, 10, 20, 30, 40), all, "Added tasks did not run");
+        List<Integer> last = new ArrayList<>(all);
+        last.addAll(Arrays.asList(10, 20, 30, 40));
+        tr.run();
+        assertEquals(last, all, "Composable did not run correct sequence");
+    }
+
+    @Test
+    public void testComposableAddAfterRunRunsLifo() throws Exception {
+        ThrowingRunnable tr = ThrowingRunnable.composable(true);
+        List<Integer> all = new ArrayList<>();
+        tr.andAlways(new Adder(all, 20));
+        tr.andAlways(new Adder(all, 10));
+        tr.run();
+        assertEquals(Arrays.asList(10, 20), all, "All tasks did not run");
+        tr.andAlways(new Adder(all, 40));
+        tr.andAlways(new Adder(all, 30));
+        tr.run();
+        assertEquals(Arrays.asList(10, 20, 30, 40, 10, 20), all, "Added tasks did not run");
+        List<Integer> last = new ArrayList<>(Arrays.asList(10, 20, 30, 40));
+        last.addAll(all);
+        tr.run();
+        assertEquals(last, all, "Composable did not run correct sequence");
+    }
+
+    static class Adder implements ThrowingRunnable {
+
+        private final List<Integer> all;
+        private final int ix;
+
+        public Adder(List<Integer> all, int ix) {
+            this.all = all;
+            this.ix = ix;
+        }
+
+        @Override
+        public void run() throws Exception {
+            all.add(ix);
+        }
+
+        public String toString() {
+            return Integer.toString(ix);
+        }
+
     }
 
     static final Exception runIt(ThrowingRunnable r) {

@@ -70,6 +70,10 @@ public interface MutableBits extends Bits {
         return createLarge(bitsCapacity, false);
     }
 
+    static MutableBits runLengthEncoded() {
+        return new RLEBits();
+    }
+
     /**
      * Create a MutableBits which is long-indexed and can handle &gt;
      * Integer.MAX_VALUE <i>bits</i>.
