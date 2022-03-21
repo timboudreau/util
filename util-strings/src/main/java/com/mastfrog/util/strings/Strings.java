@@ -61,6 +61,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
@@ -3081,6 +3082,50 @@ public final class Strings {
      */
     public static <T extends Enum<T>> T findMatch(Class<T> type, CharSequence input) {
         return literalMatcher(type).apply(input);
+    }
+
+    /**
+     * Simple variable substitution - given a target string, find occurrences of
+     * <code>$PREFIX some text $SUFFIX</code> and replace them with whatever is returned
+     * for the intervening contents from the passed function, if anything.
+     *
+     * @param target The string to modify
+     * @param prefix The prefix, non empty
+     * @param suffix The suffix, non-empty
+     * @param replacements A function to supply replacements
+     * @return A modified string, or the original
+     */
+    public static String variableSubstitution(String target, String prefix, String suffix,
+            Function<String, Optional<CharSequence>> replacements) {
+        if (target.contains(prefix)) {
+            StringBuilder result = null;
+            int ix = target.indexOf("${");
+            int lastEnd = 0;
+            while (ix >= 0 && ix < target.length() - prefix.length()) {
+                int endIx = target.indexOf(suffix, ix + prefix.length());
+                if (endIx < ix) {
+                    break;
+                }
+                String toResolve = target.substring(ix + prefix.length(), endIx);
+                Optional<CharSequence> maybeResolved = replacements.apply(toResolve);
+                if (maybeResolved.isPresent()) {
+                    if (result == null) {
+                        result = new StringBuilder();
+                    }
+                    result.append(target.substring(lastEnd, ix));
+                    result.append(maybeResolved.get());
+                }
+                lastEnd = endIx + 1;
+                ix = target.indexOf(prefix, endIx);
+            }
+            if (result != null) {
+                if (lastEnd < target.length() - 1) {
+                    result.append(target.substring(lastEnd));
+                }
+                return result.toString();
+            }
+        }
+        return target;
     }
 
     /**
