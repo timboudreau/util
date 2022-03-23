@@ -97,7 +97,11 @@ public class AlignedText {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for (Line line : lines) {
-            sb.append(line).append('\n');
+            String txt = line.toString();
+            while (txt.length() > 0 && Character.isWhitespace(txt.charAt(txt.length() - 1))) {
+                txt = txt.substring(0, txt.length() - 1);
+            }
+            sb.append(txt).append('\n');
         }
         return sb.toString();
     }
@@ -286,6 +290,7 @@ public class AlignedText {
     }
 
     public interface Lineable<T> {
+
         public T nextLine(String s);
     }
 
