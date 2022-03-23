@@ -50,14 +50,18 @@ public interface Address extends Comparable<Address> {
 
     /**
      * Number of bytes in address.
-     * 
+     *
      * @return The number of bytes needed to express an address of this type.
      */
     int size();
-    
+
     BigInteger toBigInteger();
 
     AddressPurpose purpose();
+
+    default boolean isIpV4() {
+        return this instanceof Ipv4Address || toIntArray().length == 4;
+    }
 
     default String toStringShorthand() {
         return toString();
@@ -89,4 +93,39 @@ public interface Address extends Comparable<Address> {
         }
     }
 
+    public static Address parse(String str) {
+        str = str.trim();
+        if (str.indexOf('.') > 0) {
+            return new Ipv4Address(str);
+        } else {
+            return new Ipv6Address(str);
+        }
+    }
+
+    default String toReverseDnsName() {
+        StringBuilder innr = new StringBuilder();
+        if (isIpV4()) {
+            int[] parts = toIntArray();
+            for (int i = parts.length - 1; i >= 0; i--) {
+                if (i != parts.length - 1) {
+                    innr.append('.');
+                }
+                innr.append(parts[i]);
+            }
+            innr.append(".in-addr.arpa");
+        } else {
+            StringBuilder r = new StringBuilder(toString());
+            r.reverse();
+            String rev = r.toString().replaceAll(":", "").trim();
+            for (int i = 0; i < rev.length(); i++) {
+                char c = rev.charAt(i);
+                if (i > 0) {
+                    innr.append('.');
+                }
+                innr.append(c);
+            }
+            innr.append(".ip6.arpa");
+        }
+        return innr.toString();
+    }
 }
