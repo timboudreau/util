@@ -41,7 +41,7 @@ import org.junit.Test;
 public class SimpleWeakSetTest {
 
     private void forceGc(Reference<?> ref) throws InterruptedException {
-        for (int i = 0; i < 35; i++) {
+        for (int i = 0; i < 1000; i++) {
             if (ref.get() == null) {
                 break;
             }
@@ -78,6 +78,7 @@ public class SimpleWeakSetTest {
 
         thing2 = null;
         forceGc(ref2);
+        forceGc(ref1);
         assertTrue(weak.contains(thing3));
         assertNull(ref2.get());
         assertEquals(1, weak.size());
