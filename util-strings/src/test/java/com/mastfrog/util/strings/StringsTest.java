@@ -647,6 +647,99 @@ public class StringsTest {
         assertWi(LmV_60, Long.MIN_VALUE, 60);
     }
 
+    @Test
+    public void testAppendPaddedHexInt() {
+        for (int i = -512; i < 512; i++) {
+            testAPE(i);
+        }
+        testAPE(Integer.MAX_VALUE);
+        testAPE(Integer.MIN_VALUE);
+    }
+
+    @Test
+    public void testAppendPaddedHexLong() {
+        for (long i = -512; i < 512; i++) {
+            testAPE(i);
+        }
+        testAPE(Long.MAX_VALUE);
+        testAPE(Long.MIN_VALUE);
+    }
+
+    @Test
+    public void testAppendPaddedHexShort() {
+        for (long i = -512; i < 512; i++) {
+            testAPE(i);
+        }
+        testAPE(Short.MAX_VALUE);
+        testAPE(Short.MIN_VALUE);
+    }
+
+    @Test
+    public void testAppendPaddedHexByte() {
+        for (long i = Byte.MIN_VALUE; i < Byte.MAX_VALUE; i++) {
+            testAPE(i);
+        }
+        testAPE(Byte.MAX_VALUE);
+        testAPE(Byte.MIN_VALUE);
+    }
+
+    static void testAPE(byte val) {
+        StringBuilder sb = new StringBuilder();
+        Strings.appendPaddedHex(val, sb);
+        try {
+            byte parsed = Strings.parseHexByte(sb.toString());
+            assertEquals("Wrong value - converted " + val + " to '" + sb
+                    + "'  should look like " + Integer.toHexString(val), val, parsed);
+            assertEquals("Wrong length of '" + sb + "'", 2, sb.length());
+        } catch (NumberFormatException nfe) {
+            throw new AssertionError("Unparseable '" + sb + "' for value '" + val
+                    + "' should be '" + Integer.toHexString(val) + "'", nfe);
+        }
+    }
+
+    static void testAPE(short val) {
+        StringBuilder sb = new StringBuilder();
+        Strings.appendPaddedHex(val, sb);
+        try {
+            short parsed = Strings.parseHexShort(sb.toString());
+            assertEquals("Wrong value - converted " + val + " to '" + sb
+                    + "'  should look like " + Integer.toHexString(val), val, parsed);
+            assertEquals("Wrong length of '" + sb + "'", 4, sb.length());
+        } catch (NumberFormatException nfe) {
+            throw new AssertionError("Unparseable '" + sb + "' for value '" + val
+                    + "' should be '" + Integer.toHexString(val) + "'", nfe);
+        }
+    }
+
+    static void testAPE(int val) {
+        StringBuilder sb = new StringBuilder();
+        Strings.appendPaddedHex(val, sb);
+        try {
+            int parsed = Strings.parseHexInt(sb.toString());
+            assertEquals("Wrong value - converted " + val + " to '" + sb
+                    + "'  should look like " + Integer.toHexString(val), val, parsed);
+            assertEquals("Wrong length of '" + sb + "'", 8, sb.length());
+        } catch (NumberFormatException nfe) {
+            throw new AssertionError("Unparseable '" + sb + "' for value '" + val
+                    + "' should be '" + Integer.toHexString(val) + "'", nfe);
+        }
+    }
+
+    static void testAPE(long val) {
+        StringBuilder sb = new StringBuilder();
+        Strings.appendPaddedHex(val, sb);
+        try {
+            long parsed = Strings.parseHexLong(sb.toString());
+            assertEquals("Wrong value - converted " + val + " to '" + sb
+                    + "' should look like " + Long.toHexString(val), val,
+                    parsed);
+            assertEquals("Wrong length of '" + sb + "'", 16, sb.length());
+        } catch (NumberFormatException nfe) {
+            throw new AssertionError("Unparseable '" + sb + "' for value '" + val
+                    + "' should be '" + Long.toHexString(val) + "'", nfe);
+        }
+    }
+
     static String zp(long value, int length) {
         // Doing zero padding the expensive way for comparison's sake
         boolean negative = value < 0L;
