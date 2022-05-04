@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2019 Tim Boudreau.
+ * Copyright 2022 Mastfrog Technologies.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,51 +23,51 @@
  */
 package com.mastfrog.predicates.string;
 
-import static com.mastfrog.util.preconditions.Checks.notNull;
-import java.util.Objects;
+import java.util.function.Predicate;
 
 /**
  *
  * @author Tim Boudreau
  */
-final class SingleStringPredicate implements EnhStringPredicate {
+class TrimmingStringPredicate implements EnhStringPredicate {
 
-    private final boolean negated;
-    private final String string;
+    private final Predicate<String> delegate;
 
-    SingleStringPredicate(boolean negated, String string) {
-        this.negated = negated;
-        this.string = notNull("string", string);
+    public TrimmingStringPredicate(Predicate<String> delegate) {
+        this.delegate = delegate;
     }
 
     @Override
     public boolean test(String t) {
-        boolean result = string.equals(t);
-        return negated ? !result : result;
-    }
-
-    public String toString() {
-        return (negated ? "!equals(" : "equals(") + string + ")";
-    }
-
-    @Override
-    public int hashCode() {
-        int hash = 7;
-        hash = 89 * hash + (this.negated ? 1 : 0);
-        hash = 89 * hash + Objects.hashCode(this.string);
-        return hash;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
+        if (t != null) {
+            t = t.trim();
         }
-        if (obj == null || obj.getClass() != SingleStringPredicate.class) {
+        return delegate.test(t);
+    }
+
+    @Override
+    public String toString() {
+        return "trim(" + delegate + ")";
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        } else if (o == null || o.getClass() != TrimmingStringPredicate.class) {
             return false;
         }
-        final SingleStringPredicate other = (SingleStringPredicate) obj;
-        return this.negated == other.negated
-                && this.string.equals(other.string);
+        TrimmingStringPredicate other = (TrimmingStringPredicate) o;
+        return delegate.equals(other.delegate);
+    }
+    
+    @Override
+    public int hashCode() {
+        return delegate.hashCode() * 471;
+    }
+
+    @Override
+    public EnhStringPredicate trimmingInput() {
+        return this;
     }
 }

@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2019 Tim Boudreau.
+ * Copyright 2022 Mastfrog Technologies.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,51 +23,56 @@
  */
 package com.mastfrog.predicates.string;
 
-import static com.mastfrog.util.preconditions.Checks.notNull;
-import java.util.Objects;
+import java.util.function.Predicate;
 
 /**
  *
  * @author Tim Boudreau
  */
-final class SingleStringPredicate implements EnhStringPredicate {
+final class NullHandlingStringPredicate implements EnhStringPredicate {
 
-    private final boolean negated;
-    private final String string;
+    private final boolean onNull;
+    private final Predicate<String> delegate;
 
-    SingleStringPredicate(boolean negated, String string) {
-        this.negated = negated;
-        this.string = notNull("string", string);
+    public NullHandlingStringPredicate(boolean onNull, Predicate<String> delegate) {
+        this.onNull = onNull;
+        this.delegate = delegate;
     }
 
     @Override
     public boolean test(String t) {
-        boolean result = string.equals(t);
-        return negated ? !result : result;
+        if (t == null) {
+            return onNull;
+        }
+        return delegate.test(t);
     }
 
+    @Override
     public String toString() {
-        return (negated ? "!equals(" : "equals(") + string + ")";
+        return "nulls(" + onNull + ", " + delegate + ")";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        } else if (o == null || o.getClass() != NullHandlingStringPredicate.class) {
+            return false;
+        }
+        NullHandlingStringPredicate other = (NullHandlingStringPredicate) o;
+        return other.onNull == onNull && delegate.equals(other.delegate);
     }
 
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 89 * hash + (this.negated ? 1 : 0);
-        hash = 89 * hash + Objects.hashCode(this.string);
-        return hash;
+        return delegate.hashCode() * 94849 * (onNull ? 1 : -1);
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
+    public EnhStringPredicate onNull(boolean passFail) {
+        if (passFail == onNull) {
+            return this;
         }
-        if (obj == null || obj.getClass() != SingleStringPredicate.class) {
-            return false;
-        }
-        final SingleStringPredicate other = (SingleStringPredicate) obj;
-        return this.negated == other.negated
-                && this.string.equals(other.string);
+        return EnhStringPredicate.super.onNull(passFail);
     }
 }

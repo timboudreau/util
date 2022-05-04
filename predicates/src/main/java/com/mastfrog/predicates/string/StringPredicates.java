@@ -21,18 +21,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package com.mastfrog.predicates.string;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 /**
+ * Factory for string predicates which have a reasonable implementation of
+ * <code>toString()<code>, <code>equals(Object)</code> and
+ * <code>hashCode()</code> suitable for use where the logic in question is being
+ * logged or otherwise rendered to be human readable.
  *
  * @author Tim Boudreau
  */
-public class StringPredicates {
+public final class StringPredicates {
 
     /**
      * Combine a value and an array and assert that there are no duplicates.
@@ -62,13 +66,25 @@ public class StringPredicates {
      * enabled
      * @return A predicate
      */
-    public static Predicate<String> predicate(String first, String... more) {
+    public static EnhStringPredicate predicate(String first, String... more) {
         if (more.length == 0) {
             return new SingleStringPredicate(false, first);
         }
-        String[] vals = StringPredicates.combine(first, more);
+        String[] vals = combine(first, more);
         Arrays.sort(vals);
         return new StringArrayPredicate(false, vals);
+    }
+
+    public static EnhStringPredicate predicate(String only) {
+        return new SingleStringPredicate(false, only);
+    }
+
+    public static EnhStringPredicate pattern(String pattern) {
+        return new PatternPredicate(Pattern.compile(pattern));
+    }
+
+    public static EnhStringPredicate pattern(Pattern pattern) {
+        return new PatternPredicate(pattern);
     }
 
     private StringPredicates() {

@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2019 Tim Boudreau.
+ * Copyright 2022 Mastfrog Technologies.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,50 +24,43 @@
 package com.mastfrog.predicates.string;
 
 import static com.mastfrog.util.preconditions.Checks.notNull;
-import java.util.Objects;
+import java.util.regex.Pattern;
 
 /**
  *
  * @author Tim Boudreau
  */
-final class SingleStringPredicate implements EnhStringPredicate {
+final class PatternPredicate implements EnhStringPredicate {
 
-    private final boolean negated;
-    private final String string;
+    private final Pattern pattern;
 
-    SingleStringPredicate(boolean negated, String string) {
-        this.negated = negated;
-        this.string = notNull("string", string);
+    PatternPredicate(Pattern pattern) {
+        this.pattern = notNull("pattern", pattern);
     }
 
     @Override
     public boolean test(String t) {
-        boolean result = string.equals(t);
-        return negated ? !result : result;
+        return t != null && pattern.matcher(t).find();
     }
 
+    @Override
     public String toString() {
-        return (negated ? "!equals(" : "equals(") + string + ")";
+        return "Matches pattern " + pattern.pattern();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        } else if (o == null || o.getClass() != PatternPredicate.class) {
+            return false;
+        }
+        PatternPredicate other = (PatternPredicate) o;
+        return pattern.pattern().equals(other.pattern.pattern());
     }
 
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 89 * hash + (this.negated ? 1 : 0);
-        hash = 89 * hash + Objects.hashCode(this.string);
-        return hash;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null || obj.getClass() != SingleStringPredicate.class) {
-            return false;
-        }
-        final SingleStringPredicate other = (SingleStringPredicate) obj;
-        return this.negated == other.negated
-                && this.string.equals(other.string);
+        return pattern.pattern().hashCode();
     }
 }

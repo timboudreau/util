@@ -21,7 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package com.mastfrog.predicates.string;
 
 import java.util.Arrays;
@@ -31,18 +30,22 @@ import java.util.function.Predicate;
  *
  * @author Tim Boudreau
  */
-final class StringArrayPredicate implements Predicate<String> {
+final class StringArrayPredicate implements EnhStringPredicate {
 
     private final boolean negated;
     private final String[] vals;
 
     StringArrayPredicate(boolean negated, String[] vals) {
         this.negated = negated;
+        Arrays.sort(vals);
         this.vals = vals;
     }
 
     @Override
     public boolean test(String t) {
+        if (t == null) {
+            return false;
+        }
         boolean result = Arrays.binarySearch(vals, t) >= 0;
         return negated ? !result : result;
     }
@@ -58,4 +61,24 @@ final class StringArrayPredicate implements Predicate<String> {
         return pfx + (vals.length == 1 ? vals[0] : Arrays.toString(vals)) + ")";
     }
 
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 43 * hash + (this.negated ? 1 : 0);
+        hash = 43 * hash + Arrays.deepHashCode(this.vals);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || obj.getClass() != StringArrayPredicate.class) {
+            return false;
+        }
+        final StringArrayPredicate other = (StringArrayPredicate) obj;
+        return this.negated == other.negated
+                && Arrays.deepEquals(this.vals, other.vals);
+    }
 }
