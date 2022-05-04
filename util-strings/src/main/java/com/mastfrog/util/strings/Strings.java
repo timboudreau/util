@@ -453,7 +453,7 @@ public final class Strings {
      */
     public static String toString(final Throwable throwable) {
         StringWriter w = new StringWriter();
-        try (PrintWriter p = new PrintWriter(w)) {
+        try ( PrintWriter p = new PrintWriter(w)) {
             throwable.printStackTrace(p);
         }
         return w.toString();
@@ -1161,7 +1161,8 @@ public final class Strings {
      *
      * @param delim A delimiter character
      * @param seq a character sequence
-     * @param proc A predicate which receives split elements until it returns false
+     * @param proc A predicate which receives split elements until it returns
+     * false
      */
     public static void split(char delim, CharSequence seq, Predicate<CharSequence> proc) {
         Checks.notNull("seq", seq);
@@ -1299,6 +1300,176 @@ public final class Strings {
             }
         }
         return false;
+    }
+
+    /**
+     * Convert a hex character 0-9a-fA-F to the corresponding int 0-16.
+     *
+     * @param c A char
+     * @return An int
+     * @throws NumberFormatException if an invalid character is passed
+     */
+    public static int charToNybbl(char c) {
+        int val;
+        switch (c) {
+            case '0':
+                val = 0;
+                break;
+            case '1':
+                val = 1;
+                break;
+            case '2':
+                val = 2;
+                break;
+            case '3':
+                val = 3;
+                break;
+            case '4':
+                val = 4;
+                break;
+            case '5':
+                val = 5;
+                break;
+            case '6':
+                val = 6;
+                break;
+            case '7':
+                val = 7;
+                break;
+            case '8':
+                val = 8;
+                break;
+            case '9':
+                val = 9;
+                break;
+            case 'A':
+            case 'a':
+                val = 10;
+                break;
+            case 'B':
+            case 'b':
+                val = 11;
+                break;
+            case 'C':
+            case 'c':
+                val = 12;
+                break;
+            case 'D':
+            case 'd':
+                val = 13;
+                break;
+            case 'E':
+            case 'e':
+                val = 14;
+                break;
+            case 'F':
+            case 'f':
+                val = 15;
+                break;
+            default:
+                throw new NumberFormatException("Invalid character '" + c
+                        + "' is not hex");
+        }
+        return val;
+    }
+
+    public static byte parseHexByte(CharSequence seq) {
+        if (Strings.startsWith(seq, "0x")) {
+            seq = seq.subSequence(2, seq.length());
+        }
+        switch (seq.length()) {
+            case 0:
+                return 0;
+            case 1:
+                return (byte) charToNybbl(seq.charAt(0));
+            case 2:
+                return (byte) ((charToNybbl(seq.charAt(0)) << 4)
+                        | (charToNybbl(seq.charAt(1))));
+            default:
+                throw new NumberFormatException("Invalid length for single byte "
+                        + "of hex: " + seq.length() + " in '" + seq + "'");
+        }
+    }
+
+    /**
+     * Parses hexedecimal efficiently, tolerating a leading "0x", and does not
+     * fail on negative numbers as Integer.parseInt() does; and does not require
+     * an instance of String, only CharSequence.
+     *
+     * @param seq A character sequence
+     * @throws NumberFormatException if not a valid number
+     * @return An int
+     */
+    public static short parseHexShort(CharSequence seq) {
+        short result = 0;
+        int last = seq.length() - 1;
+        if (last > 3) {
+            throw new NumberFormatException("Too many characters (> 8) for an "
+                    + "int in '" + seq + "'");
+        }
+        if (Strings.startsWith(seq, "0x")) {
+            seq = seq.subSequence(2, seq.length());
+        }
+        for (int i = last, j = 0; i >= 0; i--, j += 4) {
+            int val = charToNybbl(seq.charAt(i));
+            val <<= j;
+            result |= val;
+        }
+        return result;
+    }
+
+    /**
+     * Parses hexedecimal efficiently, tolerating a leading "0x", and does not
+     * fail on negative numbers as Integer.parseInt() does; and does not require
+     * an instance of String, only CharSequence.
+     *
+     * @param seq A character sequence
+     * @throws NumberFormatException if not a valid number
+     * @return An int
+     */
+    public static int parseHexInt(CharSequence seq) {
+        int result = 0;
+        int last = seq.length() - 1;
+        if (last > 7) {
+            throw new NumberFormatException("Too many characters (> 8) for an "
+                    + "int in '" + seq + "'");
+        }
+        if (Strings.startsWith(seq, "0x")) {
+            seq = seq.subSequence(2, seq.length());
+        }
+        for (int i = last, j = 0; i >= 0; i--, j += 4) {
+            int val = charToNybbl(seq.charAt(i));
+            val <<= j;
+            result |= val;
+        }
+        return result;
+    }
+
+    /**
+     * Parses hexedecimal efficiently, tolerating a leading "0x", and does not
+     * fail on negative numbers as Long.parseLong() does; and does not require
+     * an instance of String, only CharSequence.
+     *
+     * @param seq A character sequence
+     * @throws NumberFormatException if not a valid number
+     * @return A long
+     */
+    public static long parseHexLong(CharSequence seq) {
+        long result = 0;
+        int last = seq.length() - 1;
+        if (last > 15) {
+            throw new NumberFormatException("Too many characters (> 16) for a "
+                    + "long in '" + seq + "'");
+        }
+        if (Strings.startsWith(seq, "0x")) {
+            seq = seq.subSequence(2, seq.length());
+        }
+        for (int i = last, j = 0; i >= 0; i--, j += 4) {
+            long val = charToNybbl(seq.charAt(i));
+            val <<= j;
+            result |= val;
+        }
+        return result;
     }
 
     /**
@@ -1759,41 +1930,91 @@ public final class Strings {
     }
 
     public static StringBuilder appendPaddedHex(byte val, StringBuilder sb) {
-        String sval = Integer.toHexString(val & 0xFF);
-        if (sval.length() == 1) {
-            sb.append('0');
-        }
-        return sb.append(sval);
+        return appendPaddedHex(val, false, sb);
+    }
+
+    public static StringBuilder appendPaddedHex(byte val, boolean upperCase, StringBuilder sb) {
+        int right = val & 0x0F;
+        int left = (val & 0xF0) >> 4;
+        return sb.append(nybblChar(left, upperCase))
+                .append(nybblChar(right, upperCase));
     }
 
     public static StringBuilder appendPaddedHex(short val, StringBuilder sb) {
-        String sval = Integer.toHexString(val & 0xFFFF);
-        for (int i = 0; i < 4 - sval.length(); i++) {
-            sb.append('0');
-        }
-        return sb.append(sval);
+        return appendPaddedHex(val, false, sb);
     }
 
-    public static StringBuilder appendPaddedHex(int val, StringBuilder sb) {
-        String sval = Integer.toHexString(val & 0xFFFFFFFF);
-        if (sval.length() != 8) {
-            char[] c = new char[8 - sval.length()];
-            Arrays.fill(c, '0');
-            sb.append(c);
-            sb.append(sval);
+    public static StringBuilder appendPaddedHex(short val, boolean upperCase, StringBuilder sb) {
+        for (int shift = 12; shift >= 0; shift -= 4) {
+            int curr = (int) ((long) NYBBL_MASK & (val >> shift));
+            sb.append(nybblChar(curr, upperCase));
         }
-        return sb.append(sval);
+        return sb;
+    }
+
+    private static final int NYBBL_MASK = 0xF;
+
+    public static StringBuilder appendPaddedHex(int val, StringBuilder sb) {
+        return appendPaddedHex(val, false, sb);
+    }
+
+    public static char nybblChar(int curr, boolean upperCase) {
+        switch (curr) {
+            case 0:
+                return '0';
+            case 1:
+                return '1';
+            case 2:
+                return '2';
+            case 3:
+                return '3';
+            case 4:
+                return '4';
+            case 5:
+                return '5';
+            case 6:
+                return '6';
+            case 7:
+                return '7';
+            case 8:
+                return '8';
+            case 9:
+                return '9';
+            case 10:
+                return upperCase ? 'A' : 'a';
+            case 11:
+                return upperCase ? 'B' : 'b';
+            case 12:
+                return upperCase ? 'C' : 'c';
+            case 13:
+                return upperCase ? 'D' : 'd';
+            case 14:
+                return upperCase ? 'E' : 'e';
+            case 15:
+                return upperCase ? 'F' : 'f';
+            default:
+                throw new AssertionError(curr);
+        }
+    }
+
+    public static StringBuilder appendPaddedHex(int val, boolean upperCase, StringBuilder sb) {
+        for (int shift = 28; shift >= 0; shift -= 4) {
+            int curr = NYBBL_MASK & (val >> shift);
+            sb.append(nybblChar(curr, upperCase));
+        }
+        return sb;
     }
 
     public static StringBuilder appendPaddedHex(long val, StringBuilder sb) {
-        String sval = Long.toHexString(val);
-        if (sval.length() != 16) {
-            char[] c = new char[16 - sval.length()];
-            Arrays.fill(c, '0');
-            sb.append(c);
-            sb.append(sval);
+        return appendPaddedHex(val, false, sb);
+    }
+
+    public static StringBuilder appendPaddedHex(long val, boolean upperCase, StringBuilder sb) {
+        for (int shift = 60; shift >= 0; shift -= 4) {
+            int curr = (int) ((long) NYBBL_MASK & (val >> shift));
+            sb.append(nybblChar(curr, upperCase));
         }
-        return sb.append(sval);
+        return sb;
     }
 
     public static String toPaddedHex(byte[] bytes) {
@@ -1805,7 +2026,7 @@ public final class Strings {
     }
 
     public static String toPaddedHex(byte[] bytes, String delimiter) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder((bytes.length * 2) + (delimiter.length() * (bytes.length - 1)));
         for (int i = 0; i < bytes.length; i++) {
             byte b = bytes[i];
             appendPaddedHex(b, sb);
@@ -2803,6 +3024,7 @@ public final class Strings {
         return is(seq, pdc) && pdc.dotCount == 1
                 // do not match, e.g. '100.'
                 && seq.charAt(seq.length() - 1) != '.';
+
     }
 
     static class PositiveDecimalCheck implements CharPred {
@@ -2880,6 +3102,7 @@ public final class Strings {
                     }
                 }
                 return true;
+
         }
     }
 
@@ -2970,6 +3193,7 @@ public final class Strings {
                     }
                 }
                 return BiIterateResult.MAYBE;
+
         }
     }
 
@@ -3086,8 +3310,9 @@ public final class Strings {
 
     /**
      * Simple variable substitution - given a target string, find occurrences of
-     * <code>$PREFIX some text $SUFFIX</code> and replace them with whatever is returned
-     * for the intervening contents from the passed function, if anything.
+     * <code>$PREFIX some text $SUFFIX</code> and replace them with whatever is
+     * returned for the intervening contents from the passed function, if
+     * anything.
      *
      * @param target The string to modify
      * @param prefix The prefix, non empty
@@ -3126,6 +3351,7 @@ public final class Strings {
             }
         }
         return target;
+
     }
 
     /**
