@@ -245,7 +245,7 @@ public final class IntPredicates {
      *
      * @return An int predicate
      */
-    public static IntPredicate alwaysFalse() {
+    public static EnhIntPredicate alwaysFalse() {
         return FixedIntPredicate.INT_FALSE;
     }
 
@@ -259,6 +259,22 @@ public final class IntPredicates {
             @Override
             public boolean test(int value) {
                 return value != 0;
+            }
+        };
+    }
+
+    public EnhIntPredicate divisibleBy(int divisor) {
+        if (divisor == 0) {
+            return alwaysFalse();
+        }
+        return new EnhIntPredicate() {
+            @Override
+            public boolean test(int value) {
+                return value % divisor == 0;
+            }
+
+            public String toString() {
+                return "divisibleBy(" + divisor + ")";
             }
         };
     }

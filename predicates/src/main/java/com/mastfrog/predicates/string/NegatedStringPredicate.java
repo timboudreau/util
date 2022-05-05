@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2019 Tim Boudreau.
+ * Copyright 2022 Mastfrog Technologies.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,62 +23,32 @@
  */
 package com.mastfrog.predicates.string;
 
-import java.util.Arrays;
 import java.util.function.Predicate;
 
 /**
  *
  * @author Tim Boudreau
  */
-final class StringArrayPredicate implements EnhStringPredicate {
+final class NegatedStringPredicate implements EnhStringPredicate {
 
-    private final boolean negated;
-    private final String[] vals;
+    private final EnhStringPredicate delegate;
 
-    StringArrayPredicate(boolean negated, String[] vals) {
-        this.negated = negated;
-        Arrays.sort(vals);
-        this.vals = vals;
+    public NegatedStringPredicate(EnhStringPredicate delegate) {
+        this.delegate = delegate;
     }
 
     @Override
     public boolean test(String t) {
-        if (t == null) {
-            return false;
-        }
-        boolean result = Arrays.binarySearch(vals, t) >= 0;
-        return negated ? !result : result;
+        return !delegate.test(t);
     }
 
     @Override
     public EnhStringPredicate negate() {
-        return new StringArrayPredicate(!negated, vals);
+        return delegate;
     }
 
     @Override
     public String toString() {
-        String pfx = negated ? "!match(" : "match(";
-        return pfx + (vals.length == 1 ? vals[0] : Arrays.toString(vals)) + ")";
-    }
-
-    @Override
-    public int hashCode() {
-        int hash = 5;
-        hash = 43 * hash + (this.negated ? 1 : 0);
-        hash = 43 * hash + Arrays.deepHashCode(this.vals);
-        return hash;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null || obj.getClass() != StringArrayPredicate.class) {
-            return false;
-        }
-        final StringArrayPredicate other = (StringArrayPredicate) obj;
-        return this.negated == other.negated
-                && Arrays.deepEquals(this.vals, other.vals);
+        return "not(" + delegate + ")";
     }
 }

@@ -28,7 +28,14 @@ import java.util.function.Predicate;
 
 /**
  * Extended <code>Predicate&lt;String&gt;</code> which allows custom
- * null-handling and ability to trim whitespace from the string before testing.
+ * null-handling and ability to trim whitespace from the string before testing,
+ * and, where possible, provide reasonable and meaningful implementations of
+ * toString(), equals() and hashCode().
+ * <p>
+ * Methods which return a logically related predicate (or, negate, and) also
+ * return an EnhStringPredicate whose toString() method can similarly describe
+ * what the predicate does.
+ * </p>
  *
  * @author Tim Boudreau
  */
@@ -100,5 +107,24 @@ public interface EnhStringPredicate extends Predicate<String> {
      */
     default <T> Predicate<T> asToStringPredicate() {
         return ConvertedStringPredicate.<T>toStringPredicate(this);
+    }
+
+    @Override
+    default EnhStringPredicate negate() {
+        return new NegatedStringPredicate(this);
+    }
+
+    @Override
+    default EnhStringPredicate or(Predicate<? super String> other) {
+        return new LogicalStringPredicate(true, this, other);
+    }
+
+    @Override
+    default EnhStringPredicate and(Predicate<? super String> other) {
+        return new LogicalStringPredicate(false, this, other);
+    }
+
+    default EnhStringPredicate andNot(Predicate<? super String> other) {
+        return and(other.negate());
     }
 }

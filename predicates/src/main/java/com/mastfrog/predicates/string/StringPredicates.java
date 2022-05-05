@@ -23,9 +23,12 @@
  */
 package com.mastfrog.predicates.string;
 
+import static com.mastfrog.predicates.string.SubstringPredicate.Relation.CONTAINS;
+import static com.mastfrog.predicates.string.SubstringPredicate.Relation.ENDS_WITH;
+import static com.mastfrog.predicates.string.SubstringPredicate.Relation.STARTS_WITH;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.function.Predicate;
+import java.util.function.IntPredicate;
 import java.util.regex.Pattern;
 
 /**
@@ -55,6 +58,22 @@ public final class StringPredicates {
 
     private static boolean noDuplicates(String[] vals) {
         return new HashSet<>(Arrays.asList(vals)).size() == vals.length;
+    }
+
+    public static EnhStringPredicate contains(String s) {
+        return new SubstringPredicate(CONTAINS, s);
+    }
+
+    public static EnhStringPredicate startsWith(String s) {
+        return new SubstringPredicate(STARTS_WITH, s);
+    }
+
+    public static EnhStringPredicate endsWith(String s) {
+        return new SubstringPredicate(ENDS_WITH, s);
+    }
+
+    public static EnhStringPredicate length(IntPredicate lengthTest) {
+        return new LengthPredicate(lengthTest);
     }
 
     /**
