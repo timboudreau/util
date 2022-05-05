@@ -29,24 +29,38 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.util.Base64;
 
 /**
+ * Codec implementation for Java serialization, which uses a string format
+ * decoder such as base-64 for string representations.
  *
  * @author Tim Boudreau
  */
 final class SerializationCodec implements Codec {
 
-    static final SerializationCodec INSTANCE = new SerializationCodec();
+    static final SerializationCodec INSTANCE = new SerializationCodec(false,
+            StringEncoding.BASE_64_DEFAULT);
+    private final boolean nonClosing;
+    private final StringEncoding stringEncoding;
+
+    public SerializationCodec(boolean nonClosing, StringEncoding base64) {
+        this.nonClosing = nonClosing;
+        this.stringEncoding = base64;
+    }
 
     @Override
     public <T> String writeValueAsString(T t) throws IOException {
-        return Base64.getEncoder().encodeToString(writeValueAsBytes(t));
+        return stringEncoding.newEncoder().encodeToString(writeValueAsBytes(t));
+    }
+
+    @Override
+    public <T> T readValue(String value, Class<T> type) throws IOException {
+        return readValue(stringEncoding.newDecoder().decode(value), type);
     }
 
     @Override
     public <T> void writeValue(T t, OutputStream out) throws IOException {
-        try (ObjectOutputStream oout = new ObjectOutputStream(out)) {
+        try ( ObjectOutputStream oout = newObjectOutputStream(out)) {
             oout.writeObject(t);
         }
     }
@@ -60,10 +74,45 @@ final class SerializationCodec implements Codec {
 
     @Override
     public <T> T readValue(InputStream in, Class<T> type) throws IOException {
-        try (ObjectInputStream oin = new ObjectInputStream(in)) {
+        try ( ObjectInputStream oin = newObjectInputStream(in)) {
             return type.cast(oin.readObject());
         } catch (ClassNotFoundException ex) {
             throw new IOException(ex);
+        }
+    }
+
+    private ObjectInputStream newObjectInputStream(InputStream delegate) throws IOException {
+        return nonClosing ? new NonClosingObjectInputStream(delegate)
+                : new ObjectInputStream(delegate);
+    }
+
+    private ObjectOutputStream newObjectOutputStream(OutputStream delegate) throws IOException {
+        return nonClosing ? new NonClosingObjectOutputStream(delegate)
+                : new ObjectOutputStream(delegate);
+    }
+
+    private static class NonClosingObjectOutputStream extends ObjectOutputStream {
+
+        public NonClosingObjectOutputStream(OutputStream out) throws IOException {
+            super(out);
+        }
+
+        @Override
+        public void close() throws IOException {
+            super.flush();
+            // do nothing
+        }
+    }
+
+    private static class NonClosingObjectInputStream extends ObjectInputStream {
+
+        public NonClosingObjectInputStream(InputStream in) throws IOException {
+            super(in);
+        }
+
+        @Override
+        public void close() throws IOException {
+            super.close();
         }
     }
 }

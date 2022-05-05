@@ -1,7 +1,7 @@
-/* 
+/*
  * The MIT License
  *
- * Copyright 2013 Tim Boudreau.
+ * Copyright 2022 Mastfrog Technologies.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,45 +21,46 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.util.perf;
+package com.mastfrog.util.codec;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.util.Base64;
 
 /**
- * Annotation for methods which will result in auto-generation of a JMX MBean
- * which provides access statistics for that method, assuming the necessary
- * libraries are on the classpath and the object with such annotations is
- * instantiated by Guice.
- * <p/>
- * Works with the JMX-AOP module, but is kept here so methods can be annotated
- * to be benchmarked while leaving the choice of including the JMX module
- * optional.
  *
  * @author Tim Boudreau
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface Benchmark {
+final class Base64WrapperEncoder implements StringFormatEncoder {
 
-    String value();
+    private final Base64.Encoder delegate;
 
-    Kind[] publish() default {};
+    Base64WrapperEncoder(Base64.Encoder delegate) {
+        this.delegate = delegate;
+    }
 
-    public enum Kind {
-        CALL_COUNT('+'),
-        TOTAL_TIME('=');
-        private final char code;
+    @Override
+    public byte[] encode(byte[] src) {
+        return delegate.encode(src);
+    }
 
-        Kind(char code) {
-            this.code = code;
-        }
+    @Override
+    public int encode(byte[] src, byte[] dst) {
+        return delegate.encode(src, dst);
+    }
 
-        @Override
-        public String toString() {
-            return "" + code;
-        }
+    @Override
+    public String encodeToString(byte[] src) {
+        return delegate.encodeToString(src);
+    }
+
+    @Override
+    public ByteBuffer encode(ByteBuffer buffer) {
+        return delegate.encode(buffer);
+    }
+
+    @Override
+    public OutputStream wrap(OutputStream os) {
+        return delegate.wrap(os);
     }
 }
