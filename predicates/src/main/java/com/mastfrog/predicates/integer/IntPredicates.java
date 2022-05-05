@@ -263,6 +263,10 @@ public final class IntPredicates {
         };
     }
 
+    public static EnhIntPredicate greaterThanOrEqualTo(int val) {
+        return greaterThan(val - 1);
+    }
+
     public static EnhIntPredicate greaterThan(int val) {
         return new EnhIntPredicate() {
             @Override
@@ -275,6 +279,10 @@ public final class IntPredicates {
                 return value > val;
             }
         };
+    }
+
+    public static EnhIntPredicate lessThanOrEqualTo(int val) {
+        return lessThan(val + 1);
     }
 
     public static EnhIntPredicate lessThan(int val) {

@@ -27,6 +27,7 @@ import static com.mastfrog.util.preconditions.Checks.notNull;
 import static java.lang.Long.max;
 import java.time.Duration;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
+import java.util.function.Supplier;
 
 /**
  * A slight twist on the CountDownLatch pattern, allowing the count to be
@@ -87,6 +88,24 @@ public final class IncrementableLatch {
         increment();
         try {
             notNull("r", r).run();
+        } finally {
+            countDown();
+        }
+    }
+
+    /**
+     * Increment this latch for the duration that the passed supplier runs; if
+     * you have some code that might briefly bring the count to zero, but you do
+     * not want to release blocked threads, at least until the runnable has
+     * completed, use this method.
+     *
+     * @param A supplier
+     * @return the output of the supplier
+     */
+    public <T> T hold(Supplier<T> supp) {
+        increment();
+        try {
+            return notNull("supp", supp).get();
         } finally {
             countDown();
         }
