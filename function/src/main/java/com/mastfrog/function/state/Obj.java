@@ -24,6 +24,7 @@
 package com.mastfrog.function.state;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
@@ -109,5 +110,9 @@ public interface Obj<T> extends Supplier<T>, Consumer<T> {
             return true;
         }
         return false;
+    }
+
+    default Optional<T> toOptional() {
+        return Optional.ofNullable(get());
     }
 }
