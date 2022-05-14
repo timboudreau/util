@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package com.mastfrog.util.search;
+package com.mastfrog.util.xsearch;
 
 import com.mastfrog.util.collections.CollectionUtils;
 import java.util.ArrayList;
