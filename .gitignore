@@ -58,3 +58,11 @@ nb-configuration.xml
 /converters/target/
 /util-strings/nbproject/
 /concurrent/nbproject/
+/meta-inf-loader/target/
+/meta-inf-loader/meta-inf-test-1/nbproject/
+/meta-inf-loader/meta-inf-test-1/target/
+/meta-inf-loader/meta-inf-test-3/target/
+/meta-inf-loader/meta-inf-test-2/target/
+/meta-inf-loader/meta-inf-test-4/target/
+/meta-inf-loader/meta-inf-test-four/target/
+/meta-inf-loader/meta-inf-test-four/nbproject/

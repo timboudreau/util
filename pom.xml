@@ -41,6 +41,11 @@
         <module>sort</module>
         <module>search</module>
         <module>cache</module>
+        <module>meta-inf-loader</module>
+	<module>meta-inf-loader/meta-inf-test-1</module>
+	<module>meta-inf-loader/meta-inf-test-2</module>
+	<module>meta-inf-loader/meta-inf-test-3</module>	
+        <module>meta-inf-loader/meta-inf-test-four</module>
     </modules>
     <issueManagement>
         <system>Github</system>

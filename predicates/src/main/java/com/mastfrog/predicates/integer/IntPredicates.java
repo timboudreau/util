@@ -29,7 +29,6 @@ import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.IntFunction;
-import java.util.function.IntPredicate;
 
 /**
  * Factory for integer predicates which are fast, consistently implement
