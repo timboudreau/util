@@ -21,8 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package com.mastfrog.function.throwing;
+
+import com.mastfrog.util.preconditions.Exceptions;
+import java.util.function.Predicate;
 
 /**
  * A predicate that throws an exception.
@@ -33,4 +35,14 @@ package com.mastfrog.function.throwing;
 public interface ThrowingPredicate<R> {
 
     boolean test(R val) throws Exception;
+
+    default Predicate<R> toNonThrowing() {
+        return r -> {
+            try {
+                return ThrowingPredicate.this.test(r);
+            } catch (Exception e) {
+                return Exceptions.chuck(e);
+            }
+        };
+    }
 }
