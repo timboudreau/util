@@ -52,12 +52,10 @@ public interface AwaitableCompletionStage<T> extends CompletionStage<T>, Awaitab
         try {
             return of(supp.get());
         } catch (Exception | Error e) {
-            return of(CompletableFuture.failedStage(e));
+            CompletableFuture<R> fut = new CompletableFuture<>();
+            fut.completeExceptionally(e);
+            return of(fut);
         }
-    }
-
-    public static AwaitableCompletionStage<Process> of(Process process) {
-        return of(process.onExit());
     }
 
     // Override a few things we're likely to need to directly return
