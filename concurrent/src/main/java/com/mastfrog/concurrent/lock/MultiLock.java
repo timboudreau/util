@@ -48,7 +48,8 @@ import java.util.function.IntPredicate;
  * <h3>Intended Use-Cases</h3>
  * <ul>
  * <li>Memory-manager-like applications where ranges of storage must be able to
- * be locked without serializing all work within it</li>
+ * be locked without serializing all work within its storage through a single
+ * giantlock</li>
  * <li>Migrating code from coarse-grained locking to finer-grained locking by
  * creating individual locks for those fields which were formerly all covered by
  * a single lock, and allowing code that accesses them to lock multiple of them
@@ -61,7 +62,7 @@ import java.util.function.IntPredicate;
  * particular problem, using a <code>ThreadLocal</code> to avoid locking any
  * slots that were already locked by that thread).
  * </p><p>
- * But locking operations either succeed, block until they do, or fail, to lock
+ * Locking operations either succeed, block until they succeed, or fail, to lock
  * all requested slots in a single atomic operation.
  * </p>
  *

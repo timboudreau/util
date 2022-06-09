@@ -28,13 +28,14 @@ import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
  * CompletionStage has no way to do a blocking wait for a result, and
  * CompletableFuture should not be directly exposed unless you want to invite
- * thw orld to be able to randomly complete it, so - this.
+ * thw world to be able to randomly complete it, so - this.
  *
  * @author Tim Boudreau
  */
@@ -94,4 +95,13 @@ public interface AwaitableCompletionStage<T> extends CompletionStage<T>, Awaitab
     @Override
     <U> AwaitableCompletionStage<U> handleAsync(
             BiFunction<? super T, Throwable, ? extends U> fn, Executor executor);
+
+    @Override
+    public AwaitableCompletionStage<T> whenCompleteAsync(BiConsumer<? super T, ? super Throwable> action, Executor executor);
+
+    @Override
+    public AwaitableCompletionStage<T> whenCompleteAsync(BiConsumer<? super T, ? super Throwable> action);
+
+    @Override
+    public AwaitableCompletionStage<T> whenComplete(BiConsumer<? super T, ? super Throwable> action);
 }

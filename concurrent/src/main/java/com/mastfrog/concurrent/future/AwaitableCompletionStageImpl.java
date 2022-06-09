@@ -254,21 +254,21 @@ final class AwaitableCompletionStageImpl<T> implements AwaitableCompletionStage<
     }
 
     @Override
-    public final CompletionStage<T> whenComplete(
+    public final AwaitableCompletionStage<T> whenComplete(
             BiConsumer<? super T, ? super Throwable> action) {
-        return future.whenComplete(action);
+        return AwaitableCompletionStage.of(future.whenComplete(action));
     }
 
     @Override
-    public final CompletionStage<T> whenCompleteAsync(
+    public final AwaitableCompletionStage<T> whenCompleteAsync(
             BiConsumer<? super T, ? super Throwable> action) {
-        return future.whenCompleteAsync(action);
+        return AwaitableCompletionStage.of(future.whenCompleteAsync(action));
     }
 
     @Override
-    public final CompletionStage<T> whenCompleteAsync(
+    public final AwaitableCompletionStage<T> whenCompleteAsync(
             BiConsumer<? super T, ? super Throwable> action, Executor executor) {
-        return future.whenCompleteAsync(action, executor);
+        return AwaitableCompletionStage.of(future.whenCompleteAsync(action, executor));
     }
 
     @Override

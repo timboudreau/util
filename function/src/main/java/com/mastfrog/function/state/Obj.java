@@ -23,10 +23,13 @@
  */
 package com.mastfrog.function.state;
 
+import com.mastfrog.function.optional.ThrowingOptional;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
@@ -68,6 +71,10 @@ public interface Obj<T> extends Supplier<T>, Consumer<T> {
     default boolean is(T obj) {
         return Objects.equals(obj, get());
     }
+    
+    default boolean isSame(T obj) {
+        return get() == obj;
+    }
 
     default boolean isSet() {
         return get() != null;
@@ -78,6 +85,30 @@ public interface Obj<T> extends Supplier<T>, Consumer<T> {
     }
 
     boolean ifUpdate(T newValue, Runnable ifChange);
+
+    default boolean ifUnset(Runnable run) {
+        if (!isSet()) {
+            run.run();
+            return true;
+        }
+        return false;
+    }
+
+    default <R> Optional<R> ifSet(Function<T, R> func) {
+        T obj = get();
+        if (obj != null) {
+            return Optional.ofNullable(func.apply(obj));
+        }
+        return Optional.empty();
+    }
+    
+    default Optional<T> toOptional() {
+        return Optional.ofNullable(get());
+    }
+    
+    default ThrowingOptional<T> toThrowingOptional() {
+        return ThrowingOptional.from(toOptional());
+    }
 
     default boolean ifNullSet(Supplier<T> supp) {
         if (!isSet()) {

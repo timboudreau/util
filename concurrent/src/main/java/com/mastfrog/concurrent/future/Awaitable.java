@@ -29,6 +29,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Abstraction for things that can be waited on for a result.
@@ -55,6 +57,14 @@ public interface Awaitable<T> {
     default T awaitQuietly(Duration duration) {
         try {
             return await(duration);
+        } catch (InterruptedException ex) {
+            return Exceptions.chuck(ex);
+        }
+    }
+    
+    default T awaitQuietly() {
+        try {
+            return await();
         } catch (InterruptedException ex) {
             return Exceptions.chuck(ex);
         }
