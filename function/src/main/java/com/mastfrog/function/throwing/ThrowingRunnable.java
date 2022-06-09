@@ -115,8 +115,20 @@ public interface ThrowingRunnable {
      * Creates a Java Runnable which may throw undeclared exceptions.
      *
      * @return A runnable
+     * @deprecated Use toNonThrowing() which is consistently named
      */
+    @Deprecated
     default Runnable toRunnable() {
+        return () -> {
+            try {
+                ThrowingRunnable.this.run();
+            } catch (Exception e) {
+                Exceptions.chuck(e);
+            }
+        };
+    }
+
+    default Runnable toNonThrowing() {
         return () -> {
             try {
                 ThrowingRunnable.this.run();

@@ -7,8 +7,13 @@ import com.mastfrog.function.throwing.ThrowingRunnable;
 import com.mastfrog.function.throwing.ThrowingSupplier;
 import static com.mastfrog.util.preconditions.Checks.notNull;
 import com.mastfrog.util.preconditions.Exceptions;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 /**
@@ -49,7 +54,7 @@ final class ThrowingOptionalWrapper<T> implements Supplier<T>, ThrowingOptional<
 
     @Override
     public boolean isEmpty() {
-        return delegate.isEmpty();
+        return !delegate.isPresent();
     }
 
     @Override
@@ -60,7 +65,11 @@ final class ThrowingOptionalWrapper<T> implements Supplier<T>, ThrowingOptional<
 
     @Override
     public void ifPresentOrElse(ThrowingConsumer<? super T> action, ThrowingRunnable emptyAction) {
-        delegate.ifPresentOrElse(action.toNonThrowing(), emptyAction.toRunnable());
+        if (delegate.isPresent()) {
+            action.toNonThrowing().accept(get());
+        } else {
+            emptyAction.toNonThrowing().run();
+        }
     }
 
     @Override
@@ -81,33 +90,39 @@ final class ThrowingOptionalWrapper<T> implements Supplier<T>, ThrowingOptional<
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <U> ThrowingOptionalWrapper<U> flatMap(ThrowingFunction<? super T, ? extends Optional<? extends U>> mapper) {
-        return new ThrowingOptionalWrapper<>(delegate.flatMap(mapper.toNonThrowing()));
+        // JDK9 - cast can be removed along with @SuppressWarnings
+        return new ThrowingOptionalWrapper<U>(delegate.flatMap((Function<T, Optional<U>>) mapper.toNonThrowing()));
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <U> ThrowingOptionalWrapper<U> flatMapThrowing(ThrowingFunction<? super T, ? extends ThrowingOptional<? extends U>> mapper) {
-        return new ThrowingOptionalWrapper<>(delegate.flatMap(obj
+        return new ThrowingOptionalWrapper<U>(delegate.flatMap(obj
                 -> {
-            return mapper.toNonThrowing().apply(obj).toOptional();
+            // JDK9 - cast can be removed along with @SuppressWarnings
+            Function<? super T, ? extends ThrowingOptional<U>> f = (Function<? super T, ? extends ThrowingOptional<U>>) mapper.toNonThrowing();
+            return f.apply(obj).toOptional();
         }));
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ThrowingOptionalWrapper<T> or(ThrowingSupplier<? extends Optional<? extends T>> supplier) {
-        return new ThrowingOptionalWrapper<>(delegate.or(()
-                -> {
-            try {
-                return supplier.get();
-            } catch (Exception | Error e) {
-                return Exceptions.chuck(e);
-            }
-        }));
+        if (delegate.isPresent()) {
+            return this;
+        }
+        try {
+            return new ThrowingOptionalWrapper<>((Optional<T>) supplier.get());
+        } catch (Exception ex) {
+            return Exceptions.chuck(ex);
+        }
     }
 
     @Override
     public Stream<T> stream() {
-        return delegate.stream();
+        return isEmpty() ? Collections.<T>emptyList().stream() : Arrays.asList(get()).stream();
     }
 
     @Override
