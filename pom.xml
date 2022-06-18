@@ -1,19 +1,27 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
- xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+<project
+     xmlns="http://maven.apache.org/POM/4.0.0"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
     <artifactId>util-parent</artifactId>
+
     <url>https://github.com/timboudreau/util</url>
+
     <parent>
         <groupId>com.mastfrog</groupId>
         <artifactId>mastfrog-parent</artifactId>
-        <version>2.8.1</version>
+        <version>2.8.2</version>
         <relativePath/>
     </parent>
+
     <name>Util Parent</name>
     <description>BOM POM for Mastfrog Utilities libraries</description>
     <packaging>pom</packaging>
     <modules>
+
         <module>annotation-processors</module>
         <module>util-time</module>
         <module>util-strings</module>
@@ -38,21 +46,26 @@
         <module>sort</module>
         <module>search</module>
         <module>cache</module>
+
     </modules>
     <issueManagement>
         <system>Github</system>
         <url>https://github.com/timboudreau/util/issues</url>
     </issueManagement>
+
     <inceptionYear>2010</inceptionYear>
+
     <scm>
         <url>https://github.com/timboudreau/util</url>
         <connection>scm:git:https://github.com/timboudreau/util</connection>
         <developerConnection>git@github.com/timboudreau/util</developerConnection>
     </scm>
+
     <organization>
         <name>Mastfrog Technologies</name>
         <url>https://mastfrog.com</url>
     </organization>
+
     <licenses>
         <license>
             <name>MIT</name>
@@ -60,6 +73,7 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
+
     <developers>
         <developer>
             <name>Tim Boudreau</name>
@@ -67,4 +81,6 @@
             <url>https://timboudreau.com</url>
         </developer>
     </developers>
+
 </project>
+
