@@ -46,7 +46,7 @@
         <module>sort</module>
         <module>search</module>
         <module>cache</module>
-
+        <module>shutdown-hooks</module>
     </modules>
     <issueManagement>
         <system>Github</system>

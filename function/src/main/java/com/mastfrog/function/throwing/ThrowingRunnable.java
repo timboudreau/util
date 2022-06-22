@@ -469,7 +469,7 @@ public interface ThrowingRunnable {
     }
 
     default void addAsShutdownHook() {
-        Runtime.getRuntime().addShutdownHook(new Thread(toRunnable()));
+        Runtime.getRuntime().addShutdownHook(new Thread(toNonThrowing()));
     }
 
     public static ThrowingRunnable fromAutoCloseable(AutoCloseable e) {
