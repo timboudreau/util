@@ -171,7 +171,7 @@ public interface ShutdownHooks {
      * @param toClose A resource to be closed
      * @return this
      */
-    void add(AutoCloseable toClose);
+    void addResource(AutoCloseable toClose);
 
     /**
      * Add an AutoCloseable to be cancelled to the batch which runs first; the
@@ -180,7 +180,7 @@ public interface ShutdownHooks {
      * @param toClose A resource to be closed
      * @return this
      */
-    ShutdownHooks addFirst(AutoCloseable toClose);
+    ShutdownHooks addResourceFirst(AutoCloseable toClose);
 
     /**
      * Add an AutoCloseable to be cancelled to the batch which runs last; the
@@ -189,7 +189,7 @@ public interface ShutdownHooks {
      * @param toClose A resource to be closed
      * @return this
      */
-    ShutdownHooks addLast(AutoCloseable toClose);
+    ShutdownHooks addResourceLast(AutoCloseable toClose);
 
     ShutdownHooks add(Callable<?> toRun);
 

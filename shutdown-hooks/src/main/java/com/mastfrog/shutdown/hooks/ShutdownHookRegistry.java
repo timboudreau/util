@@ -195,33 +195,33 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
     }
 
     @Override
-    public void add(AutoCloseable toRun) {
+    public void addResource(AutoCloseable toRun) {
         add(toRun, Phase.MIDDLE, true);
     }
 
     @Override
-    public ShutdownHookRegistry addFirst(AutoCloseable toRun) {
+    public ShutdownHookRegistry addResourceFirst(AutoCloseable toRun) {
         return add(toRun, Phase.FIRST, true);
     }
 
     @Override
-    public ShutdownHookRegistry addLast(AutoCloseable toRun) {
+    public ShutdownHookRegistry addResourceLast(AutoCloseable toRun) {
         return add(toRun, Phase.LAST, true);
     }
 
     @Override
     public ShutdownHookRegistry add(ExecutorService toRun) {
-        return add(toRun, Phase.MIDDLE, false);
+        return add(toRun, Phase.MIDDLE, true);
     }
 
     @Override
     public ShutdownHookRegistry addFirst(ExecutorService toRun) {
-        return add(toRun, Phase.FIRST, false);
+        return add(toRun, Phase.FIRST, true);
     }
 
     @Override
     public ShutdownHookRegistry addLast(ExecutorService toRun) {
-        return add(toRun, Phase.LAST, false);
+        return add(toRun, Phase.LAST, true);
     }
 
     @Override
