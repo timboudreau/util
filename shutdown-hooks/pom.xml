@@ -8,6 +8,7 @@
     </parent>
     <artifactId>shutdown-hooks</artifactId>
     <name>shutdown-hooks</name>
+    <version>2.8.2.1</version>
 
     <dependencies>
         <dependency>

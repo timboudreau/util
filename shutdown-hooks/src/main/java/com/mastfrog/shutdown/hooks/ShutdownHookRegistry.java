@@ -29,6 +29,7 @@ import com.mastfrog.shutdown.hooks.ShutdownHookRegistry.VMShutdownHookRegistry;
 import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
@@ -42,6 +43,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -61,11 +63,12 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
     private final ThrowingRunnable main = ThrowingRunnable.composable(true);
     private final Set<ExecutorService> waitFor = Collections.synchronizedSet(
             Collections.newSetFromMap(new WeakHashMap<>()));
+    private final AtomicBoolean registered = new AtomicBoolean();
     // XXX may want to make this lazy and store it in an atomic, as creating 
     // thread instances has a cost; on the other hand, when are we going to
     // have an application that makes thousands of instances of 
     // ShutdownHookRegistry?
-    private final ShutdownThread shutdownThread = new ShutdownThread(this);
+    private final AtomicReference<ShutdownThread> shutdownThread = new AtomicReference<>();
     private long executorsWait;
     private final AtomicInteger count = new AtomicInteger();
     private volatile boolean running;
@@ -75,19 +78,45 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
         this(500);
     }
 
+    public ShutdownHookRegistry(Duration wait) {
+        this(wait.toMillis());
+    }
+
     public ShutdownHookRegistry(long wait) {
         this.executorsWait = Math.max(0, wait);
         main.andAlways(last);
         main.andAlways(middle);
         main.andAlways(first);
     }
+    
+    private ShutdownThread shutdownThread(boolean create) {
+        return shutdownThread.updateAndGet(old -> {
+            if (old == null && create) {
+                return new ShutdownThread(this);
+            }
+            return old;
+        });
+    }
 
     protected void install() {
-        shutdownThread.register();
+        shutdownThread(true).register();
     }
 
     protected void deinstall() {
-        shutdownThread.dergister();
+        ShutdownThread thread = shutdownThread(false);
+        if (thread != null) {
+            thread.deregister();
+        }
+    }
+    
+    void unregisterIfCurrent(ShutdownThread thread) {
+        shutdownThread.getAndUpdate(old -> {
+            if (old == thread) {
+                registered.set(false);
+                return null;
+            }
+            return old;
+        });
     }
 
     @Override
@@ -233,7 +262,10 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
             try {
                 // If we are running an an application thread due to explicit
                 // shutdown from the application
-                shutdownThread.dergister();
+                ShutdownThread thr = shutdownThread(false);
+                if (thr != null) {
+                    thr.deregister();
+                }
             } catch (IllegalStateException ex) {
                 // Ok, that just means we really are running in VM shutdown
             }
@@ -321,29 +353,45 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
     }
 
     protected ShutdownHookRegistry add(Object toRun, Phase phase, boolean weak) {
-        ThrowingRunnable target;
-        switch (phase) {
-            case FIRST:
-                target = first;
-                break;
-            case MIDDLE:
-                target = middle;
-                break;
-            case LAST:
-                target = last;
-                break;
-            default:
-                throw new AssertionError(phase);
+        try {
+            ThrowingRunnable target;
+            switch (phase) {
+                case FIRST:
+                    target = first;
+                    break;
+                case MIDDLE:
+                    target = middle;
+                    break;
+                case LAST:
+                    target = last;
+                    break;
+                default:
+                    throw new AssertionError(phase);
+            }
+            ThrowingRunnable toAdd;
+            if (weak) {
+                toAdd = new WeakRun(notNull("toRun", toRun));
+            } else {
+                toAdd = new NormalRun(notNull("toRun", toRun));
+            }
+            target.andAlways(toAdd);
+            count.incrementAndGet();
+            return this;
+        } finally {
+            if (registered.compareAndSet(false, true)) {
+                onFirstAdd();
+            }
         }
-        ThrowingRunnable toAdd;
-        if (weak) {
-            toAdd = new WeakRun(notNull("toRun", toRun));
-        } else {
-            toAdd = new NormalRun(notNull("toRun", toRun));
-        }
-        target.andAlways(toAdd);
-        count.incrementAndGet();
-        return this;
+    }
+
+    /**
+     * Called when the first shutdown hook item is added; most implementations
+     * will want to call <code>install()</code> here, but this is specifically
+     * not done to make it easy to create implementations within tests that
+     * will never, ever add themselves as a VM shutdown hook.
+     */
+    protected void onFirstAdd() {
+
     }
 
     final class NormalRun implements ThrowingRunnable {
@@ -463,11 +511,8 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
         }
 
         @Override
-        protected ShutdownHookRegistry add(Object toRun, Phase phase, boolean weak) {
-            if (!registered.compareAndSet(false, true)) {
-                install();
-            }
-            return super.add(toRun, phase, weak);
+        protected void onFirstAdd() {
+            install();
         }
 
         @Override
@@ -523,6 +568,21 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
     }
 
     /**
+     * Get a shutdown hook registry instance. This method is only for use in
+     * things like ServletContextListeners where there is no control over
+     * lifecycle. The returned instance is not a singleton.
+     *
+     * @param msToWait The number of milliseconds to wait before aborting any
+     * remaining shutdown tasks
+     * @return A registry of shutdown hooks.
+     */
+    public static ShutdownHookRegistry get(Duration maximumShutdownDuration) {
+        VMShutdownHookRegistry result = new VMShutdownHookRegistry(
+                maximumShutdownDuration.toMillis());
+        return result;
+    }
+
+    /**
      * Set the number of milliseconds to wait on shutdown. Has no effect if
      * shutdown hooks have been or are already running, but useful for injection
      * frameworks where this value may not be known at creation time.
@@ -531,6 +591,17 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
      */
     public synchronized void setWaitMilliseconds(long wait) {
         this.executorsWait = Math.max(0, wait);
+    }
+
+    /**
+     * Set the number of milliseconds to wait on shutdown. Has no effect if
+     * shutdown hooks have been or are already running, but useful for injection
+     * frameworks where this value may not be known at creation time.
+     *
+     * @param wait A number of milliseconds, set to zero if negative
+     */
+    public synchronized void setWaitMilliseconds(Duration toWait) {
+        this.executorsWait = Math.max(0, toWait.toMillis());
     }
 
     private static final class Timeout {
@@ -547,9 +618,15 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
     }
 
     /**
+     * Get the currently <i>registered as a VM shutdown hook instance</i>
+     * under the following conditions:
+     * <ul>
+     * <li>It has not yet finished running</li>
+     * <li>The shutdown thread's context classloader is the same instance as
+     * that of the calling thread</li>
+     * </ul>
      *
-     *
-     * @return
+     * @return A ShutdownHookRegistry, if possible
      */
     public static Optional<ShutdownHookRegistry> current() {
         for (ShutdownThread thread : REGISTERED_HOOKS) {
@@ -597,7 +674,7 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
             return result;
         }
 
-        boolean dergister() {
+        boolean deregister() {
             boolean result = registered.compareAndSet(true, false);
             if (result) {
                 try {
@@ -606,6 +683,7 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
                     result = false;
                 }
                 REGISTERED_HOOKS.remove(this);
+                registry.unregisterIfCurrent(this);
             }
             return result;
         }
@@ -616,6 +694,7 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
                 registry.runShutdownHooks();
             } finally {
                 registered.set(false);
+                registry.unregisterIfCurrent(this);
                 REGISTERED_HOOKS.remove(this);
             }
         }
