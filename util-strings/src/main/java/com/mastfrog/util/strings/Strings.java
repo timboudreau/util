@@ -244,6 +244,21 @@ public final class Strings {
     public static String deSingleQuote(String text) {
         return dequote(text, '\'');
     }
+    
+    /**
+     * Turn a string into an optional which is present only if the passed
+     * text is not null or empty.
+     * 
+     * @param text Some text or null
+     * @return An optional
+     * @since 2.8.3
+     */
+    public static Optional<String> ifNonBlank(String text) {
+        if (text == null || text.isEmpty() || isBlank(text)) {
+            return Optional.empty();
+        }
+        return Optional.of(text);
+    }
 
     /**
      * Trim a CharSequence returning a susbsequence.
