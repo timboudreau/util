@@ -88,7 +88,7 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
         main.andAlways(middle);
         main.andAlways(first);
     }
-    
+
     private ShutdownThread shutdownThread(boolean create) {
         return shutdownThread.updateAndGet(old -> {
             if (old == null && create) {
@@ -108,7 +108,7 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
             thread.deregister();
         }
     }
-    
+
     void unregisterIfCurrent(ShutdownThread thread) {
         shutdownThread.getAndUpdate(old -> {
             if (old == thread) {
@@ -387,8 +387,8 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
     /**
      * Called when the first shutdown hook item is added; most implementations
      * will want to call <code>install()</code> here, but this is specifically
-     * not done to make it easy to create implementations within tests that
-     * will never, ever add themselves as a VM shutdown hook.
+     * not done to make it easy to create implementations within tests that will
+     * never, ever add themselves as a VM shutdown hook.
      */
     protected void onFirstAdd() {
 
@@ -548,7 +548,7 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
      *
      * @return A registry of shutdown hooks.
      */
-    public static ShutdownHookRegistry get() {
+    public static ShutdownHookRegistry shutdownHookRegistry() {
         VMShutdownHookRegistry result = new VMShutdownHookRegistry();
         return result;
     }
@@ -562,21 +562,7 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
      * remaining shutdown tasks
      * @return A registry of shutdown hooks.
      */
-    public static ShutdownHookRegistry get(int msToWait) {
-        VMShutdownHookRegistry result = new VMShutdownHookRegistry(msToWait);
-        return result;
-    }
-
-    /**
-     * Get a shutdown hook registry instance. This method is only for use in
-     * things like ServletContextListeners where there is no control over
-     * lifecycle. The returned instance is not a singleton.
-     *
-     * @param msToWait The number of milliseconds to wait before aborting any
-     * remaining shutdown tasks
-     * @return A registry of shutdown hooks.
-     */
-    public static ShutdownHookRegistry get(Duration maximumShutdownDuration) {
+    public static ShutdownHookRegistry shutdownHookRegistry(Duration maximumShutdownDuration) {
         VMShutdownHookRegistry result = new VMShutdownHookRegistry(
                 maximumShutdownDuration.toMillis());
         return result;
