@@ -195,8 +195,8 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
     }
 
     @Override
-    public void addResource(AutoCloseable toRun) {
-        add(toRun, Phase.MIDDLE, true);
+    public ShutdownHookRegistry addResource(AutoCloseable toRun) {
+        return add(toRun, Phase.MIDDLE, true);
     }
 
     @Override

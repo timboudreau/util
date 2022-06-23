@@ -29,7 +29,7 @@ package com.mastfrog.util.thread;
  * @author Tim Boudreau
  */
 @FunctionalInterface
-public interface QuietAutoCloseable extends AutoCloseable {
+public interface QuietAutoCloseable extends com.mastfrog.function.misc.QuietAutoClosable {
     @Override
     void close();
 }

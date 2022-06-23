@@ -115,10 +115,14 @@ public interface ThrowingOptional<T> extends Supplier<T> {
 
     ThrowingOptional<T> or(ThrowingSupplier<? extends Optional<? extends T>> supplier);
 
-    default ThrowingOptional<T> or(ThrowingOptional<? extends T> supplier) {
-        return or(() -> supplier.toOptional());
+    default ThrowingOptional<T> or(ThrowingOptional<? extends T> opt) {
+        return or(() -> opt.toOptional());
     }
 
+    default ThrowingOptional<T> orThrowing(ThrowingSupplier<ThrowingOptional<? extends T>> supplier) {
+        return or(() -> supplier.get().toOptional());
+    }
+    
     T orElse(T other);
 
     T orElseGet(ThrowingSupplier<? extends T> supplier);

@@ -171,7 +171,7 @@ public interface ShutdownHooks {
      * @param toClose A resource to be closed
      * @return this
      */
-    void addResource(AutoCloseable toClose);
+    ShutdownHooks addResource(AutoCloseable toClose);
 
     /**
      * Add an AutoCloseable to be cancelled to the batch which runs first; the

@@ -31,7 +31,9 @@ import java.util.function.Consumer;
  * push an object onto the stack and have it removed at the end of a block.
  *
  * @author Tim Boudreau
+ * @deprecated Use the richer, more modern version in com.mastfrog.function.threadlocal
  */
+@Deprecated
 public class ThreadLocalStack<T> {
 
     private final FactoryThreadLocal<LinkedList<T>> stack = new FactoryThreadLocal<>(() -> new LinkedList<>());

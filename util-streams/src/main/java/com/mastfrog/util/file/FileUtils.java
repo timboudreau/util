@@ -23,15 +23,20 @@
  */
 package com.mastfrog.util.file;
 
+import com.mastfrog.function.optional.ThrowingOptional;
+import com.mastfrog.function.state.Int;
 import com.mastfrog.function.state.Obj;
+import com.mastfrog.function.throwing.ThrowingRunnable;
 import com.mastfrog.function.throwing.io.IOFunction;
 import com.mastfrog.function.throwing.io.IOSupplier;
 import com.mastfrog.util.preconditions.Checks;
+import static com.mastfrog.util.preconditions.Checks.notNull;
 import com.mastfrog.util.preconditions.Exceptions;
 import com.mastfrog.util.streams.ContinuousLineStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
@@ -51,6 +56,8 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
@@ -61,6 +68,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.concurrent.Executor;
@@ -71,10 +79,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  * Utility methods for reading and writing files and directories. The read and
@@ -546,14 +557,14 @@ public final class FileUtils {
      * @return The channel which was written to
      * @throws IOException If something goes wrong
      */
-    public static WritableByteChannel writeCharSequence(CharSequence content,
+    public static <T extends WritableByteChannel> T writeCharSequence(CharSequence content,
             boolean permissive, Charset as, int bufferSize,
-            boolean directBuffers, IOSupplier<? extends WritableByteChannel> channelSupplier) throws IOException {
+            boolean directBuffers, IOSupplier<? extends T> channelSupplier) throws IOException {
         Checks.notNull("content", content);
         Checks.notNull("as", as);
         Checks.greaterThanZero("bufferSize", bufferSize);
         Checks.notNull("channelSupplier", channelSupplier);
-        WritableByteChannel channel = channelSupplier.get();
+        T channel = channelSupplier.get();
         try {
             ByteBuffer buffer = directBuffers ? ByteBuffer.allocateDirect(Math.max(4, bufferSize)) : ByteBuffer.allocate(Math.max(4, bufferSize));
             CharsetEncoder enc = as.newEncoder();
@@ -908,7 +919,7 @@ public final class FileUtils {
         }
         Set<Path> paths = new HashSet<>();
         for (;;) {
-            try (Stream<Path> all = Files.walk(dir)) {
+            try ( Stream<Path> all = Files.walk(dir)) {
                 all.forEach(paths::add);
                 break;
             } catch (NoSuchFileException ex) {
@@ -1196,7 +1207,7 @@ public final class FileUtils {
      */
     public static int search(boolean relativize, Path dir, boolean followLinks, Predicate<? super Path> predicate, Consumer<? super Path> consumer) throws IOException {
         int[] count = new int[1];
-        try (Stream<Path> all = Files.walk(dir, followLinks ? FOLLOW_LINKS : NO_FV_OPTIONS)) {
+        try ( Stream<Path> all = Files.walk(dir, followLinks ? FOLLOW_LINKS : NO_FV_OPTIONS)) {
             all.filter(predicate).forEach(path -> {
                 if (relativize) {
                     path = dir.relativize(path);
@@ -1216,9 +1227,6 @@ public final class FileUtils {
      * bytes of memory.
      *
      * @param path the file path
-     * @param the buffer size for the byte gathering buffer (the character
-     * buffer size will be one of two byte chars sized using a heuristic based
-     * on the charset's deocder's reported average bytes per character).
      *
      * @return A stream of lines. Note, since I/O is involved, the returned
      * stream
@@ -1236,9 +1244,7 @@ public final class FileUtils {
      * bytes of memory.
      *
      * @param path the file path
-     * @param the buffer size for the byte gathering buffer (the character
-     * buffer size will be one of two byte chars sized using a heuristic based
-     * on the charset's deocder's reported average bytes per character).
+     * @param charset the character set
      *
      * @return A stream of lines. Note, since I/O is involved, the returned
      * stream
@@ -1256,9 +1262,11 @@ public final class FileUtils {
      * bytes of memory.
      *
      * @param path the file path
-     * @param the buffer size for the byte gathering buffer (the character
-     * buffer size will be one of two byte chars sized using a heuristic based
-     * on the charset's deocder's reported average bytes per character).
+     * @param bufferSize the buffer size for the byte gathering buffer (the
+     * character buffer size will be one of two byte chars sized using a
+     * heuristic based on the charset's deocder's reported average bytes per
+     * character).
+     * @param charset the character set
      *
      * @return A stream of lines. Note, since I/O is involved, the returned
      * stream
@@ -1339,6 +1347,175 @@ public final class FileUtils {
      */
     public static Iterable<File> pathsToFiles(Iterable<Path> file) {
         return () -> pathsToFiles(file.iterator());
+    }
+
+    public static Optional<Path> ifExists(Path path) {
+        if (path == null) {
+            return Optional.empty();
+        }
+        if (Files.exists(path)) {
+            return Optional.of(path);
+        }
+        return Optional.empty();
+    }
+
+    public static Optional<Path> ifDirectory(Path path) {
+        return ifExists(path).flatMap(maybeDir
+                -> {
+            return Files.isDirectory(maybeDir)
+                    ? Optional.of(maybeDir)
+                    : Optional.empty();
+        });
+    }
+
+    public static ThrowingOptional<Path> ifExistsT(Path path) {
+        if (path == null) {
+            return ThrowingOptional.empty();
+        }
+        if (Files.exists(path)) {
+            return ThrowingOptional.of(path);
+        }
+        return ThrowingOptional.empty();
+    }
+
+    public static ThrowingOptional<Path> ifDirectoryT(Path path) {
+        return ifExistsT(path).flatMapThrowing(maybeDir
+                -> {
+            return Files.isDirectory(maybeDir)
+                    ? ThrowingOptional.of(maybeDir)
+                    : ThrowingOptional.empty();
+        });
+    }
+
+    /**
+     * Copy an entire folder tree.
+     *
+     * @param log A log
+     * @param from The source folder
+     * @param to The target folder
+     * @return a 2-element array with the number of files copied and the number
+     * of folders created
+     * @throws IOException if something goes wrong
+     */
+    public static int[] copyFolderTree(Path from, Path to) throws IOException {
+        Int files = Int.create();
+        Int dirs = Int.create();
+        try ( Stream<Path> srcStream = Files.walk(from, 1280)) {
+            srcStream.forEach(fileOrDir
+                    -> {
+                Path rel = from.relativize(fileOrDir);
+                Path target = to.resolve(rel);
+                boolean dir = Files.isDirectory(fileOrDir);
+                quietly(()
+                        -> {
+                    Path destDir = dir
+                            ? target
+                            : target.getParent();
+                    if (!Files.exists(destDir)) {
+                        Files.createDirectories(destDir);
+                        dirs.increment();
+                    }
+                    if (!dir) {
+                        if (!Files.exists(fileOrDir)) {
+                            Files.copy(fileOrDir, target);
+                        } else {
+                            Files.copy(fileOrDir, target, REPLACE_EXISTING);
+                        }
+                        files.increment();
+                    }
+                });
+            });
+        }
+        return new int[]{
+            files.getAsInt(), dirs.getAsInt()
+        };
+    }
+
+    private static void quietly(ThrowingRunnable tr) {
+        tr.toNonThrowing().run();
+    }
+
+    /**
+     * Get the cache directory in the user's home directory - on linux,
+     * ~/.cache, on Mac OS X ~/Library/Caches
+     *
+     * @return A Path
+     */
+    public static Path userCacheRoot() {
+        Path home = Paths.get(System.getProperty("user.home", System.getenv(
+                "HOME")));
+        String os = System.getProperty("os.name");
+        if ("Mac OS X".equals(os)) {
+            return home.resolve("Library").resolve("Caches");
+        } else {
+            // Linux default; Windows would be ? Do we care?
+            return home.resolve(".cache");
+        }
+    }
+
+    /**
+     * Get the system temporary directory.
+     *
+     * @return A path
+     */
+    public static Path temp() {
+        return Paths.get(System.getProperty("java.io.tmpdir", "/tmp"));
+    }
+
+    public static Path home() {
+        return fromSystemProperty("user.home", () -> fromSystemProperty(
+                "java.io.tmpdir", () -> Paths.get("/")));
+    }
+
+    private static Path fromSystemProperty(String what, Supplier<Path> fallback) {
+        String prop = System.getProperty(what);
+        return prop == null
+                ? fallback.get()
+                : Paths.get(prop);
+    }
+
+    /**
+     * Returns a shorter string prefixed with ~/ if the passed path is below the
+     * user's home dir.
+     *
+     * @param what A path
+     * @return A string representation of the path that shortens it if it can.
+     */
+    public static String homeRelativePath(Path what) {
+        Path home = home();
+        if (what.startsWith(home)) {
+            return "~/" + home.relativize(what).toString();
+        }
+        return what.toString();
+    }
+
+    /**
+     * Unzip the passed input stream into the passed directory.
+     *
+     * @param in An input stream
+     * @param dir A folder
+     * @throws IOException if something goes wrong
+     */
+    public static void unzip(InputStream in, Path dir) throws IOException {
+        notNull("dir", dir);
+        try ( ZipInputStream zip = new ZipInputStream(notNull("in", in))) {
+            ZipEntry en;
+            while ((en = zip.getNextEntry()) != null) {
+                if (en.isDirectory()) {
+                    Path dest = dir.resolve(en.getName());
+                    if (!Files.exists(dest)) {
+                        Files.createDirectories(dest);
+                    }
+                } else {
+                    Path dest = dir.resolve(en.getName());
+                    if (!Files.exists(dest.getParent())) {
+                        Files.createDirectories(dest.getParent());
+                    }
+                    Files.copy(zip, dest,
+                            StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
+        }
     }
 
     private static final class ConvertIterator<T, R> implements Iterator<R> {

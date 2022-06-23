@@ -32,6 +32,7 @@ import java.util.function.Predicate;
 
 /**
  * Adds a few useful methods to CompletionStage and CompletableFuture.
+ * Most of this class is obsoleted by improvements in JDK 11-17.
  *
  * @author Tim Boudreau
  */
