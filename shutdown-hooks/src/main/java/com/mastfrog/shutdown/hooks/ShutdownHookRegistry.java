@@ -180,8 +180,8 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
     }
 
     @Override
-    public void add(Timer toRun) {
-        add(toRun, Phase.MIDDLE, true);
+    public ShutdownHookRegistry add(Timer toRun) {
+        return add(toRun, Phase.MIDDLE, true);
     }
 
     @Override
@@ -493,7 +493,7 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
         }
     }
 
-    enum Phase {
+    protected enum Phase {
         FIRST,
         MIDDLE,
         LAST

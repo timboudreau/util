@@ -144,7 +144,7 @@ public interface ShutdownHooks {
      * @param toCancel A timer
      * @return this
      */
-    void add(Timer toCancel);
+    ShutdownHooks add(Timer toCancel);
 
     /**
      * Add a timer to be cancelled to the batch which runs first; the timer will
