@@ -215,17 +215,33 @@ public interface Escaper {
         switch (c) {
             case '"':
                 return "&quot;";
+            case '\'':
+                return "&apos";
             case '&':
                 return "&amp;";
             case '<':
                 return "&lt;";
             case '>':
                 return "&gt;";
+            case '©':
+                return "&copy;";
+            case '®':
+                return "&reg;";
+            case '\u2122':
+                return "&trade;";
+            case '¢':
+                return "&cent;";
+            case '£':
+                return "&pound;";
+            case '¥':
+                return "&yen;";
+            case '€':
+                return "&euro;";
             default:
                 return null;
         }
     };
-
+    
     /**
      * Escapes double quotes, ampersands, less-than and greater-than to their
      * SGML entities, and replaces \n with &lt;br&gt;.
@@ -286,5 +302,15 @@ public interface Escaper {
             default:
                 return null;
         }
+    };
+
+    /**
+     * Omits characters which are neither letters nor digits - useful
+     * for hash-matching text that may have varying amounts of whitespace
+     * or other non-semantic formatting differences.
+     */
+    public static Escaper OMIT_NON_WORD_CHARACTERS = c -> {
+        return !Character.isDigit(c) && !Character.isLetter(c) ? "" :
+                Character.toString(c);
     };
 }
