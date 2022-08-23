@@ -60,3 +60,7 @@ nb-configuration.xml
 /concurrent/nbproject/
 /shutdown-hooks/target/
 /shutdown-hooks/nbproject/
+/character-predicates/nbproject/
+/character-predicates/target/
+/character-functions/nbproject/
+/character-functions/target/

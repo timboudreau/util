@@ -47,7 +47,7 @@
         <module>search</module>
         <module>cache</module>
         <module>shutdown-hooks</module>
-
+        <module>character-functions</module>
     </modules>
     <issueManagement>
         <system>Github</system>
