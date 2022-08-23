@@ -30,6 +30,8 @@ import com.mastfrog.util.preconditions.InvalidArgumentException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 import java.lang.reflect.Array;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -52,8 +54,11 @@ import java.util.Base64;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -80,7 +85,7 @@ import java.util.function.Supplier;
 public final class Strings {
 
     private static final BitSet PUNC = new BitSet(128);
-    private static final CharSequence ELLIPSIS = new SingleCharSequence('\u2026');
+    private static final ComparableCharSequence ELLIPSIS = new SingleCharSequence('\u2026');
     private static final int MAX_ELLIPSIS_SKEW = 12;
     private static boolean puncInitialized;
 
@@ -244,11 +249,11 @@ public final class Strings {
     public static String deSingleQuote(String text) {
         return dequote(text, '\'');
     }
-    
+
     /**
-     * Turn a string into an optional which is present only if the passed
-     * text is not null or empty.
-     * 
+     * Turn a string into an optional which is present only if the passed text
+     * is not null or empty.
+     *
      * @param text Some text or null
      * @return An optional
      * @since 2.8.3
@@ -267,42 +272,7 @@ public final class Strings {
      * @return
      */
     public static CharSequence trim(CharSequence seq) {
-        if (seq instanceof String) {
-            return ((String) seq).trim();
-        }
-        int len = seq.length();
-        if (len == 0) {
-            return seq;
-        }
-        if (seq instanceof String) {
-            return ((String) seq).trim();
-        }
-        int start = 0;
-        int end = len;
-        for (int i = 0; i < len; i++) {
-            if (Character.isWhitespace(seq.charAt(i))) {
-                start++;
-            } else {
-                break;
-            }
-        }
-        if (start == len - 1) {
-            return "";
-        }
-        for (int i = len - 1; i >= 0; i--) {
-            if (Character.isWhitespace(seq.charAt(i))) {
-                end--;
-            } else {
-                break;
-            }
-        }
-        if (end == 0) {
-            return "";
-        }
-        if (end == len && start == 0) {
-            return seq;
-        }
-        return seq.subSequence(start, end);
+        return trimmedSubsequence(notNull("seq", seq));
     }
 
     /**
@@ -617,7 +587,7 @@ public final class Strings {
         if (length != b.length()) {
             return false;
         }
-        if (!ignoreCase && a.getClass() == b.getClass()) {
+        if (!ignoreCase && a.getClass() == b.getClass() && a.getClass() != NoCopySubsequence.class) {
             return a.equals(b);
         }
         if (!ignoreCase && a instanceof String) {
@@ -952,7 +922,7 @@ public final class Strings {
      * @param c A character
      * @return A character sequence
      */
-    public static CharSequence singleChar(char c) {
+    public static ComparableCharSequence singleChar(char c) {
         switch (c) {
             case '\n':
                 return CR;
@@ -3366,7 +3336,258 @@ public final class Strings {
             }
         }
         return target;
+    }
 
+    /**
+     * Sort a list in order of jaccard distance from best to worst based on
+     * their similarity to a given string and an n-gram size.
+     *
+     * @param n The size of n, 1 or greater
+     * @param to A string to compare to
+     * @param l A list of strings
+     */
+    public static void sortByJaccardSimilarity(int n, CharSequence to, List<? extends CharSequence> l) {
+        l.sort((a, b) -> {
+            double aval = jaccardSimilarity(n, to, a);
+            double bval = jaccardSimilarity(n, to, b);
+            return Double.compare(bval, aval);
+        });
+    }
+
+    /**
+     * A string similarity score, somewhat like levenshtein distance.
+     *
+     * @param n The size of the n-grams to use
+     * @param a The first string
+     * @param b The second string
+     * @return A number between 0.0 an 1.0 for similarity
+     * @see https://en.wikipedia.org/wiki/Jaccard_index
+     */
+    public static double jaccardSimilarity(int n, CharSequence a, CharSequence b) {
+        Set<ComparableCharSequence> agrams = new HashSet<>(toNGrams(true, n, a));
+        Set<ComparableCharSequence> bgrams = new HashSet<>(toNGrams(true, n, b));
+        if (agrams.isEmpty() || bgrams.isEmpty()) {
+            return 0;
+        }
+        Set<ComparableCharSequence> isect = new HashSet<>(agrams);
+        isect.retainAll(bgrams);
+        Set<ComparableCharSequence> union = new HashSet<>(agrams);
+        union.addAll(bgrams);
+        return (double) isect.size() / (double) union.size();
+    }
+
+    /**
+     * Generate n-grams, splitting a string into equally sized pieces - this is
+     * useful for a number of string distance algorithms.
+     * <p>
+     * Note that if the string length is not divisible by <code>n</code> then
+     * the head or tail item in the returned list may be of a length less than
+     * <code>n</code>.
+     * </p>
+     *
+     * @param fromHead Start from the 0th position, so any odd-sized n-gram is
+     * the last one
+     * @param n The number of characters in the n-gram
+     * @param seq The character sequence
+     * @return
+     */
+    public static List<ComparableCharSequence> toNGrams(boolean fromHead, int n, CharSequence seq) {
+        if (n == 0) {
+            throw new IllegalArgumentException("0 n-gram size");
+        } else if (n == 1) {
+            int len = notNull("seq", seq).length();
+            List<ComparableCharSequence> result = new ArrayList<>(len);
+            for (int i = 0; i < len; i++) {
+                result.add(singleChar(seq.charAt(i)));
+            }
+            return result;
+        }
+        int len = notNull("seq", seq).length();
+        if (len == 0) {
+            return emptyList();
+        }
+        if (len < n) {
+            return singletonList(wrap(seq));
+        }
+        List<ComparableCharSequence> list = new ArrayList<>((len / n) + ((len % n) == 0 ? 0 : 1));
+        if (fromHead) {
+            for (int i = 0; i < len; i += n) {
+                int end = min(len, i + n);
+                list.add(new NoCopySubsequence(seq, i, end));
+            }
+        } else {
+            for (int i = len; i >= 0; i -= n) {
+                int start = max(0, i - n);
+                if (start < i) {
+                    list.add(0, new NoCopySubsequence(seq, start, i));
+                }
+            }
+        }
+        return list;
+    }
+
+    /**
+     * Returns a ComparableCharSequence that trims whitespace from the original.
+     * If the original is mutable, changes will appear in the result.
+     *
+     * @param orig The original character sequence
+     * @return A subsequence
+     */
+    public static ComparableCharSequence trimmedSubsequence(CharSequence orig) {
+        int start = 0;
+        int len = orig.length();
+        if (len == 0) {
+            return ComparableCharSequence.EMPTY;
+        }
+        int end = len;
+        boolean nonWhitespaceSeenAtStart = false;
+        boolean nonWhitespaceSeenAtEnd = false;
+        for (int i = 0; i < len; i++) {
+            if (!nonWhitespaceSeenAtStart) {
+                char startChar = orig.charAt(i);
+                if (Character.isWhitespace(startChar)) {
+                    start = i + 1;
+                } else {
+                    nonWhitespaceSeenAtStart = true;
+                }
+            }
+            if (!nonWhitespaceSeenAtEnd) {
+                int pos = len - (i + 1);
+                char endChar = orig.charAt(pos);
+                if (Character.isWhitespace(endChar)) {
+                    end = pos;
+                } else {
+                    nonWhitespaceSeenAtEnd = true;
+                }
+            }
+            if (start >= end) {
+                return ComparableCharSequence.EMPTY;
+            }
+            if (nonWhitespaceSeenAtEnd && nonWhitespaceSeenAtStart) {
+                break;
+            }
+        }
+        if (start == 0 && end == len) {
+            return wrap(orig);
+        } else if (end == start + 1) {
+            return singleChar(orig.charAt(start));
+        }
+        return wrap(orig.subSequence(start, end));
+    }
+
+    static ComparableCharSequence wrap(CharSequence what) {
+        if (what instanceof ComparableCharSequence) {
+            return ((ComparableCharSequence) what);
+        }
+        switch (what.length()) {
+            case 0:
+                return ComparableCharSequence.EMPTY;
+            case 1:
+                return singleChar(what.charAt(0));
+        }
+        return new ComparableCharSequenceWrapper(what);
+    }
+
+    private static final class ComparableCharSequenceWrapper implements ComparableCharSequence {
+
+        private final CharSequence orig;
+
+        ComparableCharSequenceWrapper(CharSequence orig) {
+            this.orig = orig;
+        }
+
+        @Override
+        public int length() {
+            return orig.length();
+        }
+
+        @Override
+        public char charAt(int index) {
+            return orig.charAt(index);
+        }
+
+        @Override
+        public CharSequence subSequence(int start, int end) {
+            return orig.subSequence(start, end);
+        }
+
+        @Override
+        public String toString() {
+            return orig.toString();
+        }
+
+        public boolean equals(Object o) {
+            if (o == null) {
+                return false;
+            } else if (o == this) {
+                return true;
+            } else if (!(o instanceof CharSequence)) {
+                return false;
+            }
+            CharSequence seq = (CharSequence) o;
+            return charSequencesEqual(this, seq);
+        }
+
+        public int hashCode() {
+            return orig.hashCode();
+        }
+    }
+
+    private static final class NoCopySubsequence implements ComparableCharSequence {
+
+        private final CharSequence str;
+        private final int start;
+        private final int end;
+        private int hc = 0;
+
+        NoCopySubsequence(CharSequence orig, int start, int end) {
+            this.start = start;
+            this.end = end;
+            this.str = orig;
+        }
+
+        @Override
+        public int length() {
+            return end - start;
+        }
+
+        @Override
+        public char charAt(int index) {
+            return str.charAt(start + index);
+        }
+
+        @Override
+        public CharSequence subSequence(int start, int end) {
+            if (start == end) {
+                return "";
+            } else if (start > end) {
+                throw new IllegalArgumentException("Start " + start
+                        + " is > end " + end);
+            }
+            int newStart = start + this.start;
+            return new NoCopySubsequence(str, newStart, newStart + (end - start));
+        }
+
+        @Override
+        public String toString() {
+            return str.toString().substring(start, end);
+        }
+
+        public boolean equals(Object o) {
+            if (o == null) {
+                return false;
+            } else if (o == this) {
+                return true;
+            } else if (!(o instanceof CharSequence)) {
+                return false;
+            }
+            CharSequence seq = (CharSequence) o;
+            return charSequencesEqual(this, seq);
+        }
+
+        public int hashCode() {
+            return hc == 0 ? hc = charSequenceHashCode(this) : hc;
+        }
     }
 
     /**

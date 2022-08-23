@@ -24,9 +24,8 @@
 
 package com.mastfrog.util.strings;
 
-import com.mastfrog.util.strings.ComparableCharSequence;
-
 /**
+ * A CharSequence that wraps a single character.
  *
  * @author Tim Boudreau
  */
@@ -74,7 +73,7 @@ final class SingleCharSequence implements CharSequence, ComparableCharSequence {
     }
 
     public String toString() {
-        return new String(new char[] { c });
+        return Character.toString(c);
     }
 
     @Override

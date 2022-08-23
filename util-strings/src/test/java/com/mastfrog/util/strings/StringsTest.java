@@ -29,8 +29,11 @@ import static com.mastfrog.util.strings.Strings.isDigits;
 import static com.mastfrog.util.strings.Strings.is;
 import static com.mastfrog.util.strings.Strings.isPositiveDecimal;
 import static com.mastfrog.util.strings.Strings.quickJson;
+import java.util.ArrayList;
 import java.util.Arrays;
 import static java.util.Arrays.asList;
+import java.util.Collection;
+import static java.util.Collections.emptyList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -482,9 +485,8 @@ public class StringsTest {
         for (int i = 0; i < seqs.length; i++) {
             seqs[i] = Strings.trim(seqs[i]);
         }
-        assertTrue(seqs[0] instanceof String);
-        assertEquals("max-age=60", seqs[0]);
-        assertEquals("includeSubDomains", seqs[1]);
+        assertCharSequences("max-age=60", seqs[0]);
+        assertCharSequences("includeSubDomains", seqs[1]);
         assertEquals(2, seqs.length);
     }
 
@@ -1004,6 +1006,75 @@ public class StringsTest {
 
     private static void assertCharSequences(String exp, CharSequence got) {
         assertEquals(exp, got.toString());
+    }
+
+    private static void assertTrimmed(String orig) {
+        String expect = orig.trim();
+        assertCharSequences(expect, Strings.trimmedSubsequence(orig));
+    }
+
+    @Test
+    public void testTrimmedSubsequence() {
+        assertTrimmed("whatever");
+        assertTrimmed("  some stuff");
+        assertTrimmed("    ");
+        assertTrimmed("  this");
+        assertTrimmed("that  ");
+        assertTrimmed("some other stuff   ");
+        assertTrimmed(" whatever this is   \t\n");
+        assertTrimmed("");
+        assertTrimmed("\n");
+        assertTrimmed("a");
+        assertTrimmed("b ");
+        assertTrimmed(" c");
+        assertTrimmed(" d ");
+    }
+
+    @Test
+    public void testNGrams() {
+        assertNGrams("1234567890", 2, "12", "34", "56", "78", "90");
+        assertNGrams(false, "1234567890", 2, "12", "34", "56", "78", "90");
+
+        assertNGrams("123456789", 3, "123", "456", "789");
+        assertNGrams(false, "123456789", 3, "123", "456", "789");
+
+        assertNGrams("1234567890", 3, "123", "456", "789", "0");
+        assertNGrams(false, "1234567890", 3, "1", "234", "567", "890");
+
+        assertNGrams("1234567890", 1, "1", "2", "3", "4", "5", "6", "7", "8", "9", "0");
+        assertNGrams(false, "1234567890", 1, "1", "2", "3", "4", "5", "6", "7", "8", "9", "0");
+
+        assertEquals(emptyList(), Strings.toNGrams(true, 2, ""));
+        assertEquals(emptyList(), Strings.toNGrams(false, 2, ""));
+        assertEquals(emptyList(), Strings.toNGrams(false, 1, ""));
+    }
+
+    @Test
+    public void testSortByJaccardDistance() {
+        List<String> l = new ArrayList<>(Arrays.asList("externs", "cats", "dogs",
+                "cadag", "dabs", "monkeys", "doogies", "frogs"));
+        Strings.sortByJaccardSimilarity(2, "dags", l);
+        assertEquals("dogs", l.get(0));
+        assertEquals("dabs", l.get(1));
+        assertEquals("cadag", l.get(2));
+
+    }
+
+    private static void assertNGrams(String orig, int n, String... parts) {
+        assertNGrams(true, orig, n, parts);
+    }
+
+    private static void assertNGrams(boolean head, String orig, int n, String... parts) {
+        assertNGrams(Strings.toNGrams(head, n, orig), parts);
+    }
+
+    private static void assertNGrams(Collection<? extends ComparableCharSequence> c, String... parts) {
+        List<String> expect = Arrays.asList(parts);
+        List<String> got = new ArrayList<>(parts.length);
+        for (ComparableCharSequence cc : c) {
+            got.add(cc.toString());
+        }
+        assertEquals(expect, got);
     }
 
     @Test

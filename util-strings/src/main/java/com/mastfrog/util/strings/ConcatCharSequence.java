@@ -57,6 +57,7 @@ public final class ConcatCharSequence implements CharSequence, Appendable, Appen
         chars.add(initial);
     }
 
+    @Override
     public ConcatCharSequence append(char ch) {
         chars.add(Strings.singleChar(ch));
         hash = 0;

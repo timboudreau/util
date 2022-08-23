@@ -80,7 +80,7 @@ public class AlignedText {
             if (cc.isEmpty()) {
                 continue;
             }
-            if (!DIGITS.matcher(cc).matches()) {
+            if (Strings.isDigits(cc)) {
                 result = false;
                 break;
             }
