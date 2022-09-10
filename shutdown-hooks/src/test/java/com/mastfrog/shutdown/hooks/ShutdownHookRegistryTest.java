@@ -50,7 +50,7 @@ public class ShutdownHookRegistryTest {
     @Test
     public void testShutdownHooksAreRunInReverseOrder() throws IOException {
         Injector deps = Guice.createInjector(new M());
-        ShutdownHooks hooks = deps.getInstance(ShutdownHooks.class);
+        ShutdownHookRegistry hooks = deps.getInstance(ShutdownHookRegistry.class);
 
         ThingOne one = deps.getInstance(ThingOne.class);
         ThingTwo two = deps.getInstance(ThingTwo.class);
@@ -58,12 +58,12 @@ public class ShutdownHookRegistryTest {
         ThingThree three2 = deps.getInstance(ThingThree.class);
         assertSame(three, three2);
 
-        assertSame(ShutdownHookRegistry.current(), hooks,
+        assertSame(ShutdownHookRegistry.current().get(), hooks,
                 "Should have gotten current instance");
 
         hooks.shutdown();
         
-        assertNull(ShutdownHookRegistry.current());
+        assertFalse(ShutdownHookRegistry.current().isPresent());
 
         assertTrue(one.hookRan);
         assertTrue(two.hookRan);
@@ -82,9 +82,6 @@ public class ShutdownHookRegistryTest {
         hooks.add(f.addReentrant(hooks, 1, 5));
 
         hooks.close();
-
-        System.out.println("GOT " + f.all);
-
     }
 
     @Test
@@ -157,7 +154,6 @@ public class ShutdownHookRegistryTest {
         public Runnable apply(int index) {
             added.add(index);
             return () -> {
-                System.out.println("run " + index);
                 all.add(index);
             };
         }
@@ -174,7 +170,7 @@ public class ShutdownHookRegistryTest {
 
         @Override
         protected void configure() {
-            bind(ShutdownHooks.class).to(VMShutdownHookRegistry.class).asEagerSingleton();
+            bind(ShutdownHookRegistry.class).to(VMShutdownHookRegistry.class).asEagerSingleton();
             bind(ThingOne.class).in(Scopes.SINGLETON);
             bind(ThingTwo.class).in(Scopes.SINGLETON);
             bind(ThingThree.class).in(Scopes.SINGLETON);
