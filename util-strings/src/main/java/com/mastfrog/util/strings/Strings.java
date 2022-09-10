@@ -3525,7 +3525,7 @@ public final class Strings {
                 return false;
             }
             CharSequence seq = (CharSequence) o;
-            return charSequencesEqual(this, seq);
+            return charSequencesEqual(orig, seq);
         }
 
         public int hashCode() {
