@@ -1,6 +1,7 @@
 package com.mastfrog.bits.large;
 
 import com.mastfrog.bits.MutableBits;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -8,7 +9,12 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.LongFunction;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.junit.jupiter.api.AfterAll;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -218,8 +224,26 @@ public class LongArrayBitSetTest {
         }
     }
 
-    static final class MappedLong implements LongFunction<LongArray> {
+    static Set<Path> paths = ConcurrentHashMap.newKeySet();
+    @AfterAll
+    public static void after() {
+        for (Path p : paths) {
+            if (Files.exists(p)) {
+                try {
+                    Files.delete(p);
+                } catch (IOException ex) {
+                    
+                }
+            }
+        }
+    }
 
+    static Path addPath(Path path) {
+        paths.add(path);
+        return path;
+    }
+
+    static final class MappedLong implements LongFunction<LongArray> {
         private static final Path tmp = Paths.get(System.getProperty("java.io.tmpdir"));
         private static volatile int ix = 1;
         private static final String pfx = "MappedLong-" + Long.toString(System.currentTimeMillis(), 36) + "-";
@@ -230,7 +254,7 @@ public class LongArrayBitSetTest {
             assertTrue(Files.exists(tmp), "tmpdir does not exist");
             assertTrue(Files.isDirectory(tmp), "tmpdir not a dir");
             String nm = pfx + ix++ + ".longs";
-            return new MappedFileLongArray(tmp.resolve(nm), value, false);
+            return new MappedFileLongArray(addPath(tmp.resolve(nm)), value, false);
         }
 
         @Override
