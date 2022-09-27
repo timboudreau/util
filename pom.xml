@@ -48,6 +48,7 @@
         <module>cache</module>
         <module>shutdown-hooks</module>
         <module>character-functions</module>
+        <module>reference</module>
     </modules>
     <issueManagement>
         <system>Github</system>
