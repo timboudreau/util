@@ -216,7 +216,7 @@ public interface Escaper {
             case '"':
                 return "&quot;";
             case '\'':
-                return "&apos";
+                return "&apos;";
             case '&':
                 return "&amp;";
             case '<':
