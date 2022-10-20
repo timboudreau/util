@@ -27,8 +27,10 @@ package com.mastfrog.util.thread;
 /**
  *
  * @author Tim Boudreau
+ * @deprecated Use the version in com.mastfrog.function.misc
  */
 @FunctionalInterface
+@Deprecated
 public interface QuietAutoCloseable extends com.mastfrog.function.misc.QuietAutoClosable {
     @Override
     void close();

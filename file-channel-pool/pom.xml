@@ -56,7 +56,6 @@
             <groupId>com.mastfrog</groupId>
             <artifactId>util-function</artifactId>
             <scope>test</scope>
-            <type>jar</type>
         </dependency>
 
     </dependencies>

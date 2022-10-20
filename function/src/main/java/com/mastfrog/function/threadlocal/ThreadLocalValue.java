@@ -112,7 +112,7 @@ public final class ThreadLocalValue<T>
      */
     public QuietAutoClosable setTo(T value)
     {
-        return new AutoCloseableImpl(set(notNull("value", value)));
+        return new AutoCloseableImpl(set(value));
     }
 
     /**
