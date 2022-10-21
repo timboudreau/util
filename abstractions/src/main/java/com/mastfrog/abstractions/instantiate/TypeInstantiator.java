@@ -21,14 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mastfrog.abstractions;
+package com.mastfrog.abstractions.instantiate;
+
+import java.lang.reflect.Type;
 
 /**
- * Abstraction for a thing which can return an instance of a type given a type.
+ * Abstraction for a thing which can return an instance of a type given a
+ * reflective type.
  *
  * @author Tim Boudreau
  */
-public interface Instantiator {
+public interface TypeInstantiator {
 
-    <T> T getInstance(Class<T> type);
+    <T> T getInstance(Type type);
+
 }
