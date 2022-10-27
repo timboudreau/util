@@ -80,6 +80,16 @@ public class TimeUtil {
             .appendValue(ChronoField.SECOND_OF_MINUTE, 2).appendLiteral(" ")
             .appendZoneOrOffsetId().toFormatter();
 
+    public static final DateTimeFormatter ISO2822DateFormatForOutput = new DateTimeFormatterBuilder()
+            .appendText(ChronoField.DAY_OF_WEEK, TextStyle.SHORT_STANDALONE).appendLiteral(", ")
+            .appendText(ChronoField.DAY_OF_MONTH, TextStyle.FULL).appendLiteral(" ")
+            .appendText(ChronoField.MONTH_OF_YEAR, TextStyle.SHORT).appendLiteral(" ")
+            .appendText(ChronoField.YEAR, TextStyle.FULL).appendLiteral(" ")
+            .appendValue(ChronoField.HOUR_OF_DAY, 2).appendLiteral(":")
+            .appendValue(ChronoField.MINUTE_OF_HOUR, 2).appendLiteral(":")
+            .appendValue(ChronoField.SECOND_OF_MINUTE, 2).appendLiteral(" ")
+            .appendOffsetId().toFormatter();
+
     private static final DateTimeFormatter SORTABLE_STRING_FORMAT = new DateTimeFormatterBuilder()
             .appendValue(ChronoField.YEAR, 4).appendLiteral('-')
             .appendValue(ChronoField.MONTH_OF_YEAR, 2).appendLiteral('-')
@@ -453,7 +463,7 @@ public class TimeUtil {
      */
     public static String toHttpHeaderFormat(ZonedDateTime dateTime) {
         Checks.notNull("dateTime", dateTime);
-        return ISO2822DateFormat.format(dateTime);
+        return ISO2822DateFormatForOutput.format(dateTime);
     }
 
     /**
