@@ -23,10 +23,6 @@
 
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>util-strings</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
             <artifactId>util-misc</artifactId>
         </dependency>
         <dependency>
@@ -36,10 +32,6 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>util-streams</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>util-preconditions</artifactId>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
