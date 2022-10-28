@@ -76,7 +76,6 @@ public interface ThrowingBiConsumer<T, R> {
      * exceptions).
      *
      * @return A BiConsumer
-     * @deprecated
      */
     default BiConsumer<T, R> toNonThrowing() {
         return (T t, R u) -> {
