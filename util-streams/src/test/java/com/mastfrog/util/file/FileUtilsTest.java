@@ -36,6 +36,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import java.nio.file.Files;
+import static java.nio.file.Files.deleteIfExists;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -530,7 +531,6 @@ public class FileUtilsTest {
         assertFalse(FileUtils.deleteIfExists(null));
     }
 
-
     static Set<String> setOf(String... strings) {
         return new LinkedHashSet<>(Arrays.asList(strings));
     }
@@ -561,8 +561,9 @@ public class FileUtilsTest {
 
     @AfterClass
     public static void teardown() throws Exception {
-        if (asciiFile != null && Files.exists(asciiFile)) {
-            Files.delete(asciiFile);
-        }
+        deleteIfExists(asciiFile);
+        deleteIfExists(utf16asciiFile);
+        deleteIfExists(utf8nonAsciiFile);
+        deleteIfExists(utf16nonAsciiFile);
     }
 }
