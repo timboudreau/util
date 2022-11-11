@@ -898,6 +898,7 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
                 return prev;
             }
             MessageEntry<Message> prev = getPrev();
+            assert prev != this : "Previous is this";
             MessageEntry<Message> newPrev = prev == null ? null : prev.deepCopyRemoving(msg, found);
             return new MessageEntry<>(newPrev, message);
         }
