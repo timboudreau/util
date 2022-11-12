@@ -438,7 +438,7 @@ public final class Strings {
      */
     public static String toString(final Throwable throwable) {
         StringWriter w = new StringWriter();
-        try ( PrintWriter p = new PrintWriter(w)) {
+        try (PrintWriter p = new PrintWriter(w)) {
             throwable.printStackTrace(p);
         }
         return w.toString();
@@ -3336,6 +3336,46 @@ public final class Strings {
             }
         }
         return target;
+    }
+
+    /**
+     * Returns the passed string with the first character lower-cased.
+     *
+     * @param s A string
+     * @return A string
+     */
+    public static String decapitalize(String s) {
+        if (s.length() == 0 || !Character.isUpperCase(s.charAt(0))) {
+            return s;
+        }
+        char[] c = s.toCharArray();
+        c[0] = Character.toLowerCase(c[0]);
+        return new String(c);
+    }
+
+    /**
+     * Returns the passed character sequence with the first character
+     * lower-cased.
+     *
+     * @param s A string
+     * @return A string
+     */
+    public static String decapitalize(CharSequence s) {
+        if (s.length() == 0 || !Character.isUpperCase(s.charAt(0))) {
+            return s instanceof String ? s.toString() : (String) s;
+        }
+        char[] c = new char[s.length()];
+        for (int i = 0; i < c.length; i++) {
+            switch (i) {
+                case 0:
+                    c[i] = Character.toLowerCase(s.charAt(i));
+                    break;
+                default:
+                    c[i] = s.charAt(i);
+                    break;
+            }
+        }
+        return new String(c);
     }
 
     /**
