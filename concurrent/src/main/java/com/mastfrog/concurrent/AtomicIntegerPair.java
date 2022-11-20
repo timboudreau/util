@@ -158,6 +158,7 @@ final class AtomicIntegerPair implements IntegerPair {
         return (int) (value & 0xFFFF_FFFFL);
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("(");
         fetch((a, b) -> {
