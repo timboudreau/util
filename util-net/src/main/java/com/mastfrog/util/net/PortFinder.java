@@ -122,7 +122,7 @@ public final class PortFinder {
         return port;
     }
 
-    private boolean available(int port) {
+    public static boolean available(int port) {
         try (ServerSocket ss = new ServerSocket(port)) {
             ss.setReuseAddress(true);
             try (DatagramSocket ds = new DatagramSocket(port)) {
