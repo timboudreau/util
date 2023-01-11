@@ -13,6 +13,9 @@ import com.mastfrog.bits.Bits;
 import com.mastfrog.bits.MutableBits;
 import com.mastfrog.function.IntBiConsumer;
 import com.mastfrog.function.state.Int;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.IntFunction;
 
@@ -587,6 +590,26 @@ public interface IntGraph {
         return topologicalSort(Bits.fromBitSet(bits));
     }
 
+    default boolean containsCycles() {
+        int sz = size();
+        for (int i = 0; i < sz; i++) {
+            if (isRecursive(i)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    default boolean containsSelfCycles() {
+        int sz = size();
+        for (int i = 0; i < sz; i++) {
+            if (parents(i).get(i)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Topologically sort a set of ints; note that if a graph contains cycles,
      * topological sorting is impossible - you will get <i>some</i> order that
@@ -598,20 +621,21 @@ public interface IntGraph {
      * @return A list
      */
     default IntPath topologicalSort(Bits bits) {
-        BitSet visited = new BitSet();
-
+        BitSet visited = new BitSet(size());
         IntPath.Builder ipb = IntPath.builder();
         IntConsumer visitPreceding = new IntConsumer() {
             @Override
             public void accept(int node) {
                 boolean wasVisited = visited.get(node);
                 visited.set(node);
-                if (!wasVisited && node > 0 && node < size()) {
-                    Bits ancestors = parents(node);
-                    ancestors.forEachSetBitAscending(this);
-                }
-                if (!wasVisited && bits.get(node)) {
-                    ipb.add(node);
+                if (!wasVisited) {
+                    if (node >= 0 && node < size()) {
+                        Bits ancestors = parents(node);
+                        ancestors.forEachSetBitDescending(this);
+                    }
+                    if (bits.get(node)) {
+                        ipb.add(node);
+                    }
                 }
             }
         };

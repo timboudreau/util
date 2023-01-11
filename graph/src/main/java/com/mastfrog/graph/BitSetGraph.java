@@ -798,6 +798,30 @@ final class BitSetGraph implements IntGraph {
         closureOf(node, test, 0);
         return test.get(node);
     }
+    
+    public BitSetGraph removingSelfCycles() {
+        int sz = size();
+        MutableBits selfCycleNodes = MutableBits.create(sz);
+        for (int i = 0; i < sz; i++) {
+            if (parents(i).get(i)) {
+                selfCycleNodes.set(i);
+            }
+        }
+        if (selfCycleNodes.isEmpty()) {
+            return this;
+        }
+        Bits[] inboundNew = Arrays.copyOf(this.inboundEdges, this.inboundEdges.length);
+        Bits[] outboundNew = Arrays.copyOf(this.outboundEdges, this.outboundEdges.length);
+        selfCycleNodes.forEachSetBitAscending(cyc -> {
+            MutableBits mb = inboundNew[cyc].mutableCopy();
+            mb.clear(cyc);
+            inboundNew[cyc] = mb;
+            mb = outboundNew[cyc].mutableCopy();
+            mb.clear(cyc);
+            outboundNew[cyc] = mb;
+        });
+        return new BitSetGraph(outboundNew, inboundNew, bitsFactory);
+    }
 
     /**
      * Return an array of all nodes in the graph, sorted by the size of their

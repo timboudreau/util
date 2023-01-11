@@ -29,6 +29,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.Test;
 
@@ -49,7 +51,14 @@ public class TopoSortTest {
 
     @Test
     public void test() {
+        if (true) {
+//            return;
+        }
         IntGraph graph = IntGraph.builder(5).addEdges(EDGES_1).build();
+
+        assertFalse(graph.containsCycles(), () -> "Graph does not contain cycles: " + graph);
+        assertFalse(graph.containsSelfCycles(), () -> "Graph does not contain self-cycles: " + graph);
+
         ObjectGraph<String> og = new BitSetObjectGraph<>(graph, new IxRes());
         Set<String> s = new HashSet<>(Arrays.asList("0", "1", "2", "20", "5", "6", "8", "10", "31"));
         List<String> sorted = og.topologicalSort(s);
@@ -63,9 +72,21 @@ public class TopoSortTest {
             reverseClosureOverlap.retainAll(remaining);
 
             if (!reverseClosureOverlap.isEmpty()) {
-                fail("Item " + curr + " is followed by some of its ancestors in the topological sort: " + reverseClosureOverlap);
+                fail("Item " + curr + " is followed by some of "
+                        + "its ancestors in the topological sort: " + reverseClosureOverlap
+                        + " " + g2s(og));
             }
         }
+    }
+
+    private String g2s(ObjectGraph<String> g) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < g.size(); i++) {
+            String n = g.toNode(i);
+            sb.append("\n").append(n).append(" ancestors: ").append(g.reverseClosureOf(n));
+            sb.append("\n").append(n).append(" descendants: ").append(g.closureOf(n));
+        }
+        return sb.toString();
     }
 
     @Test
@@ -75,6 +96,8 @@ public class TopoSortTest {
 //        Set<String> s = new HashSet<>(Arrays.asList("0", "1", "2", "20", "5", "6", "8", "10", "31"));
         Set<String> s = new HashSet<>(Arrays.asList("0", "1", "2", "20", "5", "6", "10", "31"));
         List<String> sorted = og.topologicalSort(s);
+
+        assertTrue(graph.containsCycles(), "This graph has cycles");
 
         for (int i = 1; i < sorted.size(); i++) {
             String curr = sorted.get(i);
@@ -86,8 +109,11 @@ public class TopoSortTest {
             reverseClosureOverlap.remove("10");
             reverseClosureOverlap.retainAll(remaining);
 
+//             Cannot truly enforce a sort order over a cyclic graph
             if (!reverseClosureOverlap.isEmpty()) {
-                fail("Item " + curr + " is followed by some of its ancestors in the topological sort: " + reverseClosureOverlap);
+                fail("Item " + curr + " is followed by some of its ancestors "
+                        + "in the topological sort: " + reverseClosureOverlap
+                        + " " + g2s(og));
             }
         }
     }
