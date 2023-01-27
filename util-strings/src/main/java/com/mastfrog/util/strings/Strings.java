@@ -1773,14 +1773,16 @@ public final class Strings {
     public static String camelCaseToDelimited(CharSequence s, char delimiter) {
         StringBuilder sb = new StringBuilder();
         int max = s.length();
+        char prev = 0;
         for (int i = 0; i < max; i++) {
             char c = s.charAt(i);
-            if (Character.isUpperCase(c)) {
-                if (sb.length() > 0) {
+            if (Character.isUpperCase(c) && !Character.isUpperCase(prev)) {
+                if (sb.length() > 0 && sb.charAt(sb.length() - 1) != delimiter) {
                     sb.append(delimiter);
                 }
             }
             sb.append(Character.toLowerCase(c));
+            prev = c;
         }
         return sb.toString();
     }

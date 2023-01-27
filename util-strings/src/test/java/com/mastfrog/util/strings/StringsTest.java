@@ -1187,6 +1187,27 @@ public class StringsTest {
         }
     }
 
+    @Test
+    public void testCamelCaseInterpretation() {
+        assertCamelCaseToDelimited("foo", "foo", false);
+        assertCamelCaseToDelimited("FOO", "foo", true);
+        assertCamelCaseToDelimited("THIS_IS_STUFF", "ThisIsStuff", true);
+        assertCamelCaseToDelimited("THIS_IS_STUFF", "ThisIs_Stuff", true);
+        assertCamelCaseToDelimited("this_is_stuff", "ThisIsStuff", false);
+        assertCamelCaseToDelimited("UUID_PATTERN", "uuid_Pattern", true);
+        assertCamelCaseToDelimited("UUID_PATTERN", "UUID_Pattern",  true);
+        assertCamelCaseToDelimited("UUIDPATTERN", "UUIDPattern",  true);
+    }
+
+    private void assertCamelCaseToDelimited(String expect, String s, boolean upcase) {
+        String got = Strings.camelCaseToDelimited(s, '_');
+        if (upcase) {
+            got = got.toUpperCase();
+        }
+        assertEquals("Delimited conversion of '" + s + "' failed: '"
+                + got + "' expected '" + expect + "'", expect, got);
+    }
+
     static class EfficiencyCheckingCharPred implements CharPred {
 
         private final CharPred delegate;
