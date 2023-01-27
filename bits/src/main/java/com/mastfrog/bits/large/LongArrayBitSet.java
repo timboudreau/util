@@ -475,6 +475,7 @@ public class LongArrayBitSet implements AutoCloseable, Serializable {
         long word = ~word(u) & (wm << startingBit);
         for (;;) {
             if (word != 0) {
+                // XXX - don't we want LEADING zeros?
                 return (u * BITS_PER_WORD) + Long.numberOfTrailingZeros(word);
             }
             if (++u == wordsInUse) {
