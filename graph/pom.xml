@@ -14,8 +14,6 @@
         <relativePath/>
     </parent>
     
-    <version>2.9.4.1</version>
-
     <artifactId>graph</artifactId>
 
     <url>https://github.com/timboudreau/util</url>
