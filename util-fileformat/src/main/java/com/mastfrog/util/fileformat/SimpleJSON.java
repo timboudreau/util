@@ -291,7 +291,10 @@ public final class SimpleJSON {
                 sb.append(((ZonedDateTime) o).format(ISO_INSTANT));
             });
         } else if (o instanceof Instant) {
-            stringify(((Instant) o).atZone(GMT));
+            String str = stringify(((Instant) o).atZone(GMT));
+            delimit('"', sb, () -> {
+                sb.append(o.toString());
+            });
         } else if (o instanceof LocalDateTime) {
             LocalDateTime ldt = (LocalDateTime) o;
             write(ldt.toInstant(ZoneId.systemDefault().getRules().getOffset(Instant.now())), sb, depth, style);
