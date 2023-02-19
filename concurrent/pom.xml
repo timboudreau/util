@@ -47,6 +47,7 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>function</artifactId>
+            <version>${mastfrog.function.version}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
