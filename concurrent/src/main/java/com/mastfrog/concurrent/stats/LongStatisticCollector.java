@@ -64,6 +64,17 @@ public interface LongStatisticCollector extends StatisticCollector<LongConsumer,
     }
 
     /**
+     * Create a LongStatisticCollector which is based by an
+     * IntegerStatisticCollector and treats its contents as unsigned ints.
+     *
+     * @param samples The target number of samples
+     * @return A statistic collector
+     */
+    static LongStatisticCollector ofUnsignedInts(int samples) {
+        return new ConcurrentUnsignedIntStats(samples);
+    }
+
+    /**
      * Convert this instance to an LongSummaryStatistics which snapshots the
      * current state.
      *

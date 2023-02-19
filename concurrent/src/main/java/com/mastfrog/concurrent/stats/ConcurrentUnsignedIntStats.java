@@ -24,6 +24,7 @@
 package com.mastfrog.concurrent.stats;
 
 import com.mastfrog.function.LongQuadConsumer;
+import com.mastfrog.function.state.Lng;
 import java.util.LongSummaryStatistics;
 import java.util.function.LongConsumer;
 
@@ -37,10 +38,14 @@ final class ConcurrentUnsignedIntStats implements LongConsumer, LongStatisticCol
 
     private final ConcurrentIntegerStats delegate;
     private final long MAX = (long) Integer.MAX_VALUE * 2L;
-    private volatile boolean hasOutOfBoundsValues;
+    volatile boolean hasOutOfBoundsValues;
 
-    public ConcurrentUnsignedIntStats(ConcurrentIntegerStats delegate) {
+    ConcurrentUnsignedIntStats(ConcurrentIntegerStats delegate) {
         this.delegate = delegate;
+    }
+
+    ConcurrentUnsignedIntStats(int samples) {
+        this(new ConcurrentIntegerStats(samples));
     }
 
     @Override
@@ -48,7 +53,7 @@ final class ConcurrentUnsignedIntStats implements LongConsumer, LongStatisticCol
         if (value > MAX || value < 0) {
             boolean old = hasOutOfBoundsValues;
             hasOutOfBoundsValues = true;
-            if (!old) {
+            if (!old && !Boolean.getBoolean("unit.test")) {
                 new IllegalArgumentException("Received out-of-bounds value "
                         + value + ".  This will only be logged on the first "
                         + "occurrence.")
@@ -92,7 +97,7 @@ final class ConcurrentUnsignedIntStats implements LongConsumer, LongStatisticCol
 
     @Override
     public int forEach(LongConsumer consumer) {
-        return delegate.forEach(intValue -> consumer.accept(intValue));
+        return delegate.forEach(intValue -> consumer.accept(toLong(intValue)));
     }
 
     @Override
@@ -104,8 +109,24 @@ final class ConcurrentUnsignedIntStats implements LongConsumer, LongStatisticCol
 
     @Override
     public boolean withStatsAndValues(LongConsumer valueVisitor, LongQuadConsumer statsConsumer) {
-        return delegate.withStatsAndValues(val -> valueVisitor.accept(toLong(val)),
-                (a, b, c, d) -> statsConsumer.accept(toLong(a), toLong(b), toLong(c), toLong(d)));
+        Lng min = Lng.of(Long.MAX_VALUE);
+        Lng max = Lng.of(Long.MIN_VALUE);
+        Lng sum = Lng.create();
+        Lng callCount = Lng.create();
+        int count = forEach(val -> {
+            min.min(val);
+            max.max(val);
+            sum.incrementSafe(val);
+            callCount.increment();
+            if (valueVisitor != null) {
+                valueVisitor.accept(val);
+            }
+        });
+        boolean result = count != 0;
+        if (result) {
+            statsConsumer.accept(min.getAsLong(), max.getAsLong(), sum.getAsLong(), callCount.get());
+        }
+        return result;
     }
 
     @Override
@@ -119,7 +140,7 @@ final class ConcurrentUnsignedIntStats implements LongConsumer, LongStatisticCol
     }
 
     private static long toLong(int val) {
-        return val & -1;
+        return val & 0x00000000FFFFFFFFL;
     }
 
     private int toInt(long val) {

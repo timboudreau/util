@@ -24,6 +24,7 @@
 package com.mastfrog.concurrent.stats;
 
 import com.mastfrog.function.state.Bool;
+import com.mastfrog.function.state.Int;
 import java.util.LongSummaryStatistics;
 import java.util.Random;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,42 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Tim Boudreau
  */
 public class ConcurrentUnsignedIntStatsTest {
+
+    @Test
+    public void testLargeValues() {
+        long first = Integer.MAX_VALUE + 1L;
+        long second = Integer.MAX_VALUE + 2L;
+        ConcurrentUnsignedIntStats stats = new ConcurrentUnsignedIntStats(20);
+        stats.add(first);
+        stats.add(1);
+        stats.add(second);
+
+        assertEquals(3, stats.sampleCount());
+        Int cur = Int.create();
+        long[] vals = new long[3];
+        stats.forEach(stat -> {
+            vals[cur.increment()] = stat;
+        });
+
+        assertEquals(first, vals[0]);
+        assertEquals(1, vals[1]);
+        assertEquals(second, vals[2]);
+
+        assertFalse(stats.hasReceivedOutOfBoundsValues());
+
+        LongSummaryStatistics st = stats.toStatistics();
+
+        double expectedAverage = (first + 1 + second) / 3D;
+        assertEquals(expectedAverage, st.getAverage(), 0.1);
+
+        assertEquals(first + 1 + second, st.getSum());
+        assertEquals(1L, st.getMin());
+        assertEquals(second, st.getMax());
+
+        stats.accept(Long.MAX_VALUE);
+        assertTrue(stats.hasReceivedOutOfBoundsValues());
+        assertEquals(3, stats.sampleCount(), "Out of bounds values should be ignored");
+    }
 
     @Test
     public void testLongStats() {
