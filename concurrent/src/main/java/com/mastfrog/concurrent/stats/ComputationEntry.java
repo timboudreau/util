@@ -41,7 +41,7 @@ final class ComputationEntry<S extends StatisticComputation<ValueConsumer, C, N>
     }
 
     static <S extends StatisticComputation<ValueConsumer, C, N>, ValueConsumer, C extends ValueConsumer, N extends Number>
-            ComputationEntry newComputationEntry(S computation) {
+            ComputationEntry<S, ValueConsumer, C, N> newComputationEntry(S computation) {
         return new ComputationEntry<>(computation);
     }
 
