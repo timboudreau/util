@@ -99,7 +99,7 @@ public final class IncrementableLatch {
      * not want to release blocked threads, at least until the runnable has
      * completed, use this method.
      *
-     * @param A supplier
+     * @param supp A supplier
      * @return the output of the supplier
      */
     public <T> T hold(Supplier<T> supp) {

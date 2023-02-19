@@ -152,8 +152,7 @@ public interface SlottedLock extends MultiplyLockable {
      * is at best <i>advice</i> - there is no guarantee that those slots will
      * still be unlocked on any future attempt at locking them.
      *
-     * @param first the first slot
-     * @param more additional slots to test
+     * @param slots The slots to test
      * @return true if <i>all</i> of the mentioned slots are locked; returns
      * false if the passed bit set is empty
      */
@@ -164,7 +163,7 @@ public interface SlottedLock extends MultiplyLockable {
      * value is at best <i>advice</i> - there is no guarantee that those slots
      * will still be unlocked on any future attempt at locking them.
      *
-     * @param first the first slot
+     * @param ix The slot to test
      * @return true if <i>all</i> of the mentioned slots are locked
      */
     boolean isLocked(int ix);

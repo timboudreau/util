@@ -25,10 +25,12 @@ package com.mastfrog.concurrent.stats;
 
 import com.mastfrog.function.IntQuadConsumer;
 import com.mastfrog.util.preconditions.Checks;
+import java.util.Collection;
 import java.util.IntSummaryStatistics;
 import java.util.Random;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntConsumer;
+import java.util.function.LongConsumer;
 
 /**
  * Subtype of StatisticCollector for integers.
@@ -60,7 +62,7 @@ public interface IntegerStatisticCollector extends StatisticCollector<IntConsume
      * Create an <i>concurrent</i> integer statistic collector.
      *
      * @param samples
-     * @return
+     * @return A new collector
      */
     static IntegerStatisticCollector create(int samples) {
         return new ConcurrentIntegerStats(samples);
@@ -80,6 +82,20 @@ public interface IntegerStatisticCollector extends StatisticCollector<IntConsume
         return intermittentlySampling(() -> {
             return rnd.nextInt(oneIn) == 1;
         });
+    }
+
+    @Override
+    public default IntConsumer aggregateValueConsumers(Collection<? extends IntConsumer> group) {
+        IntConsumer result = null;
+        for (IntConsumer c : group) {
+            if (result == null) {
+                result = c;
+            } else {
+                result = result.andThen(c);
+            }
+        }
+        return result == null ? val -> {
+        } : result;
     }
 
     /**

@@ -23,19 +23,17 @@
  */
 package com.mastfrog.concurrent.stats;
 
-import com.mastfrog.function.IntQuadConsumer;
 import com.mastfrog.function.LongQuadConsumer;
 import com.mastfrog.function.throwing.ThrowingRunnable;
 import com.mastfrog.util.preconditions.Checks;
 import com.mastfrog.util.preconditions.Exceptions;
+import java.util.Collection;
 import java.util.LongSummaryStatistics;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Subtype of StatisticCollector for integers.
@@ -59,7 +57,7 @@ public interface LongStatisticCollector extends StatisticCollector<LongConsumer,
      * Create an <i>concurrent</i> integer statistic collector.
      *
      * @param samples
-     * @return
+     * @return A new collector
      */
     static LongStatisticCollector create(int samples) {
         return new ConcurrentLongStats(samples);
@@ -72,6 +70,20 @@ public interface LongStatisticCollector extends StatisticCollector<LongConsumer,
      * @return An IntSummaryStatistics
      */
     LongSummaryStatistics toStatistics();
+
+    @Override
+    public default LongConsumer aggregateValueConsumers(Collection<? extends LongConsumer> group) {
+        LongConsumer result = null;
+        for (LongConsumer c : group) {
+            if (result == null) {
+                result = c;
+            } else {
+                result = result.andThen(c);
+            }
+        }
+        return result == null ? val -> {
+        } : result;
+    }
 
     /**
      * Wrap this statistic collection in one which ignores some percentage of
@@ -191,6 +203,11 @@ public interface LongStatisticCollector extends StatisticCollector<LongConsumer,
             @Override
             public LongSummaryStatistics toStatistics() {
                 return LongStatisticCollector.this.toStatistics();
+            }
+
+            @Override
+            public String toString() {
+                return LongStatisticCollector.this.toString() + " @ " + shouldSample;
             }
         };
     }

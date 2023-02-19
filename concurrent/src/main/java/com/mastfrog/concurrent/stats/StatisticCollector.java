@@ -23,6 +23,13 @@
  */
 package com.mastfrog.concurrent.stats;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import static java.util.Collections.emptyMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Collects and can compute statistics; unlike the JDK's IntSummaryStatistics
  * and friends, those in this package are
@@ -44,7 +51,7 @@ public interface StatisticCollector<ValueConsumer, StatsConsumer> {
      * If true, no statistics have been collected yet, or the instance has been
      * reset.
      *
-     * @return
+     * @return true if no statistics are present
      */
     boolean isEmpty();
 
@@ -118,4 +125,28 @@ public interface StatisticCollector<ValueConsumer, StatsConsumer> {
      * @return true if a median value exists and the consumer was called
      */
     boolean median(ValueConsumer c);
+
+    ValueConsumer aggregateValueConsumers(Collection<? extends ValueConsumer> group);
+
+    default <N extends Number> Map<StatisticComputation<ValueConsumer, ? extends ValueConsumer, N>, N> compute(
+            Collection<? extends StatisticComputation<ValueConsumer, ? extends ValueConsumer, N>> computations) {
+        if (computations.isEmpty()) {
+            return emptyMap();
+        }
+        Map<StatisticComputation<ValueConsumer, ? extends ValueConsumer, N>, ComputationEntry<? extends StatisticComputation<ValueConsumer, ? extends ValueConsumer, N>, ValueConsumer, ? extends ValueConsumer, N>> entries = new HashMap<>();
+        List<ValueConsumer> consumers = new ArrayList<>(computations.size());
+        computations.forEach((StatisticComputation<ValueConsumer, ? extends ValueConsumer, N> c) -> {
+            ComputationEntry<? extends StatisticComputation<ValueConsumer, ? extends ValueConsumer, N>, ValueConsumer, ? extends ValueConsumer, N> en = ComputationEntry.newComputationEntry(c);
+            consumers.add(en.consumer());
+            entries.put(c, en);
+        });
+        ValueConsumer singleConsumer = aggregateValueConsumers(consumers);
+        forEach(singleConsumer);
+        Map<StatisticComputation<ValueConsumer, ? extends ValueConsumer, N>, N> result = new HashMap<>();
+        computations.forEach(comp -> {
+            ComputationEntry<? extends StatisticComputation<ValueConsumer, ? extends ValueConsumer, N>, ValueConsumer, ? extends ValueConsumer, N> en = entries.get(comp);
+            en.result().ifPresent(res -> result.put(comp, res));
+        });
+        return result;
+    }
 }

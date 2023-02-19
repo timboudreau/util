@@ -47,7 +47,6 @@ final class ConcurrentLongStats implements LongConsumer, LongStatisticCollector 
 
     public ConcurrentLongStats(int ringSize) {
         arr = new AtomicLongArray(greaterThanOne("ringSize", ringSize));
-        ;
     }
 
     public ConcurrentLongStats copy() {
@@ -245,19 +244,17 @@ final class ConcurrentLongStats implements LongConsumer, LongStatisticCollector 
         Lng min = Lng.of(Long.MAX_VALUE);
         Lng max = Lng.of(Long.MIN_VALUE);
         Lng sum = Lng.create();
-        Int callCount = Int.create();
         int count = forEach(val -> {
             min.min(val);
             max.max(val);
             sum.incrementSafe(val);
-            callCount.increment();
             if (valueVisitor != null) {
                 valueVisitor.accept(val);
             }
         });
         boolean result = count != 0;
         if (result) {
-            statsConsumer.accept(min.getAsLong(), max.getAsLong(), sum.getAsLong(), callCount.get());
+            statsConsumer.accept(min.getAsLong(), max.getAsLong(), sum.getAsLong(), count);
         }
         return result;
     }
@@ -274,17 +271,19 @@ final class ConcurrentLongStats implements LongConsumer, LongStatisticCollector 
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("long-stats{");
-        boolean any = withStatsAndValues(val -> {
-            sb.append(' ').append(val);
-        }, (min, max, sum, count) -> {
-            sb.append(" min=").append(min)
-                    .append(" max=").append(max)
-                    .append(" sum=").append(sum)
-                    .append(" count=").append(count);
-        });
+        int t = tail.get();
+        StringBuilder sb = new StringBuilder("long-stats(" + arr.length() + ")@" + t);
+        boolean any = t != 0;
+//        boolean any = withStatsAndValues(val -> {
+//            sb.append(' ').append(val);
+//        }, (min, max, sum, count) -> {
+//            sb.append(" min=").append(min)
+//                    .append(" max=").append(max)
+//                    .append(" sum=").append(sum)
+//                    .append(" count=").append(count);
+//        });
         if (!any) {
-            sb.append("-empty-");
+            sb.append("{-empty-}");
         }
         return sb.append('}').toString();
     }
