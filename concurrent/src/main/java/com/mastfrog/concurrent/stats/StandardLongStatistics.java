@@ -87,14 +87,15 @@ public enum StandardLongStatistics implements StatisticComputation<LongConsumer,
     private static final class Averager extends StandardLongStatisticsComputer {
 
         private long sum;
-        private int count;
+        private long count;
 
         @Override
         Optional<Long> value() {
             if (count == 0) {
                 return Optional.empty();
             }
-            return Optional.of(sum / count);
+            double val = (double) sum / count;
+            return Optional.of(Math.round(val));
         }
 
         @Override

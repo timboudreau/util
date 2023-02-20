@@ -24,8 +24,12 @@
 package com.mastfrog.concurrent.stats;
 
 import com.mastfrog.function.state.Bool;
+import static java.lang.Math.abs;
+import static java.util.Arrays.asList;
 import java.util.LongSummaryStatistics;
+import java.util.Map;
 import java.util.Random;
+import java.util.function.LongConsumer;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -34,6 +38,53 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Tim Boudreau
  */
 public class ConcurrentLongStatsTest {
+
+    @Test
+    public void testBasicStats() {
+        Random r = new Random(658121039204L);
+        int count = 1000;
+        ConcurrentLongStats stats = new ConcurrentLongStats(count);
+
+        for (int i = 0; i < 1000; i++) {
+            long val = r.nextLong();
+            if (val != 0) {
+                stats.add(abs(val));
+            }
+        }
+
+        LongSummaryStatistics sum = stats.toStatistics();
+
+        Map<StatisticComputation<LongConsumer, ? extends LongConsumer, Long>, Long> results
+                = stats.compute(asList(StandardLongStatistics.values()));
+
+        for (StandardLongStatistics sl : StandardLongStatistics.values()) {
+            Long value = results.get(sl);
+            assertNotNull(value, "No value for " + sl);
+
+            long expected;
+            switch (sl) {
+                case COUNT:
+                    expected = sum.getCount();
+                    break;
+                case MAX:
+                    expected = sum.getMax();
+                    break;
+                case MIN:
+                    expected = sum.getMin();
+                    break;
+                case SUM:
+                    expected = sum.getSum();
+                    break;
+                case MEAN:
+                    expected = (long) sum.getAverage();
+                    break;
+                default:
+                    throw new AssertionError(sl);
+            }
+            assertEquals(expected, value.longValue(), () -> "Wrong value for " + sl);
+        }
+
+    }
 
     @Test
     public void testLongStats() {

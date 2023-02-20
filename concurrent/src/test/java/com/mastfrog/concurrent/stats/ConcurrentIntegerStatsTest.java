@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Tim Boudreau
  */
 public class ConcurrentIntegerStatsTest {
-
+    
     @Test
     public void testIntStats() {
 
