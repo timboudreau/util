@@ -14,8 +14,6 @@
         <relativePath/>
     </parent>
 
-    <version>2.9.5.2</version>
-
     <artifactId>util-fileformat</artifactId>
 
     <url>https://github.com/timboudreau/util</url>
