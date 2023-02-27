@@ -23,6 +23,8 @@
  */
 package com.mastfrog.concurrent;
 
+import static java.lang.System.currentTimeMillis;
+import java.time.Duration;
 import java.util.concurrent.locks.LockSupport;
 
 /**
@@ -63,6 +65,22 @@ public final class SimpleLatch {
     public void enter() {
         parked.push(Thread.currentThread());
         LockSupport.park(this);
+    }
+
+    /**
+     * Enter the latch, blocking the current thread for the passed duration, or
+     * until released, unless previously released.
+     *
+     * @param dur A duration
+     */
+    public void enterFor(Duration dur) {
+        long delay = dur.toMillis();
+        if (delay <= 0) {
+            return;
+        }
+        long deadline = currentTimeMillis() + delay;
+        parked.push(Thread.currentThread());
+        LockSupport.parkUntil(this, deadline);
     }
 
     /**

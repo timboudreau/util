@@ -77,6 +77,7 @@ public class AtomicMinMax implements IntConsumer {
         return pair.right();
     }
 
+    @Override
     public String toString() {
         return "MinMax" + pair;
     }

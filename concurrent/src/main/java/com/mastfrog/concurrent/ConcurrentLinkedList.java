@@ -33,9 +33,9 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 /**
- * A simplified version of AtomicLinkedQueue, for when you just need multiple
- * threads to append to a non-blocking list. Note the API is considerably less
- * right than a list, but all operations are guaranteed to be atomic.
+ * A Trieber stack, for when you just need multiple threads to append to a
+ * non-blocking list. Note the API is considerably less right than a list, but
+ * all operations are guaranteed to be atomic.
  * <p>
  * Note that one price of atomicity - specifically the requirement that all
  * mutations involve mutation of <i>exactly and only one field</i> (and the fact
@@ -49,7 +49,7 @@ import java.util.function.UnaryOperator;
  *
  * @author Tim Boudreau
  */
-public class ConcurrentLinkedList<T> implements Iterable<T> {
+public final class ConcurrentLinkedList<T> implements Iterable<T> {
 
     private static final AtomicReferenceFieldUpdater<ConcurrentLinkedList, Cell> HEAD
             = AtomicReferenceFieldUpdater.newUpdater(ConcurrentLinkedList.class, Cell.class, "head");
@@ -82,7 +82,7 @@ public class ConcurrentLinkedList<T> implements Iterable<T> {
         Cell<T> headCell = headCell();
         return new ConcurrentLinkedList<>(fifo, headCell == null ? null : headCell.copy());
     }
-
+    
     public boolean isFifo() {
         return fifo;
     }
