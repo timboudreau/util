@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2018 tim.
+ * Copyright 2018 Tim Boudreau
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -58,7 +58,7 @@ import org.junit.Test;
  */
 public class AtomicLinkedQueueTest {
 
-    @Test
+    @Test(timeout = 30000)
     @SuppressWarnings("ThrowableResultIgnored")
     public void testTransferringFromEmptyDoesNotCauseNPE() throws Throwable {
         AtomicLinkedQueue<String> a = new AtomicLinkedQueue<>();
@@ -106,7 +106,7 @@ public class AtomicLinkedQueueTest {
         });
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testRemoveSingle() throws Throwable {
         AtomicLinkedQueue<Integer> q = new AtomicLinkedQueue<>();
         q.add(5);
@@ -116,7 +116,7 @@ public class AtomicLinkedQueueTest {
         assertEquals(0, q.size());
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testConcurrentRemove() throws InterruptedException {
         Phaser ph = new Phaser(4);
         List<Integer> toRemove = new CopyOnWriteArrayList<>();
@@ -155,6 +155,7 @@ public class AtomicLinkedQueueTest {
 
         private final Phaser ph;
         private final List<Integer> ints;
+        private final Iterator<Integer> intsIter;
         private final AtomicLinkedQueue<Integer> q;
         private Throwable thrown;
         volatile int removed;
@@ -163,6 +164,7 @@ public class AtomicLinkedQueueTest {
             this.ph = ph;
             this.ints = ints;
             this.q = q;
+            intsIter = ints.iterator();
         }
 
         @Override
@@ -202,7 +204,7 @@ public class AtomicLinkedQueueTest {
         }
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testSwap() {
         AtomicLinkedQueue<String> a = new AtomicLinkedQueue<>(Arrays.asList("A", "B", "C"));
         AtomicLinkedQueue<String> b = new AtomicLinkedQueue<>(Arrays.asList("D", "E", "F"));
@@ -214,7 +216,7 @@ public class AtomicLinkedQueueTest {
         assertEquals("A,B,C", a.toString());
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testRemoveRetain() {
         AtomicLinkedQueue<String> q = new AtomicLinkedQueue<>(Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H", "I"));
         q.retainAll(Arrays.asList("B", "D", "F", "G", "I", "Q"));
@@ -235,7 +237,7 @@ public class AtomicLinkedQueueTest {
         assertTrue(q.isEmpty());
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testTransfer() {
         AtomicLinkedQueue<String> a = new AtomicLinkedQueue<>(Arrays.asList("A", "B", "C"));
         AtomicLinkedQueue<String> b = new AtomicLinkedQueue<>();
@@ -274,7 +276,7 @@ public class AtomicLinkedQueueTest {
         assertTrue(b.isEmpty());
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testStream() {
         int max = 20000;
         AtomicLinkedQueue<Integer> q = new AtomicLinkedQueue<>();
@@ -320,7 +322,7 @@ public class AtomicLinkedQueueTest {
         }
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testReplaceContents() {
         AtomicLinkedQueue<String> q1 = new AtomicLinkedQueue<>(Arrays.asList("a", "b", "c", "d"));
         assertEquals(Arrays.asList("a", "b", "c", "d"), q1.asList());
@@ -338,7 +340,7 @@ public class AtomicLinkedQueueTest {
         }
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testCopiesAreIndependent() {
         String e = "e";
         AtomicLinkedQueue<String> q1 = new AtomicLinkedQueue<>(Arrays.asList("a", "b", "c", "d", "e"));
@@ -350,7 +352,7 @@ public class AtomicLinkedQueueTest {
         assertTrue(q2.contains(e));
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testRemoveByIdentityTailAndHead() {
         Thing[] things = new Thing[100];
         for (int i = 0; i < things.length; i++) {
@@ -376,7 +378,7 @@ public class AtomicLinkedQueueTest {
         });
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testRemoveByIdentityCannotCreateDuplicatesWhenSingleThreaded() {
         Thing[] things = new Thing[100];
         for (int i = 0; i < things.length; i++) {
@@ -402,7 +404,7 @@ public class AtomicLinkedQueueTest {
         assertEquals(all.toString(), new LinkedHashSet<>(all).size(), all.size());
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testRemoveByIdentity() {
         Thing[] things = new Thing[]{new Thing(1, 1), new Thing(1, 2), new Thing(1, 3), new Thing(1, 4)};
         AtomicLinkedQueue<Thing> q = new AtomicLinkedQueue<>(Arrays.asList(things));
@@ -413,7 +415,7 @@ public class AtomicLinkedQueueTest {
         assertTrue(q.isEmpty());
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testReverseInPlace() {
         AtomicLinkedQueue<String> q1 = new AtomicLinkedQueue<>(Arrays.asList("a", "b", "c", "d"));
         q1.reverseInPlace();
@@ -423,7 +425,7 @@ public class AtomicLinkedQueueTest {
         assertEquals("d", q1.pop());
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testPopInto() {
         AtomicLinkedQueue<String> q1 = new AtomicLinkedQueue<>(Arrays.asList("a", "b", "c", "d"));
         AtomicLinkedQueue<String> q2 = new AtomicLinkedQueue<>();
@@ -472,7 +474,7 @@ public class AtomicLinkedQueueTest {
         }
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testAtomicQueue() {
         AtomicLinkedQueue<String> q = new AtomicLinkedQueue<>(Arrays.asList("a", "b", "c"));
         assertEquals(3, q.size());

@@ -27,12 +27,16 @@ import com.mastfrog.util.preconditions.Checks;
 import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.util.Collection;
 import java.util.Collections;
+import static java.util.Collections.newSetFromMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -616,12 +620,14 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
      * Remove an object, using identity (not equality) testing. Note this method
      * may loop repeatedly creating a copy of the contents of this queue in
      * order to guarantee atomicity. If the object occurs more than once in the
-     * queue, the first occurrence is removed.
+     * queue, the first occurrence is removed. Removals are <i>atomic, but
+     * expensive</i> - under concurrency it can involve copying the entire
+     * internal linked-list structure more than once.
      *
      * @param msg An element to remove
      * @return True if it is removed
      */
-    public synchronized boolean removeByIdentity(Object msg) {
+    public boolean removeByIdentity(Object msg) {
         for (;;) {
             MessageEntry<Message> t = tail.get();
             if (t == null) {
@@ -772,7 +778,9 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
 
     /**
      * Remove - note this method delegates to <code>removeByIdentity()</code>
-     * and does not do object equality checks, only instance equality.
+     * and does not do object equality checks, only instance equality. Removals
+     * are <i>atomic, but expensive</i> - under concurrency it can involve
+     * copying the entire internal linked-list structure more than once.
      *
      * @param o An object
      * @return true if it was (probably) removed
@@ -892,14 +900,26 @@ public final class AtomicLinkedQueue<Message> implements Iterable<Message>, Queu
             return new MessageEntry<>(p, message);
         }
 
+        @SuppressWarnings("unchecked")
         MessageEntry<Message> deepCopyRemoving(Object msg, boolean[] found) {
+            return deepCopyRemoving(msg, found, newSetFromMap(new IdentityHashMap<>()));
+        }
+
+        MessageEntry<Message> deepCopyRemoving(Object msg, boolean[] found, Set<MessageEntry<Message>> msgs) {
             if (message == msg) {
+                // This item is the target - return prev, so `this` disappears from the chain
                 found[0] = true;
-                return prev;
+                return getPrev();
+            }
+            if (msgs.contains(this)) {
+                // We are racing with another thread and are seeing this node as
+                // a child of itself; the other thread will correct the inconsistency
+                // by creating a new parent node, so it is not observable from outside
+                return this;
             }
             MessageEntry<Message> prev = getPrev();
             assert prev != this : "Previous is this";
-            MessageEntry<Message> newPrev = prev == null ? null : prev.deepCopyRemoving(msg, found);
+            MessageEntry<Message> newPrev = prev == null ? null : prev.deepCopyRemoving(msg, found, msgs);
             return new MessageEntry<>(newPrev, message);
         }
 

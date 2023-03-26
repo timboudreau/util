@@ -91,7 +91,7 @@
                             <!-- For SimpleWeakSetTest, we need to ensure the
                                  garbage collector's behavior is predictable -->
                             <argLine>
-                                -XX:+IgnoreUnrecognizedVMOptions -XX:+UseSerialGC
+                                -XX:+IgnoreUnrecognizedVMOptions -XX:+UseSerialGC -Xss4m
                             </argLine>
 
                             <systemPropertyVariables>

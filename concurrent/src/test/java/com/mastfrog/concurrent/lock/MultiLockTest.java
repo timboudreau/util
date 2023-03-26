@@ -1,7 +1,7 @@
 package com.mastfrog.concurrent.lock;
 
-import com.mastfrog.concurrent.lock.Favor;
 import com.mastfrog.util.preconditions.Exceptions;
+import static com.mastfrog.util.preconditions.Exceptions.chuck;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -309,6 +310,7 @@ public class MultiLockTest {
         AtomicInteger maxInLock = new AtomicInteger();
         AtomicInteger minAvail = new AtomicInteger(64);
         AtomicInteger maxAvail = new AtomicInteger();
+        AtomicReference<Throwable> thrown = new AtomicReference<>();
         Runnable lockIt = new Runnable() {
             @Override
             public void run() {
@@ -329,6 +331,8 @@ public class MultiLockTest {
                         boolean locked = lock.isLocked(position);
                     } catch (InterruptedException ex) {
                         Logger.getLogger(MultiLockTest.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (Exception | Error e) {
+                        thrown.set(e);
                     }
                 }
             }
@@ -340,6 +344,10 @@ public class MultiLockTest {
         p.arriveAndAwaitAdvance();
         lockIt.run();
         t.join(1000);
+        Throwable th = thrown.get();
+        if (th != null) {
+            chuck(th);
+        }
         assertEquals(66, ct.get());
     }
 
