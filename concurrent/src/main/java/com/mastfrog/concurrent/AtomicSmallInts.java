@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
  *
  * @author Tim Boudreau
  */
-public class AtomicSmallInts implements Serializable {
+public final class AtomicSmallInts implements Serializable {
 
     private static final AtomicLongFieldUpdater<AtomicSmallInts> UPD
             = AtomicLongFieldUpdater.newUpdater(AtomicSmallInts.class, "value");

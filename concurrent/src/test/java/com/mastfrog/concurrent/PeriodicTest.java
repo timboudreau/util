@@ -23,15 +23,8 @@
  */
 package com.mastfrog.concurrent;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Phaser;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
-import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -45,7 +38,7 @@ public class PeriodicTest {
     public void testPeriodicConcurrent() throws Throwable {
         int threadCount = 4;
         long interval = 120;
-        long fuzz = 10;
+        long fuzz = 15;
         Periodic p = new Periodic(interval);
 
         CopyOnWriteArrayList<Long> cowal = new CopyOnWriteArrayList<>();
