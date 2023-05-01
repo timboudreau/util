@@ -461,7 +461,6 @@ final class LongListSimple extends AbstractList<Long> implements LongList, Seria
         if (last == 1) {
             return true;
         }
-//        return Arrays.equals(values, 1, last-1, other.values, 1, last-1); // XXX JDK9
         for (int i = 1; i < last - 1; i++) {
             if (values[last] != other.values[last]) {
                 return false;
@@ -486,7 +485,6 @@ final class LongListSimple extends AbstractList<Long> implements LongList, Seria
     }
 
     private boolean _endsWith(LongListSimple other) {
-//        return Arrays.equals(values, size-other.size(), size, other.values, 0, other.size(); // XXX JDK9        
         for (int i = size - 1, j = other.size() - 1; i > 0 && j >= 0; j--, i--) {
             if (values[i] != other.values[j]) {
                 return false;

@@ -82,6 +82,7 @@ final class AtomicEnumSetSmall<T extends Enum<T>> extends AbstractSet<T> impleme
         value = (1 << a.ordinal()) | (1 << b.ordinal()) | (1 << c.ordinal());
     }
 
+    @SafeVarargs
     AtomicEnumSetSmall(T a, T... more) {
         this(notNull("a", a).getDeclaringClass());
         value = 1 << a.ordinal();

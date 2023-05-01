@@ -699,7 +699,7 @@ public final class ArrayUtils {
     public static Long[] toBoxedArray(long[] longs) {
         Long[] result = new Long[longs.length];
         for (int i = 0; i < longs.length; i++) {
-            result[i] = Long.valueOf(longs[i]);
+            result[i] = longs[i];
         }
         return result;
     }
@@ -713,7 +713,7 @@ public final class ArrayUtils {
     public static Integer[] toBoxedArray(int[] ints) {
         Integer[] result = new Integer[ints.length];
         for (int i = 0; i < ints.length; i++) {
-            result[i] = Integer.valueOf(ints[i]);
+            result[i] = ints[i];
         }
         return result;
     }
@@ -748,6 +748,40 @@ public final class ArrayUtils {
             assert ints[i] != null : "null in Integer array at " + i
                     + Arrays.toString(ints);
             result[i] = ints[i];
+        }
+        return result;
+    }
+
+    /**
+     * Convert an array of boxed shorts to an array of primitive shorts. Nulls
+     * not allowed.
+     *
+     * @param shorts An array of integers
+     * @return An array of primitive integers
+     */
+    public static short[] toPrimitiveArray(Short[] shorts) {
+        short[] result = new short[shorts.length];
+        for (int i = 0; i < shorts.length; i++) {
+            assert shorts[i] != null : "null in Integer array at " + i
+                    + Arrays.toString(shorts);
+            result[i] = shorts[i];
+        }
+        return result;
+    }
+
+    /**
+     * Convert an array of boxed shorts to an array of primitive shorts. Nulls
+     * not allowed.
+     *
+     * @param bytes An array of integers
+     * @return An array of primitive integers
+     */
+    public static byte[] toPrimitiveArray(Byte[] bytes) {
+        byte[] result = new byte[bytes.length];
+        for (int i = 0; i < bytes.length; i++) {
+            assert bytes[i] != null : "null in Integer array at " + i
+                    + Arrays.toString(bytes);
+            result[i] = bytes[i];
         }
         return result;
     }
@@ -918,9 +952,7 @@ public final class ArrayUtils {
         if (start == 0) {
             return Arrays.copyOf(array, length);
         }
-        char[] result = new char[length];
-        System.arraycopy(array, start, result, 0, length);
-        return result;
+        return Arrays.copyOfRange(array, start, start + length);
     }
 
     /**
@@ -937,9 +969,7 @@ public final class ArrayUtils {
         if (start == 0) {
             return Arrays.copyOf(array, length);
         }
-        int[] result = new int[length];
-        System.arraycopy(array, start, result, 0, length);
-        return result;
+        return Arrays.copyOfRange(array, start, start + length);
     }
 
     /**
@@ -954,9 +984,7 @@ public final class ArrayUtils {
         if (start == 0) {
             return Arrays.copyOf(array, length);
         }
-        long[] result = new long[length];
-        System.arraycopy(array, start, result, 0, length);
-        return result;
+        return Arrays.copyOfRange(array, start, start + length);
     }
 
     /**
@@ -973,9 +1001,7 @@ public final class ArrayUtils {
         if (start == 0) {
             return Arrays.copyOf(array, length);
         }
-        byte[] result = new byte[length];
-        System.arraycopy(array, start, result, 0, length);
-        return result;
+        return Arrays.copyOfRange(array, start, start + length);
     }
 
     /**
@@ -992,9 +1018,7 @@ public final class ArrayUtils {
         if (start == 0) {
             return Arrays.copyOf(array, length);
         }
-        double[] result = new double[length];
-        System.arraycopy(array, start, result, 0, length);
-        return result;
+        return Arrays.copyOfRange(array, start, start + length);
     }
 
     /**
@@ -1011,9 +1035,7 @@ public final class ArrayUtils {
         if (start == 0) {
             return Arrays.copyOf(array, length);
         }
-        float[] result = new float[length];
-        System.arraycopy(array, start, result, 0, length);
-        return result;
+        return Arrays.copyOfRange(array, start, start + length);
     }
 
     /**
@@ -1030,9 +1052,7 @@ public final class ArrayUtils {
         if (start == 0) {
             return Arrays.copyOf(array, length);
         }
-        String[] result = new String[length];
-        System.arraycopy(array, start, result, 0, length);
-        return result;
+        return Arrays.copyOfRange(array, start, start + length);
     }
 
     /**
@@ -1055,15 +1075,7 @@ public final class ArrayUtils {
                     + start + " + len=" + length + " = " + (start + length)
                     + " in array of length " + array.length);
         }
-        T[] result;
-        try {
-            result = (T[]) Array.newInstance(array.getClass().getComponentType(), length);
-        } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException("Exception creating array of type "
-                    + array.getClass().getComponentType() + " for " + Arrays.toString(array), ex);
-        }
-        System.arraycopy(array, start, result, 0, length);
-        return result;
+        return Arrays.copyOfRange(array, start, start + length);
     }
 
     /**
@@ -1387,14 +1399,18 @@ public final class ArrayUtils {
      * cryptography where the time it takes to compute something can be
      * <a href="http://codahale.com/a-lesson-in-timing-attacks/">
      * used in an attack</a>.
+     *
+     * @param first The first byte array
+     * @param the second byte array
+     * @return if they are equal
      */
     public static boolean timingSafeEquals(byte[] first, byte[] second) {
         if (first == null) {
             return second == null;
         } else if (second == null) {
             return false;
-        } else if (second.length <= 0) {
-            return first.length <= 0;
+        } else if (second.length == 0) {
+            return first.length == 0;
         }
         byte result = (byte) ((first.length == second.length) ? 0 : 1);
         int j = 0;
@@ -1406,30 +1422,19 @@ public final class ArrayUtils {
     }
 
     /**
-     * Placeholder for method in JDK 9 on java.utl.Arrays.
+     * Tests equality of two array ranges. If the two ranges are not same-sized,
+     * returns false.
      *
-     * @param a
-     * @param aFromIndex
-     * @param aToIndex
-     * @param b
-     * @param bFromIndex
-     * @param bToIndex
-     * @return
+     * @param a The first array
+     * @param aFromIndex The starting index in the first array
+     * @param aToIndex The ending index in the first array, exclusive
+     * @param b The second array
+     * @param bFromIndex The starting index in the second array
+     * @param bToIndex The ending index in the first array, exclusive
+     * @return true if the ranges are equal
      */
     public static boolean arraysEquals(int[] a, int aFromIndex, int aToIndex, int[] b, int bFromIndex, int bToIndex) {
-        // JDK 9
-//        return Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex);
-        int aLength = aToIndex - aFromIndex;
-        int bLength = bToIndex - bFromIndex;
-        if (aLength != bLength) {
-            return false;
-        }
-        for (; aFromIndex < aToIndex && bFromIndex < bToIndex; aFromIndex++, bFromIndex++) {
-            if (a[aFromIndex] != b[bFromIndex]) {
-                return false;
-            }
-        }
-        return true;
+        return Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex);
     }
 
     /**
@@ -1761,6 +1766,181 @@ public final class ArrayUtils {
                 val = outOfRange.applyAsDouble(val);
             }
             result[i] = (float) val;
+        }
+        return result;
+    }
+
+    /**
+     * Convert a primitive array to its boxed equivalent.
+     *
+     * @param input An array
+     * @return An array of the boxed equivalent type
+     */
+    public static Float[] toBoxedArray(float[] input) {
+        Float[] result = new Float[notNull("floats", input).length];
+        for (int i = 0; i < input.length; i++) {
+            result[i] = input[i];
+        }
+        return result;
+    }
+
+    /**
+     * Convert a primitive array to its boxed equivalent.
+     *
+     * @param input An array
+     * @return An array of the boxed equivalent type
+     */
+    public static Double[] toBoxedArray(double[] input) {
+        Double[] result = new Double[notNull("doubles", input).length];
+        for (int i = 0; i < input.length; i++) {
+            result[i] = input[i];
+        }
+        return result;
+    }
+
+    /**
+     * Convert a primitive array to its boxed equivalent.
+     *
+     * @param input An array
+     * @return An array of the boxed equivalent type
+     */
+    public static Short[] toBoxedArray(short[] input) {
+        Short[] result = new Short[notNull("shorts", input).length];
+        for (int i = 0; i < input.length; i++) {
+            result[i] = input[i];
+        }
+        return result;
+    }
+
+    /**
+     * Convert a primitive array to its boxed equivalent.
+     *
+     * @param input An array
+     * @return An array of the boxed equivalent type
+     */
+    public static Byte[] toBoxedArray(byte[] input) {
+        Byte[] result = new Byte[notNull("bytes", input).length];
+        for (int i = 0; i < input.length; i++) {
+            result[i] = input[i];
+        }
+        return result;
+    }
+
+    /**
+     * Convert a primitive array to its boxed equivalent.
+     *
+     * @param input An array
+     * @return An array of the boxed equivalent type
+     */
+    public static Character[] toBoxedArray(char[] input) {
+        Character[] result = new Character[notNull("chars", input).length];
+        for (int i = 0; i < input.length; i++) {
+            result[i] = input[i];
+        }
+        return result;
+    }
+
+    /**
+     * Convert a collection of integers to a primitive int[].
+     *
+     * @param input The input
+     * @return An int[]
+     */
+    public static int[] toPrimitiveIntArray(Collection<? extends Integer> input) {
+        int[] result = new int[input.size()];
+        Iterator<? extends Integer> it = input.iterator();
+        for (int i = 0; i < result.length; i++) {
+            result[i] = it.next();
+        }
+        return result;
+    }
+
+    /**
+     * Convert a collection of longs to a primitive long[].
+     *
+     * @param input The input
+     * @return A long[]
+     */
+    public static long[] toPrimitiveLongArray(Collection<? extends Long> input) {
+        long[] result = new long[input.size()];
+        Iterator<? extends Long> it = input.iterator();
+        for (int i = 0; i < result.length; i++) {
+            result[i] = it.next();
+        }
+        return result;
+    }
+
+    /**
+     * Convert a collection of shorts to a primitive short[].
+     *
+     * @param input The input
+     * @return A short[]
+     */
+    public static short[] toPrimitiveShortArray(Collection<? extends Short> input) {
+        short[] result = new short[input.size()];
+        Iterator<? extends Short> it = input.iterator();
+        for (int i = 0; i < result.length; i++) {
+            result[i] = it.next();
+        }
+        return result;
+    }
+
+    /**
+     * Convert a collection of bytes to a primitive byte[].
+     *
+     * @param input The input
+     * @return A byte[]
+     */
+    public static byte[] toPrimitiveByteArray(Collection<? extends Byte> input) {
+        byte[] result = new byte[input.size()];
+        Iterator<? extends Byte> it = input.iterator();
+        for (int i = 0; i < result.length; i++) {
+            result[i] = it.next();
+        }
+        return result;
+    }
+
+    /**
+     * Convert a collection of Characters to a primitive char[].
+     *
+     * @param input The input
+     * @return A char[]
+     */
+    public static char[] toPrimitiveCharArray(Collection<? extends Character> input) {
+        char[] result = new char[input.size()];
+        Iterator<? extends Character> it = input.iterator();
+        for (int i = 0; i < result.length; i++) {
+            result[i] = it.next();
+        }
+        return result;
+    }
+
+    /**
+     * Convert a collection of floats to a primitive float[].
+     *
+     * @param input The input
+     * @return A float[]
+     */
+    public static float[] toPrimitiveFloatArray(Collection<? extends Float> input) {
+        float[] result = new float[input.size()];
+        Iterator<? extends Float> it = input.iterator();
+        for (int i = 0; i < result.length; i++) {
+            result[i] = it.next();
+        }
+        return result;
+    }
+
+    /**
+     * Convert a collection of doubles to a primitive double[].
+     *
+     * @param input The input
+     * @return A double[]
+     */
+    public static double[] toPrimitiveDoubleArray(Collection<? extends Double> input) {
+        double[] result = new double[input.size()];
+        Iterator<? extends Double> it = input.iterator();
+        for (int i = 0; i < result.length; i++) {
+            result[i] = it.next();
         }
         return result;
     }

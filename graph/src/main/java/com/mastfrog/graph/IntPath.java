@@ -781,19 +781,7 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer>, Se
     }
 
     static boolean arraysEquals(int[] a, int aFromIndex, int aToIndex, int[] b, int bFromIndex, int bToIndex) {
-        // JDK 9
-//        return Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex);
-        int aLength = aToIndex - aFromIndex;
-        int bLength = bToIndex - bFromIndex;
-        if (aLength != bLength) {
-            return false;
-        }
-        for (; aFromIndex < aToIndex && bFromIndex < bToIndex; aFromIndex++, bFromIndex++) {
-            if (a[aFromIndex] != b[bFromIndex]) {
-                return false;
-            }
-        }
-        return true;
+        return Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex);
     }
 
     /**
@@ -969,14 +957,7 @@ public final class IntPath implements Comparable<IntPath>, Iterable<Integer>, Se
         if ((size != ip.size) || (hashCode() != ip.hashCode())) {
             return false;
         }
-        // JDK 9
-//        return Arrays.equals(this.items, 0, size, ip.items, 0, size);
-        for (int i = 0; i < size; i++) {
-            if (get(i) != ip.get(i)) {
-                return false;
-            }
-        }
-        return true;
+        return Arrays.equals(this.items, 0, size, ip.items, 0, size);
     }
 
     private int cachedHashCode = 0;

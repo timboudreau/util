@@ -82,6 +82,7 @@ final class AtomicEnumSetMedium<T extends Enum<T>> extends AbstractSet<T> implem
         value = (1L << a.ordinal()) | (1L << b.ordinal()) | (1L << c.ordinal());
     }
 
+    @SafeVarargs
     AtomicEnumSetMedium(T a, T... more) {
         this(notNull("a", a).getDeclaringClass());
         value = 1L << a.ordinal();

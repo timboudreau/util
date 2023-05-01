@@ -876,13 +876,7 @@ class IntSetArray extends IntSet {
             }
             checkSort();
             isa.checkSort();
-            // PENDING: JDK 9's Arrays.equals has subranges
-            for (int i = 0; i < size; i++) {
-                if (data[i] != isa.data[i]) {
-                    return false;
-                }
-            }
-            return true;
+            return Arrays.equals(data, 0, size, isa.data, 0, size);
         } else if (o instanceof IntSet) {
             IntSet is = (IntSet) o;
             if (is.size() != size) {

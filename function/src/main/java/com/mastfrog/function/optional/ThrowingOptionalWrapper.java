@@ -90,7 +90,6 @@ final class ThrowingOptionalWrapper<T> implements Supplier<T>, ThrowingOptional<
     @Override
     @SuppressWarnings("unchecked")
     public <U> ThrowingOptionalWrapper<U> flatMap(ThrowingFunction<? super T, ? extends Optional<? extends U>> mapper) {
-        // JDK9 - cast can be removed along with @SuppressWarnings
         return new ThrowingOptionalWrapper<U>(delegate.flatMap((Function<T, Optional<U>>) mapper.toNonThrowing()));
     }
 
@@ -99,7 +98,6 @@ final class ThrowingOptionalWrapper<T> implements Supplier<T>, ThrowingOptional<
     public <U> ThrowingOptionalWrapper<U> flatMapThrowing(ThrowingFunction<? super T, ? extends ThrowingOptional<? extends U>> mapper) {
         return new ThrowingOptionalWrapper<U>(delegate.flatMap(obj
                 -> {
-            // JDK9 - cast can be removed along with @SuppressWarnings
             Function<? super T, ? extends ThrowingOptional<U>> f = (Function<? super T, ? extends ThrowingOptional<U>>) mapper.toNonThrowing();
             return f.apply(obj).toOptional();
         }));

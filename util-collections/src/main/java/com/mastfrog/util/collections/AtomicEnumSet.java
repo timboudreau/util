@@ -101,6 +101,7 @@ public interface AtomicEnumSet<E extends Enum<E>> extends Set<E> {
         return new AtomicEnumSetMedium<>(first);
     }
 
+    @SafeVarargs
     public static <E extends Enum<E>> AtomicEnumSet<E> of(E first, E... more) {
         Class<E> type = first.getDeclaringClass();
         E[] consts = type.getEnumConstants();

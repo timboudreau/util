@@ -25,10 +25,13 @@ package com.mastfrog.util.collections;
 
 import static com.mastfrog.util.preconditions.Checks.notNull;
 import com.mastfrog.util.search.Bias;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
+import static java.util.Collections.shuffle;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator;
 import java.util.Random;
@@ -773,48 +776,16 @@ public abstract class IntSet implements Set<Integer>, Cloneable, Trimmable, Orde
     }
 
     public Integer pick(Random r, Set<Integer> notIn) {
-        // XXX this is hideous and non-performant
-        if (notIn.size() >= size()) {
+        if (isEmpty()) {
             return null;
         }
-        int result = pick(r);
-        BitSet bits = bitsUnsafe();
-        if (result == -1 || notIn.contains(result)) {
-            int len = bits.length();
-            int pos = r.nextInt(bits.length());
-            int origPos = pos;
-            int direction = 1;
-            if (pos > len / 2) {
-                direction = -1;
-            }
-            if (bits.get(pos) && !notIn.contains(pos)) {
-                return pos;
-            }
-            boolean flipped = false;
-            for (;;) {
-                result = direction == -1 ? bits.previousSetBit(pos + direction)
-                        : bits.nextSetBit(pos + direction);
-                if (result == -1) {
-                    if (flipped) {
-                        result = -1;
-                        break;
-                    }
-                    flipped = true;
-                    direction *= -1;
-                    pos = origPos;
-                }
-                if (!notIn.contains(result)) {
-                    break;
-                }
-                pos = result;
-            }
-        }
-        if (result == -1) {
+        List<Integer> ints = new ArrayList<>(this);
+        ints.removeAll(notIn);
+        if (ints.isEmpty()) {
             return null;
-        } else {
-            notIn.add(result);
-            return result;
         }
+        shuffle(ints, r);
+        return ints.get(0);
     }
 
     /**

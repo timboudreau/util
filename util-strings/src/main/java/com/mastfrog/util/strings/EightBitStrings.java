@@ -339,9 +339,6 @@ public final class EightBitStrings implements Serializable {
                 if (other.bytes.length < bytes.length) {
                     return false;
                 }
-                // XXX if two strings with different unicode encodings,
-                // such as numeric encoding of ascii chars in one,
-                // will give the wrong answer
                 return Arrays.equals(bytes, other.bytes);
             } else if (o instanceof CharSequence) {
                 return charSequencesEqual(this, (CharSequence) o);

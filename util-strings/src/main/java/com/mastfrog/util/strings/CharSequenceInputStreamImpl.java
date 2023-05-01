@@ -189,7 +189,7 @@ final class CharSequenceInputStreamImpl extends CharSequenceInputStream {
         closed = true;
     }
 
-    /* @Override */ //JDK9
+    @Override
     public synchronized long transferTo(OutputStream out) throws IOException {
         long result = 0;
         while (ensureBytesAvailable()) {
@@ -201,9 +201,9 @@ final class CharSequenceInputStreamImpl extends CharSequenceInputStream {
         return result;
     }
 
-    /* @Override */ //JDK9
+    @Override
     public synchronized byte[] readAllBytes() throws IOException {
-        try ( ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             transferTo(out);
             return out.toByteArray();
         }

@@ -371,11 +371,11 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
         if (last == 1) {
             return true;
         }
-//        return Arrays.equals(values, 1, last-1, other.values, 1, last-1); // XXX JDK9
+//        return Arrays.equals(values, 1, last-1, other.values, 1, last-1)); // XXX JDK9
         for (int i = 1; i < last - 1; i++) {
             if (values[last] != other.values[last]) {
                 return false;
-            }
+    }
         }
         return true;
     }
@@ -396,13 +396,7 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
     }
 
     private boolean _endsWith(IntListImpl other) {
-//        return Arrays.equals(values, size-other.size(), size, other.values, 0, other.size(); // XXX JDK9        
-        for (int i = size - 1, j = other.size() - 1; i > 0 && j >= 0; j--, i--) {
-            if (values[i] != other.values[j]) {
-                return false;
-            }
-        }
-        return true;
+        return Arrays.equals(values, size - other.size(), size, other.values, 0, other.size());
     }
 
     private int nearestIndexToPresumingSorted(int start, int end, Bias bias, int value) {
@@ -772,14 +766,7 @@ final class IntListImpl extends AbstractList<Integer> implements IntList, Serial
             if (size == 0) {
                 return true;
             }
-            // JDK 9
-//            return Arrays.equals(values, 0, size, other.values, 0, size);
-            for (int i = 0; i < size; i++) {
-                if (values[i] != other.values[i]) {
-                    return false;
-                }
-            }
-            return true;
+            return Arrays.equals(values, 0, size, other.values, 0, size);
         } else {
             return super.equals(o);
         }
