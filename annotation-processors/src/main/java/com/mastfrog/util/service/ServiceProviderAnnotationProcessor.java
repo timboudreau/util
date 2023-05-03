@@ -45,7 +45,7 @@ import javax.tools.Diagnostic;
  * @author Tim Boudreau
  */
 @SupportedAnnotationTypes(SERVICE_PROVIDER_ANNOTATION_FQN)
-@SupportedSourceVersion(SourceVersion.RELEASE_8)
+@SupportedSourceVersion(SourceVersion.RELEASE_17)
 public final class ServiceProviderAnnotationProcessor extends AbstractLineOrientedRegistrationAnnotationProcessor {
 
     public static final String SERVICE_PROVIDER_ANNOTATION_FQN

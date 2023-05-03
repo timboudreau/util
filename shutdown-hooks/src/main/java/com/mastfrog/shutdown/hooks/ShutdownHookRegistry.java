@@ -333,7 +333,7 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
                         break;
                     }
                 }
-                if (!unterminated.isEmpty()) {
+                if (!unterminated.isEmpty() && !Boolean.getBoolean("unit.test")) {
                     LOG.info(() -> "Some execututors did not terminate: " + unterminated);
                 }
             }
