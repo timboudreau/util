@@ -31,7 +31,7 @@ import java.util.Objects;
  *
  * @author Tim Boudreau
  */
-public class Triple<A, B, C> {
+public final class Triple<A, B, C> {
 
     public final A a;
     public final B b;

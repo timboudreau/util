@@ -1660,6 +1660,20 @@ public final class ArrayUtils {
     }
 
     /**
+     * Create a new array with the passed value appended to the passed array.
+     *
+     * @param last The element to append
+     * @param to The preceding array contents
+     * @return An array
+     */
+    @SafeVarargs
+    public static <T> T[] append(T last, T... to) {
+        T[] result = Arrays.copyOf(to, to.length + 1);
+        result[result.length - 1] = last;
+        return result;
+    }
+
+    /**
      * Apply an operation to the contents of an array.
      *
      * @param dbls An array

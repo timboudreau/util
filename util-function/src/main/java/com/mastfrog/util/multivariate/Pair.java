@@ -32,7 +32,7 @@ import java.util.function.Function;
  *
  * @author Tim Boudreau
  */
-public class Pair<A, B> {
+public final class Pair<A, B> {
 
     public final A a;
     public final B b;
