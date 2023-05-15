@@ -313,5 +313,48 @@ public class AtomicIntegerPairArray {
         public void update(IntegerPairUpdater pairUpdater) {
             AtomicIntegerPairArray.this.update(index, pairUpdater);
         }
+
+        @Override
+        public int getAndUpdateLeft(IntUnaryOperator op) {
+            long newValue = AtomicIntegerPairArray.this.arr.getAndUpdate(index, old -> {
+                int left = op.applyAsInt(unpackLeft(old));
+                int right = unpackRight(old);
+                return pack(left, right);
+            });
+            return unpackLeft(newValue);
+        }
+
+        @Override
+        public int getAndUpdateRight(IntUnaryOperator op) {
+            long newValue = AtomicIntegerPairArray.this.arr.getAndUpdate(index, old -> {
+                int left = unpackLeft(old);
+                int right = op.applyAsInt(unpackRight(old));
+                return pack(left, right);
+
+            });
+            return unpackRight(newValue);
+        }
+
+        @Override
+        public int updateAndGetLeft(IntUnaryOperator op) {
+            long newValue = AtomicIntegerPairArray.this.arr.updateAndGet(index, old -> {
+                int left = op.applyAsInt(unpackLeft(old));
+                int right = unpackRight(old);
+                return pack(left, right);
+            });
+            return unpackLeft(newValue);
+        }
+
+        @Override
+        public int updateAndGetRight(IntUnaryOperator op) {
+            long newValue = AtomicIntegerPairArray.this.arr.updateAndGet(index, old -> {
+                int left = unpackLeft(old);
+                int right = op.applyAsInt(unpackRight(old));
+                return pack(left, right);
+
+            });
+            return unpackRight(newValue);
+        }
+
     }
 }

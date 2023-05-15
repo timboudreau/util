@@ -24,6 +24,7 @@
 package com.mastfrog.concurrent;
 
 import com.mastfrog.function.IntBiConsumer;
+import com.mastfrog.function.IntBiPredicate;
 import com.mastfrog.function.state.Lng;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.IntUnaryOperator;
@@ -166,4 +167,45 @@ final class AtomicIntegerPair implements IntegerPair {
         });
         return sb.append(')').toString();
     }
+
+    @Override
+    public int getAndUpdateLeft(IntUnaryOperator op) {
+        long val = UPD.getAndUpdate(this, old -> {
+            int left = op.applyAsInt(unpackLeft(old));
+            int right = unpackRight(old);
+            return pack(left, right);
+        });
+        return unpackLeft(val);
+    }
+
+    @Override
+    public int getAndUpdateRight(IntUnaryOperator op) {
+        long val = UPD.getAndUpdate(this, old -> {
+            int left = unpackLeft(old);
+            int right = op.applyAsInt(unpackRight(old));
+            return pack(left, right);
+        });
+        return unpackRight(val);
+    }
+
+    @Override
+    public int updateAndGetLeft(IntUnaryOperator op) {
+        long val = UPD.updateAndGet(this, old -> {
+            int left = op.applyAsInt(unpackLeft(old));
+            int right = unpackRight(old);
+            return pack(left, right);
+        });
+        return unpackLeft(val);
+    }
+
+    @Override
+    public int updateAndGetRight(IntUnaryOperator op) {
+        long val = UPD.updateAndGet(this, old -> {
+            int left = unpackLeft(old);
+            int right = op.applyAsInt(unpackRight(old));
+            return pack(left, right);
+        });
+        return unpackRight(val);
+    }
+
 }

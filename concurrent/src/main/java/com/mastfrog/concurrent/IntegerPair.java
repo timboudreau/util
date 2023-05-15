@@ -23,7 +23,10 @@
  */
 package com.mastfrog.concurrent;
 
+import static com.mastfrog.concurrent.AtomicIntegerPair.unpackLeft;
+import static com.mastfrog.concurrent.AtomicIntegerPair.unpackRight;
 import com.mastfrog.function.IntBiConsumer;
+import com.mastfrog.function.IntBiPredicate;
 import java.util.function.IntUnaryOperator;
 
 /**
@@ -53,6 +56,29 @@ public interface IntegerPair {
     void update(IntUnaryOperator leftFunction, IntUnaryOperator rightFunction);
 
     void update(IntegerPairUpdater pairUpdater);
+
+    default boolean evaluate(IntBiPredicate test) {
+        long v = toLong();
+        int left = unpackLeft(v);
+        int right = unpackRight(v);
+        return test.test(left, right);
+    }
+
+    default void updateLeft(IntUnaryOperator op) {
+        update(op, x -> x);
+    }
+
+    default void updateRight(IntUnaryOperator op) {
+        update(x -> x, op);
+    }
+
+    int getAndUpdateLeft(IntUnaryOperator op);
+
+    int getAndUpdateRight(IntUnaryOperator op);
+
+    int updateAndGetLeft(IntUnaryOperator op);
+
+    int updateAndGetRight(IntUnaryOperator op);
 
     default UnsignedView toUnsignedView() {
         return new UnsignedViewImpl(this);
