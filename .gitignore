@@ -66,3 +66,11 @@ nb-configuration.xml
 /character-functions/target/
 /reference/nbproject/
 /reference/target/
+/functions/target/
+/function-state/target/
+/function-throwing/target/
+/function-io/target/
+/thread-local/target/
+/optional/target/
+/bits-unsafe/nbproject/
+/bits-unsafe/target/

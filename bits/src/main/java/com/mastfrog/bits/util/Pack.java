@@ -265,6 +265,21 @@ public final class Pack {
         c.accept(unpack16A(val), unpack16B(val), unpack16C(val), unpack16D(val));
     }
 
+    public static int unpack16(long value, int index) {
+        switch (index) {
+            case 0:
+                return unpack16A(value);
+            case 1:
+                return unpack16B(value);
+            case 2:
+                return unpack16C(value);
+            case 3:
+                return unpack16D(value);
+            default:
+                throw new IllegalArgumentException("Index must be in 0..3 but got " + index);
+        }
+    }
+
     public static int unpack16A(long value) {
         return (int) ((value >>> 48) & 0xFFFFL);
     }

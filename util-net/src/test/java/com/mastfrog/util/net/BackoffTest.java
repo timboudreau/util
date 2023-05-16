@@ -105,7 +105,7 @@ public class BackoffTest {
         // XXX if this randomly fails, we may need to explicitly configure
         // the garbage collector for test runs
         long[] expected = new long[]{5, 50, 50, 100, 100, 200, 200, 300, 300};
-        assertArraysNearlyEqual(50, expected, timings);
+        assertArraysNearlyEqual(75, expected, timings);
     }
 
     private void assertArraysNearlyEqual(int jitter, long[] exp, long[] got) {

@@ -1,6 +1,5 @@
 package com.mastfrog.bits.large;
 
-import static com.mastfrog.bits.large.UnsafeUtils.UNSAFE;
 import com.mastfrog.util.preconditions.Exceptions;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -279,7 +278,7 @@ final class MappedFileLongArray implements CloseableLongArray {
 
     private long fileLength(long targetSize) throws IOException {
         long targetSizeBytes = HEADER_LENGTH + (Long.BYTES * targetSize);
-        long pageSize = UNSAFE.pageSize();
+        long pageSize = OffHeapLongArrayFactory.pageSize(4096);
         if (targetSizeBytes % pageSize != 0) {
             long count = targetSizeBytes / pageSize;
             targetSizeBytes = Math.max(1, count) * pageSize;

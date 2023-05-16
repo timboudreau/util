@@ -229,11 +229,11 @@ final class AtomicBitsRangeTolerant implements AtomicBits {
         return new AtomicBitsRangeTolerant(new AtomicBitsImpl(size));
     }
 
-    @Override
-    public MutableBits newBits(long size) {
-        if (size <= Integer.MAX_VALUE) {
-            return newBits((int) size);
-        }
-        return MutableBits.createLarge(size);
-    }
+//    @Override
+//    public MutableBits newBits(long size) {
+//        if (size <= Integer.MAX_VALUE) {
+//            return newBits((int) size);
+//        }
+//        return MutableBits.createLarge(size);
+//    }
 }

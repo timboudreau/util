@@ -80,7 +80,7 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>function</artifactId>
+            <artifactId>function-state</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

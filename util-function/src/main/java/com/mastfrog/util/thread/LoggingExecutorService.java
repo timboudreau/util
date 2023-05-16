@@ -36,7 +36,7 @@ import java.util.concurrent.TimeoutException;
  *
  * @author Tim Boudreau
  */
-public class LoggingExecutorService implements ExecutorService {
+public final class LoggingExecutorService implements ExecutorService {
 
     private final ExecutorService svc;
     private final String name;

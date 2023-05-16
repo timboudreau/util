@@ -1,5 +1,7 @@
 package com.mastfrog.bits.large;
 
+import com.mastfrog.bits.CloseableBits;
+import com.mastfrog.bits.MutableBits;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.PrimitiveIterator;
@@ -40,40 +42,6 @@ public interface LongArray extends Cloneable {
      */
     public static LongArray javaLongArray(long[] content) {
         return new JavaLongArray(content);
-    }
-
-    /**
-     * Create a new LongArray backed by off-heap memory allocated via
-     * <code>sun.misc.Unsafe</code>. The resulting array's memory will be
-     * disposed via a reference queue and timer if it is garbage collected.
-     * <p>
-     * <i>The array's initial contents will <b>not</b> be initialized to zero -
-     * if you need to initialize, use the <code>clear()</code> or
-     * <code>fill()</code> methods.</i>
-     * </p>
-     *
-     * @param content The initial content which is copied into this array
-     * @return An array
-     */
-    public static CloseableLongArray unsafeLongArray(long[] content) {
-        return new UnsafeLongArray(content);
-    }
-
-    /**
-     * Create a new LongArray backed by off-heap memory allocated via
-     * <code>sun.misc.Unsafe</code>. The resulting array's memory will be
-     * disposed via a reference queue and timer if it is garbage collected.
-     * <p>
-     * <i>The array's initial contents will <b>not</b> be initialized to zero -
-     * if you need to initialize, use the <code>clear()</code> or
-     * <code>fill()</code> methods.</i>
-     * </p>
-     *
-     * @param size The initial size of the array
-     * @return An array
-     */
-    public static CloseableLongArray unsafeLongArray(long size) {
-        return new UnsafeLongArray(size);
     }
 
     /**
@@ -123,6 +91,38 @@ public interface LongArray extends Cloneable {
     }
 
     /**
+     * Create a MutableBits which is long-indexed and can handle &gt;
+     * Integer.MAX_VALUE <i>bits</i>.
+     *
+     * @param bitsCapacity The initial bit capacity
+     * @return A MutableBits
+     */
+    public static MutableBits createLarge(long bitsCapacity) {
+        return createLarge(bitsCapacity, false);
+    }
+
+    /**
+     * Create a MutableBits which is long-indexed and can handle &gt;
+     * Integer.MAX_VALUE <i>bits</i>.
+     *
+     * @param bitsCapacity The initial bit capacity
+     * @param offHeap If true, use off-heap memory rather than Java heap memory
+     * @return A MutableBits
+     */
+    public static CloseableBits createLarge(long bitsCapacity, boolean offHeap) {
+        long size = bitsCapacity / Long.SIZE;
+        if (bitsCapacity % Long.SIZE != 0) {
+            size++;
+        }
+        LongArray arr = offHeap ? OffHeapLongArrayFactory.get(size)
+                : LongArray.javaLongArray((int) size);
+        if (!arr.isZeroInitialized()) {
+            arr.clear();
+        }
+        return new LongArrayBitSetBits(arr.toBitSet());
+    }
+
+    /**
      * Create a LongArrayBitSet using the contents of this array.
      *
      * @return A Long-indexed BitSet
@@ -140,8 +140,6 @@ public interface LongArray extends Cloneable {
     default LongFunction<LongArray> factory() {
         if (this instanceof MappedFileLongArray) {
             return MappedFileLongArray::new;
-        } else if (this instanceof UnsafeLongArray) {
-            return UnsafeLongArray::new;
         } else if (this instanceof JavaLongArray) {
             return JavaLongArray::new;
         } else {
@@ -521,10 +519,9 @@ public interface LongArray extends Cloneable {
     }
 
     /**
-     * For off-heap arrays, ensures that the compiler cannot
-     * reorder writes this consumer performs to take effect
-     * after this consumer has exited and the data is assumed
-     * to be consistent.
+     * For off-heap arrays, ensures that the compiler cannot reorder writes this
+     * consumer performs to take effect after this consumer has exited and the
+     * data is assumed to be consistent.
      *
      * @param c A consumer
      */

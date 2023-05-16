@@ -23,6 +23,10 @@
     <modules>
 
         <module>annotation-processors</module>
+        <module>functions</module>
+        <module>function-throwing</module>
+        <module>function-state</module>
+        <module>function-io</module>
         <module>util-time</module>
         <module>util-strings</module>
         <module>util-streams</module>
@@ -49,6 +53,9 @@
         <module>shutdown-hooks</module>
         <module>character-functions</module>
         <module>reference</module>
+        <module>optional</module>
+        <module>thread-local</module>
+        <module>bits-unsafe</module>
     </modules>
     <issueManagement>
         <system>Github</system>

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 
 <project
-     xmlns="http://maven.apache.org/POM/4.0.0"
-     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
@@ -45,6 +45,30 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>util-preconditions</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${mastfrog.groupId}</groupId>
+            <artifactId>function-io</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${mastfrog.groupId}</groupId>
+            <artifactId>function-state</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${mastfrog.groupId}</groupId>
+            <artifactId>function-throwing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${mastfrog.groupId}</groupId>
+            <artifactId>functions</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${mastfrog.groupId}</groupId>
+            <artifactId>thread-local</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${mastfrog.groupId}</groupId>
+            <artifactId>optional</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

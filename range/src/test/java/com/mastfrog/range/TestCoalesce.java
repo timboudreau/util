@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Test;
 public class TestCoalesce {
 
     @Test
+    @SuppressWarnings("unchecked")
     public void test() {
         List<IntRange<? extends IntRange<?>>> got
                 = Range.coalesce((List) origs, (Coalescer) new C());

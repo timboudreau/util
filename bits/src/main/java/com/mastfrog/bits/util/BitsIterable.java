@@ -24,7 +24,6 @@
 package com.mastfrog.bits.util;
 
 import com.mastfrog.abstractions.list.IntSized;
-import com.mastfrog.function.ShortConsumer;
 import static java.lang.Long.lowestOneBit;
 import static java.lang.Long.numberOfTrailingZeros;
 import java.util.NoSuchElementException;

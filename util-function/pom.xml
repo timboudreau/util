@@ -25,7 +25,7 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>function</artifactId>
+            <artifactId>function-io</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

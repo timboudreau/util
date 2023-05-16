@@ -1777,7 +1777,8 @@ public interface Bits extends Serializable {
         if (size <= Integer.MAX_VALUE) {
             return MutableBits.create((int) size);
         }
-        return MutableBits.createLarge(size);
+        throw new IllegalArgumentException("Not implemented for > Integer.MAX_VALUE - use bits-large");
+//        return MutableBits.createLarge(size);
     }
 
     default Set<Characteristics> characteristics() {
@@ -1795,5 +1796,6 @@ public interface Bits extends Serializable {
         LARGE,
         LONG_VALUED,
         NEGATIVE_VALUES_ALLOWED,
+        OFF_HEAP
     }
 }

@@ -1,12 +1,9 @@
 package com.mastfrog.bits;
 
-import com.mastfrog.bits.large.LongArray;
-import com.mastfrog.bits.large.LongArrayBitSetBits;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.util.BitSet;
 import java.util.Collection;
-import java.util.Set;
 
 /**
  * Extension to the read-only Bits interface with BitSet's mutation methods,
@@ -59,40 +56,8 @@ public interface MutableBits extends Bits {
         return new LongSetBits(values);
     }
 
-    /**
-     * Create a MutableBits which is long-indexed and can handle &gt;
-     * Integer.MAX_VALUE <i>bits</i>.
-     *
-     * @param bitsCapacity The initial bit capacity
-     * @return A MutableBits
-     */
-    public static MutableBits createLarge(long bitsCapacity) {
-        return createLarge(bitsCapacity, false);
-    }
-
     static MutableBits runLengthEncoded() {
         return new RLEBits();
-    }
-
-    /**
-     * Create a MutableBits which is long-indexed and can handle &gt;
-     * Integer.MAX_VALUE <i>bits</i>.
-     *
-     * @param bitsCapacity The initial bit capacity
-     * @param offHeap If true, use off-heap memory rather than Java heap memory
-     * @return A MutableBits
-     */
-    public static CloseableBits createLarge(long bitsCapacity, boolean offHeap) {
-        long size = bitsCapacity / Long.SIZE;
-        if (bitsCapacity % Long.SIZE != 0) {
-            size++;
-        }
-        LongArray arr = offHeap ? LongArray.unsafeLongArray(size)
-                : LongArray.javaLongArray((int) size);
-        if (!arr.isZeroInitialized()) {
-            arr.clear();
-        }
-        return new LongArrayBitSetBits(arr.toBitSet());
     }
 
     public static MutableBits create(int capacity) {
