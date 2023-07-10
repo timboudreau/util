@@ -318,10 +318,7 @@ public final class Streams {
                     }
                 }
             } finally {
-                is.close();
-                if (reader != null) {
-                    reader.close();
-                }
+                reader.close();
             }
         } catch (IOException e) {
             throw new IllegalStateException(e);
