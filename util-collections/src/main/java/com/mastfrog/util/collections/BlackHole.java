@@ -41,14 +41,14 @@ import java.util.Spliterator;
  */
 abstract class BlackHole<T> {
 
-    static final Set<Object> SET = new BlackHoleSet<Object>();
-    static final List<Object> LIST = new BlackHoleList<Object>();
+    static final Set<Object> SET = new BlackHoleSet<>();
+    static final List<Object> LIST = new BlackHoleList<>();
 
-    static final class BlackHoleSet<T> extends BlackHole<T> implements Set<T> {
+    private static final class BlackHoleSet<T> extends BlackHole<T> implements Set<T> {
 
     }
 
-    static final class BlackHoleList<T> extends BlackHole<T> implements List<T> {
+    private static final class BlackHoleList<T> extends BlackHole<T> implements List<T> {
 
     }
 
@@ -135,7 +135,7 @@ abstract class BlackHole<T> {
     }
 
     public ListIterator<T> listIterator() {
-        return Collections.<T>emptyList().listIterator();
+        return Collections.emptyListIterator();
     }
 
     public ListIterator<T> listIterator(int index) {
@@ -143,7 +143,7 @@ abstract class BlackHole<T> {
     }
 
     public List<T> subList(int fromIndex, int toIndex) {
-        return Collections.emptyList();
+        throw new NoSuchElementException("Always empty");
     }
 
     public Spliterator<T> spliterator() {
@@ -162,7 +162,7 @@ abstract class BlackHole<T> {
         } else if (o == null || !(o instanceof Collection<?>)) {
             return false;
         }
-        return ((Collection<?>) ((Collection<?>) o)).isEmpty();
+        return ((Collection<?>) o).isEmpty();
     }
 
     @Override

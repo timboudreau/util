@@ -41,9 +41,9 @@ public class ArrayBinaryMapTest {
     @Test
     public void testMaps() {
         // Disabling for now - class is not exposed
-        if (true) {
-            return;
-        }
+//        if (true) {
+//            return;
+//        }
         ArrayBinaryMap<String, String> m = new ArrayBinaryMap<>(String.class, new ComparableComparator<>(), 5);
         m.put("b", "2");
         m.put("a", "1");

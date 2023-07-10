@@ -760,8 +760,8 @@ final class BitSetGraph implements IntGraph {
                 if (i != j) {
                     unions[i].andNot(unions[j]);
                 }
-                if (unions[i].cardinality() == 0) {
-                }
+//                if (unions[i].cardinality() == 0) {
+//                }
             }
             if (!unions[i].isEmpty()) {
                 result.set(i);

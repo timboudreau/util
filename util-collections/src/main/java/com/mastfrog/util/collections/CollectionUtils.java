@@ -1354,6 +1354,7 @@ public final class CollectionUtils {
      * @return A map
      * @deprecated Use <code>IntMap.create(Supplier&lt;T&gt;)</code>
      */
+    @Deprecated
     public static <T> IntMap<T> intMap(Supplier<T> emptyValues) {
         return intMap(96, false, emptyValues);
     }

@@ -37,7 +37,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
@@ -55,6 +54,34 @@ public class AtomicRingTest {
     @Test
     public void testSimpleAtomicFallible() {
         testSimple(AtomicFallibleRing::new);
+    }
+
+    @Test
+    public void testSizeFallible() {
+        testTargetSizeCannotBeExceeded("Fallible", AtomicFallibleRing::new);
+    }
+
+    @Test
+    public void testSize() {
+        testTargetSizeCannotBeExceeded("Atomic", AtomicRing::new);
+    }
+
+    private void testTargetSizeCannotBeExceeded(String nm, IntFunction<Ring<String>> factory) {
+        for (int size : new int[]{31, 64, 73, 129}) {
+            Ring<String> ring = factory.apply(size);
+            for (int i = 0; i < size * 3; i++) {
+                String s = Integer.toString(i);
+                ring.accept(s);
+                if (i >= size) {
+                    List<String> contents = new ArrayList<>();
+                    for (String item : ring) {
+                        contents.add(item);
+                    }
+                    assertEquals(nm + ": Wrong size for ring contents after " + i
+                            + "/" + size, size, contents.size());
+                }
+            }
+        }
     }
 
     private void testSimple(IntFunction<Ring<String>> factory) {

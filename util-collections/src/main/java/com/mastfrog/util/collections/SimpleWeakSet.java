@@ -60,6 +60,7 @@ class SimpleWeakSet<T> extends AbstractSet<T> {
     }
 
     @Override
+    @SuppressWarnings("SuspiciousToArrayCall")
     public <T> T[] toArray(T[] a) {
         return backingStore.keySet().toArray(a);
     }

@@ -70,12 +70,18 @@ final class SingleItemList<T> implements List<T> {
 
     @Override
     public Object[] toArray() {
+        if (item == null) {
+            return new Object[0];
+        }
         return new Object[] { item };
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] a) {
+        if (item == null) {
+            return (T[]) new Object[0];
+        }
         if (a == null || a.length != 1) {
             T[] result = (T[]) Array.newInstance(item.getClass(), 1);
             result[0] = (T) item;
@@ -97,7 +103,7 @@ final class SingleItemList<T> implements List<T> {
 
     @Override
     public boolean remove(Object o) {
-        if (Objects.equals(item, o)) {
+        if (o != null && Objects.equals(item, o)) {
             item = null;
             return true;
         }
@@ -156,7 +162,7 @@ final class SingleItemList<T> implements List<T> {
 
     @Override
     public T set(int index, T element) {
-        if (index > 0) {
+        if (index != 0) {
             throw new IndexOutOfBoundsException(index + " out of range");
         }
         T old = item;
@@ -217,7 +223,7 @@ final class SingleItemList<T> implements List<T> {
         if (o == null) {
             return false;
         }
-        if (o instanceof List) {
+        if (o instanceof List<?>) {
             List<?> l = (List<?>) o;
             if (l.isEmpty() && isEmpty()) {
                 return true;

@@ -67,7 +67,7 @@ public interface Ring<T> extends Consumer<T>, Iterable<T> {
      * @return A ring
      */
     public static <T> Ring<T> createFallibleAtomic(int size) {
-        return new AtomicRing<>(size);
+        return new AtomicFallibleRing<>(size);
     }
 
     /**
