@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.thread;
 
+import com.mastfrog.function.misc.QuietAutoClosable;
 import com.mastfrog.function.throwing.ThrowingRunnable;
 import com.mastfrog.function.throwing.io.IORunnable;
 import java.io.IOException;
@@ -163,7 +164,7 @@ public final class AtomicMaximum extends Number {
         }
     }
 
-    public QuietAutoCloseable enter() {
+    public QuietAutoClosable enter() {
         int current = countActiveThreads();
         for (;;) {
             if (wasReset) {
@@ -182,7 +183,7 @@ public final class AtomicMaximum extends Number {
     }
 
     private final QAC qac = new QAC();
-    private final class QAC implements QuietAutoCloseable {
+    private final class QAC implements QuietAutoClosable {
         @Override
         public void close() {
             exit();

@@ -31,7 +31,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.function.Supplier;
-import com.mastfrog.util.thread.QuietAutoCloseable;
+import com.mastfrog.function.misc.QuietAutoClosable;
 
 /**
  * A wrapper around a ReentrantReadWriteLock that exposes operations on it as
@@ -209,7 +209,7 @@ public class FunctionalLock {
         }
     }
 
-    public QuietAutoCloseable withReadLock() {
+    public QuietAutoClosable withReadLock() {
         boolean old = inReadAccess.get();
         inReadAccess.set(true);
         readLock.lock();
@@ -219,7 +219,7 @@ public class FunctionalLock {
         };
     }
 
-    public QuietAutoCloseable withWriteLock() {
+    public QuietAutoClosable withWriteLock() {
         checkLockOrderForWriteAccess();
         writeLock.lock();
         return () -> {
@@ -313,7 +313,7 @@ public class FunctionalLock {
         }
     }
 
-    public QuietAutoCloseable withReadLockInterruptibly() throws InterruptedException {
+    public QuietAutoClosable withReadLockInterruptibly() throws InterruptedException {
         boolean old = inReadAccess.get();
         inReadAccess.set(true);
         readLock.lockInterruptibly();
@@ -323,7 +323,7 @@ public class FunctionalLock {
         };
     }
 
-    public QuietAutoCloseable withWriteLockInterruptibly() throws InterruptedException {
+    public QuietAutoClosable withWriteLockInterruptibly() throws InterruptedException {
         checkLockOrderForWriteAccess();
         writeLock.lockInterruptibly();
         return () -> {

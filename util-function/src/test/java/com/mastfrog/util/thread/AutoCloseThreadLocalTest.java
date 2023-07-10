@@ -24,6 +24,7 @@
 
 package com.mastfrog.util.thread;
 
+import com.mastfrog.function.misc.QuietAutoClosable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -85,15 +86,15 @@ public class AutoCloseThreadLocalTest {
             try {
                 start.await();
                 assertNull(local.get());
-                try (QuietAutoCloseable ac1 = local.set(1)) {
+                try (QuietAutoClosable ac1 = local.set(1)) {
                     assertEquals(Integer.valueOf(1), local.get());
-                    try (QuietAutoCloseable ac2 = local.set(2)) {
+                    try (QuietAutoClosable ac2 = local.set(2)) {
                         assertEquals(Integer.valueOf(2), local.get());
-                        try (QuietAutoCloseable ac3 = local.set(3)) {
+                        try (QuietAutoClosable ac3 = local.set(3)) {
                             assertEquals(Integer.valueOf(3), local.get());
-                            try (QuietAutoCloseable ac4 = local.set(4)) {
+                            try (QuietAutoClosable ac4 = local.set(4)) {
                                 assertEquals(Integer.valueOf(4), local.get());
-                                try (QuietAutoCloseable ac5 = local.set(5)) {
+                                try (QuietAutoClosable ac5 = local.set(5)) {
                                     assertEquals(Integer.valueOf(5), local.get());
                                 }
                                 assertEquals(Integer.valueOf(4), local.get());

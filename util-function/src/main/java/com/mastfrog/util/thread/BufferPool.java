@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.thread;
 
+import com.mastfrog.function.misc.QuietAutoClosable;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -117,7 +118,7 @@ public final class BufferPool {
      * Holds one buffer - obtain it from buffer(), and call close() to return it
      * to the pool.
      */
-    public final class BufferHolder implements QuietAutoCloseable, Comparable<BufferHolder> {
+    public final class BufferHolder implements QuietAutoClosable, Comparable<BufferHolder> {
 
         final ByteBuffer buf = direct ? ByteBuffer.allocateDirect(bufferSize)
                 : ByteBuffer.allocate(bufferSize);

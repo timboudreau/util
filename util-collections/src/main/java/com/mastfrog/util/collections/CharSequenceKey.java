@@ -48,10 +48,6 @@ final class CharSequenceKey<T extends CharSequence> implements CharSequence {
         return new Conv<>();
     }
 
-    T get() {
-        return value;
-    }
-
     @Override
     public int length() {
         return value.length();

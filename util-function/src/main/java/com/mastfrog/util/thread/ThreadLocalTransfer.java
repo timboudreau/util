@@ -30,7 +30,7 @@ package com.mastfrog.util.thread;
  *
  * @author Tim Boudreau
  */
-public final class ThreadLocalTransfer<T> implements QuietAutoCloseable {
+public final class ThreadLocalTransfer<T> implements com.mastfrog.function.misc.QuietAutoClosable {
 
     private final ThreadLocal<Transfer<T>> xfer = new ThreadLocal<>();
 
@@ -39,7 +39,7 @@ public final class ThreadLocalTransfer<T> implements QuietAutoCloseable {
         return xf == null ? null : xf.get();
     }
 
-    public QuietAutoCloseable set(T obj) {
+    public com.mastfrog.function.misc.QuietAutoClosable set(T obj) {
         Transfer<T> xf = xfer.get();
         if (xf == null) {
             xf = new Transfer<>(obj);

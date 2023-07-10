@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.thread;
 
+import com.mastfrog.function.misc.QuietAutoClosable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -150,7 +151,7 @@ public class OneThreadLatchTest {
                     }
                     int exe = executions.getAndIncrement();
                     active.set(true);
-                    try (QuietAutoCloseable clos = max.enter()) {
+                    try (QuietAutoClosable clos = max.enter()) {
                         Thread.sleep(1);
                     }
                     active.set(false);

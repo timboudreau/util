@@ -29,7 +29,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Test;
-import com.mastfrog.util.thread.QuietAutoCloseable;
+import com.mastfrog.function.misc.QuietAutoClosable;
 
 /**
  *
@@ -154,7 +154,7 @@ public class FunctionalLockTest {
         assertFalse(l.isReadAccessOnCurrentThread());
         assertEquals(0, l.getReadLockCount());
         assertFalse(l.isWriteLocked());
-        try (QuietAutoCloseable nte = l.withReadLock()) {
+        try (QuietAutoClosable nte = l.withReadLock()) {
             assertTrue(l.isReadAccessOnCurrentThread());
             assertEquals(1, l.getReadLockCount());
         }
@@ -162,7 +162,7 @@ public class FunctionalLockTest {
         assertFalse(l.isReadAccessOnCurrentThread());
         assertFalse(l.isWriteLocked());
         Exception ex = null;
-        try (QuietAutoCloseable nte = l.withWriteLock()) {
+        try (QuietAutoClosable nte = l.withWriteLock()) {
             check.run();
             assertTrue(l.isWriteLocked());
             assertFalse(l.isReadAccessOnCurrentThread());
@@ -208,11 +208,11 @@ public class FunctionalLockTest {
         }
         assertNotNull(ex);
         ex = null;
-        try (QuietAutoCloseable a = l.withReadLock()) {
+        try (QuietAutoClosable a = l.withReadLock()) {
             check.run();
             assertNotNull(a);
             assertTrue(l.isReadAccessOnCurrentThread());
-            try (QuietAutoCloseable b = l.withWriteLock()) {
+            try (QuietAutoClosable b = l.withWriteLock()) {
                 fail("Should not get here");
             } catch (IllegalThreadStateException ex1) {
                 ex = ex1;

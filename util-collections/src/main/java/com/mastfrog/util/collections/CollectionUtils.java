@@ -343,60 +343,6 @@ public final class CollectionUtils {
     }
 
     /**
-     * Create an array-backed (fast iteration and lookup, slow insert and
-     * remove) mutable set which uses binary search and a comparator for
-     * equality (allows for such things as case-insensitive string sets).
-     * <p>
-     * Note: The element arguments must be of exactly the same type.
-     *
-     * @param <T> The type
-     * @param first The first element
-     * @param more Additional elements
-     * @return A set
-     */
-    @SafeVarargs
-    @SuppressWarnings("unchecked")
-    static <T extends Comparable<T>> Set<T> mutableArraySet(T first, T... more) {
-        for (T m : more) {
-            if (first.getClass() != m.getClass()) {
-                throw new IllegalArgumentException("All elements must be of the same exact type "
-                        + "to create without passing a class object, but saw both " + first.getClass().getName()
-                        + " and " + m.getClass().getName());
-            }
-        }
-        Class<T> type = (Class<T>) first.getClass();
-        T[] arr = (T[]) Array.newInstance(type, more.length + 1);
-        arr[0] = first;
-        System.arraycopy(more, 0, arr, 1, more.length);
-        return new ArrayBinarySetMutable<>(true, true, new ComparableComparator<>(), arr);
-    }
-
-    /**
-     * Create an array-backed mutable set which uses the comparable contract of
-     * the passed type for equality comparisons.
-     *
-     * @param <T> The type
-     * @param type The type
-     * @return A set
-     */
-    static <T extends Comparable<T>> Set<T> mutableArraySet(Class<T> type) {
-        return mutableArraySet(type, 16);
-    }
-
-    static <T extends Comparable<T>> Set<T> mutableArraySet(Class<T> type, int initialCapacity) {
-        ComparableComparator<T> cc = new ComparableComparator<>();
-        return new ArrayBinarySetMutable<>(true, cc, initialCapacity, type);
-    }
-
-    static <T> Set<T> mutableArraySet(Class<T> type, Comparator<T> comp) {
-        return mutableArraySet(type, comp, 16);
-    }
-
-    static <T> Set<T> mutableArraySet(Class<T> type, Comparator<T> comp, int initialCapacity) {
-        return new ArrayBinarySetMutable<>(true, comp, initialCapacity, type);
-    }
-
-    /**
      * Wraps an iterator in one which does not permit mutation.
      *
      * @param <T> The type

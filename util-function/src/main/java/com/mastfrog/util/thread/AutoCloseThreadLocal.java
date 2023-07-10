@@ -23,6 +23,7 @@
  */
 package com.mastfrog.util.thread;
 
+import com.mastfrog.function.misc.QuietAutoClosable;
 import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.util.concurrent.Callable;
 
@@ -46,7 +47,7 @@ public class AutoCloseThreadLocal<T> {
      * @return An AutoCloseable suitable for use in try-with-resources
      * operations
      */
-    public QuietAutoCloseable set(T obj) {
+    public QuietAutoClosable set(T obj) {
         final T old = tl.get();
         tl.set(obj);
         return new TLAutoClose<>(tl, old);
@@ -102,7 +103,7 @@ public class AutoCloseThreadLocal<T> {
         tl.remove();
     }
 
-    private static final class TLAutoClose<T> implements QuietAutoCloseable {
+    private static final class TLAutoClose<T> implements QuietAutoClosable {
 
         private final ThreadLocal<T> tl;
         private final T oldVal;

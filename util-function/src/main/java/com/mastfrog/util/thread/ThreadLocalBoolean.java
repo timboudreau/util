@@ -97,7 +97,7 @@ public class ThreadLocalBoolean {
         }
     }
 
-    public QuietAutoCloseable in() {
+    public com.mastfrog.function.misc.QuietAutoClosable in() {
         boolean old = get();
         set(!initialValue);
         return () -> {
