@@ -1,6 +1,10 @@
 package com.mastfrog.bits;
 
 import static com.mastfrog.bits.Bits.Characteristics.LONG_VALUED;
+import com.mastfrog.function.IntBiConsumer;
+import com.mastfrog.function.LongBiConsumer;
+import com.mastfrog.function.state.Int;
+import com.mastfrog.function.state.Lng;
 import java.io.Serializable;
 import java.util.BitSet;
 import java.util.Collections;
@@ -308,7 +312,8 @@ public interface Bits extends Serializable {
      * @return The length
      */
     default long longLength() {
-        return previousSetBitLong(Long.MAX_VALUE) + 1;
+        long result = previousSetBitLong(Long.MAX_VALUE);
+        return result == Long.MAX_VALUE ? Long.MAX_VALUE : result + 1;
     }
 
     /**
@@ -353,42 +358,111 @@ public interface Bits extends Serializable {
     }
 
     default long previousSetBitLong(long fromIndex) {
-        if (fromIndex > max()) {
-            fromIndex = max();
+        long max = maxLong();
+        if (fromIndex > max) {
+            fromIndex = max;
         } else if (fromIndex < min()) {
             return -1;
-//            fromIndex = min();
         }
         return previousSetBit((int) fromIndex);
     }
 
     default long previousClearBitLong(long fromIndex) {
-        if (fromIndex > max()) {
-            fromIndex = max();
+        long max = maxLong();
+        if (fromIndex > max) {
+            fromIndex = max;
         } else if (fromIndex < min()) {
-//            fromIndex = min();
-            return -1;
+            return fromIndex;
         }
         return previousClearBit((int) fromIndex);
     }
 
     default long nextSetBitLong(long fromIndex) {
-        if (fromIndex > max()) {
-            fromIndex = max();
-        } else if (fromIndex < min()) {
-//            fromIndex = min();
-            return -1;
+        long max = maxLong();
+        long min = minLong();
+        if (fromIndex > max) {
+            fromIndex = max;
+        } else if (fromIndex < min) {
+            return min;
         }
         return nextSetBit((int) fromIndex);
     }
 
     default long nextClearBitLong(long fromIndex) {
-        if (fromIndex > max()) {
-            fromIndex = max();
-        } else if (fromIndex < min()) {
-            fromIndex = min();
+        long max = maxLong();
+        long min = minLong();
+        if (fromIndex > max) {
+            fromIndex = max;
+        } else if (fromIndex < min) {
+            fromIndex = min;
         }
         return nextClearBit((int) fromIndex);
+    }
+
+    default int visitRanges(IntBiConsumer c) {
+        if (isEmpty()) {
+            return 0;
+        }
+        Int start = Int.of(Integer.MIN_VALUE);
+        Int end = Int.of(Integer.MIN_VALUE);
+        Int result = Int.create();
+        IntConsumer emit = (nue) -> {
+            int st = start.getAsInt();
+            int en = end.getAsInt();
+            if (st >= 0 && en >= 0) {
+                result.increment();
+                c.accept(st, en);
+            }
+            start.set(nue);
+            end.set(nue);
+        };
+        forEachSetBitAscending(bit -> {
+            if (start.getAsInt() == -1) {
+                start.set(bit);
+                end.set(bit);
+            } else {
+                if (bit == start.getAsInt() + 1) {
+                    end.increment();
+                } else {
+                    emit.accept(bit);
+                }
+            }
+        });
+        emit.accept(-1);
+        return result.getAsInt();
+    }
+
+    default long visitRangesLong(LongBiConsumer c) {
+        if (isEmpty()) {
+            return 0;
+        }
+        Lng start = Lng.of(Integer.MIN_VALUE);
+        Lng end = Lng.of(Integer.MIN_VALUE);
+        Lng result = Lng.create();
+        LongConsumer emit = (nue) -> {
+            long st = start.getAsLong();
+            long en = end.getAsLong();
+            if (st >= 0 && en >= 0) {
+                result.increment();
+                c.accept(st, en);
+            }
+            start.set(nue);
+            end.set(nue);
+        };
+        forEachLongSetBitAscending(bit -> {
+            if (start.getAsLong() == -1) {
+                start.set(bit);
+                end.set(bit);
+            } else {
+                if (bit == start.getAsLong() + 1) {
+                    end.increment();
+                } else {
+                    emit.accept(bit);
+                }
+            }
+        });
+        emit.accept(-1);
+        return result.getAsLong();
     }
 
     /**
@@ -1745,12 +1819,11 @@ public interface Bits extends Serializable {
     }
 
     /**
-     * Create a new bits that uses the same backing storage as
-     * this one (where possible).  This variant, that takes an
-     * integer argument, delegates to the one which takes a long
-     * argument, which by default returns a BitSet-backed Bits
-     * if the size is under Integer.MAX_VALUE, and otherwise returns
-     * a long-array backed instance.
+     * Create a new bits that uses the same backing storage as this one (where
+     * possible). This variant, that takes an integer argument, delegates to the
+     * one which takes a long argument, which by default returns a BitSet-backed
+     * Bits if the size is under Integer.MAX_VALUE, and otherwise returns a
+     * long-array backed instance.
      *
      * @param size The number of bits that should be representable
      * @return A mutable bits
@@ -1760,14 +1833,13 @@ public interface Bits extends Serializable {
     }
 
     /**
-     * Create a new bits that uses the same backing storage as
-     * this one (where possible).  Implementations should override this
-     * method to return their own type; those that cannot handle >
-     * Integer.MAX_VALUE bits may call the super method for larger
-     * values.
+     * Create a new bits that uses the same backing storage as this one (where
+     * possible). Implementations should override this method to return their
+     * own type; those that cannot handle > Integer.MAX_VALUE bits may call the
+     * super method for larger values.
      *
-     * @param size The number of bits the returned Bits should be able
-     * to accomodate.
+     * @param size The number of bits the returned Bits should be able to
+     * accomodate.
      * @return A MutableBits
      */
     default MutableBits newBits(long size) {
@@ -1796,6 +1868,7 @@ public interface Bits extends Serializable {
         LARGE,
         LONG_VALUED,
         NEGATIVE_VALUES_ALLOWED,
-        OFF_HEAP
+        OFF_HEAP,
+        RLE_COMPRESSED
     }
 }

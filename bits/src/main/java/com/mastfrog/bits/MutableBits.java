@@ -56,10 +56,6 @@ public interface MutableBits extends Bits {
         return new LongSetBits(values);
     }
 
-    static MutableBits runLengthEncoded() {
-        return new RLEBits();
-    }
-
     public static MutableBits create(int capacity) {
         return new MutableBitSetBits(new BitSet(capacity));
     }

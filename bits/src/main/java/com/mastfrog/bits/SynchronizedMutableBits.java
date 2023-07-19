@@ -74,7 +74,7 @@ final class SynchronizedMutableBits implements MutableBits {
 
     @Override
     public synchronized Bits readOnlyView() {
-        return delegate.readOnlyView();
+        return this;
     }
 
     @Override
