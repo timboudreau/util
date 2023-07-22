@@ -61,6 +61,16 @@ public final class RLEBitsBuilder {
     }
 
     public RLEBitsBuilder withRange(long first, long last) {
+        if (!ranges.isEmpty()) {
+            BitRangeImpl l = ranges.getLast();
+            if (last > l.last && l.contains(first)) {
+                l.last = last;
+                return this;
+            } else if (first < l.first && l.contains(last)) {
+                l.first = first;
+                return this;
+            }
+        }
         ranges.add(new BitRangeImpl(first, last));
         return this;
     }

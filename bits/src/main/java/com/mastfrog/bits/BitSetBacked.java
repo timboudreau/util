@@ -50,6 +50,9 @@ interface BitSetBacked extends Bits {
 
     @Override
     default int nextClearBit(int fromIndex) {
+        if (fromIndex < 0) { // overflow
+            return -1;
+        }
         return bitSetUnsafe().nextClearBit(fromIndex);
     }
 

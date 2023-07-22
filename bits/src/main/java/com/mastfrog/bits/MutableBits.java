@@ -174,17 +174,22 @@ public interface MutableBits extends Bits {
     }
 
     default void or(Bits set) {
-        int length = Math.max(length(), set.length()) + 1;
-        for (int i = 0; i < length; i++) {
-            if (set.get(i)) {
-                set(i, true);
-            }
+        if (characteristics().contains(Characteristics.LONG_VALUED)) {
+            set.visitRangesLong((start, end) -> {
+                set(start, end + 1);
+            });
+        } else {
+            set.visitRanges((start, end) -> {
+                set(start, end + 1);
+            });
         }
+
     }
 
     default void xor(Bits set) {
         int length = Math.max(length(), set.length()) + 1;
-        for (int i = 0; i < length; i++) {
+        int minBit = Math.min(set.nextSetBit(set.min()), nextSetBit(min()));
+        for (int i = minBit; i < length; i++) {
             if (set.get(i) != get(i)) {
                 set(i, true);
             } else {
@@ -194,9 +199,9 @@ public interface MutableBits extends Bits {
     }
 
     default void clear() {
-        int len = length();
-        for (int i = 0; i < len; i++) {
-            set(i, false);
+        long min = minLong();
+        for (long bit = nextSetBitLong(min); bit >= min; bit = nextSetBitLong(bit)) {
+            set(bit, false);
         }
     }
 

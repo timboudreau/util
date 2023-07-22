@@ -30,7 +30,6 @@ import com.mastfrog.function.LongBiConsumer;
 import com.mastfrog.function.state.Int;
 import com.mastfrog.function.state.Lng;
 import com.mastfrog.function.state.Obj;
-import static java.lang.Math.abs;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.EnumSet;
@@ -58,13 +57,13 @@ final class RLEB implements Bits {
     }
 
     RLEB(RLEB old) {
-        this.data = Arrays.copyOf(old.data, old.data.length);
-        this.used = old.used;
+        this(Arrays.copyOf(old.data, old.data.length), old.used);
     }
 
     RLEB(long[] data, int used) {
         this.data = data;
         this.used = used;
+        assert checkInvariants();
     }
 
     static RLEB from(Bits orig) {
@@ -267,34 +266,18 @@ final class RLEB implements Bits {
         return r;
     }
 
-    static boolean LOG = false;
-
     static void binarySearch(long[] d, long bitIndex, int head, int tail,
             BSResult result) {
-
-        if (LOG) {
-            System.out.println("Search for " + bitIndex + " " + head + ":" + tail);
-        }
 
         // We get better performance by always keeping the data array in a local var
         long rawHead = d[head];
         long headStart = startFrom(rawHead);
         if (bitIndex == headStart) {
-            if (LOG) {
-                System.out.println("X1");
-            }
             result.set(head, BSResultType.HEAD_EXACT_START);
             return;
         }
         if (bitIndex < headStart) {
-            if (LOG) {
-                System.out.println("X2");
-            }
             result.clear();
-            if (LOG) {
-                System.out.println("XIT 1 " + bitIndex + " for " + headStart
-                        + " NMD " + result.nearestMatchDistance);
-            }
             if (result.nearestMatchDistance == Long.MAX_VALUE) {
                 long dist = headStart - bitIndex;
                 result.nearestMatchDistance = dist;
@@ -305,17 +288,11 @@ final class RLEB implements Bits {
 
         long headEnd = endFrom(rawHead);
         if (bitIndex == headEnd) {
-            if (LOG) {
-                System.out.println("X3");
-            }
             result.set(head, HEAD_EXACT_END);
             return;
         }
 
         if (bitIndex < headEnd && bitIndex > headStart) {
-            if (LOG) {
-                System.out.println("X4");
-            }
             result.set(head, WITHIN_HEAD);
             return;
         }
@@ -323,36 +300,20 @@ final class RLEB implements Bits {
         updateDistance(result, head, bitIndex, headEnd);
 
         if (head == tail) {
-            if (LOG) {
-                System.out.println("X5");
-            }
             result.clear();
             return;
         }
 
         long rawTail = d[tail];
-        if (LOG) {
-            System.out.println("RAWTAIL " + rawTail + " = "
-                    + startFrom(rawTail) + ":" + endFrom(rawTail));
-        }
 
         long tailEnd = endFrom(rawTail);
         if (bitIndex == tailEnd) {
             result.set(tail, TAIL_EXACT_END);
-            if (LOG) {
-                System.out.println("X6");
-            }
             return;
         }
 
         if (bitIndex > tailEnd) {
             result.clear();
-            if (LOG) {
-                System.out.println("X7 head " + head + " tail " + tail + " for "
-                        + bitIndex
-                        + " tailStart " + startFrom(rawTail)
-                        + " tailEnd " + tailEnd);
-            }
             updateDistance(result, tail, bitIndex, tailEnd);
             return;
         }
@@ -360,25 +321,16 @@ final class RLEB implements Bits {
         long tailStart = startFrom(rawTail);
         if (bitIndex == tailStart) {
             result.set(tail, TAIL_EXACT_START);
-            if (LOG) {
-                System.out.println("X8");
-            }
             return;
         }
 
         if (bitIndex < tailEnd && bitIndex > tailStart) {
             result.set(tail, WITHIN_TAIL);
-            if (LOG) {
-                System.out.println("X9");
-            }
             return;
         }
 
         if (head == tail - 1) {
             result.clear();
-            if (LOG) {
-                System.out.println("X10");
-            }
             return;
         }
 
@@ -388,10 +340,6 @@ final class RLEB implements Bits {
         if (!result.isPresent()) {
             binarySearch(d, bitIndex, mid + 1, tail - 1, result);
         }
-        if (LOG) {
-            System.out.println("FT");
-        }
-
     }
 
     static long startFrom(long l) {
@@ -431,11 +379,8 @@ final class RLEB implements Bits {
         }
     }
 
-    private void write(int arrIndex, long start, long end) {
-        write(data, arrIndex, start, end);
-    }
-
-    static void write(long[] d, int arrIndex, long start, long end) {
+    static void write(long[] d, int arrIndex, long start, long end) { // used by tests
+        // and will be needed when / if we implement MutableBits
         assert arrIndex >= 0;
         assert end >= start : "End >= start " + start + ":" + end;
         if (start > INT_MAX_UNSIGNED) {
@@ -452,7 +397,12 @@ final class RLEB implements Bits {
         }
         d[arrIndex] = (end << 32) | (start & INT_MAX_UNSIGNED);
     }
-/*
+
+    /*
+    private void write(int arrIndex, long start, long end) {
+        write(data, arrIndex, start, end);
+    }
+
     @Override
     public void set(int bitIndex, boolean value) {
         set((long) bitIndex, value);
@@ -487,7 +437,6 @@ final class RLEB implements Bits {
 
         }
     }
-*/
 
     private void merge(int aix) {
         startEnd(aix, (start, oldEnd) -> {
@@ -527,7 +476,7 @@ final class RLEB implements Bits {
         int newSize = data.length + SIZE_INCREMENT;
         data = Arrays.copyOf(data, newSize);
     }
-
+     */
     @Override
     public int cardinality() {
         int result = 0;
@@ -553,7 +502,13 @@ final class RLEB implements Bits {
 
     @Override
     public boolean get(long bitIndex) {
-        CellLookupResult cell = bitIndex < minLong() ? firstCell() : cellForBit(bitIndex);
+        long l = leastSetBitLong();
+        if (bitIndex < l) {
+            return false;
+        } else if (bitIndex == l) {
+            return true;
+        }
+        CellLookupResult cell = bitIndex < leastSetBitLong() ? firstCell() : cellForBit(bitIndex);
         return cell.type.isPresent();
     }
 
@@ -576,9 +531,17 @@ final class RLEB implements Bits {
                 return 0;
             }
         }
+        long max = greatestBitLong();
+        if (fromIndex > max) {
+            return fromIndex;
+        }
+        long min = leastSetBitLong();
+        if (fromIndex < min) {
+            return fromIndex;
+        }
         CellLookupResult cell = cellForBit(fromIndex);
         if (!cell.type.isPresent()) {
-            return start(cell.index);
+            return fromIndex;
         }
         return end(cell.index) + 1;
     }
@@ -642,7 +605,7 @@ final class RLEB implements Bits {
         if (isEmpty()) {
             return 0;
         }
-        long max = maxLong();
+        long max = greatestBitLong();
         boolean isAfterLast = start > max;
         CellLookupResult res = isAfterLast ? lastCell() : cellForBit(start);
         long result = 0L;
@@ -664,7 +627,7 @@ final class RLEB implements Bits {
         if (isEmpty()) {
             return 0;
         }
-        long max = maxLong();
+        long max = greatestBitLong();
         boolean isAfterLast = start > max;
         CellLookupResult res = isAfterLast ? lastCell() : cellForBit(start);
         long result = 0L;
@@ -696,7 +659,7 @@ final class RLEB implements Bits {
         if (isEmpty()) {
             return 0;
         }
-        long max = maxLong();
+        long max = greatestBitLong();
         boolean isAfterLast = start > max;
         CellLookupResult res = isAfterLast ? lastCell() : cellForBit(start);
         long result = 0L;
@@ -745,7 +708,7 @@ final class RLEB implements Bits {
     }
 
     public long forEachLongSetBitAscending(long from, LongPredicate consumer) {
-        if (from <= 0 || from < minLong()) {
+        if (from <= 0 || from < leastSetBitLong()) {
             return forEachLongSetBitAscending(consumer);
         }
         CellLookupResult cell = cellForBit(from);
@@ -786,9 +749,9 @@ final class RLEB implements Bits {
         if (from > to) {
             return 0L;
         }
-        long min = minLong();
+        long min = leastSetBitLong();
         boolean isBeforeStart = from < min;
-        if (isBeforeStart && to > maxLong()) {
+        if (isBeforeStart && to > greatestBitLong()) {
             return forEachLongSetBitAscending(consumer);
         } else if (isBeforeStart) {
             from = min;
@@ -863,7 +826,7 @@ final class RLEB implements Bits {
 
     @Override
     public Bits immutableCopy() {
-        return new RLEB(this);
+        return this;
     }
 
     @Override
@@ -881,6 +844,15 @@ final class RLEB implements Bits {
 
     @Override
     public int min() {
+        return 0;
+    }
+
+    @Override
+    public int max() {
+        return Integer.MAX_VALUE;
+    }
+
+    public int leastSetBit() {
         if (isEmpty()) {
             return -1;
         }
@@ -888,15 +860,7 @@ final class RLEB implements Bits {
     }
 
     @Override
-    public int max() {
-        if (isEmpty()) {
-            return -1;
-        }
-        return (int) endFrom(data[used - 1]);
-    }
-
-    @Override
-    public long minLong() {
+    public long leastSetBitLong() {
         if (isEmpty()) {
             return -1;
         }
@@ -904,7 +868,16 @@ final class RLEB implements Bits {
     }
 
     @Override
+    public long minLong() {
+        return 0;
+    }
+
+    @Override
     public long maxLong() {
+        return INT_MAX_UNSIGNED;
+    }
+
+    public long greatestBitLong() {
         if (isEmpty()) {
             return -1;
         }
@@ -917,10 +890,12 @@ final class RLEB implements Bits {
             return copy();
         }
         long[] nue = new long[used];
+        long[] d = data;
         for (int i = 0; i < used; i++) {
-            long start = startFrom(data[i]);
-            long stop = endFrom(data[i]);
-            nue[i] = start | ((stop << 32) & INT_MAX_UNSIGNED);
+            long val = d[i];
+            long start = Math.max(min(), startFrom(val) + by);
+            long stop = Math.min(max(), endFrom(val) + by);
+            nue[i] = start | ((stop << 32));
         }
         return new RLEB(nue, used);
     }
@@ -937,8 +912,7 @@ final class RLEB implements Bits {
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof RLEB) {
-            RLEB rle = (RLEB) o;
+        if (o instanceof RLEB rle) {
             if (rle.used == used) {
                 if (used == 0) {
                     return true;
@@ -971,15 +945,15 @@ final class RLEB implements Bits {
         if (isEmpty()) {
             return -1;
         }
-        long ml = minLong();
-        if (fromIndex < ml) {
-            return ml;
-        } else if (fromIndex == ml) {
+        long ml = leastSetBitLong();
+        if (fromIndex <= ml) {
             return ml;
         }
-        long max = maxLong();
+        long max = greatestBitLong();
         if (fromIndex > max) {
             return -1;
+        } else if (fromIndex == max) {
+            return fromIndex;
         }
         CellLookupResult cell = cellForBit(fromIndex);
         if (cell.type.isPresent()) {
@@ -996,13 +970,13 @@ final class RLEB implements Bits {
         if (isEmpty()) {
             return -1;
         }
-        long ml = minLong();
+        long ml = leastSetBitLong();
         if (fromIndex < ml) {
             return -1;
         } else if (fromIndex == ml) {
             return ml;
         }
-        long max = maxLong();
+        long max = greatestBitLong();
         if (fromIndex > max) {
             return max;
         }
@@ -1019,10 +993,10 @@ final class RLEB implements Bits {
     public long previousClearBitLong(long fromIndex) {
         if (fromIndex < 0) {
             return -1;
-        } else if (fromIndex < minLong()) {
+        } else if (fromIndex < leastSetBitLong()) {
             return fromIndex;
         }
-        CellLookupResult cell = fromIndex > maxLong() ? lastCell() : cellForBit(fromIndex);
+        CellLookupResult cell = fromIndex > greatestBitLong() ? lastCell() : cellForBit(fromIndex);
         if (cell.type.isPresent()) {
             long st = startFrom(data[cell.index]);
             if (st == 0) {
@@ -1037,10 +1011,10 @@ final class RLEB implements Bits {
 
     @Override
     public long nextClearBitLong(long fromIndex) {
-        if (fromIndex > maxLong()) {
+        if (fromIndex > greatestBitLong()) {
             return fromIndex;
         }
-        CellLookupResult cell = fromIndex < minLong() ? firstCell() : cellForBit(fromIndex);
+        CellLookupResult cell = fromIndex < leastSetBitLong() ? firstCell() : cellForBit(fromIndex);
         if (cell.type.isPresent()) {
             long end = endFrom(cell.index);
             if (end == Long.MAX_VALUE) {
@@ -1126,11 +1100,18 @@ final class RLEB implements Bits {
 
     @Override
     public Bits get(long fromIndex, long toIndex) {
+        if (fromIndex < 0 || toIndex < 0) {
+            throw new IllegalArgumentException("Negative start or to: "
+                    + fromIndex + ", " + toIndex);
+        }
         if (fromIndex > toIndex || isEmpty()) {
             return new RLEB();
         }
-        long min = minLong();
-        CellLookupResult res = fromIndex < min ? firstCell() : cellForBit(fromIndex);
+        long min = leastSetBitLong();
+        CellLookupResult res = fromIndex < min
+                ? firstCell()
+                : cellForBit(fromIndex);
+
         int index = res.type.isPresent() ? res.index : res.index + 1;
         if (index >= used) {
             return new RLEB();
@@ -1138,19 +1119,24 @@ final class RLEB implements Bits {
         long[] d = data;
         long[] nue = new long[SIZE_INCREMENT];
         int newUsed = 0;
+        long range = (toIndex - fromIndex) - 1;
         for (int i = index; i < used; i++) {
             long val = d[i];
-            long start = Math.max(fromIndex, startFrom(val));
-            if (start > toIndex) {
+            long st = startFrom(val);
+            if (st >= toIndex) {
                 break;
             }
-            long end = Math.min(toIndex, endFrom(val));
+            long first = Math.max(0, st - fromIndex);
+            long last = Math.min(range, endFrom(val) - fromIndex);
             int currEntry = newUsed++;
             if (newUsed >= nue.length) {
                 nue = Arrays.copyOf(nue, nue.length + SIZE_INCREMENT);
             }
-            long value = start | (end << 32);
+            long value = first | (last << 32);
             nue[currEntry] = value;
+            if (last + 1 > range) {
+                break;
+            }
         }
         return new RLEB(nue, newUsed);
     }
@@ -1199,7 +1185,7 @@ final class RLEB implements Bits {
 
     @Override
     public long longLength() {
-        long mx = maxLong();
+        long mx = greatestBitLong();
         return mx == Long.MAX_VALUE ? Long.MAX_VALUE : mx + 1L;
     }
 
@@ -1221,6 +1207,346 @@ final class RLEB implements Bits {
             c.accept(startFrom(val), endFrom(val));
         }
         return used;
+    }
+
+    @Override
+    public int forEachSetBitDescending(int from, int downTo, IntConsumer consumer) {
+        return (int) forEachLongSetBitDescending(from, downTo, (long lng) -> {
+            consumer.accept((int) lng);
+        });
+    }
+
+    @Override
+    public int forEachSetBitDescending(int from, int downTo, IntPredicate consumer) {
+        return (int) forEachLongSetBitDescending(from, downTo, (long lng) -> {
+            return consumer.test((int) lng);
+        });
+    }
+
+    @Override
+    public int forEachUnsetBitAscending(IntConsumer consumer) {
+        Int result = Int.create();
+        forEachUnsetLongBitAscending(bit -> {
+            result.increment();
+            consumer.accept((int) bit);
+        });
+        return result.getAsInt();
+    }
+
+    @Override
+    public int forEachUnsetBitDescending(IntConsumer consumer) {
+        Int result = Int.create();
+        forEachUnsetLongBitAscending(bit -> {
+            result.increment();
+            consumer.accept((int) bit);
+        });
+        return result.getAsInt();
+    }
+
+    @Override
+    public void forEachUnsetLongBitAscending(LongConsumer consumer) {
+        if (isEmpty()) {
+            return;
+        }
+        long cursor = 0;
+        long[] d = data;
+        for (int i = 0; i < used; i++) {
+            long val = d[i];
+            long start = startFrom(val);
+            for (long j = cursor; j < start; j++) {
+                consumer.accept(j);
+            }
+            long end = endFrom(val);
+            cursor = end + 1;
+        }
+    }
+
+    @Override
+    public long forEachUnsetLongBitAscending(long from, LongConsumer consumer) {
+        return forEachUnsetLongBitAscending(from, bit -> {
+            consumer.accept(bit);
+            return true;
+        });
+    }
+
+    @Override
+    public long forEachUnsetLongBitAscending(long from, LongPredicate consumer) {
+        if (isEmpty()) {
+            return 0;
+        }
+        long max = greatestBitLong();
+        if (from >= max) {
+            return 0;
+        }
+        long min = leastSetBitLong();
+        long result = 0;
+
+        int startingCell;
+        long cursor;
+        if (from < min) {
+            startingCell = 0;
+            cursor = Math.max(minLong(), from);
+        } else {
+            CellLookupResult res = cellForBit(from);
+            startingCell = res.index + 1;
+            if (res.type.isPresent()) {
+                cursor = end(res.index) + 1;
+                startingCell = res.index + 1;
+            } else {
+                cursor = Math.max(from, end(res.index) + 1);
+            }
+        }
+        long[] d = data;
+        for (int i = startingCell; i < used; i++) {
+            long val = d[i];
+            long st = startFrom(val);
+            while (cursor < st) {
+                result++;
+                if (!consumer.test(cursor)) {
+                    break;
+                }
+                cursor++;
+            }
+            cursor = endFrom(val) + 1;
+        }
+        return result;
+    }
+
+    @Override
+    public long forEachUnsetLongBitAscending(long from, long to, LongConsumer consumer) {
+        return forEachUnsetLongBitAscending(from, to, bit -> {
+            consumer.accept(bit);
+            return true;
+        });
+    }
+
+    @Override
+    public long forEachUnsetLongBitAscending(long from, long to, LongPredicate consumer) {
+        if (isEmpty()) {
+            return 0;
+        }
+        long max = greatestBitLong();
+        if (from >= max) {
+            return 0;
+        }
+        long min = leastSetBitLong();
+        long result = 0;
+
+        int startingCell;
+        long cursor;
+        if (from < min) {
+            startingCell = 0;
+            cursor = Math.max(minLong(), from);
+        } else {
+            CellLookupResult res = cellForBit(from);
+            startingCell = res.index + 1;
+            if (res.type.isPresent()) {
+                cursor = end(res.index) + 1;
+                startingCell = res.index + 1;
+            } else {
+                cursor = Math.max(from, end(res.index) + 1);
+            }
+        }
+        long[] d = data;
+        for (int i = startingCell; i < used; i++) {
+            long val = d[i];
+            long st = Math.min(to, startFrom(val));
+            while (cursor < st) {
+                result++;
+                if (!consumer.test(cursor)) {
+                    break;
+                }
+                cursor++;
+            }
+            cursor = endFrom(val) + 1;
+            if (cursor >= to) {
+                break;
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public int forEachUnsetBitAscending(int from, IntConsumer consumer) {
+        return (int) forEachUnsetLongBitAscending(from, lng -> {
+            consumer.accept((int) lng);
+        });
+    }
+
+    @Override
+    public int forEachUnsetBitAscending(int start, IntPredicate consumer) {
+        return (int) forEachUnsetLongBitAscending(start, lng -> {
+            return consumer.test((int) lng);
+        });
+    }
+
+    @Override
+    public int forEachUnsetBitAscending(int from, int upTo, IntConsumer consumer) {
+        return (int) forEachUnsetLongBitAscending(from, upTo, lng -> {
+            consumer.accept((int) lng);
+        });
+    }
+
+    @Override
+    public int forEachUnsetBitAscending(int from, int upTo, IntPredicate consumer) {
+        return (int) forEachUnsetLongBitAscending(from, upTo, lng -> {
+            return consumer.test((int) lng);
+        });
+    }
+
+    @Override
+    public Bits filter(IntPredicate pred) {
+        RLEBitsBuilder bldr = RLEBitsBuilder.newRleBitsBuilder();
+        forEachSetBitAscending(bit -> {
+            if (pred.test(bit)) {
+                bldr.withRange(bit, bit);
+            }
+        });
+        return bldr.build();
+    }
+
+    @Override
+    public void forEachUnsetLongBitDescending(LongConsumer consumer) {
+        if (isEmpty()) {
+            return;
+        }
+        long[] d = data;
+        long cursor = startFrom(d[used - 1]);
+        for (int i = used - 2; i >= 0; i--) {
+            long val = d[i];
+            long start = endFrom(val);
+            for (long j = cursor; j > start; j--) {
+                consumer.accept(j);
+            }
+            long end = startFrom(val);
+            cursor = end - 1;
+        }
+    }
+
+    @Override
+    public long forEachUnsetLongBitDescending(LongPredicate consumer) {
+        if (isEmpty()) {
+            return 0;
+        }
+        long result = 0;
+        long[] d = data;
+        long cursor = startFrom(d[used - 1]);
+        for (int i = used - 2; i >= 0; i--) {
+            long val = d[i];
+            long start = endFrom(val);
+            for (long j = cursor; j > start; j--) {
+                result++;
+                if (!consumer.test(j)) {
+                    break;
+                }
+            }
+            long end = startFrom(val);
+            cursor = end - 1;
+        }
+        return result;
+    }
+
+    @Override
+    public int forEachUnsetBitAscending(IntPredicate consumer) {
+        return (int) forEachUnsetLongBitAscending(bit -> {
+            return consumer.test((int) bit);
+        });
+    }
+
+    @Override
+    public int bitsHashCode() {
+        long h = 1234L;
+        long[] d = data;
+        long currentValue = 0L;
+        long lastIndexInLongArray = -1;
+        for (int i = used - 1; i >= 0; i--) {
+            long val = d[i];
+            long end = endFrom(val);
+            long start = startFrom(val);
+            for (long bit = end; bit >= start; bit--) {
+                long bitPosition = bit % Long.SIZE;
+                long indexInLongArray = bit / Long.SIZE;
+                if (indexInLongArray != lastIndexInLongArray && currentValue != 0) {
+                    // At a long boundary
+                    if (lastIndexInLongArray != -1) {
+                        // write last value
+                        h ^= currentValue * (lastIndexInLongArray + 1);
+                        currentValue = 1L << bitPosition;
+                    }
+                } else {
+                    long v = 1L << bitPosition;
+                    currentValue |= v;
+                }
+                lastIndexInLongArray = indexInLongArray;
+            }
+        }
+        if (currentValue != 0 && lastIndexInLongArray >= 0) {
+            h ^= currentValue * (lastIndexInLongArray + 1);
+        }
+        return (int) ((h >> 32) ^ h);
+    }
+
+    public RLEBitsBuilder toBuilder() {
+        RLEBitsBuilder rlebb = RLEBitsBuilder.newRleBitsBuilder();
+        long[] d = data;
+        for (int i = 0; i < used; i++) {
+            long val = d[i];
+            rlebb.withRange(startFrom(val), endFrom(val));
+        }
+        return rlebb;
+    }
+
+    @Override
+    public RLEB orWith(Bits other) {
+        RLEBitsBuilder rlebb = toBuilder();
+        rlebb.add(other);
+        return (RLEB) rlebb.build();
+    }
+
+    @Override
+    public Bits andWith(Bits other) {
+        if (other.isEmpty()) {
+            return Bits.EMPTY;
+        }
+
+        return Bits.super.andWith(other);
+    }
+
+    @Override
+    public Bits get(int fromIndex, int toIndex) {
+        return get((long) fromIndex, (long) toIndex);
+    }
+
+    boolean checkInvariants() {
+        String result = _checkInvariants();
+        boolean ok = result == null;
+        assert ok : result;
+        return ok;
+    }
+
+    private String _checkInvariants() {
+        if (isEmpty()) {
+            return null;
+        }
+        long[] d = data;
+        long lastStart = startFrom(d[0]);
+        long lastEnd = endFrom(d[0]);
+        if (lastStart > lastEnd) {
+            return "Inverted range " + lastStart + ":" + lastEnd + " @ 0";
+        }
+        for (int i = 1; i < used; i++) {
+            long val = d[i];
+            long start = startFrom(val);
+            long end = endFrom(val);
+            if (start > end) {
+                return "Inverted range " + start + ":" + end + " @ " + i;
+            }
+            if (start <= lastEnd) {
+                return "Overlapping or adjacent ranges " + lastStart + ":" + lastEnd + " @ " + (i - 1)
+                        + " and " + start + ":" + end + " should have been coalesced at creation time";
+            }
+        }
+        return null;
     }
 
     private final class LS implements LongSupplier, IntSupplier {
@@ -1246,16 +1572,24 @@ final class RLEB implements Bits {
                 return -1;
             }
             long result = cellCursor;
-            cellCursor++;
-            if (++cellCursor > currLast) {
-                cursor++;
+            while (result != -1 && cellCursor++ > currLast && cursor >= 0) {
+                if (++cursor < used) {
+                    cellCursor = startFrom(data[cursor]);
+                    currLast = endFrom(data[cursor]);
+                    result = cellCursor;
+                } else {
+                    cursor = -1;
+                    result = -1;
+                    break;
+                }
             }
             return result;
         }
 
         @Override
         public int getAsInt() {
-            return (int) getAsLong();
+            int val = (int) getAsLong();
+            return val < 0 ? -1 : val;
         }
     }
 }

@@ -29,6 +29,8 @@ import com.mastfrog.function.state.Int;
 import com.mastfrog.function.state.Lng;
 import java.util.BitSet;
 import java.util.Random;
+import java.util.function.IntPredicate;
+import java.util.function.LongSupplier;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -398,7 +400,6 @@ public class RLEBTest {
     @Test
     public void testPrevSetBit() {
         RLEB rleb3 = new RLEB(data3, data3.length);
-        System.out.println(rleb3);
         for (int i = 81; i >= 0; i--) {
             int expect = bits3.previousSetBit(i);
             int got = rleb3.previousSetBit(i);
@@ -407,8 +408,6 @@ public class RLEBTest {
         }
 
         RLEB rleb10 = new RLEB(data10, data10.length);
-
-        System.out.println(rleb10);
         long max = bits10.previousSetBit(Integer.MAX_VALUE);
         for (long i = max + 2; i >= 0; i--) {
             long expect = bits10.previousSetBit((int) i);
@@ -497,6 +496,155 @@ public class RLEBTest {
         rbb = RLEBitsBuilder.newRleBitsBuilder();
         rbb.add(rleb);
         assertEquals(rleb, rbb.build());
+    }
+
+    @Test
+    public void testUnset() {
+        BitSet bs1 = new BitSet();
+        long realCount = Bits.fromBitSet(bits3).forEachUnsetBitAscending(bit -> {
+            bs1.set(bit);
+        });
+        BitSet bs2 = new BitSet();
+        RLEB rleb3 = new RLEB(data3, data3.length);
+        long gotCount = rleb3.forEachUnsetBitAscending(bit -> {
+            bs2.set(bit);
+        });
+        assertEquals(bs1, bs2, "Unset bit iteration does not match");
+        assertEquals(Bits.fromBitSet(bits3).hashCode(), rleb3.hashCode());
+        assertEquals(realCount, gotCount);
+    }
+
+    @Test
+    public void testUnsetDescending() {
+        BitSet bs1 = new BitSet();
+        long realCount = Bits.fromBitSet(bits3).forEachUnsetBitAscending(bit -> {
+            bs1.set(bit);
+        });
+        BitSet bs2 = new BitSet();
+        RLEB rleb3 = new RLEB(data3, data3.length);
+        long gotCount = rleb3.forEachUnsetBitDescending(bit -> {
+            bs2.set(bit);
+        });
+        assertEquals(bs1, bs2, "Unset bit iteration does not match");
+        assertEquals(realCount, gotCount);
+    }
+
+    @Test
+    public void testUnsetWithStart() {
+        RLEB rleb3 = new RLEB(data3, data3.length);
+        for (int start = 0; start < 80; start++) {
+            BitSet bs1 = new BitSet();
+            BitSet bs2 = new BitSet();
+            int ct = Bits.fromBitSet(bits3).forEachUnsetBitAscending(start, bit -> {
+                bs1.set(bit);
+            });
+            int ct2 = rleb3.forEachUnsetBitAscending(start, bit -> {
+                bs2.set(bit);
+            });
+            assertEquals(bs1, bs2, "Unset bit iteration does not match for " + start + ":\nA:" + bs1 + "\nB:" + bs2 + "\n");
+            assertEquals(ct, ct2, "Returned bit counts doe not match for start " + start);
+        }
+    }
+
+    @Test
+    public void testUnsetWithStartAndEnd() {
+        RLEB rleb3 = new RLEB(data3, data3.length);
+        for (int start = 0, end = 40; start <= 40 && end <= 80; start++, end++) {
+            BitSet bs1 = new BitSet();
+            BitSet bs2 = new BitSet();
+            int ct = Bits.fromBitSet(bits3).forEachUnsetBitAscending(start, end, bit -> {
+                bs1.set(bit);
+            });
+            int ct2 = rleb3.forEachUnsetBitAscending(start, end, bit -> {
+                bs2.set(bit);
+            });
+            assertEquals(bs1, bs2, "Unset bit iteration does not match for " + start
+                    + ":" + end + ":\nA:" + bs1 + "\nB:" + bs2 + "\n");
+            assertEquals(ct, ct2, "Returned bit counts doe not match for start "
+                    + start + " end " + end);
+        }
+    }
+
+    @Test
+    public void testFiltered() {
+        RLEB rleb3 = new RLEB(data3, data3.length);
+
+        IntPredicate filter = bit -> {
+            return (bit / 2) % 2 == 0;
+        };
+
+        Bits expected = Bits.fromBitSet(bits3).filter(filter);
+        Bits got = rleb3.filter(filter);
+        assertEquals(expected, got);
+    }
+
+    @Test
+    public void testGet2() {
+        RLEB rleb3 = new RLEB(data3, data3.length);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 80; i++) {
+            boolean expected = bits3.get(i);
+            boolean got = rleb3.get(i);
+            if (expected != got) {
+                sb.append(i).append("=").append(got).append("\n");
+            }
+        }
+        if (!sb.isEmpty()) {
+            fail(sb.toString());
+        }
+    }
+
+    @Test
+    public void testShifted() {
+        RLEB rleb3 = new RLEB(data3, data3.length);
+        assertFalse(rleb3.get(0));
+        Bits bits = rleb3.shift(5);
+        bits.forEachSetBitAscending(bit -> {
+            long unshifted = bit - 5;
+            assertTrue(rleb3.get(unshifted), "Bit " + bit + " unshifted " + unshifted);
+        });
+
+        bits.forEachUnsetBitAscending(bit -> {
+            long unshifted = bit - 5;
+            assertFalse(rleb3.get(unshifted), "Bit " + bit + " unshifted " + unshifted);
+        });
+    }
+
+    @Test
+    public void testLongSupplier() {
+        Bits b1 = Bits.fromBitSet(bits3);
+        RLEB rleb3 = new RLEB(data3, data3.length);
+        LongSupplier canonical = b1.asLongSupplier();
+        LongSupplier ours = rleb3.asLongSupplier();
+
+        for (int i = 0;; i++) {
+            long c = canonical.getAsLong();
+            long o = ours.getAsLong();
+            assertEquals(c, o, "LongSupplier bits differ at " + i + " for " + bits3);
+            if (c < 0) {
+                break;
+            }
+        }
+    }
+
+    @Test
+    public void testGetRange() {
+        Bits b1 = Bits.fromBitSet(bits3);
+        RLEB rleb3 = new RLEB(data3, data3.length);
+        assertEquals(b1.length(), rleb3.length(), "Lengths differ");
+        for (int start = 0; start < (b1.length() / 2) - 1; start++) {
+            for (int end = b1.length(); end >= (b1.length() / 2) + 1; end--) {
+                int st = start;
+                Bits expected = b1.get(start, end);
+                expected.forEachSetBitAscending(bit -> {
+                    // sanity check
+                    assertTrue(b1.get(bit + st), "Subset has bit " + bit + " set which is not in " + b1);
+                });
+                Bits got = rleb3.get(start, end);
+                assertTrue(got instanceof RLEB);
+                assertEquals(expected, got, "Failed for range " + start + ":" + end);
+            }
+        }
     }
 
     @BeforeEach

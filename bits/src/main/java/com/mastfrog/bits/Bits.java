@@ -3,6 +3,7 @@ package com.mastfrog.bits;
 import static com.mastfrog.bits.Bits.Characteristics.LONG_VALUED;
 import com.mastfrog.function.IntBiConsumer;
 import com.mastfrog.function.LongBiConsumer;
+import com.mastfrog.function.state.Bool;
 import com.mastfrog.function.state.Int;
 import com.mastfrog.function.state.Lng;
 import java.io.Serializable;
@@ -93,6 +94,14 @@ public interface Bits extends Serializable {
      */
     public static Bits fromBitSet(BitSet bitSet) {
         return new BitSetBits(bitSet);
+    }
+
+    default int leastSetBit() {
+        return nextSetBit(min());
+    }
+
+    default long leastSetBitLong() {
+        return nextSetBitLong(minLong());
     }
 
     /**
@@ -230,12 +239,12 @@ public interface Bits extends Serializable {
      * @return A bit
      */
     default boolean get(long bitIndex) {
-        boolean[] result = new boolean[1];
+        Bool result = Bool.create();
         forEachLongSetBitAscending(bitIndex, bit -> {
-            result[0] = bit == bitIndex;
+            result.set(bit == bitIndex);
             return false;
         });
-        return result[0];
+        return result.getAsBoolean();
     }
 
     /**
@@ -277,15 +286,15 @@ public interface Bits extends Serializable {
      * @return Whether or not they intersect
      */
     default boolean intersects(Bits set) {
-        boolean[] result = new boolean[1];
+        Bool result = Bool.create();
         set.forEachLongSetBitAscending(bit -> {
             if (get(bit)) {
-                result[0] = true;
+                result.set();
                 return false;
             }
             return true; // keep going
         });
-        return result[0];
+        return result.getAsBoolean();
     }
 
     /**
@@ -303,7 +312,7 @@ public interface Bits extends Serializable {
      * @return A length
      */
     default int length() {
-        return previousSetBit(Integer.MAX_VALUE);
+        return previousSetBit(max());
     }
 
     /**
@@ -312,7 +321,7 @@ public interface Bits extends Serializable {
      * @return The length
      */
     default long longLength() {
-        long result = previousSetBitLong(Long.MAX_VALUE);
+        long result = previousSetBitLong(max());
         return result == Long.MAX_VALUE ? Long.MAX_VALUE : result + 1;
     }
 
@@ -379,10 +388,10 @@ public interface Bits extends Serializable {
 
     default long nextSetBitLong(long fromIndex) {
         long max = maxLong();
-        long min = minLong();
+        long min;
         if (fromIndex > max) {
             fromIndex = max;
-        } else if (fromIndex < min) {
+        } else if (fromIndex < (min = minLong())) {
             return min;
         }
         return nextSetBit((int) fromIndex);
@@ -390,10 +399,10 @@ public interface Bits extends Serializable {
 
     default long nextClearBitLong(long fromIndex) {
         long max = maxLong();
-        long min = minLong();
+        long min;
         if (fromIndex > max) {
             fromIndex = max;
-        } else if (fromIndex < min) {
+        } else if (fromIndex < (min = minLong())) {
             fromIndex = min;
         }
         return nextClearBit((int) fromIndex);
@@ -868,13 +877,21 @@ public interface Bits extends Serializable {
 
     /**
      * Traverse all bits which are unset, starting at the lowest bit index,
-     * passing them to the passed consumer.
+     * passing them to the passed consumer.  <b>Note:</b> this method will not
+     * iterate any bits beyond the greatest set bit, since that would cause the
+     * common case to be to continue iterating up to
+     * <code>Integer.MAX_VALUE</code>.
      *
      * @param consumer A consumer
      */
     default int forEachUnsetBitAscending(IntConsumer consumer) {
         int count = 0;
-        for (int bit = nextClearBit(min()); bit >= min(); bit = nextClearBit(bit + 1)) {
+        int len = length();
+        int min = min();
+        for (int bit = nextClearBit(min); bit >= min && bit < len; bit = nextClearBit(bit + 1)) {
+            if (bit < 0) { // overflow
+                break;
+            }
             consumer.accept(bit);
             count++;
         }
@@ -890,7 +907,8 @@ public interface Bits extends Serializable {
      */
     default int forEachUnsetBitDescending(IntConsumer consumer) {
         int count = 0;
-        for (int bit = previousClearBit(max()); bit >= min(); bit = previousClearBit(bit - 1)) {
+        int min = min();
+        for (int bit = previousClearBit(max()); bit >= min; bit = previousClearBit(bit - 1)) {
             consumer.accept(bit);
             count++;
         }
@@ -907,7 +925,9 @@ public interface Bits extends Serializable {
      */
     default int forEachUnsetBitAscending(IntPredicate consumer) {
         int count = -1;
-        for (int bit = nextClearBit(min()); bit >= min(); bit = nextClearBit(bit + 1)) {
+        int len = length();
+        int min = min();
+        for (int bit = nextClearBit(min); bit >= min && bit < len; bit = nextClearBit(bit + 1)) {
             if (!consumer.test(bit)) {
                 if (count == -1) {
                     count = 0;
@@ -934,7 +954,8 @@ public interface Bits extends Serializable {
      */
     default int forEachUnsetBitDescending(IntPredicate consumer) {
         int count = -1;
-        for (int bit = previousClearBit(max()); bit >= min(); bit = previousClearBit(bit - 1)) {
+        int min = min();
+        for (int bit = previousClearBit(max()); bit >= min; bit = previousClearBit(bit - 1)) {
             if (!consumer.test(bit)) {
                 if (count == -1) {
                     count = 0;
@@ -961,7 +982,12 @@ public interface Bits extends Serializable {
      */
     default int forEachUnsetBitAscending(int from, IntConsumer consumer) {
         int count = 0;
-        for (int bit = nextClearBit(from); bit >= min(); bit = nextClearBit(bit + 1)) {
+        int min = min();
+        int max = previousSetBit(max());
+        for (int bit = nextClearBit(from); bit >= min; bit = nextClearBit(bit + 1)) {
+            if (bit > max) {
+                break;
+            }
             consumer.accept(bit);
             count++;
         }
@@ -978,7 +1004,8 @@ public interface Bits extends Serializable {
      */
     default int forEachUnsetBitDescending(int from, IntConsumer consumer) {
         int count = 0;
-        for (int bit = previousClearBit(from); bit >= min(); bit = previousClearBit(bit - 1)) {
+        int min = min();
+        for (int bit = previousClearBit(from); bit >= min; bit = previousClearBit(bit - 1)) {
             consumer.accept(bit);
             count++;
         }
@@ -996,7 +1023,9 @@ public interface Bits extends Serializable {
      */
     default int forEachUnsetBitAscending(int start, IntPredicate consumer) {
         int count = -1;
-        for (int bit = nextClearBit(start); bit >= min(); bit = nextClearBit(bit + 1)) {
+        int min = min();
+        int len = length();
+        for (int bit = nextClearBit(start); bit >= min && bit < len; bit = nextClearBit(bit + 1)) {
             if (!consumer.test(bit)) {
                 if (count == -1) {
                     count = 0;
@@ -1024,7 +1053,8 @@ public interface Bits extends Serializable {
      */
     default int forEachUnsetBitDescending(int start, IntPredicate consumer) {
         int count = -1;
-        for (int bit = previousClearBit(start); bit >= min(); bit = previousClearBit(bit - 1)) {
+        int min = min();
+        for (int bit = previousClearBit(start); bit >= min; bit = previousClearBit(bit - 1)) {
             if (!consumer.test(bit)) {
                 if (count == -1) {
                     count = 0;
@@ -1052,7 +1082,9 @@ public interface Bits extends Serializable {
      */
     default int forEachUnsetBitAscending(int from, int upTo, IntConsumer consumer) {
         int count = 0;
-        for (int bit = nextClearBit(from); bit >= min() && bit < upTo; bit = nextClearBit(bit + 1)) {
+        int min = min();
+        int max = Math.min(upTo, previousSetBit(Integer.MAX_VALUE));
+        for (int bit = nextClearBit(from); bit >= min && bit < max; bit = nextClearBit(bit + 1)) {
             consumer.accept(bit);
             count++;
         }
@@ -1073,7 +1105,8 @@ public interface Bits extends Serializable {
             return 0;
         }
         if (downTo < 0) {
-            downTo = min() == Integer.MIN_VALUE ? Integer.MIN_VALUE : min() - 1;
+            int min = min();
+            downTo = min == Integer.MIN_VALUE ? Integer.MIN_VALUE : min - 1;
         }
         int count = 0;
         for (int bit = previousClearBit(from); bit > downTo; bit = previousClearBit(bit - 1)) {
@@ -1096,7 +1129,8 @@ public interface Bits extends Serializable {
      */
     default int forEachUnsetBitAscending(int from, int upTo, IntPredicate consumer) {
         int count = -1;
-        for (int bit = nextClearBit(from); bit >= min() && bit < upTo; bit = nextClearBit(bit + 1)) {
+        int min = min();
+        for (int bit = nextClearBit(from); bit >= min && bit < upTo; bit = nextClearBit(bit + 1)) {
             if (!consumer.test(bit)) {
                 if (count == -1) {
                     count = 0;
@@ -1193,13 +1227,18 @@ public interface Bits extends Serializable {
     // Long variants
     /**
      * Traverse all bits which are set, starting at the lowest bit index,
-     * passing them to the passed consumer.
+     * passing them to the passed consumer.<b>Note:</b> this method will not
+     * iterate any bits beyond the greatest set bit, since that would cause the
+     * common case to be to continue iterating up to
+     * <code>Integer.MAX_VALUE</code>.
      *
      * @param consumer A consumer
      */
     default long forEachLongSetBitAscending(LongConsumer consumer) {
         long count = 0;
-        for (long bit = nextSetBitLong(minLong()); bit >= min(); bit = nextSetBitLong(bit + 1)) {
+        long min = minLong();
+        long max = this.previousSetBitLong(Long.MAX_VALUE) + 1;
+        for (long bit = nextSetBitLong(min); bit >= min && bit < max; bit = nextSetBitLong(bit + 1)) {
             consumer.accept(bit);
             count++;
         }
@@ -1214,7 +1253,8 @@ public interface Bits extends Serializable {
      * @param consumer A consumer
      */
     default void forEachLongSetBitDescending(LongConsumer consumer) {
-        for (long bit = previousSetBitLong(maxLong()); bit >= minLong(); bit = previousSetBitLong(bit - 1)) {
+        long initial = nextSetBitLong(minLong());
+        for (long bit = previousSetBitLong(maxLong()); bit >= initial; bit = previousSetBitLong(bit - 1)) {
             consumer.accept(bit);
         }
     }
@@ -1786,13 +1826,17 @@ public interface Bits extends Serializable {
      * @return A LongSupplier
      */
     default LongSupplier asLongSupplier() {
+        if (isEmpty()) {
+            return () -> -1L;
+        }
         return new LongSupplier() {
-            private long pos = minLong() - 1L;
+            private long pos = nextSetBitLong(minLong());
 
             @Override
             public long getAsLong() {
+                long old = pos;
                 pos = nextSetBitLong(pos + 1L);
-                return pos;
+                return old;
             }
         };
     }
@@ -1807,13 +1851,17 @@ public interface Bits extends Serializable {
      * @return An IntSupplier
      */
     default IntSupplier asIntSupplier() {
+        if (isEmpty()) {
+            return () -> -1;
+        }
         return new IntSupplier() {
-            private int pos = min() - 1;
+            private int pos = nextSetBit(min());
 
             @Override
             public int getAsInt() {
+                int old = pos;
                 pos = nextSetBit(pos + 1);
-                return pos;
+                return old;
             }
         };
     }

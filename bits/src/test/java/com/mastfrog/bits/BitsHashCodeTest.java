@@ -100,6 +100,11 @@ public class BitsHashCodeTest {
         }
 
         @Override
+        public long cardinalityLong() {
+            return cardinality();
+        }
+
+        @Override
         public Bits copy() {
             return this;
         }
