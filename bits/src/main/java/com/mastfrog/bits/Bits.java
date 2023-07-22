@@ -1252,11 +1252,14 @@ public interface Bits extends Serializable {
      *
      * @param consumer A consumer
      */
-    default void forEachLongSetBitDescending(LongConsumer consumer) {
+    default long forEachLongSetBitDescending(LongConsumer consumer) {
+        long count = 0;
         long initial = nextSetBitLong(minLong());
         for (long bit = previousSetBitLong(maxLong()); bit >= initial; bit = previousSetBitLong(bit - 1)) {
+            count++;
             consumer.accept(bit);
         }
+        return count;
     }
 
     /**
@@ -1506,15 +1509,18 @@ public interface Bits extends Serializable {
     }
 
     /**
-     * Traverse all bits which are unset, starting at the lowest bit index,
-     * passing them to the passed consumer.
+     * Traverse all bits which are unset, starting at the least possible bit
+     * index, passing them to the passed consumer.
      *
      * @param consumer A consumer
      */
-    default void forEachUnsetLongBitAscending(LongConsumer consumer) {
+    default long forEachUnsetLongBitAscending(LongConsumer consumer) {
+        long result = 0;
         for (long bit = nextClearBitLong(minLong()); bit >= minLong(); bit = nextClearBitLong(bit + 1)) {
             consumer.accept(bit);
+            result++;
         }
+        return result;
     }
 
     /**
@@ -1524,10 +1530,12 @@ public interface Bits extends Serializable {
      *
      * @param consumer A consumer
      */
-    default void forEachUnsetLongBitDescending(LongConsumer consumer) {
+    default long forEachUnsetLongBitDescending(LongConsumer consumer) {
+        long result = 0;
         for (long bit = previousClearBitLong(maxLong()); bit >= minLong(); bit = previousClearBitLong(bit - 1)) {
             consumer.accept(bit);
         }
+        return result;
     }
 
     /**

@@ -333,16 +333,18 @@ final class LongSetBits implements MutableBits {
     }
 
     @Override
-    public void forEachLongSetBitDescending(LongConsumer consumer) {
+    public long forEachLongSetBitDescending(LongConsumer consumer) {
         if (set.isEmpty()) {
-            return;
+            return 0;
         }
         Long last;
         last = set.floor(Long.MAX_VALUE);
+        int result = 0;
         while (last != null) {
             consumer.accept(last);
             last = set.floor(last - 1);
         }
+        return result;
     }
 
     @Override

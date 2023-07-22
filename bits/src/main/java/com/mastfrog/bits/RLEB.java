@@ -581,19 +581,22 @@ final class RLEB implements Bits {
     }
 
     @Override
-    public void forEachLongSetBitDescending(LongConsumer consumer) {
+    public long forEachLongSetBitDescending(LongConsumer consumer) {
         if (isEmpty()) {
-            return;
+            return 0;
         }
         long[] d = data;
+        long result = 0;
         for (int i = used - 1; i >= 0; i--) {
             long val = d[i];
             long first = startFrom(val);
             long last = endFrom(val);
             for (long j = last; j >= first; j--) {
+                result++;
                 consumer.accept(j);
             }
         }
+        return result;
     }
 
     private CellLookupResult lastCell() {
@@ -797,12 +800,9 @@ final class RLEB implements Bits {
 
     @Override
     public int forEachSetBitDescending(IntConsumer consumer) {
-        Int result = Int.create();
-        this.forEachLongSetBitDescending((long val) -> {
+        return (int) this.forEachLongSetBitDescending((long val) -> {
             consumer.accept((int) val);
-            result.increment();
         });
-        return result.getAsInt();
     }
 
     @Override
@@ -1244,21 +1244,24 @@ final class RLEB implements Bits {
     }
 
     @Override
-    public void forEachUnsetLongBitAscending(LongConsumer consumer) {
+    public long forEachUnsetLongBitAscending(LongConsumer consumer) {
         if (isEmpty()) {
-            return;
+            return 0;
         }
         long cursor = 0;
         long[] d = data;
+        long result = 0;
         for (int i = 0; i < used; i++) {
             long val = d[i];
             long start = startFrom(val);
             for (long j = cursor; j < start; j++) {
+                result++;
                 consumer.accept(j);
             }
             long end = endFrom(val);
             cursor = end + 1;
         }
+        return result;
     }
 
     @Override
@@ -1406,21 +1409,24 @@ final class RLEB implements Bits {
     }
 
     @Override
-    public void forEachUnsetLongBitDescending(LongConsumer consumer) {
+    public long forEachUnsetLongBitDescending(LongConsumer consumer) {
         if (isEmpty()) {
-            return;
+            return 0;
         }
         long[] d = data;
         long cursor = startFrom(d[used - 1]);
+        long result = 0;
         for (int i = used - 2; i >= 0; i--) {
             long val = d[i];
             long start = endFrom(val);
             for (long j = cursor; j > start; j--) {
+                result++;
                 consumer.accept(j);
             }
             long end = startFrom(val);
             cursor = end - 1;
         }
+        return result;
     }
 
     @Override

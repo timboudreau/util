@@ -498,8 +498,8 @@ final class SynchronizedMutableBits implements MutableBits {
     }
 
     @Override
-    public synchronized void forEachLongSetBitDescending(LongConsumer consumer) {
-        delegate.forEachLongSetBitDescending(consumer);
+    public synchronized long forEachLongSetBitDescending(LongConsumer consumer) {
+        return delegate.forEachLongSetBitDescending(consumer);
     }
 
     @Override
@@ -553,13 +553,13 @@ final class SynchronizedMutableBits implements MutableBits {
     }
 
     @Override
-    public synchronized void forEachUnsetLongBitAscending(LongConsumer consumer) {
-        delegate.forEachUnsetLongBitAscending(consumer);
+    public synchronized long forEachUnsetLongBitAscending(LongConsumer consumer) {
+        return delegate.forEachUnsetLongBitAscending(consumer);
     }
 
     @Override
-    public synchronized void forEachUnsetLongBitDescending(LongConsumer consumer) {
-        delegate.forEachUnsetLongBitDescending(consumer);
+    public synchronized long forEachUnsetLongBitDescending(LongConsumer consumer) {
+        return delegate.forEachUnsetLongBitDescending(consumer);
     }
 
     @Override
@@ -637,4 +637,13 @@ final class SynchronizedMutableBits implements MutableBits {
         return delegate.equals(obj);
     }
 
+    @Override
+    public synchronized int leastSetBit() {
+        return delegate.leastSetBit();
+    }
+
+    @Override
+    public synchronized long leastSetBitLong() {
+        return delegate.leastSetBitLong();
+    }
 }
