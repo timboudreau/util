@@ -73,9 +73,11 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
     private final AtomicInteger count = new AtomicInteger();
     private volatile boolean running;
     private DeploymentMode mode = DeploymentMode.PRODUCTION;
+    public static final String SYS_PROP_SHUTDOWN_WAIT_MILLIS = "shutdown.hook.millis";
+    private static final long DEFAULT_WAIT_MILLIS = 500;
 
     public ShutdownHookRegistry() {
-        this(500);
+        this(shutdownWait());
     }
 
     public ShutdownHookRegistry(Duration wait) {
@@ -87,6 +89,24 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
         main.andAlways(last);
         main.andAlways(middle);
         main.andAlways(first);
+    }
+
+    static long shutdownWait() {
+        String prop = System.getProperty(SYS_PROP_SHUTDOWN_WAIT_MILLIS);
+        if (prop != null) {
+            try {
+                long val = Long.parseLong(prop);
+                if (val <= 0) {
+                    throw new IllegalArgumentException();
+                }
+                return val;
+            } catch (IllegalArgumentException e) {
+                System.err.println("Invalid value '" + prop + " for "
+                        + SYS_PROP_SHUTDOWN_WAIT_MILLIS
+                        + ". Using default of " + DEFAULT_WAIT_MILLIS + " ms");
+            }
+        }
+        return 500;
     }
 
     private ShutdownThread shutdownThread(boolean create) {
@@ -503,7 +523,7 @@ public abstract class ShutdownHookRegistry implements ShutdownHooks {
 
         private final AtomicBoolean registered = new AtomicBoolean();
 
-        public VMShutdownHookRegistry() {
+        VMShutdownHookRegistry() {
         }
 
         public VMShutdownHookRegistry(long wait) {
