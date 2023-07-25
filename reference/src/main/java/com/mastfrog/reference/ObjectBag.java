@@ -28,7 +28,6 @@ import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.util.ArrayList;
 import java.util.Collection;
 import static java.util.Collections.newSetFromMap;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;

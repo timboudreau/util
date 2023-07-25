@@ -98,11 +98,4 @@ public class RandomStrings {
         }
         return new String(bytes, StandardCharsets.US_ASCII);
     }
-
-    public static void main(String[] args) {
-        RandomStrings rs = new RandomStrings();
-        for (int i = 0; i < 10; i++) {
-            System.out.println(rs.get());
-        }
-    }
 }

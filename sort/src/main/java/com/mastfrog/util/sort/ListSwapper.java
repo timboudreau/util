@@ -21,15 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package com.mastfrog.util.sort;
 
 import java.util.List;
 
-/**
- *
- * @author Tim Boudreau
- */
 final class ListSwapper<T> implements Swapper {
 
     final List<T> list;

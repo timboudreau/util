@@ -260,13 +260,4 @@ public final class UniqueIDs {
         }
         return id.endsWith(reversed.substring(reversed.length() - 8, reversed.length()));
     }
-
-    public static void main(String[] args) throws IOException {
-        UniqueIDs ids = new UniqueIDs(new File("/tmp/foo.bytes"));
-        for (int i = 0; i < 100; i++) {
-            String id = ids.newId();
-            System.out.println(id);
-            System.out.println(ids.uniqueToVmString());
-        }
-    }
 }

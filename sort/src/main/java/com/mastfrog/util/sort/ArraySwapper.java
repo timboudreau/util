@@ -21,13 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package com.mastfrog.util.sort;
 
-/**
- *
- * @author Tim Boudreau
- */
 final class ArraySwapper<T> implements Swapper {
 
     final T[] array;

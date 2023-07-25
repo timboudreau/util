@@ -37,7 +37,7 @@ import java.util.stream.IntStream;
  */
 public class AlignedText {
 
-    private List<Line> lines = new ArrayList<>(20);
+    private final List<Line> lines = new ArrayList<>(20);
 
     public AlignedText() {
 
@@ -70,8 +70,6 @@ public class AlignedText {
         return result;
     }
 
-    private static final Pattern DIGITS = Pattern.compile("\\d+");
-
     private boolean isNumbers(int columnIndex) {
         boolean result = true;
         for (Line line : lines) {
@@ -94,6 +92,7 @@ public class AlignedText {
         return new String(result);
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for (Line line : lines) {
@@ -161,19 +160,6 @@ public class AlignedText {
     public AStringBuilder append(float val) {
         Line l = new Line(this);
         return l.append(decimalFormat.format(val));
-    }
-
-    public static void main(String[] args) {
-        String s = new AlignedText().append("GET/HEAD").end().append("/sp").end().append("Do something cool").end().append("23").end().end()
-                .append("GET").end().append("/some/long/path/too").end().append("Hey now what is this doing?").end().append("52043").end().end().end();
-        ;
-        System.out.println(s);
-
-        System.out.println("----------------------\n\n");
-
-        String tabbed = "FOO\t/path/to/foo\t341\tI like this thing I think\t3920202\n"
-                + "BAR/BAZ\t/shrimp\t52\tWell, that's short\t39\n";
-        System.out.println(new AlignedText(tabbed));
     }
 
     public final class Line implements Endable<AlignedText>, Lineable<AStringBuilder> {
