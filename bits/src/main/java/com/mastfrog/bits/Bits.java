@@ -899,16 +899,15 @@ public interface Bits extends Serializable {
     }
 
     /**
-     * Traverse all bits which are unset in reverse, starting at the
-     * <i>highest</i>
-     * bit index, passing them to the passed consumer.
+     * Traverse all bits which are unset in reverse, starting prior to at the
+     * <i>greatest</i> set bit index, passing them to the passed consumer.
      *
      * @param consumer A consumer
      */
     default int forEachUnsetBitDescending(IntConsumer consumer) {
         int count = 0;
         int min = min();
-        for (int bit = previousClearBit(max()); bit >= min; bit = previousClearBit(bit - 1)) {
+        for (int bit = previousClearBit(previousSetBit(max())); bit >= min; bit = previousClearBit(bit - 1)) {
             consumer.accept(bit);
             count++;
         }
@@ -953,20 +952,12 @@ public interface Bits extends Serializable {
      * bits were found to call the predicate with
      */
     default int forEachUnsetBitDescending(IntPredicate consumer) {
-        int count = -1;
+        int count = 0;
         int min = min();
-        for (int bit = previousClearBit(max()); bit >= min; bit = previousClearBit(bit - 1)) {
+        for (int bit = previousClearBit(previousSetBit(max())); bit >= min; bit = previousClearBit(bit - 1)) {
+            count++;
             if (!consumer.test(bit)) {
-                if (count == -1) {
-                    count = 0;
-                }
                 break;
-            } else {
-                if (count == -1) {
-                    count = 1;
-                } else {
-                    count++;
-                }
             }
         }
         return count;
@@ -1052,20 +1043,12 @@ public interface Bits extends Serializable {
      * bits were found to call the predicate with
      */
     default int forEachUnsetBitDescending(int start, IntPredicate consumer) {
-        int count = -1;
+        int count = 0;
         int min = min();
         for (int bit = previousClearBit(start); bit >= min; bit = previousClearBit(bit - 1)) {
+            count++;
             if (!consumer.test(bit)) {
-                if (count == -1) {
-                    count = 0;
-                }
                 break;
-            } else {
-                if (count == -1) {
-                    count = 1;
-                } else {
-                    count++;
-                }
             }
         }
         return count;
@@ -1103,13 +1086,20 @@ public interface Bits extends Serializable {
     default int forEachUnsetBitDescending(int from, int downTo, IntConsumer consumer) {
         if (from < downTo) {
             return 0;
+        } else if (from == downTo) {
+            if (get(from)) {
+                return 0;
+            } else {
+                consumer.accept(from);
+                return 1;
+            }
         }
-        if (downTo < 0) {
-            int min = min();
+        int min = min();
+        if (downTo < min) {
             downTo = min == Integer.MIN_VALUE ? Integer.MIN_VALUE : min - 1;
         }
         int count = 0;
-        for (int bit = previousClearBit(from); bit > downTo; bit = previousClearBit(bit - 1)) {
+        for (int bit = previousClearBit(from); bit >= downTo; bit = previousClearBit(bit - 1)) {
             consumer.accept(bit);
             count++;
         }
@@ -1128,20 +1118,12 @@ public interface Bits extends Serializable {
      * bits were found to call the predicate with
      */
     default int forEachUnsetBitAscending(int from, int upTo, IntPredicate consumer) {
-        int count = -1;
+        int count = 0;
         int min = min();
         for (int bit = nextClearBit(from); bit >= min && bit < upTo; bit = nextClearBit(bit + 1)) {
+            count++;
             if (!consumer.test(bit)) {
-                if (count == -1) {
-                    count = 0;
-                }
                 break;
-            } else {
-                if (count == -1) {
-                    count = 1;
-                } else {
-                    count++;
-                }
             }
         }
         return count;
@@ -1160,19 +1142,11 @@ public interface Bits extends Serializable {
      * bits were found to call the predicate with
      */
     default int forEachUnsetBitDescending(int from, int downTo, IntPredicate consumer) {
-        int count = -1;
-        for (int bit = previousClearBit(from); bit > downTo; bit = previousClearBit(bit - 1)) {
+        int count = 0;
+        for (int bit = previousClearBit(from); bit >= downTo; bit = previousClearBit(bit - 1)) {
+            count++;
             if (!consumer.test(bit)) {
-                if (count == -1) {
-                    count = 0;
-                }
                 break;
-            } else {
-                if (count == -1) {
-                    count = 1;
-                } else {
-                    count++;
-                }
             }
         }
         return count;
@@ -1218,7 +1192,7 @@ public interface Bits extends Serializable {
      * store implementations (memory mapped int-indexed ByteBuffers, and even
      * sun.misc.Unsafe) preclude actually going as high as Long.MAX_VALUE.
      *
-     * @return Long.MAX_VALUE by default
+     * @return Long.MAX_VALUE if natively long indexed, else the return value of max()
      */
     default long maxLong() {
         return isNativelyLongIndexed() ? Long.MAX_VALUE : max();
@@ -1710,11 +1684,12 @@ public interface Bits extends Serializable {
      * @return The number of bits passed to the consumer
      */
     default long forEachUnsetLongBitDescending(long from, long downTo, LongConsumer consumer) {
-        if (from < downTo) {
+        if (from < downTo || isEmpty()) {
             return 0;
         }
-        if (downTo < 0) {
-            downTo = -1;
+        long min = minLong();
+        if (downTo < min) {
+            downTo = min;
         }
         long count = 0;
         for (long bit = previousClearBitLong(from); bit > downTo; bit = previousClearBitLong(bit - 1)) {

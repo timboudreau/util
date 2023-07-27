@@ -1235,12 +1235,9 @@ final class RLEB implements Bits {
 
     @Override
     public int forEachUnsetBitDescending(IntConsumer consumer) {
-        Int result = Int.create();
-        forEachUnsetLongBitAscending(bit -> {
-            result.increment();
+        return (int) forEachUnsetLongBitDescending(bit -> {
             consumer.accept((int) bit);
         });
-        return result.getAsInt();
     }
 
     @Override
@@ -1414,17 +1411,25 @@ final class RLEB implements Bits {
             return 0;
         }
         long[] d = data;
-        long cursor = startFrom(d[used - 1]);
+        long cursor = startFrom(d[used - 1]) - 1;
+        long min = minLong();
+        if (cursor <= min) { // there is one block of bits starting at 0
+            return 0;
+        }
         long result = 0;
         for (int i = used - 2; i >= 0; i--) {
             long val = d[i];
             long start = endFrom(val);
+            result += cursor - start;
             for (long j = cursor; j > start; j--) {
-                result++;
                 consumer.accept(j);
             }
             long end = startFrom(val);
             cursor = end - 1;
+        }
+        result += cursor + 1;
+        while (cursor >= min) {
+            consumer.accept(cursor--);
         }
         return result;
     }
@@ -1434,20 +1439,304 @@ final class RLEB implements Bits {
         if (isEmpty()) {
             return 0;
         }
-        long result = 0;
         long[] d = data;
-        long cursor = startFrom(d[used - 1]);
+        long cursor = startFrom(d[used - 1]) - 1;
+        long min = minLong();
+        if (cursor <= min) { // there is one block of bits starting at 0
+            return 0;
+        }
+        long result = 0;
         for (int i = used - 2; i >= 0; i--) {
             long val = d[i];
             long start = endFrom(val);
             for (long j = cursor; j > start; j--) {
                 result++;
                 if (!consumer.test(j)) {
-                    break;
+                    return result;
                 }
             }
             long end = startFrom(val);
             cursor = end - 1;
+        }
+        while (cursor >= min) {
+            result++;
+            if (!consumer.test(cursor--)) {
+                break;
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public int forEachUnsetBitDescending(int from, IntConsumer consumer) {
+        return (int) forEachUnsetLongBitDescending(from, bit -> {
+            consumer.accept((int) bit);
+        });
+    }
+
+    @Override
+    public int forEachUnsetBitDescending(int from, IntPredicate consumer) {
+        return (int) forEachUnsetLongBitDescending(from, bit -> {
+            return consumer.test((int) bit);
+        });
+    }
+
+    @Override
+    public int forEachUnsetBitDescending(int from, int downTo, IntConsumer consumer) {
+        return (int) forEachUnsetLongBitDescending(from, downTo, bit -> {
+            consumer.accept((int) bit);
+        });
+    }
+
+    @Override
+    public int forEachUnsetBitDescending(int from, int downTo, IntPredicate consumer) {
+        return (int) forEachUnsetLongBitDescending(from, downTo, bit -> {
+            return consumer.test((int) bit);
+        });
+    }
+
+    @Override
+    public long forEachUnsetLongBitDescending(long from, LongConsumer consumer) {
+        if (isEmpty()) {
+            return 0;
+        }
+        long[] d = data;
+        long lastCell = d[used - 1];
+        long lastEnd = endFrom(lastCell);
+        long result = 0;
+        long cursor;
+        if (from > lastEnd) {
+            result += from - lastEnd;
+            for (; from > lastEnd; from--) {
+                consumer.accept(from);
+            }
+        }
+        cursor = startFrom(lastCell);
+        long min = minLong();
+        if (cursor <= min) { // there is one block of bits starting at 0
+            return 0;
+        } else {
+            cursor--;
+        }
+        int startingCell;
+        if (from < cursor) {
+            if (used == 1) {
+                for (; from >= min; from--) {
+                    consumer.accept(from);
+                }
+                return (from - min) + 1;
+            } else {
+                CellLookupResult res = cellForBit(from);
+                startingCell = res.index;
+                if (res.type.isPresent()) {
+                    cursor = startFrom(d[res.index]);
+                    if (cursor <= min) {
+                        return 0;
+                    } else {
+                        cursor--;
+                    }
+                }
+            }
+        } else {
+            startingCell = used - 2;
+        }
+
+        for (int i = startingCell; i >= 0; i--) {
+            long val = d[i];
+            long start = endFrom(val);
+            result += cursor - start;
+            for (long j = cursor; j > start; j--) {
+                consumer.accept(j);
+            }
+            long end = startFrom(val);
+            cursor = end - 1;
+        }
+        result += cursor + 1;
+        while (cursor >= min) {
+            consumer.accept(cursor--);
+        }
+        return result;
+    }
+
+    @Override
+    public long forEachUnsetLongBitDescending(long from, LongPredicate consumer) {
+        if (isEmpty()) {
+            return 0;
+        }
+        long[] d = data;
+        long lastCell = d[used - 1];
+        long lastEnd = endFrom(lastCell);
+        long result = 0;
+        long cursor;
+        if (from > lastEnd) {
+            for (; from > lastEnd; from--) {
+                result++;
+                if (!consumer.test(from)) {
+                    return result;
+                }
+            }
+        }
+        cursor = startFrom(lastCell);
+        long min = minLong();
+        if (cursor == min) { // there is one block of bits starting at 0
+            return 0;
+        } else {
+            cursor--;
+        }
+        int startingCell;
+        if (from < cursor) {
+            if (used == 1) {
+                for (; from >= min; from--) {
+                    result++;
+                    if (!consumer.test(from)) {
+                        return result;
+                    }
+                }
+                return result;
+            } else {
+                CellLookupResult res = cellForBit(from);
+                startingCell = res.index;
+                if (res.type.isPresent()) {
+                    cursor = startFrom(d[res.index]);
+                    if (cursor <= min) {
+                        return 0;
+                    } else {
+                        cursor--;
+                    }
+                }
+            }
+        } else {
+            startingCell = used - 2;
+        }
+
+        for (int i = startingCell; i >= 0; i--) {
+            long val = d[i];
+            long start = endFrom(val);
+            for (long j = cursor; j > start; j--) {
+                result++;
+                if (!consumer.test(j)) {
+                    return result;
+                }
+            }
+            long end = startFrom(val);
+            cursor = end - 1;
+        }
+        while (cursor >= min) {
+            result++;
+            if (!consumer.test(cursor--)) {
+                break;
+            }
+        }
+        return result;
+    }
+
+    public long forEachUnsetLongBitDescending(long from, long downTo, LongConsumer consumer) {
+        return forEachUnsetLongBitDescending(from, downTo, bit -> {
+            consumer.accept(bit);
+            return true;
+        });
+    }
+
+    public long forEachUnsetLongBitDescending(long from, long downTo, LongPredicate consumer) {
+        if (from < downTo || isEmpty()) {
+            return 0;
+        }
+        if (from == downTo) {
+            if (get(from)) {
+                return 0;
+            } else {
+                consumer.test(from);
+                return 1;
+            }
+        }
+        long result = 0;
+        if (from < leastSetBitLong()) {
+            for (long bit = from; bit >= downTo; bit--) {
+                result++;
+                if (!consumer.test(bit)) {
+                    break;
+                }
+            }
+            return result;
+        }
+        long min = minLong();
+        if (downTo < min) {
+            downTo = min;
+        }
+        long[] d = data;
+        long lastCell = d[used - 1];
+        long lastEnd = endFrom(lastCell);
+        long cursor;
+        if (from > lastEnd) {
+            lastEnd = Math.max(lastEnd, downTo);
+            for (; from > lastEnd; from--) {
+                result++;
+                if (!consumer.test(from)) {
+                    return result;
+                }
+            }
+        }
+        cursor = startFrom(lastCell);
+        if (cursor < downTo) {
+            return result;
+        }
+        if (cursor == min) { // there is one block of bits starting at 0
+            return 0;
+        } else {
+            cursor--;
+        }
+        int startingCell;
+        if (from < cursor) {
+            if (used == 1) {
+                min = Math.max(min, downTo);
+                for (; from >= min; from--) {
+                    result++;
+                    if (!consumer.test(from)) {
+                        System.out.println("C");
+                        return result;
+                    }
+                }
+                return result;
+            } else {
+                CellLookupResult res = cellForBit(from);
+                startingCell = res.index;
+                if (res.type.isPresent()) {
+                    cursor = startFrom(d[res.index]);
+                    if (cursor <= min) {
+                        return result;
+                    } else {
+                        cursor--;
+                        if (cursor < downTo) {
+                            return result;
+                        }
+
+                    }
+                }
+            }
+        } else {
+            startingCell = used - 2;
+        }
+        if (cursor > from) {
+            cursor = from;
+        }
+        for (int i = startingCell; i >= 0; i--) {
+            long val = d[i];
+            long start = Math.max(downTo, endFrom(val) + 1);
+
+            for (long j = cursor; j >= start; j--) {
+                result++;
+                if (!consumer.test(j) || j == downTo) {
+                    return result;
+                }
+            }
+            long end = startFrom(val);
+            cursor = end - 1;
+        }
+        while (cursor >= min && cursor >= downTo) {
+            result++;
+            if (!consumer.test(cursor--)) {
+                break;
+            }
         }
         return result;
     }
@@ -1514,7 +1803,6 @@ final class RLEB implements Bits {
         if (other.isEmpty()) {
             return Bits.EMPTY;
         }
-
         return Bits.super.andWith(other);
     }
 

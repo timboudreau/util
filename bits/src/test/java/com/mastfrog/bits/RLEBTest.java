@@ -517,7 +517,8 @@ public class RLEBTest {
     @Test
     public void testUnsetDescending() {
         BitSet bs1 = new BitSet();
-        long realCount = Bits.fromBitSet(bits3).forEachUnsetBitAscending(bit -> {
+        BitSetBits bsb = new BitSetBits(bits3);
+        long realCount = bsb.forEachUnsetBitDescending(bit -> {
             bs1.set(bit);
         });
         BitSet bs2 = new BitSet();
@@ -525,8 +526,175 @@ public class RLEBTest {
         long gotCount = rleb3.forEachUnsetBitDescending(bit -> {
             bs2.set(bit);
         });
-        assertEquals(bs1, bs2, "Unset bit iteration does not match");
+        BitSet b3 = new BitSet();
+        b3.set(0, 79);
+        b3.andNot(bits3);
+        assertEquals(bs1, bs2, "Unset bit iteration does not match - should be " + b3);
         assertEquals(realCount, gotCount);
+    }
+
+    @Test
+    public void testUnsetDescendingWithPredicate() {
+        for (int i = 100; i >= 0; i--) {
+            long stop = i;
+            BitSet bs1 = new BitSet();
+            BitSetBits bsb = new BitSetBits(bits3);
+            Lng realInvocationCount = Lng.create();
+            long realCount = bsb.forEachUnsetBitDescending(bit -> {
+                realInvocationCount.increment();
+                if (bit <= stop) {
+                    return false;
+                }
+                bs1.set(bit);
+                return true;
+            });
+            assertEquals(realInvocationCount.getAsLong(), realCount,
+                    "Default impl reports wrong number of invocations");
+            BitSet bs2 = new BitSet();
+            RLEB rleb3 = new RLEB(data3, data3.length);
+            Lng invocationCount = Lng.create();
+            long gotCount = rleb3.forEachUnsetBitDescending(bit -> {
+                invocationCount.increment();
+                if (bit <= stop) {
+                    return false;
+                }
+                bs2.set(bit);
+                return true;
+            });
+            assertEquals(bs1, bs2, "Unset bit iteration does not match for start " + i);
+            assertEquals(realCount, gotCount, "For start " + i);
+            assertEquals(invocationCount.getAsLong(), realCount, "For start " + i);
+        }
+    }
+
+    @Test
+    public void testUnsetDescendingWithStart() {
+        BitSet bs1 = new BitSet();
+        BitSetBits bsb = new BitSetBits(bits3);
+        long realCount = bsb.forEachUnsetBitDescending(100, bit -> {
+            bs1.set(bit);
+        });
+        BitSet bs2 = new BitSet();
+        RLEB rleb3 = new RLEB(data3, data3.length);
+        long gotCount = rleb3.forEachUnsetBitDescending(100, bit -> {
+            bs2.set(bit);
+        });
+        BitSet b3 = new BitSet();
+        b3.set(0, 101);
+        b3.andNot(bits3);
+        assertEquals(bs1, bs2, "Unset bit iteration does not match - should be " + b3);
+        assertEquals(realCount, gotCount);
+    }
+
+    @Test
+    public void testUnsetDescendingWithStartAndEnd() {
+        for (int i = 62; i >= 0; i--) {
+            int end = i;
+            for (int j = 100; j >= i; j--) {
+                int start = j;
+
+                BitSet bs1 = new BitSet();
+                BitSetBits bsb = new BitSetBits(bits3);
+                Lng realInvocationCount = Lng.create();
+                long realCount = bsb.forEachUnsetBitDescending(start, end, bit -> {
+                    realInvocationCount.increment();
+                    bs1.set(bit);
+                });
+                if (!bits3.get(start)) {
+                    assertTrue(bs1.get(start), "Starting bit not present in default impl");
+                }
+                if (!bits3.get(end)) {
+                    assertTrue(bs1.get(end), "Ending bit not present in default impl");
+                }
+
+                assertEquals(realInvocationCount.getAsLong(), realCount,
+                        "Default impl reports wrong number of invocations");
+                BitSet bs2 = new BitSet();
+                RLEB rleb3 = new RLEB(data3, data3.length);
+                Lng invocationCount = Lng.create();
+                long gotCount = rleb3.forEachUnsetBitDescending(start, end, bit -> {
+                    invocationCount.increment();
+                    bs2.set(bit);
+                });
+                assertEquals(bs1, bs2, "Unset bit iteration does not match for " + start + ":" + end);
+                assertEquals(realCount, gotCount, "For " + start + ":" + end);
+                assertEquals(realCount, invocationCount.getAsLong(), "For " + start + ":" + end);
+            }
+        }
+    }
+
+    @Test
+    public void testUnsetDescendingWithStartAndEndWithPredicate() {
+        for (int i = 62; i >= 0; i--) {
+            int end = i;
+            for (int j = 100; j >= i; j--) {
+                int start = j;
+
+                for (int k = end - 1; k >= start - 1; k--) {
+                    int stop = k;
+
+                    BitSet bs1 = new BitSet();
+                    BitSetBits bsb = new BitSetBits(bits3);
+                    Lng realInvocationCount = Lng.create();
+                    long realCount = bsb.forEachUnsetBitDescending(start, end, bit -> {
+                        realInvocationCount.increment();
+                        bs1.set(bit);
+                        return bit <= stop;
+                    });
+                    if (!bits3.get(start) && start >= stop) {
+                        assertTrue(bs1.get(start), "Starting bit " + start
+                                + " not present in default impl for "
+                                + start + ":" + end + " @ " + stop);
+                    }
+                    if (!bits3.get(end) && start >= stop) {
+                        assertTrue(bs1.get(end), "Ending bit "
+                                + end + " not present in default impl for "
+                                + start + ":" + end + " @ " + stop);
+                    }
+
+                    assertEquals(realInvocationCount.getAsLong(), realCount,
+                            "Default impl reports wrong number of invocations");
+                    BitSet bs2 = new BitSet();
+                    RLEB rleb3 = new RLEB(data3, data3.length);
+                    Lng invocationCount = Lng.create();
+                    long gotCount = rleb3.forEachUnsetBitDescending(start, end, bit -> {
+                        invocationCount.increment();
+                        bs2.set(bit);
+                        return bit <= stop;
+                    });
+                    assertEquals(bs1, bs2, "Unset bit iteration does not match for " + start + ":" + end + " @ " + stop);
+                    assertEquals(realCount, gotCount, "For " + start + ":" + end + " @ " + stop);
+                    assertEquals(realCount, invocationCount.getAsLong(), "For " + start + ":" + end + " @ " + stop);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testUnsetDescendingWithStartAndPredicate() {
+        for (int i = 100; i >= 0; i--) {
+            long stop = i;
+            BitSet bs1 = new BitSet();
+            BitSetBits bsb = new BitSetBits(bits3);
+            Lng realIterCount = Lng.create();
+            long realCount = bsb.forEachUnsetBitDescending(100, bit -> {
+                bs1.set(bit);
+                realIterCount.increment();
+                return bit >= stop;
+            });
+            assertEquals(realIterCount.getAsLong(), realCount, "Default bits impl reports wrong call count");
+            BitSet bs2 = new BitSet();
+            RLEB rleb3 = new RLEB(data3, data3.length);
+            Lng callCount = Lng.create();
+            long gotCount = rleb3.forEachUnsetBitDescending(100, bit -> {
+                bs2.set(bit);
+                callCount.increment();
+                return bit >= stop;
+            });
+            assertEquals(bs1, bs2, "Unset bit iteration does not match with start " + i);
+            assertEquals(realCount, gotCount, "Wrong count returned from iteration with start " + i);
+            assertEquals(realCount, callCount.getAsLong(), "Wrong actual invocation count with start " + i);
+        }
     }
 
     @Test
