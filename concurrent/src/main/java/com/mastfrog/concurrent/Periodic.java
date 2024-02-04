@@ -25,7 +25,6 @@ package com.mastfrog.concurrent;
 
 import static java.lang.System.currentTimeMillis;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BooleanSupplier;
 

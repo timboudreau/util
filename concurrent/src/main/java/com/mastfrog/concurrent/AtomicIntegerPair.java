@@ -24,7 +24,6 @@
 package com.mastfrog.concurrent;
 
 import com.mastfrog.function.IntBiConsumer;
-import com.mastfrog.function.IntBiPredicate;
 import com.mastfrog.function.state.Lng;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.IntUnaryOperator;

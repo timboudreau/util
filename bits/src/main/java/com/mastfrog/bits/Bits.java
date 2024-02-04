@@ -45,9 +45,14 @@ import java.util.function.LongSupplier;
 public interface Bits extends Serializable {
 
     public static final Bits EMPTY = new EmptyBits();
+    public static final Bits ONES = Ones.ONES;
 
     default boolean canContain(int index) {
-        return index > 0;
+        return index >= min() && index <= max();
+    }
+
+    default boolean canContain(long index) {
+        return index >= minLong() && index <= max();
     }
 
     /**
@@ -55,7 +60,10 @@ public interface Bits extends Serializable {
      *
      * @return The number of set bits
      */
-    int cardinality();
+    default int cardinality() {
+        return forEachSetBitAscending(_ignored -> {
+        });
+    }
 
     /**
      * Create a read-only copy of this bit set.
@@ -219,6 +227,11 @@ public interface Bits extends Serializable {
         return copy();
     }
 
+    /**
+     * Get the cardinality as a long.
+     *
+     * @return A long
+     */
     default long cardinalityLong() {
         return forEachLongSetBitAscending(ignored -> {
         });
@@ -512,7 +525,7 @@ public interface Bits extends Serializable {
      */
     default int bitsHashCode() {
         long h = 1234;
-        long lastBit = previousSetBitLong(Long.MAX_VALUE);
+        long lastBit = previousSetBitLong(maxLong());
         long currentValue = 0;
         long lastIndexInLongArray = -1;
         long previousBit = -1;
@@ -1192,7 +1205,8 @@ public interface Bits extends Serializable {
      * store implementations (memory mapped int-indexed ByteBuffers, and even
      * sun.misc.Unsafe) preclude actually going as high as Long.MAX_VALUE.
      *
-     * @return Long.MAX_VALUE if natively long indexed, else the return value of max()
+     * @return Long.MAX_VALUE if natively long indexed, else the return value of
+     * max()
      */
     default long maxLong() {
         return isNativelyLongIndexed() ? Long.MAX_VALUE : max();
@@ -1902,4 +1916,50 @@ public interface Bits extends Serializable {
         OFF_HEAP,
         RLE_COMPRESSED
     }
+
+    default String toBinaryString() {
+        return toBinaryString(previousSetBitLong(max()) + 1);
+    }
+
+    default String toBinaryString(long upTo) {
+        StringBuilder sb = new StringBuilder();
+        visitRangesLong((long first, long last) -> {
+            while (sb.length() < first) {
+                sb.append('0');
+            }
+            for (long i = first; i <= last; i++) {
+                sb.append('1');
+            }
+        });
+        while (sb.length() <= upTo) {
+            sb.append('0');
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Convert a string of 0's and 1's to a Bits. Characters other than 0 and 1
+     * are ignored.
+     *
+     * @param s A string
+     * @return A Bits
+     */
+    static Bits fromBinaryString(String s) {
+        BitSet bs = new BitSet(s.length());
+        int cursor = 0;
+        for (int i = 0; i < s.length(); i++) {
+            switch (s.charAt(i)) {
+                case '0':
+                    cursor++;
+                    continue;
+                case '1':
+                    bs.set(cursor++);
+                    continue;
+                default:
+                // do nothing
+            }
+        }
+        return fromBitSet(bs);
+    }
+
 }

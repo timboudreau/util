@@ -51,7 +51,7 @@ final class EmptyBits implements Bits, LongSupplier, IntSupplier, MutableBits {
 
     @Override
     public int nextClearBit(int fromIndex) {
-        return -1;
+        return fromIndex >= 0 ? fromIndex : 0;
     }
 
     @Override
@@ -61,7 +61,7 @@ final class EmptyBits implements Bits, LongSupplier, IntSupplier, MutableBits {
 
     @Override
     public int previousClearBit(int fromIndex) {
-        return -1;
+        return fromIndex >= 0 ? -1 : fromIndex;
     }
 
     @Override
@@ -108,8 +108,8 @@ final class EmptyBits implements Bits, LongSupplier, IntSupplier, MutableBits {
     public boolean equals(Object o) {
         return o == this ? true
                 : o == null ? false
-                : o instanceof EmptyBits ? true
-                : o instanceof Bits && ((Bits) o).isEmpty();
+                        : o instanceof EmptyBits ? true
+                                : o instanceof Bits && ((Bits) o).isEmpty();
     }
 
     @Override
@@ -210,7 +210,7 @@ final class EmptyBits implements Bits, LongSupplier, IntSupplier, MutableBits {
 
     @Override
     public long nextClearBitLong(long fromIndex) {
-        return -1L;
+        return fromIndex >= 0 ? fromIndex : 0;
     }
 
     @Override

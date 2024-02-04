@@ -1,7 +1,11 @@
 package com.mastfrog.bits;
 
 import java.util.Set;
+import java.util.function.IntConsumer;
+import java.util.function.IntPredicate;
 import java.util.function.IntSupplier;
+import java.util.function.LongConsumer;
+import java.util.function.LongPredicate;
 
 /**
  * A simpler wrapper inverse-bits.
@@ -12,6 +16,10 @@ final class InvertedBits implements Bits {
 
     private final Bits orig;
     private final IntSupplier capacity;
+
+    public InvertedBits(Bits orig) {
+        this(orig, () -> orig.max() - orig.min());
+    }
 
     public InvertedBits(Bits orig, IntSupplier capacity) {
         this.orig = orig;
@@ -70,6 +78,9 @@ final class InvertedBits implements Bits {
         } else if (o == null || !(o instanceof Bits)) {
             return false;
         }
+        if (o instanceof InvertedBits ib) {
+            return ib.orig.equals(orig);
+        }
         return contentEquals((Bits) o);
     }
 
@@ -92,4 +103,118 @@ final class InvertedBits implements Bits {
     public MutableBits newBits(long size) {
         return orig.newBits(size);
     }
+
+    @Override
+    public long nextSetBitLong(long fromIndex) {
+        return orig.nextClearBitLong(fromIndex);
+    }
+
+    @Override
+    public long nextClearBitLong(long fromIndex) {
+        return orig.nextSetBitLong(fromIndex);
+    }
+
+    @Override
+    public int min() {
+        return orig.min();
+    }
+
+    @Override
+    public int max() {
+        return orig.max();
+    }
+
+    @Override
+    public long minLong() {
+        return orig.minLong();
+    }
+
+    @Override
+    public long maxLong() {
+        return orig.maxLong();
+    }
+
+    @Override
+    public Bits andWith(Bits other) {
+        return orig.andNotWith(other);
+    }
+
+    @Override
+    public Bits andNotWith(Bits other) {
+        return orig.andWith(other);
+    }
+
+    @Override
+    public int forEachSetBitAscending(IntConsumer consumer) {
+        return orig.forEachUnsetBitAscending(consumer);
+    }
+
+    @Override
+    public int forEachSetBitDescending(IntConsumer consumer) {
+        return orig.forEachUnsetBitDescending(consumer);
+    }
+
+    @Override
+    public int forEachSetBitAscending(IntPredicate consumer) {
+        return orig.forEachUnsetBitDescending(consumer);
+    }
+
+    @Override
+    public int forEachSetBitDescending(IntPredicate consumer) {
+        return orig.forEachUnsetBitDescending(consumer);
+    }
+
+    @Override
+    public int forEachUnsetBitAscending(IntConsumer consumer) {
+        return orig.forEachSetBitAscending(consumer);
+    }
+
+    @Override
+    public int forEachUnsetBitAscending(IntPredicate consumer) {
+        return orig.forEachSetBitAscending(consumer);
+    }
+
+    @Override
+    public long forEachLongSetBitAscending(LongConsumer consumer) {
+        return orig.forEachUnsetLongBitAscending(consumer);
+    }
+
+    @Override
+    public long forEachLongSetBitAscending(LongPredicate consumer) {
+        return orig.forEachUnsetLongBitAscending(consumer);
+    }
+
+    @Override
+    public long forEachUnsetLongBitAscending(LongConsumer consumer) {
+        return orig.forEachLongSetBitAscending(consumer);
+    }
+
+    @Override
+    public long forEachUnsetLongBitDescending(LongConsumer consumer) {
+        return orig.forEachLongSetBitDescending(consumer);
+    }
+
+    @Override
+    public long forEachUnsetLongBitAscending(LongPredicate consumer) {
+        return orig.forEachLongSetBitAscending(consumer);
+    }
+
+    @Override
+    public long forEachUnsetLongBitDescending(LongPredicate consumer) {
+        return orig.forEachLongSetBitAscending(consumer);
+    }
+
+    @Override
+    public boolean get(long bitIndex) {
+        return !orig.get(bitIndex);
+    }
+
+    @Override
+    public boolean isEmpty() {
+        if (orig.isEmpty()) {
+            return false;
+        }
+        return orig.nextClearBitLong(orig.min()) == -1L;
+    }
+
 }

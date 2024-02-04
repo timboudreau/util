@@ -485,6 +485,23 @@ final class RLEB implements Bits {
             long val = data[i];
             long start = startFrom(val);
             long end = endFrom(val) + 1;
+            long range = end - start;
+            if (range + result > (long) Integer.MAX_VALUE) {
+                return Integer.MAX_VALUE;
+            }
+            result += (int) (end - start);
+        }
+        return result;
+    }
+
+    @Override
+    public long cardinalityLong() {
+        long result = 0;
+        long[] d = data;
+        for (int i = 0; i < used; i++) {
+            long val = data[i];
+            long start = startFrom(val);
+            long end = endFrom(val) + 1;
             result += (int) (end - start);
         }
         return result;
@@ -830,19 +847,6 @@ final class RLEB implements Bits {
     }
 
     @Override
-    public long cardinalityLong() {
-        long result = 0;
-        long[] d = data;
-        for (int i = 0; i < used; i++) {
-            long val = data[i];
-            long start = startFrom(val);
-            long end = endFrom(val) + 1;
-            result += end - start;
-        }
-        return result;
-    }
-
-    @Override
     public int min() {
         return 0;
     }
@@ -903,6 +907,21 @@ final class RLEB implements Bits {
     @Override
     public String toString() {
         return stringValue();
+    }
+
+    String rangesString() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < used; i++) {
+            if (sb.length() > 0) {
+                sb.append(", ");
+            }
+            long val = data[i];
+            sb.append(startFrom(val));
+            sb.append("-");
+            sb.append(endFrom(val));
+        }
+        sb.insert(0, '[');
+        return sb.append(']').toString();
     }
 
     @Override
@@ -1096,6 +1115,10 @@ final class RLEB implements Bits {
     @Override
     public boolean canContain(int index) {
         return index >= 0;
+    }
+
+    public boolean canContain(long index) {
+        return index >= 0 && index <= INT_MAX_UNSIGNED;
     }
 
     @Override
@@ -1803,12 +1826,20 @@ final class RLEB implements Bits {
         if (other.isEmpty()) {
             return Bits.EMPTY;
         }
-        return Bits.super.andWith(other);
+        return RLEBitsBuilder.and(this, other);
     }
 
     @Override
     public Bits get(int fromIndex, int toIndex) {
         return get((long) fromIndex, (long) toIndex);
+    }
+
+    @Override
+    public Bits xorWith(Bits other) {
+        if (isEmpty() && other.isEmpty()) {
+            return Bits.EMPTY;
+        }
+        return RLEBitsBuilder.xor(this, other);
     }
 
     boolean checkInvariants() {

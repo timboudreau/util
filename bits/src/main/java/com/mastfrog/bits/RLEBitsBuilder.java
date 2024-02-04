@@ -26,6 +26,7 @@ package com.mastfrog.bits;
 import static com.mastfrog.bits.RLEB.INT_MAX_UNSIGNED;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
+import java.util.BitSet;
 import static java.util.Collections.sort;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -33,7 +34,11 @@ import java.util.Optional;
 
 /**
  * Builder for a run-length-encoded bits which stores its contents as sets of
- * ranges.
+ * ranges. An RLE bits can support bit-indexes from 0 to 4,294,967,295
+ * (Integer.MAX_VALUE unsigned or <code>0xFFFFFFFFL</code>).
+ * <p>
+ * Bit ranges can be added to the builder in any order, and will be coalesced.
+ * </p>
  *
  * @author Tim Boudreau
  */
@@ -45,10 +50,21 @@ public final class RLEBitsBuilder {
 
     }
 
+    /**
+     * Create a new RLE bits builder.
+     *
+     * @return A builder
+     */
     public static RLEBitsBuilder newRleBitsBuilder() {
         return new RLEBitsBuilder();
     }
 
+    /**
+     * Add the contents of an existing Bits to this builder.
+     *
+     * @param bits A bits
+     * @return this
+     */
     public RLEBitsBuilder add(Bits bits) {
         bits.visitRangesLong((first, last) -> {
             withRange(first, last);
@@ -56,12 +72,30 @@ public final class RLEBitsBuilder {
         return this;
     }
 
+    /**
+     * Start a range that will be added to this builder.
+     *
+     * @param first The first bit
+     * @return A <code>{@link BitRangeBuilder}</code>
+     */
     public BitRangeBuilder range(long first) {
         return new BitRangeImpl(first);
     }
 
+    /**
+     * Add a bit range to this builder.
+     *
+     * @param first The first bit - must be <code>&lt;= last</code>
+     * @param last The last bit, inclusive
+     * @return this
+     */
     public RLEBitsBuilder withRange(long first, long last) {
+        BitRangeImpl newRange = new BitRangeImpl(first, last);
+        if (ranges.contains(newRange)) {
+            return this;
+        }
         if (!ranges.isEmpty()) {
+            sort(ranges);
             BitRangeImpl l = ranges.getLast();
             if (last > l.last && l.contains(first)) {
                 l.last = last;
@@ -71,10 +105,15 @@ public final class RLEBitsBuilder {
                 return this;
             }
         }
-        ranges.add(new BitRangeImpl(first, last));
+        ranges.add(newRange);
         return this;
     }
 
+    /**
+     * Build a bits.
+     *
+     * @return A bits
+     */
     public Bits build() {
         if (ranges.isEmpty()) {
             return new RLEB();
@@ -95,6 +134,10 @@ public final class RLEBitsBuilder {
         BitRangeImpl prev = iter.next();
         while (iter.hasNext()) {
             BitRangeImpl bi = iter.next();
+            if (bi.equals(prev)) {
+                iter.remove();
+                continue;
+            }
             Optional<BitRangeImpl> opt = prev.coalesce(bi);
             if (opt.isPresent()) {
                 BitRangeImpl x = opt.get();
@@ -105,6 +148,214 @@ public final class RLEBitsBuilder {
         }
     }
 
+    public static void main(String[] args) {
+        // 001111000011
+        // 000011100101
+        BitSet bsa = fromBinaryString("001111000011");
+        BitSet bsb = fromBinaryString("000011100101");
+
+        BitSet expectedXor = fromBinaryString("001100100110");
+
+        BitSet tgt = (BitSet) bsa.clone();
+        tgt.xor(bsb);
+
+        System.out.println("BSA: " + bsa);
+        System.out.println("BSB: " + bsb);
+        System.out.println("XXO: " + expectedXor);
+        System.out.println("REA: " + tgt);
+
+        Bits xo = xor(Bits.fromBitSet(bsa), Bits.fromBitSet(bsb));
+
+        System.out.println("XOR: " + xo);
+
+    }
+
+    static BitSet fromBinaryString(String s) {
+        BitSet bs = new BitSet(s.length());
+        int cursor = 0;
+        for (int i = 0; i < s.length(); i++) {
+            switch (s.charAt(i)) {
+                case '0':
+                    cursor++;
+                    continue;
+                case '1':
+                    bs.set(cursor++);
+                    continue;
+                default:
+                // do nothing
+            }
+        }
+        return bs;
+    }
+
+    static Bits xor(Bits a, Bits b) {
+        if (a == b) {
+            return Bits.EMPTY;
+        }
+        if (a.isEmpty()) {
+            return b;
+        } else if (b.isEmpty()) {
+            return a;
+        }
+        RLEBitsBuilder rbb = new RLEBitsBuilder();
+
+        long aix = a.leastSetBitLong();
+        long bix = b.leastSetBitLong();
+        boolean set = true;
+        for (;;) {
+            long min = min(aix, bix);
+            long max = max(aix, bix);
+            if (aix != bix) {
+//                System.out.println((set ? "SET" : "UNS") +  "-MM " + aix + ", " + bix);
+                boolean isA = min == bix;
+                boolean reduced;
+                if (isA) {
+                    if (b.get(max) == set) {
+                        max--;
+                        reduced = true;
+                    } else {
+                        reduced = false;
+                        if (a.get(max + 1) != b.get(max + 1)) {
+                            max++;
+                        }
+                    }
+                } else {
+                    if (a.get(max) == set) {
+                        reduced = true;
+                        max--;
+                    } else {
+                        reduced = false;
+                        if (a.get(max + 1) != b.get(max + 1)) {
+                            max++;
+                        }
+                    }
+                }
+//                System.out.println("ADD " + min + "-" + max);
+                rbb.withRange(min, max);
+//                if (reduced) {
+//                    System.out.println("REDU " + min + ", " + max);
+//                }
+            }
+            long oaix = aix;
+            long obix = bix;
+            do {
+                max++;
+                set = !set;
+                aix = set ? a.nextSetBitLong(max) : a.nextClearBitLong(max);
+                bix = set ? b.nextSetBitLong(max) : b.nextClearBitLong(max);
+                if (Math.min(aix, bix) == -1) {
+                    break;
+                }
+            } while (aix == bix);
+            if (aix == -1 && bix != -1) {
+                rbb.withRange(oaix, Math.max(aix, bix));
+                long last = b.previousSetBit(b.max());
+                for (long i = max; i <= last; i++) {
+                    if (a.get(i) != b.get(i)) {
+                        rbb.withRange(i, i);
+                    }
+                }
+//                System.out.println("A");
+                // XXX run through the remaining set ranges in A and set
+                // them on the result
+                break;
+            } else if (aix != -1 && bix == -1) {
+                rbb.withRange(oaix, Math.max(aix, bix));
+                long last = a.previousSetBit(a.max());
+                for (long i = max; i <= last; i++) {
+                    if (a.get(i) != b.get(i)) {
+                        rbb.withRange(i, i);
+                    }
+                }
+//                System.out.println("B");
+                break;
+            } else if (aix == -1 && bix == -1) {
+//                System.out.println("C");
+                break;
+            }
+            if (aix < oaix || bix < obix) {
+//                System.out.println("D aix " + aix + " oaix " + oaix
+//                        + " bix " + bix + " obix " + obix + " min " + min + " max " + max);
+                break;
+            }
+        }
+        return rbb.build();
+    }
+
+//    static Bits xor(Bits a, Bits b) {
+//        if (a == b) {
+//            return Bits.EMPTY;
+//        }
+//        if (a.isEmpty()) {
+//            return b;
+//        } else if (b.isEmpty()) {
+//            return a;
+//        }
+//        RLEBitsBuilder rbb = new RLEBitsBuilder();
+//
+//        long minA = a.leastSetBitLong();
+//        long minB = b.leastSetBitLong();
+//
+//        long maxA = a.previousSetBitLong(a.maxLong());
+//        long maxB = b.previousSetBitLong(b.maxLong());
+//
+//        boolean clear = true;
+//        long rangeStart = min(minA, minB);
+//        long rangeEnd = max(minA, minB);
+//
+//        for (;;) {
+//            if (minA != minB) {
+//                rbb.withRange(rangeStart, rangeEnd);
+//            } else {
+//
+//            }
+//
+//            clear = !clear;
+//            break;
+//        }
+//
+//        return rbb.build();
+//    }
+    static Bits and(Bits a, Bits b) {
+        RLEBitsBuilder rbb = new RLEBitsBuilder();
+        long leastPossible = max(a.leastSetBitLong(), b.leastSetBitLong());
+        long greatestPossible = min(a.previousSetBitLong(a.maxLong()), b.previousSetBitLong(b.maxLong()));
+        if (greatestPossible == -1) {
+            return Bits.EMPTY;
+        }
+        a.visitRangesLong((first, last) -> {
+            if (last >= leastPossible && first <= greatestPossible) {
+                first = max(leastPossible, first);
+                last = min(greatestPossible, last);
+                long currStart = -1;
+                long currEnd = -1;
+                for (long l = first; l <= last; l++) {
+                    boolean isSet = b.get(l);
+                    if (isSet) {
+                        if (currStart == -1) {
+                            currStart = currEnd = l;
+                        } else {
+                            currEnd = l;
+                        }
+                    } else {
+                        if (currStart != -1) {
+                            rbb.withRange(currStart, currEnd);
+                            currStart = currEnd = -1;
+                        }
+                    }
+                }
+                if (currStart != -1) {
+                    rbb.withRange(currStart, currEnd);
+                    currStart = currEnd = -1;
+                }
+            }
+        });
+        return rbb.build();
+    }
+
+    /**
+     * Sub-builder which receives the final bit of a bit-range.
+     */
     public static abstract class BitRangeBuilder {
 
         BitRangeBuilder() {
@@ -197,5 +448,32 @@ public final class RLEBitsBuilder {
             }
             return result;
         }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 23 * hash + (int) (this.first ^ (this.first >>> 32));
+            hash = 23 * hash + (int) (this.last ^ (this.last >>> 32));
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final BitRangeImpl other = (BitRangeImpl) obj;
+            if (this.first != other.first) {
+                return false;
+            }
+            return this.last == other.last;
+        }
+
     }
 }
